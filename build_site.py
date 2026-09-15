@@ -17,7 +17,7 @@ URL is known. Everything else is relative.
 import io
 import os
 
-BASE_URL = "https://firstimpactdevelopment-web.github.io/easybacnet-site"
+BASE_URL = "https://easybacnet.com"
 
 HERE = os.path.dirname(os.path.abspath(__file__))
 
@@ -95,6 +95,18 @@ def page(slug, title, question, answer_html, body_html, related, description):
 <title>%(title)s</title>
 <meta name="description" content="%(description)s">
 <link rel="canonical" href="%(base)s/%(slug)s.html">
+<meta name="robots" content="index, follow">
+<meta name="theme-color" content="#1565C0">
+<meta property="og:type" content="article">
+<meta property="og:site_name" content="Easy BACnet">
+<meta property="og:title" content="%(title)s">
+<meta property="og:description" content="%(description)s">
+<meta property="og:url" content="%(base)s/%(slug)s.html">
+<meta property="og:image" content="%(base)s/img/og-image.png">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="%(title)s">
+<meta name="twitter:description" content="%(description)s">
+<meta name="twitter:image" content="%(base)s/img/og-image.png">
 <style>%(css)s</style>
 <script type="application/ld+json">
 %(jsonld)s
@@ -999,6 +1011,18 @@ INDEX = """<!doctype html>
 <title>Easy BACnet &mdash; BACnet points lists, explained</title>
 <meta name="description" content="Free Android app that scans a building network for BACnet/IP devices, reads their points and exports a CSV. Plus plain-English guides to BACnet points lists, device IDs, priority arrays and discovery troubleshooting.">
 <link rel="canonical" href="%(base)s/index.html">
+<meta name="robots" content="index, follow">
+<meta name="theme-color" content="#1565C0">
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="Easy BACnet">
+<meta property="og:title" content="Easy BACnet &mdash; BACnet points lists, explained">
+<meta property="og:description" content="Free Android app that scans a building network for BACnet/IP devices, reads their points and exports a CSV. Plus plain-English guides to BACnet points lists, device IDs, priority arrays and discovery troubleshooting.">
+<meta property="og:url" content="%(base)s/index.html">
+<meta property="og:image" content="%(base)s/img/og-image.png">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="Easy BACnet &mdash; BACnet points lists, explained">
+<meta name="twitter:description" content="Free Android app that scans a building network for BACnet/IP devices, reads their points and exports a CSV. Plus plain-English guides to BACnet points lists, device IDs, priority arrays and discovery troubleshooting.">
+<meta name="twitter:image" content="%(base)s/img/og-image.png">
 <style>%(css)s</style>
 <script type="application/ld+json">
 {
@@ -1108,6 +1132,46 @@ def main():
     write("sitemap.xml", "\n".join(sm) + "\n")
 
     write("robots.txt", "User-agent: *\nAllow: /\nSitemap: %s/sitemap.xml\n" % BASE_URL)
+
+    # Custom domain + host hints
+    write("CNAME", "easybacnet.com")
+    write(".nojekyll", "")
+
+    # Standalone 404 page (not built via page())
+    write("404.html", """<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Page not found &mdash; Easy BACnet</title>
+<meta name="robots" content="noindex">
+<style>
+  :root { color-scheme: light dark; }
+  body { max-width: 40rem; margin: 0 auto; padding: 6rem 1.25rem; text-align: center;
+         font: 16px/1.65 -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto,
+         Helvetica, Arial, sans-serif; }
+  h1 { font-size: 1.85rem; margin: 0 0 .75rem; }
+  a { color: #1565C0; font-weight: 600; }
+</style>
+</head>
+<body>
+  <h1>Page not found</h1>
+  <p>The page you were looking for does not exist or has moved.</p>
+  <p><a href="/">Go to Easy BACnet</a></p>
+</body>
+</html>
+""")
+
+    # llms.txt for AI agents: site name, purpose, and key URLs
+    llms = ["# Easy BACnet",
+            "A free Android app that scans a building network for BACnet/IP devices, reads their points, and exports a CSV; plus plain-English BACnet field guides.",
+            "",
+            "## Guides"]
+    for g in GUIDES:
+        llms.append("- %s: %s/%s.html" % (g["question"], BASE_URL, g["slug"]))
+    llms.append("- Easy BACnet home: %s/index.html" % BASE_URL)
+    llms.append("- Privacy policy: %s/privacy.html" % BASE_URL)
+    write("llms.txt", "\n".join(llms) + "\n")
 
 
 if __name__ == "__main__":
