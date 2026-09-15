@@ -1,0 +1,162 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>BACnet priority array and stuck overrides | Easy BACnet</title>
+<meta name="description" content="How the BACnet priority array works, why a commanded point stays commanded, and how to release an override by writing NULL at the same priority level.">
+<link rel="canonical" href="https://firstimpactdevelopment-web.github.io/easybacnet-site/guides/bacnet-priority-and-stuck-overrides.html">
+<style>
+  :root { color-scheme: light dark; --fg:#1a1a1a; --bg:#fff; --muted:#5a5a5a;
+          --accent:#1565C0; --box:#eef4fb; --line:#cfe0f2; --code:#f0f0f0; }
+  @media (prefers-color-scheme: dark) {
+    :root { --fg:#e6e6e6; --bg:#121212; --muted:#a5a5a5; --accent:#7fb2f0;
+            --box:#16222f; --line:#2c4a6b; --code:#262626; }
+  }
+  * { box-sizing: border-box; }
+  body { max-width: 48rem; margin: 0 auto; padding: 2rem 1.25rem 5rem;
+         font: 16px/1.65 -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto,
+         Helvetica, Arial, sans-serif; color: var(--fg); background: var(--bg); }
+  header.site { display:flex; align-items:center; gap:.6rem; padding-bottom:1.5rem;
+                border-bottom:1px solid var(--line); margin-bottom:2rem; }
+  header.site a { color: var(--accent); text-decoration: none; font-weight: 600; }
+  h1 { font-size: 1.85rem; line-height: 1.25; margin: 0 0 .75rem; }
+  h2 { font-size: 1.25rem; margin-top: 2.4rem; }
+  h3 { font-size: 1.05rem; margin-top: 1.8rem; }
+  a { color: var(--accent); }
+  .answer { background: var(--box); border: 1px solid var(--line);
+            border-radius: 10px; padding: 1rem 1.15rem; margin: 1.25rem 0 2rem; }
+  .answer strong { display:block; margin-bottom:.35rem; text-transform:uppercase;
+                   font-size:.75rem; letter-spacing:.08em; color: var(--muted); }
+  code { background: var(--code); padding: .1rem .35rem; border-radius: 4px; font-size: .9em; }
+  pre { background: var(--code); padding: 1rem; border-radius: 8px; overflow-x: auto; }
+  pre code { background: none; padding: 0; }
+  table { border-collapse: collapse; width: 100%; margin: 1.25rem 0; display:block; overflow-x:auto; }
+  th, td { text-align: left; padding: .5rem .7rem; border-bottom: 1px solid var(--line); }
+  th { font-size: .85rem; text-transform: uppercase; letter-spacing: .04em; color: var(--muted); }
+  ul, ol { padding-left: 1.3rem; }
+  li { margin: .4rem 0; }
+  .muted { color: var(--muted); font-size: .92rem; }
+  nav.more { margin-top: 3rem; padding-top: 1.5rem; border-top: 1px solid var(--line); }
+  nav.more ul { list-style: none; padding: 0; }
+  nav.more li { margin: .5rem 0; }
+  footer { margin-top: 3.5rem; padding-top: 1.5rem; border-top: 1px solid var(--line);
+           color: var(--muted); font-size: .9rem; }
+</style>
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "FAQPage",
+  "mainEntity": [{
+    "@type": "Question",
+    "name": "Why is my BACnet point stuck, and how do I release an override?",
+    "acceptedAnswer": { "@type": "Answer", "text": "Because a value written to a commandable BACnet point is held at the priority it was written at until something explicitly releases it. It does not time out, and it survives the tool that wrote it being closed or disconnected. To release it you write NULL to Present_Value at the same priority level that is holding the point. Then control falls to the next-highest occupied priority, or to Relinquish_Default if the array is empty." }
+  }]
+}
+</script>
+</head>
+<body>
+
+<header class="site">
+  <a href="../index.html">Easy BACnet</a>
+  <span class="muted">&middot; BACnet field reference</span>
+</header>
+
+<article>
+  <h1>Why is my BACnet point stuck, and how do I release an override?</h1>
+
+  <div class="answer">
+    <strong>Short answer</strong>
+    <p>Because a value written to a commandable BACnet point is
+    <em>held</em> at the priority it was written at until something explicitly
+    releases it. It does not time out, and it survives the tool that wrote it being
+    closed or disconnected. To release it you write <code>NULL</code> to
+    <code>Present_Value</code> at the <em>same priority level</em> that is holding the
+    point. Then control falls to the next-highest occupied priority, or to
+    <code>Relinquish_Default</code> if the array is empty.</p>
+  </div>
+
+
+  <h2>How the priority array works</h2>
+  <p>Commandable BACnet objects &mdash; typically Analog Outputs and Values, Binary
+  Outputs and Values, and Multi-state Outputs and Values &mdash; do not have a single
+  present value. They have a <strong>priority array</strong> of 16 slots. Slot 1 is
+  the highest priority, slot 16 the lowest. The object's actual
+  <code>Present_Value</code> is whatever sits in the lowest-numbered occupied slot.</p>
+
+  <p>When every slot is empty, the point falls back to its
+  <code>Relinquish_Default</code> property. That is the value the object reverts to
+  when nobody is commanding it at all.</p>
+
+  <table>
+    <tr><th>Priority</th><th>Conventional use</th></tr>
+    <tr><td>1</td><td>Manual Life Safety</td></tr>
+    <tr><td>2</td><td>Automatic Life Safety</td></tr>
+    <tr><td>5</td><td>Critical Equipment Control</td></tr>
+    <tr><td>6</td><td>Minimum On/Off</td></tr>
+    <tr><td>8</td><td>Manual Operator &mdash; a person with a tool</td></tr>
+    <tr><td>16</td><td>Lowest; often where the normal control program writes</td></tr>
+  </table>
+
+  <p>Only 1, 2, 5, 6 and 8 are assigned meanings by the standard. The rest are
+  available, and every vendor uses them slightly differently &mdash; which is exactly
+  why you should agree a priority level in writing before letting an integrator
+  command anything.</p>
+
+  <h2>Why the point is stuck</h2>
+  <p>Someone wrote a value at a priority and never released it. The usual suspects:</p>
+  <ul>
+    <li>A technician overrode a point at priority 8 to test something and went home.</li>
+    <li>An integration or analytics platform commands a point on a schedule and
+    stopped running, leaving its last command in place.</li>
+    <li>A graphics page has an override control that writes but has no obvious
+    release button.</li>
+    <li>Someone wrote at a <em>higher</em> priority than the control program, so the
+    program keeps writing to slot 16 and nothing happens. The program looks broken;
+    it is being outranked.</li>
+  </ul>
+
+  <p>Reading the priority array tells you immediately which slot is occupied, and
+  therefore who to blame. A point being held at priority 8 is a person; at 16, it is
+  probably the control program doing its job.</p>
+
+  <h2>How to release it</h2>
+  <p>Write <code>NULL</code> to <code>Present_Value</code> at the priority that is
+  holding the point. Writing a normal value at a lower priority will not help &mdash;
+  the higher slot still wins. Writing NULL at the wrong priority clears an empty slot
+  and changes nothing.</p>
+
+  <p>After releasing, re-read the point. Control should drop to the next occupied
+  slot or to <code>Relinquish_Default</code>.</p>
+
+  <h2>The rule that keeps you out of trouble</h2>
+  <p>Release every point you take command of before you leave site. A commanded
+  point does not expire. A damper you drove to 100% to prove an actuator works will
+  still be at 100% next February unless somebody clears it, and the control program
+  will have no way to tell you it is being overruled.</p>
+
+  <p>If you are writing from <a href="../index.html">Easy BACnet</a>: the point detail
+  screen shows which priority currently commands the point and what it falls back to,
+  and the <em>Release to Auto</em> button writes NULL at the priority you select.
+  Every write and release in a session is recorded in the session write log so you
+  can check nothing was left behind.</p>
+
+</article>
+  <nav class="more">
+    <h2>Related</h2>
+    <ul>
+      <li><a href="../guides/what-is-a-bacnet-points-list.html">What is a BACnet points list?</a></li>
+      <li><a href="../guides/bacnet-object-types-explained.html">BACnet object types explained</a></li>
+      <li><a href="../guides/vendor-asking-for-bacnet-information.html">A vendor asked for my BACnet information &mdash; what do I send?</a></li>
+    </ul>
+  </nav>
+
+<footer>
+  <p>Published alongside <a href="../index.html">Easy BACnet</a>, a free
+  Android app that scans a building network for BACnet/IP devices, reads their
+  points, and exports the results as a CSV.</p>
+  <p><a href="../privacy.html">Privacy policy</a></p>
+</footer>
+
+</body>
+</html>

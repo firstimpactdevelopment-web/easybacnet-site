@@ -1,0 +1,136 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>What is a BACnet Device ID? | Easy BACnet</title>
+<meta name="description" content="A BACnet Device ID (device instance number) uniquely identifies a controller across the entire BACnet internetwork. Duplicates break integrations; 4194303 means a device was never commissioned.">
+<link rel="canonical" href="https://firstimpactdevelopment-web.github.io/easybacnet-site/guides/bacnet-device-id-explained.html">
+<style>
+  :root { color-scheme: light dark; --fg:#1a1a1a; --bg:#fff; --muted:#5a5a5a;
+          --accent:#1565C0; --box:#eef4fb; --line:#cfe0f2; --code:#f0f0f0; }
+  @media (prefers-color-scheme: dark) {
+    :root { --fg:#e6e6e6; --bg:#121212; --muted:#a5a5a5; --accent:#7fb2f0;
+            --box:#16222f; --line:#2c4a6b; --code:#262626; }
+  }
+  * { box-sizing: border-box; }
+  body { max-width: 48rem; margin: 0 auto; padding: 2rem 1.25rem 5rem;
+         font: 16px/1.65 -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto,
+         Helvetica, Arial, sans-serif; color: var(--fg); background: var(--bg); }
+  header.site { display:flex; align-items:center; gap:.6rem; padding-bottom:1.5rem;
+                border-bottom:1px solid var(--line); margin-bottom:2rem; }
+  header.site a { color: var(--accent); text-decoration: none; font-weight: 600; }
+  h1 { font-size: 1.85rem; line-height: 1.25; margin: 0 0 .75rem; }
+  h2 { font-size: 1.25rem; margin-top: 2.4rem; }
+  h3 { font-size: 1.05rem; margin-top: 1.8rem; }
+  a { color: var(--accent); }
+  .answer { background: var(--box); border: 1px solid var(--line);
+            border-radius: 10px; padding: 1rem 1.15rem; margin: 1.25rem 0 2rem; }
+  .answer strong { display:block; margin-bottom:.35rem; text-transform:uppercase;
+                   font-size:.75rem; letter-spacing:.08em; color: var(--muted); }
+  code { background: var(--code); padding: .1rem .35rem; border-radius: 4px; font-size: .9em; }
+  pre { background: var(--code); padding: 1rem; border-radius: 8px; overflow-x: auto; }
+  pre code { background: none; padding: 0; }
+  table { border-collapse: collapse; width: 100%; margin: 1.25rem 0; display:block; overflow-x:auto; }
+  th, td { text-align: left; padding: .5rem .7rem; border-bottom: 1px solid var(--line); }
+  th { font-size: .85rem; text-transform: uppercase; letter-spacing: .04em; color: var(--muted); }
+  ul, ol { padding-left: 1.3rem; }
+  li { margin: .4rem 0; }
+  .muted { color: var(--muted); font-size: .92rem; }
+  nav.more { margin-top: 3rem; padding-top: 1.5rem; border-top: 1px solid var(--line); }
+  nav.more ul { list-style: none; padding: 0; }
+  nav.more li { margin: .5rem 0; }
+  footer { margin-top: 3.5rem; padding-top: 1.5rem; border-top: 1px solid var(--line);
+           color: var(--muted); font-size: .9rem; }
+</style>
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "FAQPage",
+  "mainEntity": [{
+    "@type": "Question",
+    "name": "What is a BACnet Device ID, and why do duplicates matter?",
+    "acceptedAnswer": { "@type": "Answer", "text": "The Device ID &mdash; properly the device instance number &mdash; is a number from 0 to 4194302 that uniquely identifies one controller across the entire BACnet internetwork, not just its local subnet. Integrators address devices by this number rather than by name or IP, so it has to be unique. Two devices sharing one ID will break discovery and integration in ways that are hard to diagnose. A device reporting 4194303 is sitting on the factory default and was never commissioned." }
+  }]
+}
+</script>
+</head>
+<body>
+
+<header class="site">
+  <a href="../index.html">Easy BACnet</a>
+  <span class="muted">&middot; BACnet field reference</span>
+</header>
+
+<article>
+  <h1>What is a BACnet Device ID, and why do duplicates matter?</h1>
+
+  <div class="answer">
+    <strong>Short answer</strong>
+    <p>The Device ID &mdash; properly the <em>device instance
+    number</em> &mdash; is a number from 0 to 4194302 that uniquely identifies one
+    controller across the entire BACnet internetwork, not just its local subnet.
+    Integrators address devices by this number rather than by name or IP, so it has
+    to be unique. Two devices sharing one ID will break discovery and integration in
+    ways that are hard to diagnose. A device reporting <strong>4194303</strong> is
+    sitting on the factory default and was never commissioned.</p>
+  </div>
+
+
+  <h2>Why it exists</h2>
+  <p>IP addresses change, names get edited, and MS/TP devices have no IP address at
+  all. The device instance number is the one stable identifier that works across the
+  whole internetwork, including devices sitting behind routers on twisted-pair
+  trunks. When a vendor asks for your BACnet information, this is the number they
+  actually need.</p>
+
+  <p>It is carried in the device object's identifier: object type 8, instance
+  <em>N</em>. Discovery works by broadcasting <em>Who-Is</em> and collecting the
+  <em>I-Am</em> replies, each of which announces the responding device's instance
+  number.</p>
+
+  <h2>Why duplicates break things</h2>
+  <p>The standard requires the number to be unique. When two controllers claim the
+  same one:</p>
+  <ul>
+    <li>Discovery becomes non-deterministic &mdash; whichever device answers first
+    wins, and it may not be the same one twice.</li>
+    <li>An integration mapped to that ID will silently read from, or write to, the
+    wrong controller.</li>
+    <li>One of the devices may appear to vanish from the network entirely.</li>
+  </ul>
+  <p>Duplicates typically come from a contractor imaging several controllers from one
+  template, or from a replacement unit installed without being renumbered. They are
+  worth checking for before handing a points list to anyone &mdash; a scan that reports
+  the same instance number at two different IP addresses has found one.</p>
+
+  <h2>4194303 means "never commissioned"</h2>
+  <p>The value 4194303 (0x3FFFFF) is the uninitialized default many manufacturers
+  ship. A device reporting it has never been given a real ID. If several such devices
+  are on one network they all share it, and there is no reliable way to address any
+  of them individually until they are commissioned.</p>
+
+  <h2>Choosing numbers</h2>
+  <p>Most sites use a scheme that encodes something useful &mdash; building number,
+  floor, or panel &mdash; for example 21001 through 21099 for building 2, floor 1.
+  Any scheme is fine as long as it is written down and genuinely unique. What causes
+  pain later is a site where every panel starts at 1.</p>
+
+</article>
+  <nav class="more">
+    <h2>Related</h2>
+    <ul>
+      <li><a href="../guides/vendor-asking-for-bacnet-information.html">A vendor asked for my BACnet information &mdash; what do I send?</a></li>
+      <li><a href="../guides/why-cant-i-find-my-bacnet-devices.html">Why can't I find my BACnet devices?</a></li>
+    </ul>
+  </nav>
+
+<footer>
+  <p>Published alongside <a href="../index.html">Easy BACnet</a>, a free
+  Android app that scans a building network for BACnet/IP devices, reads their
+  points, and exports the results as a CSV.</p>
+  <p><a href="../privacy.html">Privacy policy</a></p>
+</footer>
+
+</body>
+</html>

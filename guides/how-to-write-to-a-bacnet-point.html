@@ -1,0 +1,173 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>How to write to a BACnet point with Easy BACnet, and release it | Easy BACnet</title>
+<meta name="description" content="Turning on write mode, choosing a priority, confirming the write, and - the part people forget - releasing the point back to automatic control before you leave.">
+<link rel="canonical" href="https://firstimpactdevelopment-web.github.io/easybacnet-site/guides/how-to-write-to-a-bacnet-point.html">
+<style>
+  :root { color-scheme: light dark; --fg:#1a1a1a; --bg:#fff; --muted:#5a5a5a;
+          --accent:#1565C0; --box:#eef4fb; --line:#cfe0f2; --code:#f0f0f0; }
+  @media (prefers-color-scheme: dark) {
+    :root { --fg:#e6e6e6; --bg:#121212; --muted:#a5a5a5; --accent:#7fb2f0;
+            --box:#16222f; --line:#2c4a6b; --code:#262626; }
+  }
+  * { box-sizing: border-box; }
+  body { max-width: 48rem; margin: 0 auto; padding: 2rem 1.25rem 5rem;
+         font: 16px/1.65 -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto,
+         Helvetica, Arial, sans-serif; color: var(--fg); background: var(--bg); }
+  header.site { display:flex; align-items:center; gap:.6rem; padding-bottom:1.5rem;
+                border-bottom:1px solid var(--line); margin-bottom:2rem; }
+  header.site a { color: var(--accent); text-decoration: none; font-weight: 600; }
+  h1 { font-size: 1.85rem; line-height: 1.25; margin: 0 0 .75rem; }
+  h2 { font-size: 1.25rem; margin-top: 2.4rem; }
+  h3 { font-size: 1.05rem; margin-top: 1.8rem; }
+  a { color: var(--accent); }
+  .answer { background: var(--box); border: 1px solid var(--line);
+            border-radius: 10px; padding: 1rem 1.15rem; margin: 1.25rem 0 2rem; }
+  .answer strong { display:block; margin-bottom:.35rem; text-transform:uppercase;
+                   font-size:.75rem; letter-spacing:.08em; color: var(--muted); }
+  code { background: var(--code); padding: .1rem .35rem; border-radius: 4px; font-size: .9em; }
+  pre { background: var(--code); padding: 1rem; border-radius: 8px; overflow-x: auto; }
+  pre code { background: none; padding: 0; }
+  table { border-collapse: collapse; width: 100%; margin: 1.25rem 0; display:block; overflow-x:auto; }
+  th, td { text-align: left; padding: .5rem .7rem; border-bottom: 1px solid var(--line); }
+  th { font-size: .85rem; text-transform: uppercase; letter-spacing: .04em; color: var(--muted); }
+  ul, ol { padding-left: 1.3rem; }
+  li { margin: .4rem 0; }
+  .muted { color: var(--muted); font-size: .92rem; }
+  nav.more { margin-top: 3rem; padding-top: 1.5rem; border-top: 1px solid var(--line); }
+  nav.more ul { list-style: none; padding: 0; }
+  nav.more li { margin: .5rem 0; }
+  footer { margin-top: 3.5rem; padding-top: 1.5rem; border-top: 1px solid var(--line);
+           color: var(--muted); font-size: .9rem; }
+</style>
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "FAQPage",
+  "mainEntity": [{
+    "@type": "Question",
+    "name": "How do I write to a BACnet point with Easy BACnet, and release it afterwards?",
+    "acceptedAnswer": { "@type": "Answer", "text": "Turn on Write mode from the menu on the home screen and accept the warning. Open the point, tap Write Value, enter the new value, leave the priority at 8 &mdash; Manual Operator unless you know better, tap Review, check the summary, then Write it. When you are done, tap Release to Auto on the same point. A BACnet command does not expire on its own; if you do not release it, the point stays where you left it after you drive away." }
+  }]
+}
+</script>
+</head>
+<body>
+
+<header class="site">
+  <a href="../index.html">Easy BACnet</a>
+  <span class="muted">&middot; BACnet field reference</span>
+</header>
+
+<article>
+  <h1>How do I write to a BACnet point with Easy BACnet, and release it afterwards?</h1>
+
+  <div class="answer">
+    <strong>Short answer</strong>
+    <p>Turn on <strong>Write mode</strong> from the menu on the home
+    screen and accept the warning. Open the point, tap <strong>Write Value</strong>,
+    enter the new value, leave the priority at <strong>8 &mdash; Manual Operator</strong>
+    unless you know better, tap <strong>Review</strong>, check the summary, then
+    <strong>Write it</strong>. When you are done, tap <strong>Release to Auto</strong>
+    on the same point. A BACnet command does not expire on its own; if you do not
+    release it, the point stays where you left it after you drive away.</p>
+  </div>
+
+
+  <h2>Why write mode is off, and turns itself off</h2>
+  <p>Easy BACnet opens with writing disabled every single time. This is not a
+  setting it remembers. Someone who picked the app up to read a temperature
+  should never be two taps away from commanding a damper, and a phone left
+  unlocked on a bench should not be able to change a building. Turn it on when
+  you need it; the app turns it off for you when it next starts.</p>
+
+  <h2>Step 1 &mdash; Turn on write mode</h2>
+  <p>On the home screen, open the menu (the three dots, top right) and tap
+  <strong>Write mode</strong>. Read the warning. It says, in short: a value you
+  write is held at the priority you choose until it is released, it does not
+  time out, and closing the app does not undo it. Tap <strong>I understand
+  &mdash; turn it on</strong>.</p>
+
+  <h2>Step 2 &mdash; Look before you write</h2>
+  <p>Open the point. Two rows matter here:</p>
+  <ul>
+    <li><strong>Commanded At</strong> &mdash; whether something is already
+    overriding this point, and at what priority. <em>Not commanded &mdash;
+    following its own program</em> means the controller's own logic is in
+    charge. <em>Priority 8 (68)</em> means somebody has already written 68 at
+    priority 8 and it is holding.</li>
+    <li><strong>Falls Back To</strong> &mdash; what the point will do once every
+    override is released. This is the relinquish default.</li>
+  </ul>
+  <p>If the point is already commanded at a <em>higher</em> priority than you
+  are about to use (a lower number), your write will be accepted and ignored.
+  That is BACnet behaving correctly &mdash; see
+  <a href="bacnet-priority-and-stuck-overrides.html">BACnet priority and stuck
+  overrides</a>.</p>
+
+  <h2>Step 3 &mdash; Write</h2>
+  <p>Tap <strong>Write Value</strong>. Enter the new value &mdash; for a binary
+  point you pick <em>Active (On)</em> or <em>Inactive (Off)</em> from a list
+  instead of typing. Choose a <strong>Priority</strong>. The default,
+  <strong>8 &mdash; Manual Operator</strong>, is the conventional slot for a
+  person with a tool standing in front of the equipment, and it is the right
+  choice unless a site standard says otherwise.</p>
+  <p>Tap <strong>Review</strong>. You get a summary: the point, the device, the
+  old value, the new value and the priority, and a reminder that this takes
+  command of the point until you release it. Tap <strong>Write it</strong>.</p>
+  <p>The app sends the write, waits for the controller to acknowledge, then
+  re-reads the point so what you see is what the device actually did, not what
+  you asked for. If the controller refused, you get its reason in plain words.</p>
+
+  <h2>Step 4 &mdash; Release it before you leave</h2>
+  <p>This is the step that matters. Tap <strong>Release to Auto</strong> on the
+  point, confirm, and the app writes a release at the priority you used. The
+  point drops back to the next override, or to its <em>Falls Back To</em>
+  value if there is none. <strong>Commanded At</strong> should now read
+  <em>Not commanded</em>.</p>
+  <div class="callout">
+  <p>A fan commanded on at priority 8 and never released will run until someone
+  notices the energy bill. Releasing is not optional; it is the second half of
+  writing.</p>
+  </div>
+
+  <h2>Checking what you did</h2>
+  <p>Menu &rarr; <strong>Session write log</strong> lists every write and release
+  this session, with the time, the point, old and new values, the priority, and
+  whether the controller accepted it. Read it before you walk out. If anything
+  is still commanded that should not be, the log tells you where.</p>
+
+  <h2>Points that will not accept a write</h2>
+  <ul>
+    <li><strong>Input points</strong> (Analog Input, Binary Input, Multi-State
+    Input) ignore a write unless the point is <em>Out Of Service</em>, because
+    their value belongs to the physical sensor. The app warns you about this
+    before you try.</li>
+    <li><strong>Points with no priority array</strong> may still accept a write
+    but cannot be released &mdash; there is nothing to release. The app only
+    offers <em>Release to Auto</em> when the point is actually commandable.</li>
+  </ul>
+
+</article>
+  <nav class="more">
+    <h2>Related</h2>
+    <ul>
+      <li><a href="../guides/bacnet-priority-and-stuck-overrides.html">BACnet priority and stuck overrides</a></li>
+      <li><a href="../guides/how-to-use-easy-bacnet.html">How do I use Easy BACnet to get a points list?</a></li>
+      <li><a href="../guides/how-to-build-a-custom-remote.html">How do I build a custom remote in Easy BACnet?</a></li>
+      <li><a href="../guides/bacnet-object-types-explained.html">BACnet object types explained</a></li>
+    </ul>
+  </nav>
+
+<footer>
+  <p>Published alongside <a href="../index.html">Easy BACnet</a>, a free
+  Android app that scans a building network for BACnet/IP devices, reads their
+  points, and exports the results as a CSV.</p>
+  <p><a href="../privacy.html">Privacy policy</a></p>
+</footer>
+
+</body>
+</html>

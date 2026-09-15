@@ -1,0 +1,152 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Why can't I find my BACnet devices? | Easy BACnet</title>
+<meta name="description" content="A BACnet scan returning nothing is usually a network problem: wrong subnet with no BBMD, Wi-Fi blocking broadcasts, client isolation, a non-standard port, or devices behind an MS/TP router.">
+<link rel="canonical" href="https://firstimpactdevelopment-web.github.io/easybacnet-site/guides/why-cant-i-find-my-bacnet-devices.html">
+<style>
+  :root { color-scheme: light dark; --fg:#1a1a1a; --bg:#fff; --muted:#5a5a5a;
+          --accent:#1565C0; --box:#eef4fb; --line:#cfe0f2; --code:#f0f0f0; }
+  @media (prefers-color-scheme: dark) {
+    :root { --fg:#e6e6e6; --bg:#121212; --muted:#a5a5a5; --accent:#7fb2f0;
+            --box:#16222f; --line:#2c4a6b; --code:#262626; }
+  }
+  * { box-sizing: border-box; }
+  body { max-width: 48rem; margin: 0 auto; padding: 2rem 1.25rem 5rem;
+         font: 16px/1.65 -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto,
+         Helvetica, Arial, sans-serif; color: var(--fg); background: var(--bg); }
+  header.site { display:flex; align-items:center; gap:.6rem; padding-bottom:1.5rem;
+                border-bottom:1px solid var(--line); margin-bottom:2rem; }
+  header.site a { color: var(--accent); text-decoration: none; font-weight: 600; }
+  h1 { font-size: 1.85rem; line-height: 1.25; margin: 0 0 .75rem; }
+  h2 { font-size: 1.25rem; margin-top: 2.4rem; }
+  h3 { font-size: 1.05rem; margin-top: 1.8rem; }
+  a { color: var(--accent); }
+  .answer { background: var(--box); border: 1px solid var(--line);
+            border-radius: 10px; padding: 1rem 1.15rem; margin: 1.25rem 0 2rem; }
+  .answer strong { display:block; margin-bottom:.35rem; text-transform:uppercase;
+                   font-size:.75rem; letter-spacing:.08em; color: var(--muted); }
+  code { background: var(--code); padding: .1rem .35rem; border-radius: 4px; font-size: .9em; }
+  pre { background: var(--code); padding: 1rem; border-radius: 8px; overflow-x: auto; }
+  pre code { background: none; padding: 0; }
+  table { border-collapse: collapse; width: 100%; margin: 1.25rem 0; display:block; overflow-x:auto; }
+  th, td { text-align: left; padding: .5rem .7rem; border-bottom: 1px solid var(--line); }
+  th { font-size: .85rem; text-transform: uppercase; letter-spacing: .04em; color: var(--muted); }
+  ul, ol { padding-left: 1.3rem; }
+  li { margin: .4rem 0; }
+  .muted { color: var(--muted); font-size: .92rem; }
+  nav.more { margin-top: 3rem; padding-top: 1.5rem; border-top: 1px solid var(--line); }
+  nav.more ul { list-style: none; padding: 0; }
+  nav.more li { margin: .5rem 0; }
+  footer { margin-top: 3.5rem; padding-top: 1.5rem; border-top: 1px solid var(--line);
+           color: var(--muted); font-size: .9rem; }
+</style>
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "FAQPage",
+  "mainEntity": [{
+    "@type": "Question",
+    "name": "Why can't I find my BACnet devices when I scan?",
+    "acceptedAnswer": { "@type": "Answer", "text": "Almost always because the Who-Is broadcast is not reaching the devices. The usual causes, in order of how often they turn out to be the problem: you are on a different IP subnet and there is no BBMD forwarding broadcasts; the Wi-Fi access point is dropping or filtering broadcast traffic; client isolation is on; the devices use a non-standard UDP port; or the devices sit on an MS/TP trunk behind a BACnet router. Finding nothing at all points at the network, not at the devices." }
+  }]
+}
+</script>
+</head>
+<body>
+
+<header class="site">
+  <a href="../index.html">Easy BACnet</a>
+  <span class="muted">&middot; BACnet field reference</span>
+</header>
+
+<article>
+  <h1>Why can't I find my BACnet devices when I scan?</h1>
+
+  <div class="answer">
+    <strong>Short answer</strong>
+    <p>Almost always because the <em>Who-Is</em> broadcast is not
+    reaching the devices. The usual causes, in order of how often they turn out to be
+    the problem: you are on a different IP subnet and there is no BBMD forwarding
+    broadcasts; the Wi-Fi access point is dropping or filtering broadcast traffic;
+    client isolation is on; the devices use a non-standard UDP port; or the devices
+    sit on an MS/TP trunk behind a BACnet router. Finding nothing at all points at
+    the network, not at the devices.</p>
+  </div>
+
+
+  <h2>Work through these in order</h2>
+
+  <h3>1. Are you on the same IP subnet?</h3>
+  <p>BACnet/IP discovery is a broadcast, and broadcasts do not cross routers. If the
+  controllers are on 10.20.30.0/24 and your phone got a DHCP address on the guest
+  network at 192.168.1.0/24, you will find nothing and the system is working
+  correctly. This is the single most common cause.</p>
+  <p>The fix is either to get onto the controls subnet, or to have a
+  <strong>BBMD</strong> (BACnet Broadcast Management Device) configured to forward
+  broadcasts between subnets. Many sites have one; you need its address and, for a
+  client on a foreign subnet, foreign device registration support in your tool.</p>
+
+  <h3>2. Is Wi-Fi eating the broadcast?</h3>
+  <p>Access points routinely rate-limit or drop broadcast frames, and a single
+  Who-Is can vanish without trace. A tool that sends Who-Is once and gives up will
+  intermittently find nothing on Wi-Fi even when everything is correct. Re-broadcasting
+  throughout the discovery window fixes this &mdash;
+  <a href="../index.html">Easy BACnet</a> re-sends every 1.3 seconds for this reason.</p>
+  <p>If you can, test on a wired connection to rule this out.</p>
+
+  <h3>3. Is client isolation enabled?</h3>
+  <p>Guest and corporate wireless networks frequently enable client isolation (also
+  called AP isolation), which blocks traffic between wireless clients and often
+  between wireless clients and parts of the wired network. Nothing you do in a
+  BACnet tool will work around it.</p>
+
+  <h3>4. Are the devices on a non-standard port?</h3>
+  <p>The standard is UDP 47808 (0xBAC0). Sites that run multiple logical BACnet
+  networks over one physical wire often move some onto 47809, 47810, and upward.
+  A scanner that only checks 47808 will miss them entirely.</p>
+
+  <h3>5. Are the devices behind a BACnet router?</h3>
+  <p>MS/TP devices &mdash; most VAV boxes, many unitary controllers &mdash; are not on
+  the IP network at all. They sit on a twisted-pair trunk behind a router that
+  forwards for them. They should still answer a Who-Is, but replies come back with a
+  network number and MAC address rather than a plain IP, and token-passing on the
+  trunk makes them slow: allow several seconds per request rather than one.</p>
+
+  <h3>6. Is a firewall in the way?</h3>
+  <p>Host firewalls and VLAN access lists both block UDP 47808 readily. On a phone
+  this is rarely the issue; on a laptop it often is.</p>
+
+  <h2>If you find some devices but not others</h2>
+  <p>That rules out most of the above and points at either a non-standard port for
+  the missing ones, an MS/TP trunk whose router is not forwarding, or devices that
+  are genuinely offline. It is also worth checking for
+  <a href="bacnet-device-id-explained.html">duplicate device IDs</a> &mdash; two
+  controllers claiming the same instance number can make one appear to vanish.</p>
+
+  <h2>If devices appear with no name or no points</h2>
+  <p>The device answered discovery but is refusing or failing property reads. Common
+  causes: the device is busy, it only supports segmented responses for its object
+  list and your client does not, or it is an unconfigured unit still sitting on the
+  factory-default device ID.</p>
+
+</article>
+  <nav class="more">
+    <h2>Related</h2>
+    <ul>
+      <li><a href="../guides/how-to-find-your-bacnet-points-list.html">How do I find my BACnet points list?</a></li>
+      <li><a href="../guides/bacnet-device-id-explained.html">What is a BACnet Device ID?</a></li>
+    </ul>
+  </nav>
+
+<footer>
+  <p>Published alongside <a href="../index.html">Easy BACnet</a>, a free
+  Android app that scans a building network for BACnet/IP devices, reads their
+  points, and exports the results as a CSV.</p>
+  <p><a href="../privacy.html">Privacy policy</a></p>
+</footer>
+
+</body>
+</html>
