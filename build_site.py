@@ -92,6 +92,7 @@ def page(slug, title, question, answer_html, body_html, related, description):
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
+<link rel="icon" type="image/svg+xml" href="icon.svg">
 <title>%(title)s</title>
 <meta name="description" content="%(description)s">
 <link rel="canonical" href="%(base)s/%(slug)s.html">
@@ -115,7 +116,7 @@ def page(slug, title, question, answer_html, body_html, related, description):
 <body>
 
 <header class="site">
-  <a href="%(prefix)sindex.html">Easy BACnet</a>
+  <a href="%(prefix)sindex.html" style="display:inline-flex;align-items:center;gap:.5rem;text-decoration:none"><img src="icon.svg" alt="" width="26" height="26" style="border-radius:6px"><span>Easy BACnet</span></a>
   <span class="muted">&middot; BACnet field reference</span>
 </header>
 
@@ -719,8 +720,9 @@ GUIDES.append(dict(
     question="How do I use Easy BACnet to get a points list off a building?",
     description="Step by step: connect to the building network, scan for BACnet devices, look at their points, and email the whole lot as a CSV. Five minutes, no laptop.",
     answer_html="""<p>Connect your phone to the same network as the building
-    controls, open Easy BACnet, tap <strong>Scan for Devices</strong>, wait for
-    the scan to finish, then tap <strong>Export Results</strong>. The app reads
+    controls, open the app and tap the <strong>Easy BACnet</strong> card, tap
+    <strong>Scan for Devices</strong>, wait for the scan to finish, then tap
+    <strong>Export Results</strong>. The app reads
     every point on every device it found and hands you an email with a CSV
     attached. Tap <strong>View Results</strong> instead if you want to look at
     the devices and points on the phone first.</p>""",
@@ -737,15 +739,23 @@ GUIDES.append(dict(
     If you are on the network, the devices will answer.</li>
   </ul>
 
-  <h2>Step 1 &mdash; Scan</h2>
+  <h2>Step 1 &mdash; Open Easy BACnet</h2>
+  <p>The app opens on a choice of three cards: <strong>Easy BACnet</strong> (the
+  simple flow this guide covers), <strong>Advanced Mode</strong> (a diagnostic
+  console), and <strong>Custom Remotes</strong>. Tap <strong>Easy BACnet</strong>.</p>
+
+  <h2>Step 2 &mdash; Scan</h2>
   <p>Tap <strong>Scan for Devices</strong>. The app broadcasts a BACnet
   <em>Who-Is</em> and listens for replies. It keeps re-broadcasting for up to
   about forty-five seconds, because Wi-Fi access points drop broadcast packets
   routinely and one shot is not reliable. A counter shows how many devices have
   answered so far; let it run to the end.</p>
-  <p>When it finishes you get a one-line summary, for example
-  <em>Scan complete &mdash; found 6 device(s)</em>, and two buttons: <strong>View
-  Results</strong> and <strong>Export Results</strong>.</p>
+  <p>When it finishes you get a green banner &mdash; <em>Success! Found 6
+  device(s)</em> &mdash; or a red one, <em>No devices found</em>. On success two
+  buttons appear: <strong>View Results</strong> and <strong>Export Results</strong>.
+  If it comes back red, see
+  <a href="cant-find-what-im-looking-for.html">the app can't find what I'm
+  looking for</a>.</p>
   <div class="callout">
   <p>If the summary warns about <strong>unconfigured devices</strong> or
   <strong>duplicate Device IDs</strong>, that is worth telling whoever looks
@@ -754,7 +764,7 @@ GUIDES.append(dict(
   <a href="bacnet-device-id-explained.html">BACnet Device IDs explained</a>.</p>
   </div>
 
-  <h2>Step 2 &mdash; Look at what it found (optional)</h2>
+  <h2>Step 3 &mdash; Look at what it found (optional)</h2>
   <p>Tap <strong>View Results</strong>. Each device shows its name, Device ID
   and IP address. Tap a device and the app reads its full object list &mdash; on
   a big controller this can take a minute, because it asks for the points one at
@@ -768,11 +778,13 @@ GUIDES.append(dict(
   at what priority. That one screen answers "why is this damper stuck open"
   more often than anything else in the app.</p>
 
-  <h2>Step 3 &mdash; Export</h2>
+  <h2>Step 4 &mdash; Export</h2>
   <p>Tap <strong>Export Results</strong> (from the home screen after a scan).
-  The app now reads every point on every device: names, present values, units
-  and status. A progress box shows which device it is on. Do not walk out of
-  Wi-Fi range while it runs.</p>
+  On the free version this plays one short video ad first &mdash; and if no ad
+  can load, the export just goes ahead anyway, so you are never stuck. (The
+  one-time unlock removes the ad.) The app then reads every point on every
+  device: names, present values, units and status. A progress box shows which
+  device it is on. Do not walk out of Wi-Fi range while it runs.</p>
   <p>When it finishes, your email app opens with a message and a
   <strong>CSV attached</strong>. You choose who it goes to. The app never sends
   anything itself and has no idea who your integrator is.</p>
@@ -813,7 +825,7 @@ GUIDES.append(dict(
     description="Turning on write mode, choosing a priority, confirming the write, and - the part people forget - releasing the point back to automatic control before you leave.",
     answer_html="""<p>Turn on <strong>Write mode</strong> from the menu on the home
     screen and accept the warning. Open the point, tap <strong>Write Value</strong>,
-    enter the new value, leave the priority at <strong>8 &mdash; Manual Operator</strong>
+    enter the new value, leave the priority at <strong>8</strong>
     unless you know better, tap <strong>Review</strong>, check the summary, then
     <strong>Write it</strong>. When you are done, tap <strong>Release to Auto</strong>
     on the same point. A BACnet command does not expire on its own; if you do not
@@ -854,9 +866,10 @@ GUIDES.append(dict(
   <p>Tap <strong>Write Value</strong>. Enter the new value &mdash; for a binary
   point you pick <em>Active (On)</em> or <em>Inactive (Off)</em> from a list
   instead of typing. Choose a <strong>Priority</strong>. The default,
-  <strong>8 &mdash; Manual Operator</strong>, is the conventional slot for a
-  person with a tool standing in front of the equipment, and it is the right
-  choice unless a site standard says otherwise.</p>
+  <strong>8</strong>, is the conventional level for a person with a tool
+  standing in front of the equipment (priority 8 is the &ldquo;manual operator&rdquo;
+  level in BACnet), and it is the right choice unless a site standard says
+  otherwise.</p>
   <p>Tap <strong>Review</strong>. You get a summary: the point, the device, the
   old value, the new value and the priority, and a reminder that this takes
   command of the point until you release it. Tap <strong>Write it</strong>.</p>
@@ -905,7 +918,7 @@ GUIDES.append(dict(
     slug="guides/how-to-build-a-custom-remote",
     title="How to build a custom remote in Easy BACnet | Easy BACnet",
     question="How do I build a custom remote for a BACnet device in Easy BACnet?",
-    description="Build a drag-and-drop control screen for one air handler or controller: setpoint arrows, on/off switches, readouts and a release button. What each control does, what the 48-hour rule is, and what the one-time unlock buys.",
+    description="Build a drag-and-drop control screen for one air handler or controller: setpoint arrows, on/off switches, readouts and a release button. What each control does, the one-remote free limit, and what the unlock buys.",
     answer_html="""<p>Open a device from your scan results, tap the menu and choose
     <strong>Custom Remote</strong>, then tap <strong>Edit</strong> and
     <strong>Add Control</strong>. Pick a point from the device's list (or type
@@ -914,8 +927,9 @@ GUIDES.append(dict(
     picker, or a release button &mdash; and it appears on a grid. Drag controls
     to arrange them, tap one to rename or recolour it, then tap
     <strong>Done</strong>. Saved remotes live under <strong>My Remotes</strong>
-    on the home screen. A remote built for free works fully for 48 hours and is
-    then deleted; a one-time unlock keeps every remote permanently.</p>""",
+    on the home screen. On the free version you can keep one remote, and
+    opening it plays one short video ad; the one-time unlock removes the ad and
+    lets you build as many as you like.</p>""",
     body_html="""
   <h2>What a custom remote is for</h2>
   <p>The point list shows everything a controller has &mdash; eighty rows on a
@@ -926,8 +940,9 @@ GUIDES.append(dict(
 
   <h2>Step 1 &mdash; Open the device's remote</h2>
   <p>Scan, tap <strong>View Results</strong>, tap the device. In the menu (three
-  dots) tap <strong>Custom Remote</strong>. The first time you add a control the
-  app tells you about the 48-hour rule, once, so there are no surprises.</p>
+  dots) tap <strong>Custom Remote</strong>. You can also reach your saved
+  remotes from the <strong>Custom Remotes</strong> card on the opening screen,
+  or the <strong>My Remotes</strong> button once you have built one.</p>
 
   <h2>Step 2 &mdash; Add controls</h2>
   <p>Tap <strong>Edit</strong> in the top bar, then <strong>Add Control</strong>.
@@ -984,17 +999,17 @@ GUIDES.append(dict(
   known address &mdash; no scan needed. If the controller has moved to a new IP,
   the remote says it is unreachable and a scan puts it right.</p>
 
-  <h2>The 48-hour rule and the unlock</h2>
+  <h2>Free vs unlocked</h2>
   <p>Everything else in Easy BACnet is free with nothing held back. Custom
-  remotes are the one paid feature, and they are offered as a working trial
-  rather than a locked door: a remote you build for free is fully functional for
-  <strong>48 hours</strong> from the moment it gets its first control, and is
-  then deleted. You can build it again, free, as many times as you like.</p>
-  <p>A single <strong>one-time purchase</strong> makes every remote permanent
-  &mdash; the ones you have already built as well as the ones you build later,
-  on as many devices as you look after. There is no subscription. The app tells
-  you when remotes have been deleted, on the way in, rather than leaving you to
-  find an empty screen.</p>
+  remotes are the one paid feature, handled gently: on the free version you can
+  keep <strong>one</strong> saved remote, and <strong>opening it plays one short
+  video ad</strong>. If no ad can load &mdash; common in a plant room with no
+  signal &mdash; the remote just opens anyway, so you are never locked out of
+  your own controls.</p>
+  <p>A single <strong>one-time purchase</strong> removes the ads and lifts the
+  limit: build as many remotes as you like, on as many devices as you look
+  after, and open them with no ad. Remotes never expire either way. There is no
+  subscription.</p>
 """,
     related=[
         ("guides/how-to-write-to-a-bacnet-point", "How do I write to a BACnet point with Easy BACnet, and release it?"),
@@ -1003,11 +1018,107 @@ GUIDES.append(dict(
     ],
 ))
 
+GUIDES.append(dict(
+    slug="guides/cant-find-what-im-looking-for",
+    title="The app can't find what I'm looking for | Easy BACnet",
+    question="The app can't find what I'm looking for \u2014 what do I do?",
+    description="A plain-English checklist for when a scan finds nothing, finds the wrong things, shows a device with no points, or shows a point with no value. Written for someone new to all of this.",
+    answer_html="""<p>Nine times out of ten it is one thing: your phone is not on
+    the same network as the equipment. Turn off mobile data, join the building's
+    Wi-Fi (or plug the phone into the controls network with a USB-to-Ethernet
+    adapter), and scan again. If that is not it, work down the checklist below for
+    whichever problem you have.</p>""",
+    body_html="""
+  <p>Pick the line that matches what you are seeing.</p>
+
+  <h2>The scan finds nothing at all</h2>
+  <p>You tapped <strong>Scan for Devices</strong> and got the red
+  <em>No devices found</em> banner. In order, easiest first:</p>
+  <ul>
+    <li><strong>Turn off mobile data.</strong> If the phone can reach the
+    internet over cellular, it may not bother using the Wi-Fi you need. Swipe
+    down and switch mobile data off, leave Wi-Fi on, scan again.</li>
+    <li><strong>Check which Wi-Fi you are on.</strong> It has to be the same
+    network as the equipment. A "guest" Wi-Fi almost never is &mdash; guest
+    networks deliberately hide everything else on them. Ask whoever runs the
+    site which network the controls are on.</li>
+    <li><strong>If there is no Wi-Fi near the equipment</strong>, that is normal
+    in a plant room. You need a USB-to-Ethernet adapter: plug it into the phone,
+    run a network cable from the adapter to the same switch the controllers are
+    on, and scan again.</li>
+    <li><strong>Try again a couple of times.</strong> Wi-Fi quietly drops the
+    kind of "shout to everyone" message a scan uses. The app already repeats it
+    for about 45 seconds, but a second scan sometimes catches what the first
+    missed.</li>
+    <li><strong>Move closer / onto the wired side.</strong> A weak Wi-Fi signal
+    loses these messages first.</li>
+  </ul>
+  <div class="callout">
+  <p>If none of that works, the devices are very likely on a <em>different</em>
+  part of the network that does not forward these messages to where you are
+  plugged in. That is a real thing in bigger buildings and it is not a fault in
+  the app &mdash; whoever manages the network can tell you which segment the
+  controls live on, or point you at the right switch. See
+  <a href="why-cant-i-find-my-bacnet-devices.html">why can't I find my BACnet
+  devices</a> for the technical version.</p>
+  </div>
+
+  <h2>It finds some devices, but not the one I want</h2>
+  <ul>
+    <li><strong>Look by number, not just name.</strong> Every device shows a
+    <strong>Device ID</strong> and an IP address under its name. The unit you
+    want might have a blank or unhelpful name but the right ID. See
+    <a href="bacnet-device-id-explained.html">BACnet Device IDs explained</a>.</li>
+    <li><strong>The one you want may be on another segment.</strong> Same cause
+    as finding nothing &mdash; some devices answer because they are near you,
+    while the missing one sits behind a router that is not forwarding to your
+    spot. Being plugged into the same switch as that specific unit fixes it.</li>
+    <li><strong>It may simply be powered down</strong> or unplugged from the
+    network. Worth checking before assuming it is the app.</li>
+  </ul>
+
+  <h2>I opened a device but it shows no points</h2>
+  <ul>
+    <li><strong>Give it a moment.</strong> The app reads points one at a time so
+    it works with every controller, so a big unit can take up to a minute. Watch
+    for the "Loading points" progress.</li>
+    <li><strong>Back out and open it again.</strong> A single dropped reply can
+    stall the list; reopening starts it fresh.</li>
+    <li><strong>Some small devices genuinely expose very little</strong> &mdash;
+    a sensor might have only one or two points. That is the device, not a
+    failure.</li>
+  </ul>
+
+  <h2>I see a point but no value (it shows a dash, or "none")</h2>
+  <ul>
+    <li><strong>Tap Refresh.</strong> The value is read live; one miss shows a
+    dash until the next read.</li>
+    <li><strong>Not every point has a live value.</strong> Some are settings or
+    status the device does not report as a number, and a dash is the honest
+    answer.</li>
+    <li><strong>If a whole device suddenly shows dashes</strong>, it has stopped
+    answering &mdash; it may have lost power or dropped off the network. Scan
+    again to confirm it is still there.</li>
+  </ul>
+
+  <h2>Still stuck?</h2>
+  <p>Note the Device ID or point you were after and tell whoever looks after the
+  building system. Almost every "can't find it" comes down to which network the
+  phone is on, and they will know the answer for their site in seconds.</p>
+""",
+    related=[
+        ("guides/why-cant-i-find-my-bacnet-devices", "Why can't I find my BACnet devices?"),
+        ("guides/how-to-use-easy-bacnet", "How do I use Easy BACnet to get a points list?"),
+        ("guides/bacnet-device-id-explained", "BACnet Device IDs explained"),
+    ],
+))
+
 INDEX = """<!doctype html>
 <html lang="en">
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
+<link rel="icon" type="image/svg+xml" href="icon.svg">
 <title>Easy BACnet &mdash; BACnet points lists, explained</title>
 <meta name="description" content="Free Android app that scans a building network for BACnet/IP devices, reads their points and exports a CSV. Plus plain-English guides to BACnet points lists, device IDs, priority arrays and discovery troubleshooting.">
 <link rel="canonical" href="%(base)s/index.html">
@@ -1039,7 +1150,7 @@ INDEX = """<!doctype html>
 <body>
 
 <header class="site">
-  <a href="index.html">Easy BACnet</a>
+  <a href="index.html" style="display:inline-flex;align-items:center;gap:.5rem;text-decoration:none"><img src="icon.svg" alt="" width="26" height="26" style="border-radius:6px"><span>Easy BACnet</span></a>
   <span class="muted">&middot; BACnet field reference</span>
 </header>
 
@@ -1076,6 +1187,7 @@ INDEX = """<!doctype html>
   <li><a href="guides/how-to-use-easy-bacnet.html">How do I use Easy BACnet to get a points list off a building?</a></li>
   <li><a href="guides/how-to-write-to-a-bacnet-point.html">How do I write to a BACnet point, and release it afterwards?</a></li>
   <li><a href="guides/how-to-build-a-custom-remote.html">How do I build a custom remote for a device?</a></li>
+  <li><a href="guides/cant-find-what-im-looking-for.html">The app can't find what I'm looking for &mdash; what do I do?</a></li>
 </ul>
 
 <h2>Guides</h2>
@@ -1143,6 +1255,7 @@ def main():
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
+<link rel="icon" type="image/svg+xml" href="icon.svg">
 <title>Page not found &mdash; Easy BACnet</title>
 <meta name="robots" content="noindex">
 <style>
