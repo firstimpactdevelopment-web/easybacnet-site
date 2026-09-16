@@ -1199,13 +1199,12 @@ INDEX = """<!doctype html>
 <div class="answer">
   <strong>What this is</strong>
   <p>Easy BACnet is a BACnet/IP <strong>browser and control tool</strong> for anyone
-  who works with BACnet devices on a network &mdash; field technicians, systems
-  integrators, controls engineers, and facilities and maintenance teams. Discover
-  what is on the network, browse each device and its points, read live values,
-  command a point at the priority you choose (and release it), export a full report,
-  and build your own on-screen control panels for the equipment you touch most.</p>
-  <p>No account, no analytics, no server &mdash; everything happens on your phone and
-  your local network.</p>
+  who works with BACnet/IP devices &mdash; discover what is on the network, browse each
+  device and its points, read live values, command a point at the priority you choose
+  (and release it), export a full report, and build your own on-screen controls for the
+  equipment you touch most.</p>
+  <p>No account, no analytics, no server, Easy! &mdash; everything happens on your phone
+  and your local network.</p>
 </div>
 
 <div class="shotrow">
@@ -1227,9 +1226,10 @@ INDEX = """<!doctype html>
   <li><strong>Command and release</strong> &mdash; write a value at the BACnet priority
   you choose, then release it back to automatic when you are done. Write mode is off by
   default and turns itself off every time the app starts.</li>
-  <li><strong>Build custom control panels</strong> &mdash; lay out your own screen for a
-  unit with drag-and-drop setpoints, toggles, multi-state pickers and live readouts, so
-  the handful of points you actually use are one tap away every visit.</li>
+  <li><strong>Build custom BACnet/IP controls</strong> &mdash; create your own on-screen
+  control menu for a unit and run an air handler, chiller or any BMS point from
+  drag-and-drop setpoints, toggles, multi-state pickers and live readouts you arrange
+  yourself.</li>
   <li><strong>Export a BACnet/IP device instance and points list</strong> &mdash; scan and
   export the whole BACnet/IP network as a CSV: device ID, name and IP, object type and
   number, point name, present value, units and status &mdash; ready to hand to a systems
