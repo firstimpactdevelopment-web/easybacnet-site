@@ -57,7 +57,46 @@ CSS = """
   nav.more li { margin: .5rem 0; }
   footer { margin-top: 3.5rem; padding-top: 1.5rem; border-top: 1px solid var(--line);
            color: var(--muted); font-size: .9rem; }
+  .shotrow { display:flex; flex-wrap:wrap; gap:1rem; margin:1.5rem 0; }
+  .shotrow figure { margin:0; flex:0 1 200px; }
+  .shotrow img { width:100%; height:auto; border:1px solid var(--line);
+                 border-radius:16px; display:block; }
+  .shotrow figcaption { color:var(--muted); font-size:.82rem; margin-top:.45rem;
+                        text-align:center; line-height:1.35; }
 """.replace("#284straight", "#2c4a6b")
+
+
+SCREENSHOTS = {
+    "guides/how-to-use-easy-bacnet": [("scan.png","A finished scan"),
+        ("devices.png","Every device found"),("points.png","One device\u2019s points")],
+    "guides/how-to-write-to-a-bacnet-point": [("point.png","Point detail, showing who is commanding it"),
+        ("write.png","Choosing a value and priority"),("release.png","Releasing back to auto")],
+    "guides/how-to-build-a-custom-remote": [("remote-edit.png","Edit mode \u2014 drag to arrange"),
+        ("add-control.png","Add a control"),("control-types.png","Pick a control type"),
+        ("remote-use.png","The finished panel, live")],
+    "guides/cant-find-what-im-looking-for": [("no-devices.png","When a scan finds nothing")],
+    "guides/why-cant-i-find-my-bacnet-devices": [("no-devices.png","When a scan finds nothing")],
+    "guides/what-is-a-bacnet-points-list": [("points.png","A device\u2019s point list in Easy BACnet")],
+    "guides/how-to-find-your-bacnet-points-list": [("devices.png","Devices found"),
+        ("points.png","Points on one device")],
+    "guides/vendor-asking-for-bacnet-information": [("points.png","The point list you can export")],
+    "guides/bacnet-priority-and-stuck-overrides": [("point.png","\u201cCommanded At\u201d shows the active priority"),
+        ("write.png","Writing at a priority you choose")],
+    "guides/bacnet-object-types-explained": [("points.png","Object types shown for every point")],
+    "guides/bacnet-device-id-explained": [("devices.png","Each device with its Device ID")],
+    "guides/subnets": [("no-devices.png","Wrong subnet: nothing answers")],
+}
+
+
+def screenshot_block(slug, prefix):
+    imgs = SCREENSHOTS.get(slug)
+    if not imgs:
+        return ""
+    figs = "".join(
+        '<figure><img src="%simg/%s" alt="%s" loading="lazy"><figcaption>%s</figcaption></figure>'
+        % (prefix, f, cap, cap) for f, cap in imgs
+    )
+    return '<div class="shotrow">%s</div>' % figs
 
 
 def page(slug, title, question, answer_html, body_html, related, description):
@@ -127,7 +166,7 @@ def page(slug, title, question, answer_html, body_html, related, description):
     <strong>Short answer</strong>
     %(answer)s
   </div>
-
+%(shots)s
 %(body)s
 </article>%(rel)s
 
@@ -149,6 +188,7 @@ def page(slug, title, question, answer_html, body_html, related, description):
         "jsonld": jsonld,
         "question": question,
         "answer": answer_html,
+        "shots": screenshot_block(slug, prefix),
         "body": body_html,
         "rel": rel,
         "prefix": prefix,
@@ -1154,32 +1194,45 @@ INDEX = """<!doctype html>
   <span class="muted">&middot; BACnet IP Controls made Easy</span>
 </header>
 
-<h1>Get a BACnet points list off a building network, in minutes</h1>
+<h1>Browse and control BACnet/IP devices, straight from your phone</h1>
 
 <div class="answer">
   <strong>What this is</strong>
-  <p>Easy BACnet is a free Android app for building-automation technicians. It
-  broadcasts a BACnet <em>Who-Is</em>, lists every BACnet/IP device that answers,
-  reads every point on each one, and exports the lot as a CSV attached to an email.
-  No account, no analytics, no server &mdash; everything happens on your phone and
+  <p>Easy BACnet is a BACnet/IP <strong>browser and control tool</strong> for anyone
+  who works with BACnet devices on a network &mdash; field technicians, systems
+  integrators, controls engineers, and facilities and maintenance teams. Discover
+  what is on the network, browse each device and its points, read live values,
+  command a point at the priority you choose (and release it), export a full report,
+  and build your own on-screen control panels for the equipment you touch most.</p>
+  <p>No account, no analytics, no server &mdash; everything happens on your phone and
   your local network.</p>
+</div>
+
+<div class="shotrow">
+  <figure><img src="img/scan.png" alt="A finished scan" loading="lazy"><figcaption>Find every device on the network</figcaption></figure>
+  <figure><img src="img/points.png" alt="A device's points" loading="lazy"><figcaption>Browse each device and its points</figcaption></figure>
+  <figure><img src="img/remote-use.png" alt="A custom control panel" loading="lazy"><figcaption>Build your own control panel</figcaption></figure>
 </div>
 
 <h2>What it does</h2>
 <ul>
-  <li><strong>Scan for devices</strong> &mdash; finds BACnet/IP devices on the local
+  <li><strong>Discover the network</strong> &mdash; finds every BACnet/IP device on the
   subnet, including devices reached through a BACnet router on an MS/TP trunk.</li>
-  <li><strong>Browse points</strong> &mdash; every object on a device, with its type,
-  instance number and name.</li>
-  <li><strong>Read live values</strong> &mdash; present value, units, status flags and
-  description, with a refresh.</li>
+  <li><strong>Browse devices and points</strong> &mdash; every object on every device,
+  with its type, instance number, name, live present value, units, status flags and
+  description. A full BACnet/IP browser in your pocket.</li>
   <li><strong>See who is commanding a point</strong> &mdash; the priority array and
-  relinquish default, so you can tell whether a point is being overridden.</li>
-  <li><strong>Write and release</strong> &mdash; command a point at a chosen BACnet
-  priority, or release it back to automatic. Write mode is off by default and turns
-  itself off every time the app starts.</li>
-  <li><strong>Export a CSV</strong> &mdash; device ID, device name, device IP, object
-  type, object number, point name, present value, units and status.</li>
+  relinquish default, so you can tell at a glance whether a point is being overridden,
+  and at what level.</li>
+  <li><strong>Command and release</strong> &mdash; write a value at the BACnet priority
+  you choose, then release it back to automatic when you are done. Write mode is off by
+  default and turns itself off every time the app starts.</li>
+  <li><strong>Build custom control panels</strong> &mdash; lay out your own screen for a
+  unit with drag-and-drop setpoints, toggles, multi-state pickers and live readouts, so
+  the handful of points you actually use are one tap away every visit.</li>
+  <li><strong>Export a report</strong> &mdash; the whole system as a CSV: device ID,
+  name and IP, object type and number, point name, present value, units and status &mdash;
+  ready to hand to an integrator or keep on file.</li>
 </ul>
 
 <h2>Using the app</h2>
@@ -1197,15 +1250,19 @@ INDEX = """<!doctype html>
 </ul>
 </nav>
 
-<h2>Notes for anyone scanning a building network</h2>
+<h2>Before you connect</h2>
 <ul>
-  <li>Connect to the <strong>same subnet</strong> as the controllers. BACnet
-  discovery is a broadcast and broadcasts do not cross routers without a BBMD.</li>
-  <li>Discovery uses <strong>UDP port 47808</strong>. Some sites use 47809 and up.</li>
-  <li>Reading is harmless. <strong>Writing is not</strong> &mdash; a commanded point
-  stays commanded until it is released. Read
-  <a href="guides/bacnet-priority-and-stuck-overrides.html">the priority guide</a>
-  before you write to anything on a live building.</li>
+  <li><strong>Put the phone on the same subnet as the controllers.</strong> BACnet
+  discovery relies on broadcast, and broadcast traffic does not cross a router
+  without a BBMD &mdash; so a phone on guest Wi&#8209;Fi or a separate VLAN will not
+  see the equipment.</li>
+  <li><strong>Discovery runs on UDP&nbsp;47808</strong>, the standard BACnet/IP port.
+  Some sites assign 47809 and above; the app checks the common range automatically.</li>
+  <li><strong>Reading is safe. Writing carries real weight.</strong> A commanded point
+  holds the value you write until it is released. If you intend to command anything on
+  a live system, read
+  <a href="guides/bacnet-priority-and-stuck-overrides.html">how BACnet priority works</a>
+  first.</li>
 </ul>
 
 <footer>
@@ -1277,7 +1334,7 @@ def main():
 
     # llms.txt for AI agents: site name, purpose, and key URLs
     llms = ["# Easy BACnet",
-            "A free Android app that scans a building network for BACnet/IP devices, reads their points, and exports a CSV; plus plain-English BACnet field guides.",
+            "A BACnet/IP browser and control tool for Android: discover devices, browse and read points, command and release them by priority, build custom control panels, and export a report. Plus plain-English BACnet guides.",
             "",
             "## Guides"]
     for g in GUIDES:
