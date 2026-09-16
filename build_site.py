@@ -117,7 +117,7 @@ def page(slug, title, question, answer_html, body_html, related, description):
 
 <header class="site">
   <a href="%(prefix)sindex.html" style="display:inline-flex;align-items:center;gap:.5rem;text-decoration:none"><img src="icon.svg" alt="" width="26" height="26" style="border-radius:6px"><span>Easy BACnet</span></a>
-  <span class="muted">&middot; BACnet field reference</span>
+  <span class="muted">&middot; BACnet IP Controls made Easy</span>
 </header>
 
 <article>
@@ -1151,7 +1151,7 @@ INDEX = """<!doctype html>
 
 <header class="site">
   <a href="index.html" style="display:inline-flex;align-items:center;gap:.5rem;text-decoration:none"><img src="icon.svg" alt="" width="26" height="26" style="border-radius:6px"><span>Easy BACnet</span></a>
-  <span class="muted">&middot; BACnet field reference</span>
+  <span class="muted">&middot; BACnet IP Controls made Easy</span>
 </header>
 
 <h1>Get a BACnet points list off a building network, in minutes</h1>
