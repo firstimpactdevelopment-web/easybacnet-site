@@ -1437,6 +1437,7 @@ INDEX = """<!doctype html>
 <meta name="description" content="Free Android app to scan a network for BACnet/IP devices, read and command their points by priority, build control panels, and export a CSV.">
 <link rel="canonical" href="{{BASE}}/index.html">
 <meta name="robots" content="index, follow">
+<meta name="google-site-verification" content="5mp_Qm6jQXeHC7IbyiRUwPt3te2kFjKv67pCaqqLAhQ">
 <meta name="theme-color" content="#14171a">
 <meta property="og:type" content="website">
 <meta property="og:site_name" content="Easy BACnet">
