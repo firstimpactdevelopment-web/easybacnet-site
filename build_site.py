@@ -16,8 +16,13 @@ URL is known. Everything else is relative.
 
 import io
 import os
+import html as html_module
 
 BASE_URL = "https://easybacnet.com"
+
+# Freshness signal. Bump when guide content is meaningfully revised.
+UPDATED = "2026-09-16"            # ISO, for JSON-LD and sitemap <lastmod>
+UPDATED_HUMAN = "16 September 2026"  # for the visible "Updated" line
 
 HERE = os.path.dirname(os.path.abspath(__file__))
 
@@ -38,7 +43,9 @@ CSS = """
                        font-size:.7rem; letter-spacing:.14em; text-transform:uppercase; }
   h1, h2, h3 { font-family:"Archivo",sans-serif; letter-spacing:-.01em; line-height:1.12; }
   h1 { font-weight:900; text-transform:uppercase; font-size:clamp(1.7rem,4.5vw,2.5rem);
-       margin:0 0 1rem; }
+       margin:0 0 .6rem; }
+  .updated { color:var(--muted); font-size:.8rem; margin:0 0 1.5rem;
+             font-family:"IBM Plex Mono",ui-monospace,monospace; letter-spacing:.06em; }
   h2 { font-weight:800; font-size:1.35rem; margin:2.6rem 0 .6rem; }
   h3 { font-weight:800; font-size:1.06rem; margin:1.8rem 0 .4rem; }
   a { color:var(--accent); }
@@ -98,7 +105,12 @@ SCREENSHOTS = {
         ("write.png","Writing at a priority you choose")],
     "guides/bacnet-object-types-explained": [("points.png","Object types shown for every point")],
     "guides/bacnet-device-id-explained": [("devices.png","Each device with its Device ID")],
-    "guides/subnets": [("no-devices.png","Wrong subnet: nothing answers")],
+    "guides/who-is-i-am-explained": [("scan.png","A Who-Is scan and the devices that answered"),
+        ("devices.png","Each I-Am becomes a row")],
+    "guides/what-is-a-bbmd": [("no-devices.png","No BBMD, wrong subnet: nothing answers")],
+    "guides/bacnet-mstp-vs-bacnet-ip": [("devices.png","MS/TP devices reached through an IP router")],
+    "guides/what-port-does-bacnet-use": [("scan.png","Discovery broadcasts on UDP 47808")],
+    "guides/bacnet-vs-modbus": [("points.png","A BACnet point: named, typed, with units")],
 }
 
 
@@ -129,16 +141,32 @@ def page(slug, title, question, answer_html, body_html, related, description):
 
     jsonld = """{
   "@context": "https://schema.org",
-  "@type": "FAQPage",
-  "mainEntity": [{
-    "@type": "Question",
-    "name": %s,
-    "acceptedAnswer": { "@type": "Answer", "text": %s }
-  }]
-}""" % (
-        jstr(question),
-        jstr(strip_tags(answer_html)),
-    )
+  "@graph": [
+    {
+      "@type": "FAQPage",
+      "datePublished": "%(pub)s",
+      "dateModified": "%(pub)s",
+      "mainEntity": [{
+        "@type": "Question",
+        "name": %(q)s,
+        "acceptedAnswer": { "@type": "Answer", "text": %(a)s }
+      }]
+    },
+    {
+      "@type": "BreadcrumbList",
+      "itemListElement": [
+        { "@type": "ListItem", "position": 1, "name": "Home", "item": "%(base)s/index.html" },
+        { "@type": "ListItem", "position": 2, "name": %(q)s, "item": "%(base)s/%(slug)s.html" }
+      ]
+    }
+  ]
+}""" % {
+        "q": jstr(question),
+        "a": jstr(strip_tags(answer_html)),
+        "pub": UPDATED,
+        "base": BASE_URL,
+        "slug": slug,
+    }
 
     return """<!doctype html>
 <html lang="en">
@@ -178,6 +206,7 @@ def page(slug, title, question, answer_html, body_html, related, description):
 
 <article>
   <h1>%(question)s</h1>
+  <p class="updated">Updated %(updated_h)s</p>
 
   <div class="answer">
     <strong>Short answer</strong>
@@ -209,6 +238,7 @@ def page(slug, title, question, answer_html, body_html, related, description):
         "body": body_html,
         "rel": rel,
         "prefix": prefix,
+        "updated_h": UPDATED_HUMAN,
     }
 
 
@@ -245,7 +275,7 @@ GUIDES.append(dict(
     slug="guides/what-is-a-bacnet-points-list",
     title="What is a BACnet points list? | Easy BACnet",
     question="What is a BACnet points list?",
-    description="A BACnet points list is an inventory of every object a BACnet device exposes: object type, instance number, name, present value and units. Here is what one contains and what it is used for.",
+    description="A BACnet points list inventories every object a device exposes: type, instance, name, present value and units. What it contains and why.",
     answer_html="""<p>A BACnet points list is an inventory of every data object a BACnet
     device exposes to the network. Each row is one point &mdash; a sensor reading, a
     setpoint, a command, or a status flag &mdash; identified by its <em>object type</em>
@@ -325,7 +355,7 @@ GUIDES.append(dict(
     slug="guides/how-to-find-your-bacnet-points-list",
     title="How do I find my BACnet points list? | Easy BACnet",
     question="How do I find my BACnet points list?",
-    description="Four ways to get a BACnet points list: ask your controls contractor, export from the BMS front end, scan the network with a discovery tool, or read Object_List from the controller directly.",
+    description="Scan a building network with an Android phone, read every point on each BACnet device, and export the whole list as a CSV in minutes.",
     answer_html="""<p>There are four routes, easiest first: ask your controls contractor
     for the submittal documents, export a points list from your building management
     system's front end, scan the network with a BACnet discovery tool, or read the
@@ -393,9 +423,9 @@ GUIDES.append(dict(
 
 GUIDES.append(dict(
     slug="guides/vendor-asking-for-bacnet-information",
-    title="A vendor asked for my BACnet information - what do I send? | Easy BACnet",
+    title="What BACnet info to send a vendor | Easy BACnet",
     question="A vendor asked for my BACnet information &mdash; what do I send them?",
-    description="What to send when an integrator, analytics vendor or contractor asks for your BACnet information: device IDs, IP addresses, a points list, network topology, and what to hold back.",
+    description="What to hand a vendor or integrator who asks for your BACnet details: device IDs, IPs, a full points list, and how to export it as a CSV.",
     answer_html="""<p>In almost every case they want four things: a
     <strong>points list</strong> (object type, instance number and name for each
     point), the <strong>device instance IDs and IP addresses</strong> of the
@@ -486,7 +516,7 @@ GUIDES.append(dict(
     slug="guides/why-cant-i-find-my-bacnet-devices",
     title="Why can't I find my BACnet devices? | Easy BACnet",
     question="Why can't I find my BACnet devices when I scan?",
-    description="A BACnet scan returning nothing is usually a network problem: wrong subnet with no BBMD, Wi-Fi blocking broadcasts, client isolation, a non-standard port, or devices behind an MS/TP router.",
+    description="The usual reasons a BACnet scan finds nothing: wrong subnet, blocked broadcasts, no BBMD, mobile data on, or the wrong UDP port. How to fix each.",
     answer_html="""<p>Almost always because the <em>Who-Is</em> broadcast is not
     reaching the devices. The usual causes, in order of how often they turn out to be
     the problem: you are on a different IP subnet and there is no BBMD forwarding
@@ -707,7 +737,7 @@ GUIDES.append(dict(
     slug="guides/bacnet-device-id-explained",
     title="What is a BACnet Device ID? | Easy BACnet",
     question="What is a BACnet Device ID, and why do duplicates matter?",
-    description="A BACnet Device ID (device instance number) uniquely identifies a controller across the entire BACnet internetwork. Duplicates break integrations; 4194303 means a device was never commissioned.",
+    description="A BACnet Device ID (device instance) uniquely identifies a controller across the whole network. What it is, and why duplicates break discovery.",
     answer_html="""<p>The Device ID &mdash; properly the <em>device instance
     number</em> &mdash; is a number from 0 to 4194302 that uniquely identifies one
     controller across the entire BACnet internetwork, not just its local subnet.
@@ -877,7 +907,7 @@ GUIDES.append(dict(
 
 GUIDES.append(dict(
     slug="guides/how-to-write-to-a-bacnet-point",
-    title="How to write to a BACnet point with Easy BACnet, and release it | Easy BACnet",
+    title="How to write to a BACnet point | Easy BACnet",
     question="How do I write to a BACnet point with Easy BACnet, and release it afterwards?",
     description="Turning on write mode, choosing a priority, confirming the write, and - the part people forget - releasing the point back to automatic control before you leave.",
     answer_html="""<p>Turn on <strong>Write mode</strong> from the menu on the home
@@ -975,7 +1005,7 @@ GUIDES.append(dict(
     slug="guides/how-to-build-a-custom-remote",
     title="How to build a custom remote in Easy BACnet | Easy BACnet",
     question="How do I build a custom remote for a BACnet device in Easy BACnet?",
-    description="Build a drag-and-drop control screen for one air handler or controller: setpoint arrows, on/off switches, readouts and a release button. What each control does, the one-remote free limit, and what the unlock buys.",
+    description="Build a drag-and-drop control screen for one device: setpoints, toggles, readouts and a release button. The free one-remote limit explained.",
     answer_html="""<p>Open a device from your scan results, tap the menu and choose
     <strong>Custom Remote</strong>, then tap <strong>Edit</strong> and
     <strong>Add Control</strong>. Pick a point from the device's list (or type
@@ -1079,7 +1109,7 @@ GUIDES.append(dict(
     slug="guides/cant-find-what-im-looking-for",
     title="The app can't find what I'm looking for | Easy BACnet",
     question="The app can't find what I'm looking for \u2014 what do I do?",
-    description="A plain-English checklist for when a scan finds nothing, finds the wrong things, shows a device with no points, or shows a point with no value. Written for someone new to all of this.",
+    description="A plain-English checklist for when a scan finds nothing, finds the wrong things, shows a device with no points, or a point with no value.",
     answer_html="""<p>Nine times out of ten it is one thing: your phone is not on
     the same network as the equipment. Turn off mobile data, join the building's
     Wi-Fi (or plug the phone into the controls network with a USB-to-Ethernet
@@ -1170,26 +1200,253 @@ GUIDES.append(dict(
     ],
 ))
 
+GUIDES.append(dict(
+    slug="guides/bacnet-vs-modbus",
+    title="BACnet vs Modbus: the difference | Easy BACnet",
+    question="BACnet vs Modbus — what is the difference?",
+    description="BACnet is self-describing with built-in discovery; Modbus is a bare register protocol with neither. When you meet each, and why it matters.",
+    answer_html="""<p>Both move data to and from building and industrial equipment, but
+    they work at different levels. <strong>BACnet</strong> is object-oriented and
+    self-describing: every device announces itself, and every point carries a type, a
+    name and units. <strong>Modbus</strong> is a thin, fast register protocol: it hands
+    you numbered slots and nothing else &mdash; no discovery, no names, no units. As a
+    rule of thumb, BACnet runs the HVAC and building-management side; Modbus runs meters,
+    variable-speed drives, PLCs and simple sensors.</p>""",
+    body_html="""
+  <h2>Discovery: ask the network vs sweep it</h2>
+  <p>BACnet has discovery built in. A device broadcasts a
+  <a href="who-is-i-am-explained.html">Who-Is</a> and every controller answers with an
+  I-Am, so a tool can build a device list in seconds without being told what is out
+  there. Modbus has nothing of the kind: you must already know a device's IP address
+  and unit ID, or sweep the subnet address by address to find it.</p>
+
+  <h2>Meaning: named points vs bare registers</h2>
+  <p>A BACnet point is an object such as <code>Analog Input 3</code> that carries an
+  <code>Object_Name</code>, a <code>Present_Value</code>, engineering units and status
+  flags &mdash; the device tells you what the number means. A Modbus register is just
+  address 40007 holding the number 685; whether that is 68.5&nbsp;&deg;F, 685&nbsp;kPa
+  or two packed bytes is something you work out yourself from the vendor's map.</p>
+
+  <h2>Addressing</h2>
+  <table>
+    <tr><th></th><th>BACnet</th><th>Modbus</th></tr>
+    <tr><td>Identity</td><td>Device Instance (unique network-wide)</td><td>IP + Unit/Slave ID</td></tr>
+    <tr><td>A point</td><td>Object type + instance (e.g. AI 3)</td><td>Register number + type</td></tr>
+    <tr><td>Self-describing</td><td>Yes &mdash; name, units, status</td><td>No &mdash; just a number</td></tr>
+    <tr><td>Discovery</td><td>Who-Is / I-Am</td><td>None</td></tr>
+  </table>
+
+  <h2>Where you meet each</h2>
+  <p>BACnet dominates air handlers, VAV boxes, chillers, and the building-management
+  head-end. Modbus dominates power and BTU meters, VFDs, generators, and OEM skids. Many
+  buildings run both, bridged by a gateway that presents Modbus registers as BACnet
+  objects (or the reverse).</p>
+
+  <h2>Which app do I use?</h2>
+  <p>Use <a href="../index.html">Easy BACnet</a> for BACnet/IP equipment. For Modbus gear
+  there is a sister app, <a href="https://easymodbus.com">Easy Modbus</a>, built the same
+  way &mdash; and its own write-up of
+  <a href="https://easymodbus.com/guides/modbus-vs-bacnet.html">Modbus vs BACnet</a> covers
+  the same ground from the Modbus side.</p>
+""",
+    related=[
+        ("guides/what-is-a-bacnet-points-list", "What is a BACnet points list?"),
+        ("guides/who-is-i-am-explained", "BACnet Who-Is and I-Am explained"),
+        ("guides/bacnet-object-types-explained", "BACnet object types explained"),
+    ],
+))
+
+GUIDES.append(dict(
+    slug="guides/who-is-i-am-explained",
+    title="BACnet Who-Is and I-Am explained | Easy BACnet",
+    question="What are BACnet Who-Is and I-Am?",
+    description="Who-Is is a broadcast asking which devices exist; each replies I-Am with its instance, vendor and capabilities. How BACnet discovery works.",
+    answer_html="""<p><strong>Who-Is</strong> and <strong>I-Am</strong> are the two
+    messages behind BACnet discovery. A tool broadcasts a <em>Who-Is</em> meaning
+    &ldquo;who is out there?&rdquo;, and every device that hears it answers with an
+    <em>I-Am</em> carrying its Device Instance number, the vendor, and what it can do.
+    Collect the replies and you have a device list &mdash; which is exactly what Easy
+    BACnet does when you tap Scan.</p>""",
+    body_html="""
+  <h2>The exchange</h2>
+  <p>A Who-Is is normally sent to the local broadcast address, so it reaches every device
+  on the subnet at once. Each device replies with an I-Am. A Who-Is can be
+  <em>unconstrained</em> (everybody answer) or <em>constrained</em> to a range of Device
+  Instances, which is how a tool asks only for device 200001 without hearing from the
+  whole building.</p>
+
+  <h2>What an I-Am carries</h2>
+  <ul>
+    <li><strong>Device Instance</strong> &mdash; the device's unique number on the whole
+    BACnet internetwork. If two devices share one, discovery gets unreliable: see
+    <a href="bacnet-device-id-explained.html">BACnet Device IDs explained</a>.</li>
+    <li><strong>Max APDU length</strong> and <strong>segmentation support</strong> &mdash;
+    how big a message the device can handle, which decides how points are read.</li>
+    <li><strong>Vendor ID</strong> &mdash; who made it.</li>
+  </ul>
+
+  <h2>Why a scan sometimes finds nothing</h2>
+  <p>Because Who-Is is a broadcast, and routers do not forward broadcasts, a device on a
+  different IP subnet never hears it &mdash; unless a
+  <a href="what-is-a-bbmd.html">BBMD</a> bridges the two. That is the single most common
+  reason a scan comes back empty: see
+  <a href="why-cant-i-find-my-bacnet-devices.html">why can't I find my BACnet devices?</a>.
+  Devices on a serial <a href="bacnet-mstp-vs-bacnet-ip.html">MS/TP</a> trunk answer too,
+  as long as a router carries the traffic onto IP.</p>
+""",
+    related=[
+        ("guides/why-cant-i-find-my-bacnet-devices", "Why can't I find my BACnet devices?"),
+        ("guides/what-is-a-bbmd", "What is a BBMD?"),
+        ("guides/bacnet-device-id-explained", "BACnet Device IDs explained"),
+    ],
+))
+
+GUIDES.append(dict(
+    slug="guides/what-is-a-bbmd",
+    title="What is a BBMD in BACnet? | Easy BACnet",
+    question="What is a BBMD, and when do I need one?",
+    description="A BBMD forwards BACnet/IP broadcasts across subnets, because routers do not. Without one, equipment on another subnet cannot be discovered.",
+    answer_html="""<p>A <strong>BBMD</strong> &mdash; BACnet Broadcast Management Device
+    &mdash; forwards BACnet/IP broadcasts from one IP subnet to another. BACnet discovery
+    leans on broadcasts, and IP routers deliberately do not pass broadcasts, so equipment
+    on a different subnet is invisible until a BBMD carries the broadcast across. You need
+    one whenever BACnet/IP has to span more than a single subnet.</p>""",
+    body_html="""
+  <h2>Why broadcasts are the problem</h2>
+  <p>A <a href="who-is-i-am-explained.html">Who-Is</a> is a broadcast: it reaches every
+  device on the local subnet in one shot. That is efficient, but a router's whole job is
+  to <em>not</em> forward broadcasts, or they would flood the network. So the moment your
+  equipment sits on a different subnet from the tool looking for it, discovery stops at
+  the router.</p>
+
+  <h2>What a BBMD does</h2>
+  <p>One BBMD sits on each subnet that has BACnet/IP devices. The BBMDs know about each
+  other through a <strong>Broadcast Distribution Table</strong>. When a broadcast arrives
+  on one subnet, its BBMD wraps it up and unicasts it to the other BBMDs, which re-broadcast
+  it locally. The result is that a Who-Is sent on subnet A is heard by devices on subnet
+  B, without opening the routers to general broadcast traffic.</p>
+
+  <h2>Foreign Device Registration</h2>
+  <p>A tool that is not on any BACnet subnet &mdash; a laptop or phone on office Wi-Fi,
+  say &mdash; can ask a BBMD to include it as a <strong>foreign device</strong>. The BBMD
+  then forwards broadcasts to it directly for a time. It is the standard way a piece of
+  software reaches equipment it is not physically alongside.</p>
+
+  <h2>What this means for a phone scan</h2>
+  <p>Easy BACnet scans the subnet the phone is on. If the equipment is elsewhere and there
+  is no BBMD reaching your phone, the scan finds nothing &mdash; not because the app failed,
+  but because the broadcast never crossed the router. The reliable fix on site is to get
+  the phone onto the <strong>same subnet</strong> as the controllers; see
+  <a href="why-cant-i-find-my-bacnet-devices.html">why can't I find my BACnet devices?</a>.</p>
+""",
+    related=[
+        ("guides/why-cant-i-find-my-bacnet-devices", "Why can't I find my BACnet devices?"),
+        ("guides/who-is-i-am-explained", "BACnet Who-Is and I-Am explained"),
+        ("guides/what-port-does-bacnet-use", "What port does BACnet use?"),
+    ],
+))
+
+GUIDES.append(dict(
+    slug="guides/bacnet-mstp-vs-bacnet-ip",
+    title="BACnet MS/TP vs BACnet/IP | Easy BACnet",
+    question="BACnet MS/TP vs BACnet/IP — what is the difference?",
+    description="BACnet/IP runs over Ethernet and Wi-Fi on UDP 47808; MS/TP runs over an RS-485 serial pair. How they differ and how a router joins them.",
+    answer_html="""<p><strong>BACnet/IP</strong> carries BACnet over ordinary Ethernet and
+    Wi-Fi networks using <a href="what-port-does-bacnet-use.html">UDP&nbsp;47808</a>.
+    <strong>BACnet MS/TP</strong> (Master-Slave/Token-Passing) carries it over a cheap
+    RS-485 serial twisted pair. IP is fast and everywhere; MS/TP is slow and inexpensive,
+    which is why most individual field controllers are MS/TP and reach the wider network
+    through a BACnet router.</p>""",
+    body_html="""
+  <h2>Different wires, same BACnet</h2>
+  <p>The objects, the points and the services are identical; only the bottom layer differs.
+  BACnet/IP rides on the building's data network. MS/TP rides on a two- or three-wire
+  RS-485 bus daisy-chained from controller to controller, typically at 9600 to 115200 baud
+  &mdash; a fraction of Ethernet speed, but enough for a VAV box reporting a temperature.</p>
+
+  <h2>Token passing</h2>
+  <p>MS/TP devices share one wire, so they take turns: a token is passed from master to
+  master, and only the holder may speak. It is robust and cheap, but it puts a ceiling on
+  how fast a trunk can be polled &mdash; part of why reading a large MS/TP unit is not
+  instant.</p>
+
+  <h2>Addressing and how they meet</h2>
+  <p>On MS/TP a device has a small <strong>MAC address</strong> (0&ndash;127) on its
+  trunk, plus a <strong>network number</strong> for that trunk. A <strong>BACnet
+  router</strong> joins the MS/TP trunk to BACnet/IP, so from the IP side each MS/TP
+  device appears as a normal BACnet device with its Device Instance. That routing is why
+  Easy BACnet, which speaks BACnet/IP over Wi-Fi, can still list and read MS/TP
+  controllers &mdash; provided a router is carrying them onto the subnet your phone is on.</p>
+
+  <h2>Which am I looking at?</h2>
+  <p>If a device shows a network number greater than the local one and a low MAC address,
+  it is almost certainly an MS/TP device reached through a router. Pure BACnet/IP devices
+  sit on the IP network directly with their own IP address.</p>
+""",
+    related=[
+        ("guides/who-is-i-am-explained", "BACnet Who-Is and I-Am explained"),
+        ("guides/what-port-does-bacnet-use", "What port does BACnet use?"),
+        ("guides/why-cant-i-find-my-bacnet-devices", "Why can't I find my BACnet devices?"),
+    ],
+))
+
+GUIDES.append(dict(
+    slug="guides/what-port-does-bacnet-use",
+    title="What port does BACnet use? | Easy BACnet",
+    question="What port does BACnet use?",
+    description="BACnet/IP uses UDP port 47808 (0xBAC0) by default; extra networks use 47809 and up. Easy BACnet checks the common range automatically.",
+    answer_html="""<p>BACnet/IP uses <strong>UDP port 47808</strong> by default &mdash; that
+    is <code>0xBAC0</code> in hex, which is where the number comes from. It is UDP, not TCP,
+    and discovery relies on broadcasts to that port. Where a single IP subnet carries more
+    than one BACnet network, the extra networks use <strong>47809</strong> and up.</p>""",
+    body_html="""
+  <h2>47808, and why</h2>
+  <p>The default port is 47808 decimal, chosen because in hexadecimal it reads
+  <code>0xBAC0</code> &mdash; &ldquo;BAC0&rdquo;, for BACnet. It is a UDP port: BACnet/IP
+  sends connectionless datagrams, and a <a href="who-is-i-am-explained.html">Who-Is</a>
+  goes out as a broadcast to that port so every device on the subnet hears it.</p>
+
+  <h2>When it is not 47808</h2>
+  <p>One IP subnet can host several separate BACnet networks by giving each its own port,
+  starting at 47808 and counting up: 47809, 47810, and so on (up to 47823 is common). If a
+  building was set up that way, a tool must check each port, because devices on 47809 never
+  answer a broadcast sent to 47808. Easy BACnet checks the common range for you.</p>
+
+  <h2>Firewalls and MS/TP</h2>
+  <p>If a software firewall or a locked-down switch is dropping UDP 47808, discovery fails
+  even on the right subnet &mdash; worth ruling out with whoever runs the network. Note
+  that <a href="bacnet-mstp-vs-bacnet-ip.html">MS/TP</a> devices have no IP port at all;
+  they live on a serial trunk and reach IP only through a BACnet router. And because the
+  port carries broadcasts, it will not cross a router to another subnet without a
+  <a href="what-is-a-bbmd.html">BBMD</a>.</p>
+""",
+    related=[
+        ("guides/what-is-a-bbmd", "What is a BBMD?"),
+        ("guides/bacnet-mstp-vs-bacnet-ip", "BACnet MS/TP vs BACnet/IP"),
+        ("guides/why-cant-i-find-my-bacnet-devices", "Why can't I find my BACnet devices?"),
+    ],
+))
+
 INDEX = """<!doctype html>
 <html lang="en">
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <link rel="icon" type="image/svg+xml" href="icon.svg">
-<title>Easy BACnet &mdash; browse and control BACnet/IP devices from your phone</title>
-<meta name="description" content="A BACnet/IP browser and control tool for Android: discover devices, browse and read points, command and release them by priority, build custom control panels, and export a report. Plus plain-English BACnet guides.">
+<title>Easy BACnet &mdash; scan, read &amp; control BACnet/IP devices</title>
+<meta name="description" content="Free Android app to scan a network for BACnet/IP devices, read and command their points by priority, build control panels, and export a CSV.">
 <link rel="canonical" href="{{BASE}}/index.html">
 <meta name="robots" content="index, follow">
 <meta name="theme-color" content="#14171a">
 <meta property="og:type" content="website">
 <meta property="og:site_name" content="Easy BACnet">
-<meta property="og:title" content="Easy BACnet &mdash; browse and control BACnet/IP devices from your phone">
-<meta property="og:description" content="A BACnet/IP browser and control tool for Android: discover devices, browse and read points, command and release them by priority, build custom control panels, and export a report.">
+<meta property="og:title" content="Easy BACnet &mdash; scan, read &amp; control BACnet/IP devices">
+<meta property="og:description" content="Free Android app to scan a network for BACnet/IP devices, read and command their points by priority, build control panels, and export a CSV.">
 <meta property="og:url" content="{{BASE}}/index.html">
 <meta property="og:image" content="{{BASE}}/img/og-image.png">
 <meta name="twitter:card" content="summary_large_image">
-<meta name="twitter:title" content="Easy BACnet &mdash; browse and control BACnet/IP devices from your phone">
-<meta name="twitter:description" content="A BACnet/IP browser and control tool for Android: discover devices, browse and read points, command and release them by priority, build custom control panels, and export a report.">
+<meta name="twitter:title" content="Easy BACnet &mdash; scan, read &amp; control BACnet/IP devices">
+<meta name="twitter:description" content="Free Android app to scan a network for BACnet/IP devices, read and command their points by priority, build control panels, and export a CSV.">
 <meta name="twitter:image" content="{{BASE}}/img/og-image.png">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -1282,12 +1539,31 @@ footer a{color:var(--mut); text-decoration:underline}
 <script type="application/ld+json">
 {
   "@context": "https://schema.org",
-  "@type": "SoftwareApplication",
-  "name": "Easy BACnet",
-  "applicationCategory": "UtilitiesApplication",
-  "operatingSystem": "Android 8.0 or later",
-  "offers": { "@type": "Offer", "price": "0", "priceCurrency": "USD" },
-  "description": "Scans a local network for BACnet/IP devices, reads their points, commands and releases them by priority, builds custom control panels, and exports the results as a CSV."
+  "@graph": [
+    {
+      "@type": "Organization",
+      "@id": "{{BASE}}/#org",
+      "name": "Easy BACnet",
+      "url": "{{BASE}}/",
+      "logo": "{{BASE}}/icon.svg"
+    },
+    {
+      "@type": "WebSite",
+      "@id": "{{BASE}}/#site",
+      "name": "Easy BACnet",
+      "url": "{{BASE}}/",
+      "publisher": { "@id": "{{BASE}}/#org" }
+    },
+    {
+      "@type": "SoftwareApplication",
+      "name": "Easy BACnet",
+      "applicationCategory": "UtilitiesApplication",
+      "operatingSystem": "Android 8.0 or later",
+      "offers": { "@type": "Offer", "price": "0", "priceCurrency": "USD" },
+      "publisher": { "@id": "{{BASE}}/#org" },
+      "description": "Scans a local network for BACnet/IP devices, reads their points, commands and releases them by priority, builds custom control panels, and exports the results as a CSV."
+    }
+  ]
 }
 </script>
 </head>
@@ -1434,7 +1710,7 @@ def main():
     sm = ['<?xml version="1.0" encoding="UTF-8"?>',
           '<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">']
     for u in urls:
-        sm.append("  <url><loc>%s/%s</loc></url>" % (BASE_URL, u))
+        sm.append("  <url><loc>%s/%s</loc><lastmod>%s</lastmod></url>" % (BASE_URL, u, UPDATED))
     sm.append("</urlset>")
     write("sitemap.xml", "\n".join(sm) + "\n")
 
@@ -1477,11 +1753,11 @@ def main():
 
     # llms.txt for AI agents: site name, purpose, and key URLs
     llms = ["# Easy BACnet",
-            "A BACnet/IP browser and control tool for Android: discover devices, browse and read points, command and release them by priority, build custom control panels, and export a report. Plus plain-English BACnet guides.",
+            "Free Android app to scan a network for BACnet/IP devices, read and command their points by priority, build control panels, and export a CSV. Plus plain-English BACnet guides.",
             "",
             "## Guides"]
     for g in GUIDES:
-        llms.append("- %s: %s/%s.html" % (g["question"], BASE_URL, g["slug"]))
+        llms.append("- %s: %s/%s.html" % (html_module.unescape(g["question"]), BASE_URL, g["slug"]))
     llms.append("- Easy BACnet home: %s/index.html" % BASE_URL)
     llms.append("- Privacy policy: %s/privacy.html" % BASE_URL)
     write("llms.txt", "\n".join(llms) + "\n")
