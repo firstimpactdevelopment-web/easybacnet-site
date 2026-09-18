@@ -1,0 +1,234 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<link rel="icon" type="image/svg+xml" href="icon.svg">
+<title>What is a subnet, and why doesn't the switch give me the right one? | Easy BACnet</title>
+<meta name="description" content="Being plugged into a switch doesn't mean you're on the building's controls network. What a subnet is, why a switch port can hand you the wrong one (VLANs, DHCP, static IPs), and how to get on the right one to find your BACnet devices.">
+<link rel="canonical" href="https://easybacnet.com/guides/subnets.html">
+<meta name="robots" content="index, follow">
+<meta name="theme-color" content="#14171a">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Archivo:wght@600;800;900&family=Manrope:wght@400;500;600;700&family=IBM+Plex+Mono:wght@500;600&display=swap" rel="stylesheet">
+<meta property="og:type" content="article">
+<meta property="og:site_name" content="Easy BACnet">
+<meta property="og:title" content="What is a subnet, and why doesn't the switch give me the right one? | Easy BACnet">
+<meta property="og:description" content="Being plugged into a switch doesn't mean you're on the building's controls network. What a subnet is, why a switch port can hand you the wrong one (VLANs, DHCP, static IPs), and how to get on the right one to find your BACnet devices.">
+<meta property="og:url" content="https://easybacnet.com/guides/subnets.html">
+<meta property="og:image" content="https://easybacnet.com/img/og-image.png">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="What is a subnet, and why doesn't the switch give me the right one? | Easy BACnet">
+<meta name="twitter:description" content="Being plugged into a switch doesn't mean you're on the building's controls network. What a subnet is, why a switch port can hand you the wrong one (VLANs, DHCP, static IPs), and how to get on the right one to find your BACnet devices.">
+<meta name="twitter:image" content="https://easybacnet.com/img/og-image.png">
+<style>
+  :root { color-scheme: dark; --fg:#f3f5f6; --bg:#14171a; --muted:#9aa4ad;
+          --accent:#ff9a1f; --box:#1d2227; --line:#2f363d; --code:#101418; --ink:#0d0f11; }
+  * { box-sizing: border-box; }
+  body { max-width: 48rem; margin: 0 auto; padding: 2rem 1.25rem 5rem;
+         font-family:"Manrope",system-ui,-apple-system,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
+         font-size:17px; line-height:1.7; color:var(--fg); background:var(--bg);
+         -webkit-font-smoothing:antialiased; }
+  header.site { display:flex; align-items:center; gap:.6rem; flex-wrap:wrap;
+                padding-bottom:1.25rem; border-bottom:1px solid var(--line); margin-bottom:2.25rem; }
+  header.site a { color:var(--fg); text-decoration:none; }
+  header.site .brand { font-family:"Archivo",sans-serif; font-weight:900;
+                       text-transform:uppercase; letter-spacing:.02em; font-size:1.05rem; }
+  header.site .muted { margin-left:auto; font-family:"IBM Plex Mono",ui-monospace,monospace;
+                       font-size:.7rem; letter-spacing:.14em; text-transform:uppercase; }
+  h1, h2, h3 { font-family:"Archivo",sans-serif; letter-spacing:-.01em; line-height:1.12; }
+  h1 { font-weight:900; text-transform:uppercase; font-size:clamp(1.7rem,4.5vw,2.5rem);
+       margin:0 0 .6rem; }
+  .updated { color:var(--muted); font-size:.8rem; margin:0 0 1.5rem;
+             font-family:"IBM Plex Mono",ui-monospace,monospace; letter-spacing:.06em; }
+  h2 { font-weight:800; font-size:1.35rem; margin:2.6rem 0 .6rem; }
+  h3 { font-weight:800; font-size:1.06rem; margin:1.8rem 0 .4rem; }
+  a { color:var(--accent); }
+  strong { color:#fff; }
+  .answer { background:var(--box); border:1px solid var(--line); border-left:3px solid var(--accent);
+            border-radius:12px; padding:1.1rem 1.3rem; margin:1.5rem 0 2rem; }
+  .answer > strong { display:block; margin-bottom:.5rem; text-transform:uppercase;
+                   font-family:"IBM Plex Mono",ui-monospace,monospace; font-weight:600;
+                   font-size:.72rem; letter-spacing:.18em; color:var(--accent); }
+  .answer p { margin:.6rem 0; }
+  .answer p strong { color:#fff; font-weight:700; }
+  code { background:var(--code); padding:.1rem .4rem; border-radius:4px; font-size:.9em;
+         font-family:"IBM Plex Mono",ui-monospace,monospace; }
+  pre { background:var(--code); padding:1rem; border-radius:10px; overflow-x:auto;
+        border:1px solid var(--line); }
+  pre code { background:none; padding:0; }
+  table { border-collapse:collapse; width:100%; margin:1.25rem 0; display:block; overflow-x:auto; }
+  th, td { text-align:left; padding:.55rem .75rem; border-bottom:1px solid var(--line); }
+  th { font-family:"IBM Plex Mono",ui-monospace,monospace; font-size:.72rem;
+       text-transform:uppercase; letter-spacing:.1em; color:var(--accent); font-weight:600; }
+  ul, ol { padding-left:1.3rem; }
+  li { margin:.45rem 0; }
+  .muted { color:var(--muted); font-size:.92rem; }
+  nav.more { margin-top:3rem; padding-top:1.5rem; border-top:1px solid var(--line); }
+  nav.more h2 { margin-top:0; }
+  nav.more ul { list-style:none; padding:0; }
+  nav.more li { margin:0; border-bottom:1px solid var(--line); padding:.85rem 0; }
+  nav.more li:last-child { border-bottom:none; }
+  nav.more a { font-family:"Archivo",sans-serif; font-weight:600; }
+  footer { margin-top:3.5rem; padding-top:1.5rem; border-top:1px solid var(--line);
+           color:var(--muted); font-size:.9rem; }
+  footer a { color:var(--accent); }
+  .shotrow { display:flex; flex-wrap:wrap; gap:1rem; margin:1.75rem 0; }
+  .shotrow figure { margin:0; flex:0 1 200px; }
+  .shotrow img { width:100%; height:auto; border:1px solid var(--line);
+                 border-radius:16px; display:block; background:var(--ink); }
+  .shotrow figcaption { color:var(--muted); font-size:.82rem; margin-top:.5rem;
+                        text-align:center; line-height:1.35; }
+</style>
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@graph": [
+    {
+      "@type": "FAQPage",
+      "datePublished": "2026-09-18",
+      "dateModified": "2026-09-18",
+      "mainEntity": [{
+        "@type": "Question",
+        "name": "Why am I on the wrong network even though I'm plugged into the switch?",
+        "acceptedAnswer": { "@type": "Answer", "text": "Plugging a cable into a switch only gives you a physical connection. Which network you actually land on &mdash; the subnet &mdash; is decided by how that switch port is configured, by the address a DHCP server hands you, or by the static address set on your own device. A single switch commonly carries several separate networks at once, so it can easily place you on the office or guest network instead of the controls network. BACnet discovery only reaches your own subnet, so when you are on the wrong one the scan finds nothing even though the cable is plugged in and the link light is on." }
+      }]
+    },
+    {
+      "@type": "BreadcrumbList",
+      "itemListElement": [
+        { "@type": "ListItem", "position": 1, "name": "Home", "item": "https://easybacnet.com/index.html" },
+        { "@type": "ListItem", "position": 2, "name": "Why am I on the wrong network even though I'm plugged into the switch?", "item": "https://easybacnet.com/guides/subnets.html" }
+      ]
+    }
+  ]
+}
+</script>
+</head>
+<body>
+
+<header class="site">
+  <a href="../index.html" style="display:inline-flex;align-items:center;gap:.5rem;text-decoration:none"><img src="icon.svg" alt="" width="28" height="28" style="border-radius:7px"><b class="brand">Easy BACnet</b></a>
+  <span class="muted">&middot; BACnet IP Controls made Easy</span>
+</header>
+
+<article>
+  <h1>Why am I on the wrong network even though I'm plugged into the switch?</h1>
+  <p class="updated">Updated 18 September 2026</p>
+
+  <div class="answer">
+    <strong>Short answer</strong>
+    <p>Plugging a cable into a switch only gives you a physical
+    connection. Which <strong>network</strong> you actually land on &mdash; the
+    <em>subnet</em> &mdash; is decided by how that switch port is configured, by
+    the address a DHCP server hands you, or by the static address set on your own
+    device. A single switch commonly carries several separate networks at once, so
+    it can easily place you on the office or guest network instead of the controls
+    network. BACnet discovery only reaches your own subnet, so when you are on the
+    wrong one the scan finds nothing even though the cable is plugged in and the
+    link light is on.</p>
+  </div>
+<div class="shotrow"><figure><img src="../img/no-devices.png" alt="Wrong subnet: the scan finds nothing" loading="lazy"><figcaption>Wrong subnet: the scan finds nothing</figcaption></figure></div>
+
+  <h2>What a subnet is, in plain terms</h2>
+  <p>Think of the building's wiring as a set of separate mail systems that happen to
+  share the same hallways. Each system &mdash; the office computers, the guest
+  Wi-Fi, the heating/cooling/ventilation controls &mdash; is its own
+  <strong>subnet</strong>: a group of devices that can talk to each other directly.
+  A message sent within one subnet does not automatically reach another; getting
+  between them requires a router (or, for BACnet broadcasts specifically, a BBMD).</p>
+  <p>You can tell subnets apart by their address range. An address like
+  <code>10.20.30.42</code> with a mask of <code>255.255.255.0</code> means "I am on
+  the 10.20.30 network." A device at <code>192.168.1.55</code> is on a different
+  network and, without a router between them, the two cannot hear each other.</p>
+
+  <h2>Why "plugged into the switch" isn't enough</h2>
+  <p>On anything bigger than a home network, switches are <strong>managed</strong>:
+  one physical switch is divided into several logical networks (VLANs), and each
+  port is assigned to one of them. The controls, the offices, the cameras and the
+  guest Wi-Fi can all run through the same switch on different VLANs. So the port
+  you happened to plug into decides which network you are on &mdash; and it is often
+  not the controls network. A link light confirms the cable works. It says nothing
+  about which subnet you were placed on.</p>
+
+  <h2>The four common reasons the switch gives you the wrong subnet</h2>
+  <h3>1. The port is on a different VLAN</h3>
+  <p>The most common one. The jack you used is assigned to the office or guest VLAN,
+  not the controls VLAN. Everything looks connected, but you are walled off from the
+  controllers. The fix is a port (or a switch configuration change) on the controls
+  VLAN &mdash; a network task, not something an app can do.</p>
+  <h3>2. DHCP handed you an address from the wrong pool</h3>
+  <p>If that VLAN has its own DHCP server, it gives you an address on <em>its</em>
+  subnet &mdash; a perfectly valid address on the wrong network.</p>
+  <h3>3. No DHCP answered, so your device made up an address</h3>
+  <p>Controls networks often have no DHCP server at all &mdash; every controller is
+  set by hand. Plug a laptop or phone expecting DHCP into that network and, after a
+  timeout, it self-assigns an address starting with <code>169.254</code> (called
+  APIPA). That address is on nothing useful and reaches nothing. Seeing
+  <code>169.254.x.x</code> is a strong sign you need a static address on the controls
+  subnet.</p>
+  <h3>4. Your device has a static IP for another subnet</h3>
+  <p>If your laptop was previously set to a fixed address for a different site or
+  network, it will keep trying to use it here and land on the wrong subnet.</p>
+
+  <h2>How to tell which subnet you are on</h2>
+  <p>When a scan finds nothing, Easy BACnet shows this device's own address and
+  subnet mask (for example <code>192.168.1.42 (mask 255.255.255.0)</code>). Compare
+  the first three groups of numbers with the controllers' known range. If the
+  controllers are on <code>10.20.30.x</code> and you are on <code>192.168.1.x</code>
+  &mdash; or on <code>169.254.x.x</code> &mdash; that mismatch is why nothing was
+  found. This is the single most useful thing to check, and to share.</p>
+
+  <h2>Why this stops a BACnet scan specifically</h2>
+  <p>BACnet/IP discovery works by broadcasting a <em>Who-Is</em> and listening for
+  replies. A broadcast stays inside your own subnet; it does not cross routers or
+  VLAN boundaries. So being on the wrong subnet doesn't just make things slow
+  &mdash; it makes the controllers completely invisible, and the system is behaving
+  correctly when that happens. (Some sites bridge this gap with a
+  <a href="what-is-a-bbmd.html">BBMD</a>, which forwards these broadcasts between
+  subnets.)</p>
+
+  <h2>How to get onto the right subnet</h2>
+  <ul>
+    <li><strong>Ask for a controls-network connection.</strong> Your network or HVAC
+    provider can point you to a switch port on the controls VLAN, or put your port
+    on it.</li>
+    <li><strong>Get the right address.</strong> If that network uses DHCP, you'll be
+    given a correct address automatically. If it doesn't (common for controls), ask
+    for a free static IP, subnet mask and gateway on the controls subnet and set them
+    on your device.</li>
+    <li><strong>Ask whether there's a BBMD.</strong> If one exists, it can forward
+    discovery from another subnet &mdash; you'll need its address.</li>
+    <li><strong>Use a known device address.</strong> If you already know a
+    controller's IP and it is reachable through a router, Easy BACnet's Advanced Mode
+    can add it directly by IP without a broadcast.</li>
+  </ul>
+
+  <h2>What to give your network and HVAC provider</h2>
+  <p>Share three things and the conversation is usually short: the address and mask
+  Easy BACnet shows for your device; the subnet the controllers are supposed to be
+  on (if you know it); and which switch and port, or which jack, you are plugged
+  into. That tells them immediately whether you are on the wrong VLAN and what to
+  change. None of this is a fault with the equipment or the app &mdash; it is about
+  which network your connection lands on.</p>
+
+</article>
+  <nav class="more">
+    <h2>Related</h2>
+    <ul>
+      <li><a href="../guides/why-cant-i-find-my-bacnet-devices.html">Why can't I find my BACnet devices?</a></li>
+      <li><a href="../guides/what-is-a-bbmd.html">What is a BBMD?</a></li>
+      <li><a href="../guides/cant-find-what-im-looking-for.html">The app can&rsquo;t find what I&rsquo;m looking for</a></li>
+    </ul>
+  </nav>
+
+<footer>
+  <p>Published alongside <a href="../index.html">Easy BACnet</a>, a free
+  Android app that scans a building network for BACnet/IP devices, reads their
+  points, and exports the results as a CSV.</p>
+  <p><a href="../privacy.html">Privacy policy</a></p>
+</footer>
+
+</body>
+</html>

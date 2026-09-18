@@ -21,8 +21,8 @@ import html as html_module
 BASE_URL = "https://easybacnet.com"
 
 # Freshness signal. Bump when guide content is meaningfully revised.
-UPDATED = "2026-09-16"            # ISO, for JSON-LD and sitemap <lastmod>
-UPDATED_HUMAN = "16 September 2026"  # for the visible "Updated" line
+UPDATED = "2026-09-18"            # ISO, for JSON-LD and sitemap <lastmod>
+UPDATED_HUMAN = "18 September 2026"  # for the visible "Updated" line
 
 HERE = os.path.dirname(os.path.abspath(__file__))
 
@@ -88,7 +88,8 @@ CSS = """
 
 
 SCREENSHOTS = {
-    "guides/how-to-use-easy-bacnet": [("scan.png","A finished scan"),
+    "guides/how-to-use-easy-bacnet": [("picker.png","Choose a mode on the home screen"),
+        ("scan.png","A finished scan"),
         ("devices.png","Every device found"),("points.png","One device\u2019s points")],
     "guides/how-to-write-to-a-bacnet-point": [("point.png","Point detail, showing who is commanding it"),
         ("write.png","Choosing a value and priority"),("release.png","Releasing back to auto")],
@@ -97,6 +98,7 @@ SCREENSHOTS = {
         ("remote-use.png","The finished panel, live")],
     "guides/cant-find-what-im-looking-for": [("no-devices.png","When a scan finds nothing")],
     "guides/why-cant-i-find-my-bacnet-devices": [("no-devices.png","When a scan finds nothing")],
+    "guides/subnets": [("no-devices.png","Wrong subnet: the scan finds nothing")],
     "guides/what-is-a-bacnet-points-list": [("points.png","A device\u2019s point list in Easy BACnet")],
     "guides/how-to-find-your-bacnet-points-list": [("devices.png","Devices found"),
         ("points.png","Points on one device")],
@@ -581,8 +583,113 @@ GUIDES.append(dict(
   factory-default device ID.</p>
 """,
     related=[
+        ("guides/subnets", "What is a subnet, and why doesn&rsquo;t the switch give me the right one?"),
         ("guides/how-to-find-your-bacnet-points-list", "How do I find my BACnet points list?"),
         ("guides/bacnet-device-id-explained", "What is a BACnet Device ID?"),
+    ],
+))
+
+GUIDES.append(dict(
+    slug="guides/subnets",
+    title="What is a subnet, and why doesn't the switch give me the right one? | Easy BACnet",
+    question="Why am I on the wrong network even though I'm plugged into the switch?",
+    description="Being plugged into a switch doesn't mean you're on the building's controls network. What a subnet is, why a switch port can hand you the wrong one (VLANs, DHCP, static IPs), and how to get on the right one to find your BACnet devices.",
+    answer_html="""<p>Plugging a cable into a switch only gives you a physical
+    connection. Which <strong>network</strong> you actually land on &mdash; the
+    <em>subnet</em> &mdash; is decided by how that switch port is configured, by
+    the address a DHCP server hands you, or by the static address set on your own
+    device. A single switch commonly carries several separate networks at once, so
+    it can easily place you on the office or guest network instead of the controls
+    network. BACnet discovery only reaches your own subnet, so when you are on the
+    wrong one the scan finds nothing even though the cable is plugged in and the
+    link light is on.</p>""",
+    body_html="""
+  <h2>What a subnet is, in plain terms</h2>
+  <p>Think of the building's wiring as a set of separate mail systems that happen to
+  share the same hallways. Each system &mdash; the office computers, the guest
+  Wi-Fi, the heating/cooling/ventilation controls &mdash; is its own
+  <strong>subnet</strong>: a group of devices that can talk to each other directly.
+  A message sent within one subnet does not automatically reach another; getting
+  between them requires a router (or, for BACnet broadcasts specifically, a BBMD).</p>
+  <p>You can tell subnets apart by their address range. An address like
+  <code>10.20.30.42</code> with a mask of <code>255.255.255.0</code> means "I am on
+  the 10.20.30 network." A device at <code>192.168.1.55</code> is on a different
+  network and, without a router between them, the two cannot hear each other.</p>
+
+  <h2>Why "plugged into the switch" isn't enough</h2>
+  <p>On anything bigger than a home network, switches are <strong>managed</strong>:
+  one physical switch is divided into several logical networks (VLANs), and each
+  port is assigned to one of them. The controls, the offices, the cameras and the
+  guest Wi-Fi can all run through the same switch on different VLANs. So the port
+  you happened to plug into decides which network you are on &mdash; and it is often
+  not the controls network. A link light confirms the cable works. It says nothing
+  about which subnet you were placed on.</p>
+
+  <h2>The four common reasons the switch gives you the wrong subnet</h2>
+  <h3>1. The port is on a different VLAN</h3>
+  <p>The most common one. The jack you used is assigned to the office or guest VLAN,
+  not the controls VLAN. Everything looks connected, but you are walled off from the
+  controllers. The fix is a port (or a switch configuration change) on the controls
+  VLAN &mdash; a network task, not something an app can do.</p>
+  <h3>2. DHCP handed you an address from the wrong pool</h3>
+  <p>If that VLAN has its own DHCP server, it gives you an address on <em>its</em>
+  subnet &mdash; a perfectly valid address on the wrong network.</p>
+  <h3>3. No DHCP answered, so your device made up an address</h3>
+  <p>Controls networks often have no DHCP server at all &mdash; every controller is
+  set by hand. Plug a laptop or phone expecting DHCP into that network and, after a
+  timeout, it self-assigns an address starting with <code>169.254</code> (called
+  APIPA). That address is on nothing useful and reaches nothing. Seeing
+  <code>169.254.x.x</code> is a strong sign you need a static address on the controls
+  subnet.</p>
+  <h3>4. Your device has a static IP for another subnet</h3>
+  <p>If your laptop was previously set to a fixed address for a different site or
+  network, it will keep trying to use it here and land on the wrong subnet.</p>
+
+  <h2>How to tell which subnet you are on</h2>
+  <p>When a scan finds nothing, Easy BACnet shows this device's own address and
+  subnet mask (for example <code>192.168.1.42 (mask 255.255.255.0)</code>). Compare
+  the first three groups of numbers with the controllers' known range. If the
+  controllers are on <code>10.20.30.x</code> and you are on <code>192.168.1.x</code>
+  &mdash; or on <code>169.254.x.x</code> &mdash; that mismatch is why nothing was
+  found. This is the single most useful thing to check, and to share.</p>
+
+  <h2>Why this stops a BACnet scan specifically</h2>
+  <p>BACnet/IP discovery works by broadcasting a <em>Who-Is</em> and listening for
+  replies. A broadcast stays inside your own subnet; it does not cross routers or
+  VLAN boundaries. So being on the wrong subnet doesn't just make things slow
+  &mdash; it makes the controllers completely invisible, and the system is behaving
+  correctly when that happens. (Some sites bridge this gap with a
+  <a href="what-is-a-bbmd.html">BBMD</a>, which forwards these broadcasts between
+  subnets.)</p>
+
+  <h2>How to get onto the right subnet</h2>
+  <ul>
+    <li><strong>Ask for a controls-network connection.</strong> Your network or HVAC
+    provider can point you to a switch port on the controls VLAN, or put your port
+    on it.</li>
+    <li><strong>Get the right address.</strong> If that network uses DHCP, you'll be
+    given a correct address automatically. If it doesn't (common for controls), ask
+    for a free static IP, subnet mask and gateway on the controls subnet and set them
+    on your device.</li>
+    <li><strong>Ask whether there's a BBMD.</strong> If one exists, it can forward
+    discovery from another subnet &mdash; you'll need its address.</li>
+    <li><strong>Use a known device address.</strong> If you already know a
+    controller's IP and it is reachable through a router, Easy BACnet's Advanced Mode
+    can add it directly by IP without a broadcast.</li>
+  </ul>
+
+  <h2>What to give your network and HVAC provider</h2>
+  <p>Share three things and the conversation is usually short: the address and mask
+  Easy BACnet shows for your device; the subnet the controllers are supposed to be
+  on (if you know it); and which switch and port, or which jack, you are plugged
+  into. That tells them immediately whether you are on the wrong VLAN and what to
+  change. None of this is a fault with the equipment or the app &mdash; it is about
+  which network your connection lands on.</p>
+""",
+    related=[
+        ("guides/why-cant-i-find-my-bacnet-devices", "Why can't I find my BACnet devices?"),
+        ("guides/what-is-a-bbmd", "What is a BBMD?"),
+        ("guides/cant-find-what-im-looking-for", "The app can&rsquo;t find what I&rsquo;m looking for"),
     ],
 ))
 
@@ -1424,6 +1531,603 @@ GUIDES.append(dict(
         ("guides/what-is-a-bbmd", "What is a BBMD?"),
         ("guides/bacnet-mstp-vs-bacnet-ip", "BACnet MS/TP vs BACnet/IP"),
         ("guides/why-cant-i-find-my-bacnet-devices", "Why can't I find my BACnet devices?"),
+    ],
+))
+
+GUIDES.append(dict(
+    slug="guides/bacnet-scanner-app-android",
+    title="BACnet scanner app for Android | Easy BACnet",
+    question="Is there a BACnet scanner app for Android?",
+    description="Yes. How to discover, read and command BACnet/IP devices from an Android phone, what a phone can and cannot reach, and the subnet and MS/TP catches.",
+    answer_html="""<p>Yes &mdash; <a href="../index.html">Easy BACnet</a> is an
+    Android app that broadcasts a BACnet <em>Who-Is</em>, lists every BACnet/IP
+    device that answers, reads each one's points, and &mdash; with safety rails
+    &mdash; writes to them at a chosen priority. Unlike Modbus, BACnet has real
+    discovery built in, so a phone on the same network as the controllers will find
+    them in seconds. The one thing to get right first is the network: a phone can
+    only find what its Wi-Fi connection can actually reach.</p>""",
+    body_html="""
+  <h2>Why a phone is the right tool here</h2>
+  <p>BACnet controllers live in plant rooms, ceilings and rooftop units. When all
+  you need is to confirm a device is alive, read a sensor, or release a stuck
+  override, getting a laptop onto the control network is most of the work. A phone
+  already on the building network does the same job and fits in a pocket &mdash;
+  which is the difference between checking a point on the spot and booking a return
+  visit.</p>
+
+  <h2>How discovery works &mdash; and why it sometimes finds nothing</h2>
+  <p>Easy BACnet sends a <em>Who-Is</em> broadcast and collects the <em>I-Am</em>
+  replies. That broadcast only travels across the local subnet, so the usual reason
+  a scan comes back empty is not the app &mdash; it is that the phone landed on the
+  wrong network. Guest Wi-Fi, a separate controls VLAN, or a switch handing out an
+  address in the wrong range will all leave you shouting into a room the controllers
+  cannot hear. See <a href="why-cant-i-find-my-bacnet-devices.html">why can't I find
+  my BACnet devices?</a> and <a href="subnets.html">what is a subnet, and why doesn't
+  the switch give me the right one?</a></p>
+
+  <h2>What a phone can and cannot reach</h2>
+  <table>
+    <tr><th>Situation</th><th>Works from the phone?</th></tr>
+    <tr><td>BACnet/IP devices on the same subnet as the phone</td><td>Yes &mdash; the normal case, found by <em>Who-Is</em></td></tr>
+    <tr><td>A specific device you can reach by IP but not by broadcast</td><td>Yes &mdash; add it directly by IP address</td></tr>
+    <tr><td>MS/TP devices on a serial trunk behind a BACnet router</td><td>Yes, if the router advertises them onto IP &mdash; you reach them through it, not directly. See <a href="bacnet-mstp-vs-bacnet-ip.html">MS/TP vs BACnet/IP</a></td></tr>
+    <tr><td>Devices on another subnet, with no BBMD</td><td>No &mdash; broadcasts don't cross a router without a <a href="what-is-a-bbmd.html">BBMD</a></td></tr>
+  </table>
+  <p>The honest limits worth knowing up front: Easy BACnet speaks <strong>BACnet/IP</strong>.
+  It reaches MS/TP devices through a router that publishes them, not by plugging into
+  a serial trunk directly, and it does not register as a foreign device with a BBMD,
+  so a device on a different subnet needs either a BBMD or a direct add-by-IP.</p>
+
+  <h2>Reading is safe; writing has rails</h2>
+  <p>Discovering and reading changes nothing &mdash; a phone is a perfectly safe way
+  to look around a live system. Writing is where BACnet is genuinely careful, and so
+  is the app: write mode is off every time you launch, each command goes out at a
+  priority you choose, the priority array is read back so you can see what won, and
+  a one-tap <em>release to auto</em> hands control back. If you have ever left an
+  override in a controller by accident, that matters &mdash; see
+  <a href="bacnet-priority-and-stuck-overrides.html">BACnet priority and stuck
+  overrides</a> and <a href="how-to-write-to-a-bacnet-point.html">how to write to a
+  BACnet point</a>.</p>
+
+  <h2>What you walk away with</h2>
+  <p>Every device, point, present value, unit and status the scan finds can be
+  exported as a CSV &mdash; so a phone standing in a plant room turns a system nobody
+  had documented into a list somebody can use. Walk through a full scan in
+  <a href="how-to-use-easy-bacnet.html">how to use Easy BACnet</a>.</p>
+""",
+    related=[
+        ("guides/how-to-use-easy-bacnet", "How do I use Easy BACnet to scan and read?"),
+        ("guides/why-cant-i-find-my-bacnet-devices", "Why can't I find my BACnet devices?"),
+        ("guides/subnets", "What is a subnet, and why doesn't the switch give me the right one?"),
+        ("guides/how-to-write-to-a-bacnet-point", "How do I write to a BACnet point?"),
+    ],
+))
+
+GUIDES.append(dict(
+    slug="guides/read-bacnet-values-from-phone",
+    title="How to read BACnet values from a phone | Easy BACnet",
+    question="How do I read BACnet values from a phone?",
+    description="Step by step: join the controls network, discover BACnet devices, open a point and read its live present value, units and status — from an Android phone, no laptop.",
+    answer_html="""<p>Join your phone to the same network as the controls, open
+    <a href="../index.html">Easy BACnet</a>, tap <strong>Scan for Devices</strong>,
+    open the device you want and then the point you want, and its live
+    <strong>Present Value</strong>, <strong>Units</strong> and <strong>Status</strong>
+    are right there, with a <strong>Refresh</strong> button for a fresh read.
+    Reading changes nothing on the equipment, so this is completely safe to do on a
+    live system. The whole thing takes under a minute once the phone is on the right
+    network &mdash; which is the one part worth getting right first.</p>""",
+    body_html="""
+  <h2>What you need</h2>
+  <ul>
+    <li><strong>Your phone on the controls network.</strong> Join the building's
+    controls Wi-Fi, or plug into the network with a USB-Ethernet adapter. A phone on
+    guest Wi-Fi or mobile data reaches nothing &mdash; and that is the network, not
+    the app. See <a href="why-cant-i-find-my-bacnet-devices.html">why can't I find my
+    BACnet devices?</a> and <a href="subnets.html">the subnet guide</a> if the scan
+    is empty.</li>
+    <li><strong>No password.</strong> BACnet has no login. If you are on the network,
+    the devices answer.</li>
+  </ul>
+
+  <h2>Step 1 &mdash; Scan for devices</h2>
+  <p>Open the app, tap the <strong>Easy BACnet</strong> card, then <strong>Scan for
+  Devices</strong>. The app broadcasts a BACnet <em>Who-Is</em> and collects the
+  replies for up to about forty-five seconds &mdash; access points drop broadcasts,
+  so it keeps asking rather than trusting one shot. A counter shows devices as they
+  answer.</p>
+  <figure class="shot">
+    <img src="../img/scan.png" alt="Easy BACnet scanning a network and listing the BACnet devices that answered" loading="lazy">
+    <figcaption>A scan in progress &mdash; devices appear as they answer the Who-Is.</figcaption>
+  </figure>
+
+  <h2>Step 2 &mdash; Open the device</h2>
+  <p>Tap <strong>View Results</strong>. Each device shows its name, Device ID and IP
+  address. Tap the one you want and the app reads its object list &mdash; on a large
+  controller this takes a moment, because it reads the points one at a time on
+  purpose, which is the only approach that works with every controller ever made.</p>
+  <figure class="shot">
+    <img src="../img/devices.png" alt="A list of discovered BACnet devices with names, Device IDs and IP addresses" loading="lazy">
+    <figcaption>Discovered devices, each with its name, Device ID and IP.</figcaption>
+  </figure>
+
+  <h2>Step 3 &mdash; Find the point</h2>
+  <p>The device opens to its list of points &mdash; analog inputs, binary values,
+  setpoints and the rest. Names come from the controller's own
+  <em>Object_Name</em>, so a well-commissioned device reads like plain English and a
+  poorly-commissioned one reads like <code>AI-3</code>. If a big controller has
+  hundreds of points, use the search box. Not sure what the object types mean? See
+  <a href="bacnet-object-types-explained.html">BACnet object types explained</a>.</p>
+  <figure class="shot">
+    <img src="../img/points.png" alt="The point list for a BACnet device showing analog and binary objects with live values" loading="lazy">
+    <figcaption>A device's points, each showing its live value.</figcaption>
+  </figure>
+
+  <h2>Step 4 &mdash; Read the value</h2>
+  <p>Tap the point. You get its live <strong>Present Value</strong>, the
+  <strong>Units</strong> the controller reports, the <strong>Status</strong> flags
+  (in alarm, in fault, overridden, out of service) and the
+  <strong>Description</strong> if the device carries one. <strong>Refresh</strong>
+  reads it again on demand.</p>
+  <figure class="shot">
+    <img src="../img/point.png" alt="A single BACnet point showing present value, units, status flags and description" loading="lazy">
+    <figcaption>One point: present value, units, status, and whether anything is overriding it.</figcaption>
+  </figure>
+  <div class="callout">
+  <p>On a commandable point you also see <strong>Commanded At</strong> and
+  <strong>Falls Back To</strong> &mdash; whether something is currently overriding
+  the point and at what priority. That single screen answers &ldquo;why is this
+  damper stuck open?&rdquo; more often than anything else in the app. See
+  <a href="bacnet-priority-and-stuck-overrides.html">BACnet priority and stuck
+  overrides</a>.</p>
+  </div>
+
+  <h2>Reading is safe; writing is separate</h2>
+  <p>Everything above only reads &mdash; it cannot change a thing on the equipment,
+  so a phone is a perfectly safe way to look around a live building. Changing a value
+  is a deliberate, separate mode that is off every time you launch the app. When you
+  do need it, see <a href="how-to-write-to-a-bacnet-point.html">how to write to a
+  BACnet point</a>.</p>
+
+  <h2>Turning a quick read into a record</h2>
+  <p>If you need more than one value, skip tapping through points one by one:
+  <strong>Export Results</strong> reads every point on every device and hands you a
+  CSV by email &mdash; names, present values, units and status. A five-minute scan in
+  a plant room turns an undocumented building into a points list somebody can use.
+  The full walkthrough is in <a href="how-to-use-easy-bacnet.html">how to use Easy
+  BACnet</a>.</p>
+""",
+    related=[
+        ("guides/how-to-use-easy-bacnet", "How do I use Easy BACnet to scan and read?"),
+        ("guides/bacnet-scanner-app-android", "Is there a BACnet scanner app for Android?"),
+        ("guides/bacnet-object-types-explained", "BACnet object types explained"),
+        ("guides/how-to-write-to-a-bacnet-point", "How do I write to a BACnet point?"),
+    ],
+))
+
+GUIDES.append(dict(
+    slug="guides/bacnet-device-shows-offline",
+    title="BACnet device shows offline? Causes & fixes | Easy BACnet",
+    question="Why does my BACnet device show offline?",
+    description="A BACnet device that shows offline is usually a network or discovery problem, not dead hardware — wrong subnet, dropped broadcasts, a firewall on UDP 47808, or a duplicate ID.",
+    answer_html="""<p>&ldquo;Offline&rdquo; in BACnet almost always means <em>I stopped
+    hearing from it</em>, not <em>it is broken</em>. The usual causes, most common
+    first: your phone or client is on the wrong subnet so the broadcast never reaches
+    it, a Wi-Fi access point is dropping the broadcast packets, a firewall is blocking
+    UDP 47808, the device shares a Device ID or network number with another device, or
+    it genuinely lost power or its network link. A device showing a <em>fault</em> flag
+    is a different thing from one showing offline &mdash; worth separating first.</p>""",
+    body_html="""
+  <h2>Offline versus fault &mdash; not the same</h2>
+  <p>First separate two things people both call &ldquo;offline&rdquo;. A device that
+  does not answer discovery or reads at all is a <strong>communication</strong>
+  problem &mdash; the causes below. A device that answers fine but whose
+  <em>points</em> show a fault or unreliable flag is a <strong>health</strong> problem
+  on the equipment &mdash; a failed sensor, not a network fault. If you can read the
+  device but a point looks wrong, that is fault, not offline.</p>
+
+  <h2>The causes of a truly unreachable device</h2>
+
+  <h3>1. Wrong subnet (by far the most common)</h3>
+  <p>Controls equipment usually sits on its own subnet or VLAN. If your phone is on
+  guest Wi-Fi, the office network, or a different scope, the broadcast that finds
+  BACnet devices never reaches them and everything looks offline. See
+  <a href="subnets.html">what is a subnet, and why doesn't the switch give me the right
+  one?</a></p>
+
+  <h3>2. Dropped broadcast packets</h3>
+  <p>BACnet discovery is a broadcast, and Wi-Fi access points drop broadcast packets
+  freely under load. A device that appears one scan and vanishes the next, or shows
+  offline intermittently, is often this. Scanning repeatedly &mdash; which a good tool
+  does automatically &mdash; works around it.</p>
+
+  <h3>3. A firewall on UDP 47808</h3>
+  <p>BACnet/IP lives on UDP <strong>47808</strong> (0xBAC0). A software firewall,
+  antivirus, or a locked-down switch dropping that port makes devices unreachable even
+  on the right subnet. See <a href="what-port-does-bacnet-use.html">what port does
+  BACnet use?</a></p>
+
+  <h3>4. A duplicate Device ID or network number</h3>
+  <p>Two devices sharing a Device ID, or a duplicated network number, makes devices
+  appear and disappear or answer for each other &mdash; a classic &ldquo;it is online,
+  no it is not&rdquo; symptom. If it started when equipment was added, suspect this.
+  See <a href="bacnet-device-id-explained.html">BACnet Device IDs explained</a>.</p>
+
+  <h3>5. It is on another subnet with no BBMD</h3>
+  <p>Broadcasts do not cross a router by themselves. A device on a different segment
+  needs a <a href="what-is-a-bbmd.html">BBMD</a> or a directed add-by-IP, or it will
+  always look absent from your side.</p>
+
+  <h3>6. It really is down</h3>
+  <p>Lost power, a pulled network cable, a dead MS/TP trunk behind its router. Once the
+  five above are ruled out, this is what is left &mdash; and now you know to look at the
+  equipment, not the network.</p>
+
+  <h2>A quick order to check in</h2>
+  <ol>
+    <li>Confirm your phone's IP is on the <strong>same subnet</strong> as the controls.</li>
+    <li><strong>Scan again</strong> a couple of times &mdash; dropped broadcasts hide
+    devices.</li>
+    <li>Try adding the device <strong>directly by IP</strong>; if that works, it is a
+    broadcast/subnet problem, not a dead device.</li>
+    <li>Check for <strong>duplicate IDs</strong> in what you did find.</li>
+    <li>Ask whoever runs the network about <strong>UDP 47808</strong> and VLANs.</li>
+  </ol>
+  <div class="callout">
+  <p><a href="../index.html">Easy BACnet</a> re-broadcasts discovery for up to about
+  forty-five seconds to beat dropped packets, shows your phone's own subnet when a scan
+  is empty, and flags duplicate Device IDs when it sees them &mdash; the three things
+  behind most &ldquo;offline&rdquo; reports.</p>
+  </div>
+""",
+    related=[
+        ("guides/why-cant-i-find-my-bacnet-devices", "Why can't I find my BACnet devices?"),
+        ("guides/subnets", "What is a subnet, and why doesn't the switch give me the right one?"),
+        ("guides/bacnet-device-id-explained", "What is a BACnet Device ID?"),
+        ("guides/what-is-a-bbmd", "What is a BBMD?"),
+    ],
+))
+
+GUIDES.append(dict(
+    slug="guides/bacnet-write-access-denied",
+    title="BACnet Write Access Denied — what it means | Easy BACnet",
+    question="What does BACnet 'Write Access Denied' mean, and how do I fix it?",
+    description="Write Access Denied means the BACnet property you tried to write cannot be written that way — usually a read-only property, a non-commandable point, or the wrong priority.",
+    answer_html="""<p>&ldquo;Write Access Denied&rdquo; is BACnet telling you the
+    property you aimed at cannot be written the way you tried &mdash; it is a
+    permission answer from the device, not a network error. The usual reasons: the
+    property is read-only (you cannot write an input's Present_Value directly), the
+    object is not commandable so it has no priority array to write into, the point is
+    locked by <em>Out_Of_Service</em> or the controller's own program, or you wrote
+    the right thing to the wrong property. The device is healthy; it is declining this
+    particular write.</p>""",
+    body_html="""
+  <h2>What the error actually is</h2>
+  <p>It is a BACnet error class <em>property</em>, error code <em>write-access-denied</em>,
+  returned by the device in response to your WriteProperty. That means communication
+  worked end to end &mdash; the device received the request, understood it, and refused
+  it on rules. So this is never a wiring or subnet problem; it is about <em>what</em>
+  you tried to write.</p>
+
+  <h2>The common reasons, and the fix</h2>
+
+  <h3>1. The property is read-only</h3>
+  <p>You cannot write the Present_Value of an Analog Input or Binary Input &mdash; those
+  reflect a physical sensor and are read-only by definition. If you need to force a
+  value for testing, that is what <em>Out_Of_Service</em> plus the manual override is
+  for, not a direct write. Writing to an <em>output</em> or <em>value</em> object is
+  the writable case.</p>
+
+  <h3>2. The object is not commandable</h3>
+  <p>Only commandable objects (typically outputs, and value objects the vendor made
+  commandable) have the 16-slot priority array you write into. Write to a
+  non-commandable object and you get access denied. Check the object type &mdash; see
+  <a href="bacnet-object-types-explained.html">BACnet object types explained</a>.</p>
+
+  <h3>3. You wrote the value instead of a priority</h3>
+  <p>On a commandable point you write Present_Value <em>at a priority</em> (1&ndash;16).
+  Some controllers reject a write that does not specify a priority, or reject writes at
+  priorities they reserve. Choose a priority &mdash; 8 is the usual manual-operator
+  slot &mdash; and write there. See
+  <a href="bacnet-priority-and-stuck-overrides.html">BACnet priority and stuck
+  overrides</a>.</p>
+
+  <h3>4. The controller's program owns it</h3>
+  <p>Some devices lock points that their internal logic controls, or require the point
+  to be out of service before an external write is allowed. This is a device policy;
+  the vendor's manual will say so, and forcing past it is not something to do on live
+  equipment without understanding what the program expects.</p>
+
+  <h3>5. Genuinely protected</h3>
+  <p>Configuration properties, and some vendors' whole objects, are simply not
+  writable over BACnet by design. If the manual says read-only, it is read-only.</p>
+
+  <h2>How to work out which</h2>
+  <ol>
+    <li><strong>Look at the object type.</strong> Input? It is read-only &mdash; you want
+    an output or value object.</li>
+    <li><strong>Check whether it is commandable</strong> (does it have a priority
+    array?). If not, there is nothing to write.</li>
+    <li><strong>Write Present_Value at priority 8</strong> rather than as a plain
+    value.</li>
+    <li><strong>Read the vendor manual</strong> for points the program locks or that
+    need Out_Of_Service first.</li>
+  </ol>
+  <div class="callout">
+  <p><a href="../index.html">Easy BACnet</a> only offers a write where the object is
+  commandable, defaults to a sensible priority, and reads the priority array back so
+  you can see whether the write took &mdash; which turns &ldquo;access denied&rdquo;
+  from a mystery into an obvious &ldquo;that point is not writable.&rdquo; See
+  <a href="how-to-write-to-a-bacnet-point.html">how to write to a BACnet point</a>.</p>
+  </div>
+""",
+    related=[
+        ("guides/how-to-write-to-a-bacnet-point", "How do I write to a BACnet point?"),
+        ("guides/bacnet-priority-and-stuck-overrides", "BACnet priority and stuck overrides"),
+        ("guides/bacnet-object-types-explained", "BACnet object types explained"),
+        ("guides/bacnet-value-does-not-change-when-written", "Why doesn't my BACnet value change when I write to it?"),
+    ],
+))
+
+GUIDES.append(dict(
+    slug="guides/bacnet-value-does-not-change-when-written",
+    title="BACnet value won't change when written? | Easy BACnet",
+    question="Why doesn't my BACnet value change when I write to it?",
+    description="You wrote a BACnet point and nothing changed. Usually a higher priority is already commanding it, you wrote a value instead of at a priority, or the point is read-only.",
+    answer_html="""<p>You wrote the point, got no error, and nothing moved. In BACnet
+    that almost always means <strong>something at a higher priority is already in
+    command</strong>. A commandable point obeys the highest active slot in its 16-level
+    priority array, so a write at priority 8 does nothing while priority 5 is held. The
+    other possibilities: you wrote at a priority the equipment's logic immediately
+    overrides on its next cycle, you wrote a read-only property, or the write went to
+    the wrong object. Reading the priority array tells you which in one look.</p>""",
+    body_html="""
+  <h2>The priority array is the whole story</h2>
+  <p>A commandable BACnet point does not simply hold the last value written. It has
+  sixteen priority slots, and its Present_Value follows the <em>highest-priority slot
+  that currently has a value</em>. If slot 5 holds 72 and you write 68 at slot 8, the
+  point stays at 72 &mdash; your write landed, it is just being outranked. This is
+  working exactly as designed, and it is the number-one reason a write &ldquo;does
+  nothing.&rdquo; See <a href="bacnet-priority-and-stuck-overrides.html">BACnet priority
+  and stuck overrides</a>.</p>
+
+  <h2>Work through it in order</h2>
+
+  <h3>1. Read the priority array</h3>
+  <p>Look at all sixteen slots. If any slot <em>above</em> the one you wrote holds a
+  value, that is what is winning. Common culprits: a manual override left in slot 8 by
+  a previous technician, or the building program holding a low-numbered slot.</p>
+
+  <h3>2. Decide the right way to win</h3>
+  <p>You can write at a higher priority than the one holding it &mdash; but understand
+  what you are overriding before you do, because you may be fighting the safety logic.
+  Often the correct fix is not to write higher but to <strong>release</strong> the slot
+  that should not be held (write NULL to relinquish it), letting the point fall back to
+  the program.</p>
+
+  <h3>3. Check you wrote at a priority at all</h3>
+  <p>Writing Present_Value as a bare value, with no priority, behaves inconsistently
+  across controllers &mdash; some take it, some ignore it. Write explicitly at a
+  priority (8 is the usual manual slot).</p>
+
+  <h3>4. Rule out read-only and wrong-object</h3>
+  <p>If the point is an input or a non-commandable object, a &ldquo;successful&rdquo;
+  write may have gone nowhere useful &mdash; or returned
+  <a href="bacnet-write-access-denied.html">Write Access Denied</a>. Confirm you are on
+  a commandable output or value object.</p>
+
+  <h3>5. The program rewrites it every cycle</h3>
+  <p>If the value flicks to yours for a second and then snaps back, the controller's
+  own logic is writing that point on its scan at a higher priority. You cannot win that
+  from outside without addressing the program &mdash; and you usually should not.</p>
+
+  <div class="callout">
+  <p><a href="../index.html">Easy BACnet</a> reads the full priority array after every
+  write and shows which slot is in command, so &ldquo;nothing happened&rdquo; becomes
+  &ldquo;priority 5 is holding it&rdquo; &mdash; the difference between guessing and
+  knowing. It also offers a one-tap release to hand a stuck slot back to Auto.</p>
+  </div>
+""",
+    related=[
+        ("guides/bacnet-priority-and-stuck-overrides", "BACnet priority and stuck overrides"),
+        ("guides/how-to-write-to-a-bacnet-point", "How do I write to a BACnet point?"),
+        ("guides/bacnet-write-access-denied", "What does BACnet Write Access Denied mean?"),
+        ("guides/bacnet-object-types-explained", "BACnet object types explained"),
+    ],
+))
+
+GUIDES.append(dict(
+    slug="guides/export-bacnet-points-to-csv",
+    title="Export a BACnet points list to CSV (and EDE) | Easy BACnet",
+    question="How do I export a BACnet points list to CSV, and what is an EDE file?",
+    description="How to get a BACnet device's points out as a CSV you can open in Excel or hand to an integrator — from a phone — and how that relates to the EDE format vendors ask for.",
+    answer_html="""<p>Scan the device, read its points, and export &mdash; a CSV with
+    each object's name, type, instance, present value, units and status is what
+    &ldquo;a points list&rdquo; usually means, and it opens straight in Excel.
+    <a href="../index.html">Easy BACnet</a> does this from a phone and emails you the
+    CSV. An <strong>EDE file</strong> (Engineering Data Exchange) is a more formal,
+    column-standardised spreadsheet that integrators use to import points into a
+    building management system &mdash; the same information, in a fixed layout. For most
+    &ldquo;send me your points&rdquo; requests a clean CSV is exactly what is wanted.</p>""",
+    body_html="""
+  <h2>What people mean by &ldquo;a points list&rdquo;</h2>
+  <p>When a vendor, integrator or analytics provider asks for your points list, they
+  want a table of what exists on the equipment: for each object, its name, what kind of
+  object it is, its number, and usually a live value and units. Unlike Modbus, BACnet
+  devices can be <em>asked</em> what they contain &mdash; so this list can be built by
+  reading the device, not by hunting for a document. See
+  <a href="what-is-a-bacnet-points-list.html">what is a BACnet points list?</a></p>
+
+  <h2>Getting it out as a CSV from a phone</h2>
+  <ol>
+    <li>Join the controls network and <strong>scan</strong> for devices.</li>
+    <li>Choose <strong>Export</strong> &mdash; the app reads every point on every device
+    it found: name, present value, units, status, object type and instance.</li>
+    <li>Your email app opens with a <strong>CSV attached</strong>. You choose who it
+    goes to; nothing is uploaded anywhere.</li>
+  </ol>
+  <p>The columns are the ones an integrator actually needs: Device ID, Device Name,
+  Device IP, Object Type, Object Number, Point Name, Present Value, Units, Status. The
+  full walkthrough is in <a href="how-to-use-easy-bacnet.html">how to use Easy
+  BACnet</a>.</p>
+
+  <h2>CSV versus EDE &mdash; which do they want?</h2>
+  <table>
+    <tr><th></th><th>CSV (from Easy BACnet)</th><th>EDE file</th></tr>
+    <tr><td>What it is</td><td>A plain table of the device's objects and values</td><td>A standardised BACnet spreadsheet with fixed columns for import</td></tr>
+    <tr><td>Opens in Excel</td><td>Yes</td><td>Yes (it is a spreadsheet)</td></tr>
+    <tr><td>Best for</td><td>&ldquo;Show me what's on this device&rdquo;, records, a vendor request, troubleshooting</td><td>Bulk-importing points into a BMS or analytics platform to a fixed schema</td></tr>
+    <tr><td>Contains</td><td>Names, values, units, status, object IDs</td><td>Object name, type, instance, and standard EDE columns (present-value fields, units, COV increment, etc.)</td></tr>
+  </table>
+  <p>EDE (Engineering Data Exchange) is a convention from the BACnet world for moving a
+  point list between tools in a predictable column order. If someone specifically asks
+  for &ldquo;an EDE&rdquo;, they mean that layout. If they just say &ldquo;send me the
+  points&rdquo;, a CSV with clear names and values is what they are after &mdash; and it
+  is trivial to reshape a CSV into an EDE template if they later need one.</p>
+
+  <div class="callout">
+  <p>The value of exporting from the live device is that it is <em>true</em>: it is what
+  the equipment actually reports today, not what a years-old design document claims. A
+  CSV built from a real scan is often the most accurate points list a building has. See
+  <a href="vendor-asking-for-bacnet-information.html">a vendor asked for my BACnet
+  information</a>.</p>
+  </div>
+""",
+    related=[
+        ("guides/what-is-a-bacnet-points-list", "What is a BACnet points list?"),
+        ("guides/how-to-use-easy-bacnet", "How do I use Easy BACnet to scan and read?"),
+        ("guides/vendor-asking-for-bacnet-information", "A vendor asked for my BACnet information"),
+        ("guides/read-bacnet-values-from-phone", "How do I read BACnet values from a phone?"),
+    ],
+))
+
+GUIDES.append(dict(
+    slug="guides/test-bacnet-device-without-bms",
+    title="Test a BACnet device without a BMS | Easy BACnet",
+    question="How do I test a BACnet device without a BMS?",
+    description="You don't need the building management system to prove a BACnet device works. How to discover it, read its points and check control response with just a phone on the network.",
+    answer_html="""<p>You do not need the building management system, a laptop, or the
+    integrator to prove a BACnet device is alive and working. Any BACnet client on the
+    same network can do it &mdash; including <a href="../index.html">Easy BACnet</a> on
+    a phone. Join the network, run a Who-Is, and if the device answers with its name and
+    Device ID it is online and speaking BACnet. Read its points to confirm the sensors
+    report sane values, and &mdash; carefully &mdash; command a commandable point to
+    confirm it responds. That is a full functional check with nothing but a phone.</p>""",
+    body_html="""
+  <h2>Why you can do this without the BMS</h2>
+  <p>BACnet has no login and no single master. Any device on the network can ask any
+  other device questions, which is exactly what a BMS does &mdash; it is just a BACnet
+  client with a nice front end. So a handheld client can perform the same discovery,
+  reads and writes the BMS would, which makes a phone ideal for commissioning checks,
+  startup verification, and &ldquo;is this new controller actually talking?&rdquo;
+  before the BMS is even connected.</p>
+
+  <h2>The test, step by step</h2>
+
+  <h3>1. Prove it is on the network (discovery)</h3>
+  <p>Run a scan. If the device answers a Who-Is with its name, Device ID and IP, it is
+  powered, on the network, and speaking BACnet/IP &mdash; three things confirmed at
+  once. If it does not answer, that is a network or address problem, not necessarily a
+  dead device: see <a href="bacnet-device-shows-offline.html">why does my BACnet device
+  show offline?</a></p>
+
+  <h3>2. Prove the sensors read (inputs)</h3>
+  <p>Open the device and read its input points. Do the values make physical sense &mdash;
+  a room temperature near room temperature, a damper position between 0 and 100%? A
+  point flagged fault or unreliable, or reading an impossible number, points at a sensor
+  or wiring problem on the equipment. This alone catches a lot of commissioning faults.</p>
+
+  <h3>3. Prove it responds to control (outputs)</h3>
+  <p>On a commandable output, write a value at a manual priority and watch what happens
+  &mdash; a valve drives, a fan starts, the feedback point moves. Then <strong>release
+  it</strong> so you do not leave an override behind. This confirms the whole chain: the
+  controller received the command and the actuator obeyed. Do this only where it is safe
+  to move the equipment, and always release afterwards &mdash; see
+  <a href="how-to-write-to-a-bacnet-point.html">how to write to a BACnet point</a> and
+  <a href="bacnet-priority-and-stuck-overrides.html">priority and stuck overrides</a>.</p>
+
+  <h2>What a phone test can and cannot tell you</h2>
+  <ul>
+    <li><strong>Can</strong>: confirm the device is online, that points read sane
+    values, that outputs respond to commands, and capture the whole lot as a
+    <a href="export-bacnet-points-to-csv.html">CSV</a> for a record.</li>
+    <li><strong>Cannot</strong>: reach devices on another subnet without a
+    <a href="what-is-a-bbmd.html">BBMD</a>, or plug straight into an MS/TP trunk &mdash;
+    those go through a router. And it does not replace the BMS's scheduling and trending;
+    it proves the device works, not that the whole sequence is programmed.</li>
+  </ul>
+  <div class="callout">
+  <p>This is the field-tech use Easy BACnet is built for: walk up to a new or suspect
+  controller with a phone, prove in two minutes whether it is the device, the network or
+  the program at fault, and leave a CSV behind &mdash; no BMS access required.</p>
+  </div>
+""",
+    related=[
+        ("guides/read-bacnet-values-from-phone", "How do I read BACnet values from a phone?"),
+        ("guides/bacnet-device-shows-offline", "Why does my BACnet device show offline?"),
+        ("guides/how-to-write-to-a-bacnet-point", "How do I write to a BACnet point?"),
+        ("guides/export-bacnet-points-to-csv", "How do I export a BACnet points list to CSV?"),
+    ],
+))
+
+GUIDES.append(dict(
+    slug="guides/best-free-bacnet-explorer",
+    title="Best free BACnet explorer tools | Easy BACnet",
+    question="What is the best free BACnet explorer tool?",
+    description="The free BACnet explorers compared — YABE, CAS BACnet Explorer, the Contemporary Controls BDT and Wacnet — plus where a free phone-based option fits for fieldwork.",
+    answer_html="""<p>For a Windows desk, the established free choices are
+    <strong>YABE</strong> (Yet Another BACnet Explorer, open source), the
+    <strong>Contemporary Controls BACnet Discovery Tool (BDT)</strong>, Chipkin's
+    <strong>CAS BACnet Explorer</strong>, and <strong>Wacnet</strong>. They are capable
+    and worth having. What none of them is, is a tool you can carry &mdash; they are all
+    Windows programs. For discovering and reading BACnet from the plant room on the
+    device in your pocket, <a href="../index.html">Easy BACnet</a> fills the gap the
+    desktop explorers leave open, and it writes as well as reads.</p>""",
+    body_html="""
+  <h2>The free desktop explorers</h2>
+  <table>
+    <tr><th>Tool</th><th>Platform</th><th>Reads</th><th>Writes</th><th>Notes</th></tr>
+    <tr><td>YABE</td><td>Windows</td><td>Yes</td><td>Yes</td><td>Open source, very capable, technical interface. The default &ldquo;free explorer&rdquo; answer.</td></tr>
+    <tr><td>CAS BACnet Explorer</td><td>Windows</td><td>Yes</td><td>Yes</td><td>Polished, free tier, from Chipkin. Good for commissioning.</td></tr>
+    <tr><td>Contemporary Controls BDT</td><td>Windows</td><td>Yes</td><td>No</td><td>Free discovery/read tool; read-only. Download is behind a form.</td></tr>
+    <tr><td>Wacnet</td><td>Windows/Java</td><td>Yes</td><td>Yes</td><td>Open source, single-JAR, quick to stand up.</td></tr>
+    <tr><td>Easy BACnet</td><td>Android (phone/tablet)</td><td>Yes</td><td>Yes</td><td>Free; discovery, read, write with priority safety, CSV export &mdash; in the field.</td></tr>
+  </table>
+
+  <h2>How to choose</h2>
+  <ul>
+    <li><strong>You are at a Windows desk and want the deepest free tool:</strong> YABE
+    or CAS BACnet Explorer. YABE if you like open source and don't mind a dense UI; CAS
+    if you want something more polished.</li>
+    <li><strong>You just want to discover devices on a Windows laptop:</strong> the
+    Contemporary Controls BDT is purpose-built for that &mdash; but it is read-only, so
+    it will not command a point.</li>
+    <li><strong>You want to check equipment where it lives, without a laptop:</strong>
+    that is the phone case, and it is the one the desktop tools cannot serve. Easy BACnet
+    discovers, reads live values, writes with a priority array and release, and exports a
+    <a href="export-bacnet-points-to-csv.html">CSV</a> &mdash; from the network you are
+    already standing on.</li>
+  </ul>
+
+  <div class="callout">
+  <p>These are not either/or. Many people keep YABE or CAS on the laptop for deep desk
+  work and use a phone tool for the walk-around &mdash; discovery, a quick read, a
+  careful override and release, a CSV for the file. The desktop explorers are strong;
+  the open niche is <em>portable</em>, and that is where a phone wins. See
+  <a href="bacnet-scanner-app-android.html">is there a BACnet scanner app for
+  Android?</a></p>
+  </div>
+
+  <h2>A note on &ldquo;free&rdquo;</h2>
+  <p>Watch what &ldquo;free&rdquo; includes. Some free tools read but do not write; some
+  gate the download behind a lead form; some are free for personal use only. Easy BACnet
+  is free to scan, read, write and export; a one-time purchase only lifts the limit on
+  saved custom control panels. Reading and commissioning a device costs nothing.</p>
+""",
+    related=[
+        ("guides/bacnet-scanner-app-android", "Is there a BACnet scanner app for Android?"),
+        ("guides/read-bacnet-values-from-phone", "How do I read BACnet values from a phone?"),
+        ("guides/how-to-use-easy-bacnet", "How do I use Easy BACnet to scan and read?"),
+        ("guides/test-bacnet-device-without-bms", "How do I test a BACnet device without a BMS?"),
     ],
 ))
 
