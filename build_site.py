@@ -2131,6 +2131,201 @@ GUIDES.append(dict(
     ],
 ))
 
+# ---------------------------------------------------------------------------
+# Free interactive tools (link magnets; generated, schema-marked)
+# ---------------------------------------------------------------------------
+
+TOOLS = []
+
+TOOL_CSS_EXTRA = """
+  .tool { background:var(--box); border:1px solid var(--line); border-radius:14px;
+          padding:1.3rem 1.4rem; margin:1.75rem 0; }
+  .tool label { display:block; font-family:"IBM Plex Mono",ui-monospace,monospace;
+                font-size:.72rem; text-transform:uppercase; letter-spacing:.12em;
+                color:var(--accent); margin:.9rem 0 .3rem; }
+  .tool input, .tool select { width:100%; padding:.6rem .7rem; font-size:1rem;
+                font-family:"IBM Plex Mono",ui-monospace,monospace; color:var(--fg);
+                background:var(--code); border:1px solid var(--line); border-radius:8px; }
+  .tool .row { display:flex; gap:1rem; flex-wrap:wrap; }
+  .tool .row > div { flex:1 1 160px; }
+  .tool button { margin-top:1.1rem; padding:.6rem 1.2rem; font-family:"Archivo",sans-serif;
+                font-weight:700; text-transform:uppercase; letter-spacing:.03em; font-size:.85rem;
+                color:var(--ink); background:var(--accent); border:none; border-radius:8px;
+                cursor:pointer; }
+  .tool table { margin:1.3rem 0 0; }
+  .tool .out-note { color:var(--muted); font-size:.85rem; margin-top:.8rem; }
+  .tool hr { border:none; border-top:1px solid var(--line); margin:1.8rem 0; }
+"""
+
+
+def tool_page(slug, title, question, description, intro_html, tool_html, related):
+    """A standalone interactive tool page, rendered with .replace() so JavaScript in
+    tool_html is safe. Carries SoftwareApplication + BreadcrumbList JSON-LD."""
+    rel = ""
+    if related:
+        items = "\n".join(
+            '      <li><a href="%s.html">%s</a></li>' % (r[0], r[1]) for r in related
+        )
+        rel = ('\n  <nav class="more">\n    <h2>Related</h2>\n    <ul>\n' + items +
+               '\n    </ul>\n  </nav>')
+    jsonld = ('{"@context":"https://schema.org","@graph":['
+              '{"@type":"SoftwareApplication","name":' + jstr(question) +
+              ',"applicationCategory":"UtilitiesApplication","operatingSystem":"Any (web browser)"'
+              ',"offers":{"@type":"Offer","price":"0","priceCurrency":"USD"}'
+              ',"description":' + jstr(description) + '},'
+              '{"@type":"BreadcrumbList","itemListElement":['
+              '{"@type":"ListItem","position":1,"name":"Home","item":"' + BASE_URL + '/index.html"},'
+              '{"@type":"ListItem","position":2,"name":' + jstr(question) +
+              ',"item":"' + BASE_URL + '/' + slug + '.html"}]}]}')
+    return (TOOL_TEMPLATE
+            .replace("{{TITLE}}", title)
+            .replace("{{DESC}}", description)
+            .replace("{{BASE}}", BASE_URL)
+            .replace("{{SLUG}}", slug)
+            .replace("{{CSS}}", CSS + TOOL_CSS_EXTRA)
+            .replace("{{JSONLD}}", jsonld)
+            .replace("{{H1}}", question)
+            .replace("{{UPDATED}}", UPDATED_HUMAN)
+            .replace("{{INTRO}}", intro_html)
+            .replace("{{TOOL}}", tool_html)
+            .replace("{{REL}}", rel))
+
+
+TOOL_TEMPLATE = """<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<link rel="icon" type="image/svg+xml" href="icon.svg">
+<title>{{TITLE}}</title>
+<meta name="description" content="{{DESC}}">
+<link rel="canonical" href="{{BASE}}/{{SLUG}}.html">
+<meta name="robots" content="index, follow">
+<meta name="theme-color" content="#14171a">
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="Easy BACnet">
+<meta property="og:title" content="{{TITLE}}">
+<meta property="og:description" content="{{DESC}}">
+<meta property="og:url" content="{{BASE}}/{{SLUG}}.html">
+<meta property="og:image" content="{{BASE}}/img/og-image.png">
+<meta name="twitter:card" content="summary_large_image">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Archivo:wght@600;800;900&family=Manrope:wght@400;500;600;700&family=IBM+Plex+Mono:wght@500;600&display=swap" rel="stylesheet">
+<style>{{CSS}}</style>
+<script type="application/ld+json">
+{{JSONLD}}
+</script>
+</head>
+<body>
+
+<header class="site">
+  <a href="index.html" style="display:inline-flex;align-items:center;gap:.5rem;text-decoration:none"><img src="icon.svg" alt="" width="26" height="26" style="border-radius:6px"><span>Easy BACnet</span></a>
+  <span class="muted">&middot; free BACnet tools</span>
+</header>
+
+<article>
+  <h1>{{H1}}</h1>
+  <p class="updated">Free browser tool &middot; nothing is uploaded &middot; updated {{UPDATED}}</p>
+  {{INTRO}}
+  {{TOOL}}
+</article>{{REL}}
+
+<footer>
+  <p>Published alongside <a href="index.html">Easy BACnet</a>, a free Android app that
+  scans a building network for BACnet/IP devices, reads and commands their points, and
+  exports a CSV. This tool runs entirely in your browser.</p>
+  <p><a href="terms.html">Terms of use</a> &middot; <a href="privacy.html">Privacy policy</a></p>
+</footer>
+
+</body>
+</html>
+"""
+
+TOOLS.append(dict(
+    slug="bacnet-object-id-decoder",
+    title="BACnet Object Identifier decoder | Easy BACnet",
+    question="BACnet Object Identifier decoder",
+    description="Encode or decode a BACnet Object Identifier: turn an object type and instance into the 32-bit number, or decode a raw number back into its type and instance. Free browser tool.",
+    intro_html="""<p>A BACnet Object Identifier packs an <strong>object type</strong> and
+    an <strong>instance number</strong> into a single 32-bit value &mdash; the top 10
+    bits are the type, the bottom 22 bits are the instance. This tool goes both ways:
+    pick a type and instance to get the encoded number, or paste a raw Object Identifier
+    to see what it means. Background: <a href="guides/what-is-a-bacnet-points-list.html">what
+    is a BACnet points list?</a> and <a href="guides/bacnet-object-types-explained.html">BACnet
+    object types explained</a>.</p>""",
+    tool_html="""
+  <div class="tool">
+    <strong style="font-family:'Archivo',sans-serif">Encode &mdash; type + instance to number</strong>
+    <div class="row">
+      <div><label for="otype">Object type</label><select id="otype"></select></div>
+      <div><label for="oinst">Instance (0&ndash;4194303)</label><input id="oinst" value="7" inputmode="numeric"></div>
+    </div>
+    <button onclick="encId()">Encode</button>
+    <table id="eout" style="display:none"><tbody id="ebody"></tbody></table>
+    <p class="out-note" id="enote"></p>
+    <hr>
+    <strong style="font-family:'Archivo',sans-serif">Decode &mdash; number to type + instance</strong>
+    <label for="oraw">Object Identifier (decimal or 0x hex)</label>
+    <input id="oraw" value="8388615" inputmode="text">
+    <button onclick="decId()">Decode</button>
+    <table id="dout" style="display:none"><tbody id="dbody"></tbody></table>
+    <p class="out-note" id="dnote"></p>
+  </div>
+<script>
+var OT={0:'Analog Input',1:'Analog Output',2:'Analog Value',3:'Binary Input',
+4:'Binary Output',5:'Binary Value',6:'Calendar',7:'Command',8:'Device',
+9:'Event Enrollment',10:'File',11:'Group',12:'Loop',13:'Multi-state Input',
+14:'Multi-state Output',15:'Notification Class',16:'Program',17:'Schedule',
+18:'Averaging',19:'Multi-state Value',20:'Trend Log',21:'Life Safety Point',
+22:'Life Safety Zone',23:'Accumulator',24:'Pulse Converter',25:'Event Log',
+27:'Trend Log Multiple',28:'Load Control',29:'Structured View',30:'Access Door',
+36:'Access User',39:'BitString Value',40:'CharacterString Value',
+45:'Integer Value',46:'Large Analog Value',49:'Positive Integer Value',
+56:'Network Port'};
+var MAXI=4194303;
+function tname(t){return OT[t]?OT[t]:'Type '+t+' (proprietary or less common)';}
+function row(k,v){return '<tr><th>'+k+'</th><td>'+v+'</td></tr>';}
+(function(){var s=document.getElementById('otype');var keys=Object.keys(OT).map(Number).sort(function(a,b){return a-b;});
+for(var i=0;i<keys.length;i++){var o=document.createElement('option');o.value=keys[i];o.textContent=keys[i]+' — '+OT[keys[i]];if(keys[i]===0){o.selected=true;}s.appendChild(o);}})();
+function encId(){
+  var t=parseInt(document.getElementById('otype').value,10);
+  var inst=parseInt((document.getElementById('oinst').value||'').trim(),10);
+  var note=document.getElementById('enote');var out=document.getElementById('eout');
+  if(isNaN(inst)||inst<0||inst>MAXI){note.textContent='Instance must be between 0 and 4194303.';out.style.display='none';return;}
+  var id=t*4194304+inst;
+  document.getElementById('ebody').innerHTML=
+    row('Object',tname(t)+', instance '+inst)
+    +row('Object Identifier (decimal)',id)
+    +row('Object Identifier (hex)','0x'+id.toString(16).toUpperCase())
+    +row('How it splits','type '+t+' &laquo; 22  |  instance '+inst);
+  out.style.display='';note.textContent='';
+}
+function decId(){
+  var s=(document.getElementById('oraw').value||'').trim().toLowerCase();
+  var note=document.getElementById('dnote');var out=document.getElementById('dout');
+  var n;
+  if(s.indexOf('0x')===0){n=parseInt(s.slice(2),16);}else{n=parseInt(s,10);}
+  if(isNaN(n)||n<0||n>4294967295){note.textContent='Enter a number between 0 and 4294967295 (0xFFFFFFFF).';out.style.display='none';return;}
+  var t=Math.floor(n/4194304);var inst=n-t*4194304;
+  var extra=(t===1023&&inst===MAXI)?' &mdash; this is the &ldquo;uninitialized&rdquo; value':'';
+  document.getElementById('dbody').innerHTML=
+    row('Object type',t+' &mdash; '+tname(t))
+    +row('Instance number',inst+extra)
+    +row('Reads as',tname(t)+', instance '+inst);
+  out.style.display='';note.textContent='';
+}
+window.addEventListener('DOMContentLoaded',function(){encId();decId();});
+</script>
+""",
+    related=[
+        ("guides/bacnet-object-types-explained", "BACnet object types explained"),
+        ("guides/what-is-a-bacnet-points-list", "What is a BACnet points list?"),
+        ("guides/bacnet-device-id-explained", "What is a BACnet Device ID?"),
+        ("guides/bacnet-scanner-app-android", "Is there a BACnet scanner app for Android?"),
+    ],
+))
+
 INDEX = """<!doctype html>
 <html lang="en">
 <head>
@@ -2356,6 +2551,16 @@ footer a{color:var(--mut); text-decoration:underline}
 
 <section class="band">
   <div class="wrap">
+    <h2>Free tools</h2>
+    <p>Quick browser calculators &mdash; nothing is uploaded.</p>
+    <ul class="linklist">
+{{TOOLS}}
+    </ul>
+  </div>
+</section>
+
+<section class="band">
+  <div class="wrap">
     <h2>Guides</h2>
     <ul class="linklist">
 {{GUIDES}}
@@ -2403,15 +2608,32 @@ def main():
             ),
         )
 
+    for t in TOOLS:
+        write(
+            t["slug"] + ".html",
+            tool_page(
+                t["slug"], t["title"], t["question"], t["description"],
+                t["intro_html"], t["tool_html"], t["related"],
+            ),
+        )
+
     links = "\n".join(
         '  <li><a href="%s.html">%s</a><br><span class="muted">%s</span></li>'
         % (g["slug"], g["question"], g["description"].split(".")[0] + ".")
         for g in GUIDES
     )
-    write("index.html", INDEX.replace("{{BASE}}", BASE_URL).replace("{{GUIDES}}", links))
+    tool_links = "\n".join(
+        '  <li><a href="%s.html">%s</a><br><span class="muted">%s</span></li>'
+        % (t["slug"], t["question"], t["description"].split(".")[0] + ".")
+        for t in TOOLS
+    )
+    write("index.html", INDEX.replace("{{BASE}}", BASE_URL)
+          .replace("{{TOOLS}}", tool_links).replace("{{GUIDES}}", links))
 
     # sitemap + robots so crawlers and agents can enumerate the whole set
-    urls = ["index.html", "privacy.html"] + [g["slug"] + ".html" for g in GUIDES]
+    urls = (["index.html", "privacy.html"]
+            + [t["slug"] + ".html" for t in TOOLS]
+            + [g["slug"] + ".html" for g in GUIDES])
     sm = ['<?xml version="1.0" encoding="UTF-8"?>',
           '<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">']
     for u in urls:
@@ -2460,7 +2682,11 @@ def main():
     llms = ["# Easy BACnet",
             "Free Android app to scan a network for BACnet/IP devices, read and command their points by priority, build control panels, and export a CSV. Plus plain-English BACnet guides.",
             "",
-            "## Guides"]
+            "## Free tools"]
+    for t in TOOLS:
+        llms.append("- %s: %s/%s.html" % (html_module.unescape(t["question"]), BASE_URL, t["slug"]))
+    llms.append("")
+    llms.append("## Guides")
     for g in GUIDES:
         llms.append("- %s: %s/%s.html" % (html_module.unescape(g["question"]), BASE_URL, g["slug"]))
     llms.append("- Easy BACnet home: %s/index.html" % BASE_URL)
