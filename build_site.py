@@ -26,6 +26,47 @@ UPDATED_HUMAN = "18 September 2026"  # for the visible "Updated" line
 
 HERE = os.path.dirname(os.path.abspath(__file__))
 
+# Google Analytics 4 measurement ID for easybacnet.com (GA4 property under
+# tim.bruhn89 "Default Account for Firebase", created 2026-09-20).
+GA_MEASUREMENT_ID = "G-BH9W9B8YRJ"
+
+# GA4 with Consent Mode v2. Analytics storage defaults to DENIED and only
+# loads gtag/config after the visitor accepts the cookie banner (GDPR/ePrivacy).
+# Self-contained (own <style>, own banner DOM) so it can be dropped into any
+# page after the <meta charset> line. IP anonymisation is on; no ad signals.
+ANALYTICS = ("""
+<!-- Google Analytics 4 (Consent Mode v2) — analytics cookies gated by the banner -->
+<script>
+(function(){
+  var ID="%(ga)s", KEY="ga-consent", P="%(privacy)s";
+  window.dataLayer=window.dataLayer||[];function gtag(){dataLayer.push(arguments);}window.gtag=gtag;
+  gtag('js',new Date());
+  gtag('consent','default',{ad_storage:'denied',ad_user_data:'denied',ad_personalization:'denied',analytics_storage:'denied',wait_for_update:500});
+  var v=null;try{v=localStorage.getItem(KEY);}catch(e){}
+  function load(){if(window.__ga)return;window.__ga=1;var s=document.createElement('script');s.async=true;s.src='https://www.googletagmanager.com/gtag/js?id='+ID;document.head.appendChild(s);gtag('config',ID,{anonymize_ip:true});}
+  function grant(){gtag('consent','update',{analytics_storage:'granted'});load();}
+  if(v==='granted'){grant();}
+  function banner(){
+    if(v==='granted'||v==='denied')return;
+    var d=document.createElement('div');d.className='cookie-consent';
+    d.innerHTML='<p>We use Google Analytics to understand which guides help. No ads, no cross-site tracking. <a href="'+P+'">Privacy policy</a>.</p><div class="cc-row"><button type="button" id="cc-no">Decline</button><button type="button" id="cc-yes">Accept</button></div>';
+    document.body.appendChild(d);
+    d.querySelector('#cc-yes').onclick=function(){try{localStorage.setItem(KEY,'granted');}catch(e){}grant();d.remove();};
+    d.querySelector('#cc-no').onclick=function(){try{localStorage.setItem(KEY,'denied');}catch(e){}d.remove();};
+  }
+  if(document.readyState==='loading'){document.addEventListener('DOMContentLoaded',banner);}else{banner();}
+})();
+</script>
+<style>
+.cookie-consent{position:fixed;left:1rem;right:1rem;bottom:1rem;max-width:660px;margin:0 auto;z-index:9999;background:#1d2227;color:#f3f5f6;border:1px solid #2f363d;border-radius:12px;padding:1rem 1.15rem;box-shadow:0 14px 44px rgba(0,0,0,.55);font-family:"Manrope",system-ui,-apple-system,"Segoe UI",Roboto,Arial,sans-serif;font-size:.92rem;line-height:1.5}
+.cookie-consent p{margin:0 0 .8rem}
+.cookie-consent a{color:#ff9a1f}
+.cookie-consent .cc-row{display:flex;gap:.6rem;justify-content:flex-end}
+.cookie-consent button{font:inherit;font-weight:700;padding:.5rem 1.15rem;border-radius:8px;border:1px solid #3a424c;background:transparent;color:#f3f5f6;cursor:pointer}
+.cookie-consent #cc-yes{background:#ff9a1f;border-color:#ff9a1f;color:#0d0f11}
+</style>
+""" % {"ga": GA_MEASUREMENT_ID, "privacy": BASE_URL + "/privacy.html"})
+
 CSS = """
   :root { color-scheme: dark; --fg:#f3f5f6; --bg:#14171a; --muted:#9aa4ad;
           --accent:#ff9a1f; --box:#1d2227; --line:#2f363d; --code:#101418; --ink:#0d0f11; }
@@ -261,6 +302,14 @@ def jstr(s):
 
 
 def write(relpath, content):
+    # Inject the analytics + consent banner into every HTML page, right after
+    # the charset meta so it never pushes charset past the first 1 KB.
+    if "<head>" in content and "googletagmanager" not in content:
+        marker = '<meta charset="utf-8">'
+        if marker in content:
+            content = content.replace(marker, marker + ANALYTICS, 1)
+        else:
+            content = content.replace("<head>", "<head>" + ANALYTICS, 1)
     full = os.path.join(HERE, relpath)
     os.makedirs(os.path.dirname(full), exist_ok=True)
     io.open(full, "w", encoding="utf-8", newline="\n").write(content)
@@ -1296,16 +1345,183 @@ GUIDES.append(dict(
     again to confirm it is still there.</li>
   </ul>
 
-  <h2>Still stuck?</h2>
-  <p>Note the Device ID or point you were after and tell whoever looks after the
-  building system. Almost every "can't find it" comes down to which network the
-  phone is on, and they will know the answer for their site in seconds.</p>
+  <h2>Two self-checks that pin down the problem</h2>
+  <p>Before you call anyone, two quick tests will tell you whether you are looking at a
+  network problem or a BACnet problem &mdash; and save a lot of back-and-forth.</p>
+  <ul>
+    <li><strong>Add the device by its IP directly.</strong> A scan uses a broadcast;
+    adding a device by its exact IP is a directed read that skips the broadcast entirely.
+    If a directed read works when a scan doesn't, the device is fine and you have a
+    broadcast/subnet problem &mdash; often a missing <a href="what-is-a-bbmd.html">BBMD</a>.</li>
+    <li><strong>Ping the device's IP.</strong> Find its address from the switch, the
+    equipment label or the controls contractor, and ping it from a laptop on the same
+    network. If it <em>doesn't</em> ping, the fault is the network path, not BACnet. If
+    it <em>does</em> ping but no BACnet tool sees it, the device is online and the
+    problem is BACnet-specific &mdash; a blocked port, the wrong port, or a
+    configuration issue. Our
+    <a href="is-my-bacnet-device-online-ping-test.html">is my BACnet device actually
+    online?</a> guide walks through the test and what each result means.</li>
+  </ul>
+
+  <h2>Still stuck? Here's who to contact</h2>
+  <p>Once those checks point you at network versus BACnet, a short call to the right
+  provider is the next step. Use the symptom to decide which one &mdash; contacting the
+  wrong trade is the most common reason these issues drag on.</p>
+
+  <h3>Contact your IT / network provider if&hellip;</h3>
+  <p>The problem is <strong>reaching the equipment on the network</strong>. This is
+  the right call when a scan finds nothing at all, when you suspect you are on a
+  guest Wi-Fi or the <a href="subnets.html">wrong subnet</a>, or when some devices
+  answer but others appear to be blocked by a firewall or VLAN. They own the wiring,
+  switches, Wi-Fi and IP addressing &mdash; they can confirm which network the
+  controls live on and get your phone onto it.</p>
+  <p><strong>Have ready:</strong> your phone's IP address and subnet mask (the app
+  shows these when a scan finds nothing), and which switch or network jack you are
+  plugged into.</p>
+
+  <h3>Contact your controls / BMS provider if&hellip;</h3>
+  <p>The app <strong>can reach the device, but the points or values are wrong</strong>.
+  This is the right call when a device shows up but is unconfigured or has a duplicate
+  <a href="bacnet-device-id-explained.html">Device ID</a>, when expected points are
+  missing after commissioning, when a value reads correctly but nothing acts on it, or
+  when you suspect the devices are MS/TP controllers that
+  <a href="does-easy-bacnet-support-mstp-rs485.html">haven't been routed onto IP</a>.
+  This is the company that programmed and commissioned the control system.</p>
+  <p><strong>Have ready:</strong> the Device ID, name and IP from the scan, the point
+  name and what it is doing, and what you expected versus what you saw. Exporting the
+  scan as a CSV and attaching it is often the fastest way to
+  <a href="vendor-asking-for-bacnet-information.html">give them what they need</a>.</p>
+
+  <h3>Contact your HVAC / mechanical provider if&hellip;</h3>
+  <p>The app reads a point correctly but <strong>the physical equipment isn't
+  behaving</strong> &mdash; a fan or pump that won't run, no heating or cooling, or a
+  unit that has mechanically tripped. Easy BACnet can confirm the controller is
+  reachable and reporting; the machine itself is their domain.</p>
+
+  <p>Not sure which of the three it is? Our
+  <a href="who-to-call-it-hvac-or-controls.html">who do I call &mdash; IT, HVAC, or
+  controls/BMS?</a> guide walks through each symptom in more detail and lists exactly
+  what to have ready so the call is short.</p>
 """,
     related=[
-        ("guides/why-cant-i-find-my-bacnet-devices", "Why can't I find my BACnet IP devices?"),
+        ("guides/is-my-bacnet-device-online-ping-test", "Is my BACnet device actually online? Ping it first"),
         ("guides/who-to-call-it-hvac-or-controls", "Who do I call &mdash; IT, HVAC, or controls/BMS?"),
-        ("guides/how-to-use-easy-bacnet", "How do I get a BACnet IP points list?"),
+        ("guides/why-cant-i-find-my-bacnet-devices", "Why can't I find my BACnet IP devices?"),
         ("guides/bacnet-device-id-explained", "BACnet Device IDs explained"),
+    ],
+))
+
+GUIDES.append(dict(
+    slug="guides/is-my-bacnet-device-online-ping-test",
+    title="Is my BACnet device actually online? Ping it first | Easy BACnet",
+    question="How do I tell if a BACnet device is really online before blaming the app?",
+    description="A hands-on test that separates a network problem from a BACnet problem: find the device's IP, ping it, then try a directed read. What each result means, and who to call once you know.",
+    answer_html="""<p>Find the device's IP address and <strong>ping it</strong>. A ping
+    tests the plain network path, with no BACnet involved. If the ping <strong>fails</strong>,
+    the device is unreachable on the network &mdash; a wrong subnet, a firewall, a bad
+    cable or a wrong IP &mdash; and no BACnet tool will find it until that is fixed. If
+    the ping <strong>succeeds but Easy BACnet still can't see it</strong>, the device is
+    powered and on the network but its BACnet isn't answering your discovery &mdash; a
+    very different problem with its own short list of causes. That one test tells you
+    which half of the world to look in.</p>""",
+    body_html="""
+  <h2>Why ping first</h2>
+  <p>A BACnet scan can fail for a dozen reasons, and most of them are not the device.
+  A ping strips all of that away: it asks one question &mdash; <em>can any packet reach
+  this address and come back?</em> &mdash; without touching BACnet at all. Knowing the
+  answer to that before anything else stops you chasing a controls problem that is
+  really a network problem, or vice versa.</p>
+
+  <h2>Step 1 &mdash; find the device's IP address</h2>
+  <p>You need the actual IP of the controller. Common places to get it:</p>
+  <ul>
+    <li><strong>From Easy BACnet itself</strong>, if the device shows up in a scan at
+    all &mdash; the IP is listed under the device name alongside its
+    <a href="bacnet-device-id-explained.html">Device ID</a>. (If it shows up, ping is
+    moot; skip to the reads.)</li>
+    <li><strong>From the equipment label or commissioning sheet.</strong> Controllers
+    are often labelled with their IP, or it is in the project's points list.</li>
+    <li><strong>From the network switch or router.</strong> Its DHCP lease table or ARP
+    table lists every device and its IP &mdash; ask whoever runs the network to read it
+    off, or check the router's admin page. This is exactly the &ldquo;look for the IP
+    from the network equipment&rdquo; step.</li>
+    <li><strong>From the BMS front end or the controls contractor</strong>, who will
+    have it on record.</li>
+  </ul>
+
+  <h2>Step 2 &mdash; ping it</h2>
+  <p>Ping from a device on the <em>same network</em> as the controller &mdash; a laptop
+  plugged into the controls switch is ideal. On a laptop, open a terminal or command
+  prompt and type <code>ping</code> followed by the address, e.g.
+  <code>ping 10.20.30.41</code>. On a phone, a free ping/network-tools app does the
+  same. You are looking for replies rather than &ldquo;request timed out&rdquo; or
+  &ldquo;destination unreachable&rdquo;.</p>
+
+  <h2>Step 3 &mdash; read the result</h2>
+
+  <h3>The ping fails (timeouts, or unreachable)</h3>
+  <p>The device is <strong>not reachable on the network</strong>, and this is not a
+  BACnet issue yet. Likely causes:</p>
+  <ul>
+    <li>You are on a <a href="subnets.html">different subnet</a> with no route to it &mdash;
+    the most common one. Get onto the controls network and ping again.</li>
+    <li>A firewall or VLAN is blocking the path (some also block ping specifically &mdash;
+    see below).</li>
+    <li>The IP is wrong, or the device has changed address on DHCP.</li>
+    <li>A physical problem &mdash; unplugged cable, dead switch port, or the unit is
+    powered down.</li>
+  </ul>
+  <p>This is an <strong>IT / network</strong> problem. Once a ping succeeds, come back
+  and scan again.</p>
+
+  <h3>The ping succeeds, but Easy BACnet still can't see it</h3>
+  <p>This is the useful case, and the one people miss: <strong>the device is online at
+  the network level, but its BACnet is not answering your discovery.</strong> The
+  hardware is fine; something specific to BACnet is in the way:</p>
+  <ul>
+    <li><strong>The Who-Is broadcast isn't reaching it.</strong> Ping is directed at one
+    address; discovery is a broadcast, and broadcasts are dropped or don't cross routers.
+    <strong>Try adding the device by its IP directly</strong> in the app (a directed
+    read rather than a broadcast). If a directed read works, the device is fine and you
+    have a broadcast/subnet problem &mdash; you likely need a
+    <a href="what-is-a-bbmd.html">BBMD</a>. See also
+    <a href="why-cant-i-find-my-bacnet-devices.html">why can't I find my BACnet
+    devices</a>.</li>
+    <li><strong>It's on a non-standard UDP port.</strong> BACnet/IP is usually UDP
+    47808, but sites running multiple networks over one wire use 47809 and up. Ping
+    doesn't care about ports; BACnet does. See
+    <a href="what-port-does-bacnet-use.html">what port does BACnet use</a>.</li>
+    <li><strong>A firewall allows ping but blocks 47808.</strong> ICMP (ping) and UDP
+    47808 (BACnet) are separate rules; it is common to permit one and block the other.</li>
+    <li><strong>The device's BACnet service is disabled, mis-instanced, or has a
+    <a href="bacnet-device-id-explained.html">duplicate Device ID</a></strong> &mdash; it
+    answers on the network but not as the BACnet device you expect.</li>
+    <li><strong>It's an MS/TP device</strong> behind a router that pings at its IP but
+    whose trunk isn't being routed onto IP. Easy BACnet is
+    <a href="does-easy-bacnet-support-mstp-rs485.html">BACnet IP only</a>.</li>
+  </ul>
+  <p>The first three are usually <strong>IT / network</strong>; the last two are your
+  <strong>controls / BMS</strong> provider. Either way you now know it is a BACnet
+  configuration problem, not dead hardware.</p>
+
+  <h3>The device pings and answers BACnet, but shows no points (or no values)</h3>
+  <p>Communication is fine; the device is just slow to enumerate, is refusing property
+  reads, or genuinely exposes very little. Work through
+  <a href="cant-find-what-im-looking-for.html">the app can't find what I'm looking
+  for</a>.</p>
+
+  <h2>What this buys you on the phone</h2>
+  <p>A clean ping plus a failed scan is the single most useful sentence you can give a
+  provider: <em>&ldquo;10.20.30.41 pings fine from a laptop on the controls switch, but
+  no BACnet tool sees it.&rdquo;</em> That rules out the network path and the hardware in
+  one line and points straight at BACnet configuration &mdash; so the person you call
+  starts three steps ahead.</p>
+""",
+    related=[
+        ("guides/cant-find-what-im-looking-for", "The app can&rsquo;t find what I&rsquo;m looking for"),
+        ("guides/why-cant-i-find-my-bacnet-devices", "Why can't I find my BACnet IP devices?"),
+        ("guides/bacnet-device-shows-offline", "Why does my BACnet IP device show offline?"),
+        ("guides/who-to-call-it-hvac-or-controls", "Who do I call &mdash; IT, HVAC, or controls/BMS?"),
     ],
 ))
 
