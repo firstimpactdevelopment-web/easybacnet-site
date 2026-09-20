@@ -16,6 +16,7 @@ URL is known. Everything else is relative.
 
 import io
 import os
+import re
 import html as html_module
 
 BASE_URL = "https://easybacnet.com"
@@ -65,7 +66,7 @@ ANALYTICS = ("""
 .cookie-consent button{font:inherit;font-weight:700;padding:.5rem 1.15rem;border-radius:8px;border:1px solid #3a424c;background:transparent;color:#f3f5f6;cursor:pointer}
 .cookie-consent #cc-yes{background:#ff9a1f;border-color:#ff9a1f;color:#0d0f11}
 </style>
-""" % {"ga": GA_MEASUREMENT_ID, "privacy": BASE_URL + "/privacy.html"})
+""" % {"ga": GA_MEASUREMENT_ID, "privacy": BASE_URL + "/privacy"})
 
 CSS = """
   :root { color-scheme: dark; --fg:#f3f5f6; --bg:#14171a; --muted:#9aa4ad;
@@ -301,6 +302,34 @@ def jstr(s):
     return '"' + s.replace("\\", "\\\\").replace('"', '\\"') + '"'
 
 
+def _to_clean_url(u):
+    # Cloudflare Pages serves extensionless clean URLs and 301-redirects any
+    # ".html" to them. So every internal URL we emit — links, canonical, og:url,
+    # breadcrumb items, sitemap <loc> — must be the extensionless form, or it
+    # points at a redirect (Google Search Central: link consistently to the
+    # canonical URL and keep sitemaps/canonicals in agreement). Same-site and
+    # relative URLs only; external hosts (e.g. easymodbus.com) are left alone.
+    if u.startswith(("http://", "https://")) and "easybacnet.com" not in u:
+        return u
+    if u.startswith(("mailto:", "tel:", "#", "javascript:", "data:")):
+        return u
+    u = re.sub(r'index\.html(?=$|[#?])', "", u)   # ".../index.html" -> ".../"
+    u = re.sub(r'\.html(?=$|[#?])', "", u)          # ".../page.html"  -> ".../page"
+    return u or "/"                                  # bare "index.html" -> "/"
+
+
+def _clean_internal_urls(text):
+    text = re.sub(r'href="([^"]*)"',
+                  lambda m: 'href="%s"' % _to_clean_url(m.group(1)), text)
+    text = re.sub(r'(<meta property="og:url" content=")([^"]*)(")',
+                  lambda m: m.group(1) + _to_clean_url(m.group(2)) + m.group(3), text)
+    text = re.sub(r'("item":\s*")([^"]*)(")',
+                  lambda m: m.group(1) + _to_clean_url(m.group(2)) + m.group(3), text)
+    text = re.sub(r'(<loc>)([^<]*)(</loc>)',
+                  lambda m: m.group(1) + _to_clean_url(m.group(2)) + m.group(3), text)
+    return text
+
+
 def write(relpath, content):
     # Inject the analytics + consent banner into every HTML page, right after
     # the charset meta so it never pushes charset past the first 1 KB.
@@ -310,6 +339,7 @@ def write(relpath, content):
             content = content.replace(marker, marker + ANALYTICS, 1)
         else:
             content = content.replace("<head>", "<head>" + ANALYTICS, 1)
+    content = _clean_internal_urls(content)
     full = os.path.join(HERE, relpath)
     os.makedirs(os.path.dirname(full), exist_ok=True)
     io.open(full, "w", encoding="utf-8", newline="\n").write(content)
@@ -640,9 +670,9 @@ GUIDES.append(dict(
 
 GUIDES.append(dict(
     slug="guides/subnets",
-    title="What is a subnet, and why doesn't the switch give me the right one? | Easy BACnet",
+    title="What is a subnet? BACnet/IP discovery | Easy BACnet",
     question="Why am I on the wrong network even though I'm plugged into the switch?",
-    description="Being plugged into a switch doesn't mean you're on the building's controls network. What a subnet is, why a switch port can hand you the wrong one (VLANs, DHCP, static IPs), and how to get on the right one to find your BACnet IP devices.",
+    description="A switch port doesn't mean you're on the controls network. What a subnet is, why a port hands you the wrong one (VLANs, DHCP), and how to reach the right one.",
     answer_html="""<p>Plugging a cable into a switch only gives you a physical
     connection. Which <strong>network</strong> you actually land on &mdash; the
     <em>subnet</em> &mdash; is decided by how that switch port is configured, by
@@ -960,7 +990,7 @@ GUIDES.append(dict(
 
 GUIDES.append(dict(
     slug="guides/how-to-use-easy-bacnet",
-    title="How to Get a BACnet IP Points List Off a Building | Easy BACnet",
+    title="How to Get a BACnet IP Points List | Easy BACnet",
     question="How do I get a BACnet IP points list off a building?",
     description="Step by step: connect to the building network, scan for BACnet IP devices, look at their points, and email the whole lot as a CSV. Five minutes, no laptop.",
     answer_html="""<p>Connect your phone to the same network as the building
@@ -1413,9 +1443,9 @@ GUIDES.append(dict(
 
 GUIDES.append(dict(
     slug="guides/is-my-bacnet-device-online-ping-test",
-    title="Is my BACnet device actually online? Ping it first | Easy BACnet",
+    title="Is my BACnet device online? Ping test | Easy BACnet",
     question="How do I tell if a BACnet device is really online before blaming the app?",
-    description="A hands-on test that separates a network problem from a BACnet problem: find the device's IP, ping it, then try a directed read. What each result means, and who to call once you know.",
+    description="A hands-on test that separates a network problem from a BACnet problem: find the device IP, ping it, then try a directed read, and what each result means.",
     answer_html="""<p>Find the device's IP address and <strong>ping it</strong>. A ping
     tests the plain network path, with no BACnet involved. If the ping <strong>fails</strong>,
     the device is unreachable on the network &mdash; a wrong subnet, a firewall, a bad
@@ -1826,7 +1856,7 @@ GUIDES.append(dict(
     slug="guides/read-bacnet-values-from-phone",
     title="How to read BACnet values from a phone | Easy BACnet",
     question="How do I read BACnet values from a phone?",
-    description="Step by step: join the controls network, discover BACnet IP devices, open a point and read its live present value, units and status — from an Android phone, no laptop.",
+    description="Step by step: join the controls network, discover BACnet IP devices, then open a point and read its live present value, units and status from an Android phone.",
     answer_html="""<p>Join your phone to the same network as the controls, open
     <a href="../index.html">Easy BACnet</a>, tap <strong>Scan for Devices</strong>,
     open the device you want and then the point you want, and its live
@@ -1927,7 +1957,7 @@ GUIDES.append(dict(
     slug="guides/bacnet-device-shows-offline",
     title="BACnet IP device shows offline? Causes & fixes | Easy BACnet",
     question="Why does my BACnet IP device show offline?",
-    description="A BACnet IP device that shows offline is usually a network or discovery problem, not dead hardware — wrong subnet, dropped broadcasts, a firewall on UDP 47808, or a duplicate ID.",
+    description="A BACnet IP device showing offline is usually a network problem, not dead hardware: wrong subnet, dropped broadcasts, a firewall, or a duplicate ID.",
     answer_html="""<p>&ldquo;Offline&rdquo; in BACnet almost always means <em>I stopped
     hearing from it</em>, not <em>it is broken</em>. The usual causes, most common
     first: your phone or client is on the wrong subnet so the broadcast never reaches
@@ -2010,7 +2040,7 @@ GUIDES.append(dict(
     slug="guides/bacnet-write-access-denied",
     title="BACnet Write Access Denied — what it means | Easy BACnet",
     question="What does BACnet 'Write Access Denied' mean, and how do I fix it?",
-    description="Write Access Denied means the BACnet property you tried to write cannot be written that way — usually a read-only property, a non-commandable point, or the wrong priority.",
+    description="Write Access Denied means the BACnet property cannot be written that way: usually a read-only property, a non-commandable point, or the wrong priority.",
     answer_html="""<p>&ldquo;Write Access Denied&rdquo; is BACnet telling you the
     property you aimed at cannot be written the way you tried &mdash; it is a
     permission answer from the device, not a network error. The usual reasons: the
@@ -2091,7 +2121,7 @@ GUIDES.append(dict(
     slug="guides/bacnet-value-does-not-change-when-written",
     title="BACnet value won't change when written? | Easy BACnet",
     question="Why doesn't my BACnet value change when I write to it?",
-    description="You wrote a BACnet point and nothing changed. Usually a higher priority is already commanding it, you wrote a value instead of at a priority, or the point is read-only.",
+    description="You wrote a BACnet point and nothing changed. Usually a higher priority already commands it, you wrote a value instead of at a priority, or it is read-only.",
     answer_html="""<p>You wrote the point, got no error, and nothing moved. In BACnet
     that almost always means <strong>something at a higher priority is already in
     command</strong>. A commandable point obeys the highest active slot in its 16-level
@@ -2156,9 +2186,9 @@ GUIDES.append(dict(
 
 GUIDES.append(dict(
     slug="guides/export-bacnet-points-to-csv",
-    title="Export a BACnet IP points list to CSV (and EDE) | Easy BACnet",
+    title="Export a BACnet IP points list to CSV | Easy BACnet",
     question="How do I export a BACnet IP points list to CSV, and what is an EDE file?",
-    description="How to get a BACnet IP device's points out as a CSV you can open in Excel or hand to an integrator — from a phone — and how that relates to the EDE format vendors ask for.",
+    description="How to get a BACnet IP device's points out as a CSV you can open in Excel or hand to an integrator, from a phone, and how that relates to the EDE format.",
     answer_html="""<p>Scan the device, read its points, and export &mdash; a CSV with
     each object's name, type, instance, present value, units and status is what
     &ldquo;a points list&rdquo; usually means, and it opens straight in Excel.
@@ -2223,7 +2253,7 @@ GUIDES.append(dict(
     slug="guides/test-bacnet-device-without-bms",
     title="Test a BACnet IP device without a BMS | Easy BACnet",
     question="How do I test a BACnet IP device without a BMS?",
-    description="You don't need the building management system to prove a BACnet IP device works. How to discover it, read its points and check control response with just a phone on the network.",
+    description="You don't need the building management system to prove a BACnet IP device works. How to discover it, read its points and check control response with a phone.",
     answer_html="""<p>You do not need the building management system, a laptop, or the
     integrator to prove a BACnet IP device is alive and working. Any BACnet client on the
     same network can do it &mdash; including <a href="../index.html">Easy BACnet</a> on
@@ -2292,7 +2322,7 @@ GUIDES.append(dict(
     slug="guides/best-free-bacnet-explorer",
     title="Best free BACnet explorer tools | Easy BACnet",
     question="What is the best free BACnet explorer tool?",
-    description="The free BACnet explorers compared — YABE, CAS BACnet Explorer, the Contemporary Controls BDT and Wacnet — plus where a free phone-based option fits for fieldwork.",
+    description="The free BACnet explorers compared: YABE, CAS BACnet Explorer, the Contemporary Controls BDT and Wacnet, plus where a free phone tool fits fieldwork.",
     answer_html="""<p>For a Windows desk, the established free choices are
     <strong>YABE</strong> (Yet Another BACnet Explorer, open source), the
     <strong>Contemporary Controls BACnet Discovery Tool (BDT)</strong>, Chipkin's
@@ -2354,7 +2384,7 @@ GUIDES.append(dict(
     slug="guides/does-easy-bacnet-support-mstp-rs485",
     title="Does Easy BACnet support MS/TP or RS-485? | Easy BACnet",
     question="Does Easy BACnet support MS/TP or RS-485?",
-    description="No. Easy BACnet is a BACnet IP tool and does not connect to an MS/TP (RS-485) serial trunk directly. It does read MS/TP devices that are routed onto the IP network through a BACnet router. What that means in practice.",
+    description="No. Easy BACnet is a BACnet IP tool and does not connect to an MS/TP (RS-485) trunk directly, but it reads MS/TP devices routed onto IP by a BACnet router.",
     answer_html="""<p><strong>No &mdash; not directly, and not at this time.</strong> Easy
     BACnet talks <strong>BACnet IP</strong> over your phone's Wi-Fi or a
     USB-Ethernet adapter. A phone has no RS-485 serial port, so the app cannot plug
@@ -2421,9 +2451,9 @@ GUIDES.append(dict(
 
 GUIDES.append(dict(
     slug="guides/who-to-call-it-hvac-or-controls",
-    title="Who do I call: IT, HVAC, or the controls/BMS contractor? | Easy BACnet",
+    title="Who to call: IT, HVAC, or controls/BMS? | Easy BACnet",
     question="Who do I call when something's wrong &mdash; IT, HVAC, or the controls contractor?",
-    description="Most BACnet IP problems belong to one of three providers: IT/network, the HVAC/mechanical contractor, or the controls/BMS integrator. A plain map of who owns what, which one to call for each symptom, and what to have ready so the call is short.",
+    description="Most BACnet IP problems belong to IT/network, the HVAC/mechanical contractor, or the controls/BMS integrator. Who owns what, and who to call for each symptom.",
     answer_html="""<p>Match the problem to the provider. If you <strong>can't reach the
     equipment on the network</strong> (nothing scans, wrong subnet, a firewall),
     that's your <strong>IT / network</strong> provider. If the equipment is reachable
@@ -2646,7 +2676,7 @@ TOOLS.append(dict(
     slug="bacnet-object-id-decoder",
     title="BACnet Object Identifier decoder | Easy BACnet",
     question="BACnet Object Identifier decoder",
-    description="Encode or decode a BACnet Object Identifier: turn an object type and instance into the 32-bit number, or decode a raw number back into its type and instance. Free browser tool.",
+    description="Encode or decode a BACnet Object Identifier: object type and instance to the 32-bit number and back. Free browser tool.",
     intro_html="""<p>A BACnet Object Identifier packs an <strong>object type</strong> and
     an <strong>instance number</strong> into a single 32-bit value &mdash; the top 10
     bits are the type, the bottom 22 bits are the instance. This tool goes both ways:
@@ -3032,7 +3062,8 @@ def main():
           .replace("{{TOOLS}}", tool_links).replace("{{GUIDES}}", links))
 
     # sitemap + robots so crawlers and agents can enumerate the whole set
-    urls = (["index.html", "privacy.html"]
+    # <loc> values are normalised to extensionless clean URLs in write().
+    urls = (["index.html", "privacy.html", "privacy-desktop.html", "terms.html"]
             + [t["slug"] + ".html" for t in TOOLS]
             + [g["slug"] + ".html" for g in GUIDES])
     sm = ['<?xml version="1.0" encoding="UTF-8"?>',
@@ -3085,13 +3116,13 @@ def main():
             "",
             "## Free tools"]
     for t in TOOLS:
-        llms.append("- %s: %s/%s.html" % (html_module.unescape(t["question"]), BASE_URL, t["slug"]))
+        llms.append("- %s: %s/%s" % (html_module.unescape(t["question"]), BASE_URL, t["slug"]))
     llms.append("")
     llms.append("## Guides")
     for g in GUIDES:
-        llms.append("- %s: %s/%s.html" % (html_module.unescape(g["question"]), BASE_URL, g["slug"]))
-    llms.append("- Easy BACnet home: %s/index.html" % BASE_URL)
-    llms.append("- Privacy policy: %s/privacy.html" % BASE_URL)
+        llms.append("- %s: %s/%s" % (html_module.unescape(g["question"]), BASE_URL, g["slug"]))
+    llms.append("- Easy BACnet home: %s/" % BASE_URL)
+    llms.append("- Privacy policy: %s/privacy" % BASE_URL)
     write("llms.txt", "\n".join(llms) + "\n")
 
 
