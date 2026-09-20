@@ -2767,6 +2767,7 @@ INDEX = """<!doctype html>
 <link rel="canonical" href="{{BASE}}/index.html">
 <meta name="robots" content="index, follow">
 <meta name="google-site-verification" content="5mp_Qm6jQXeHC7IbyiRUwPt3te2kFjKv67pCaqqLAhQ">
+<meta name="google-site-verification" content="rbS8niGRuwenITXwh4zN0Ak8BX8jyhI73wGn0c0yW-k">
 <meta name="theme-color" content="#14171a">
 <meta property="og:type" content="website">
 <meta property="og:site_name" content="Easy BACnet">
