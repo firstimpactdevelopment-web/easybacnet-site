@@ -275,10 +275,10 @@ GUIDES = []
 
 GUIDES.append(dict(
     slug="guides/what-is-a-bacnet-points-list",
-    title="What is a BACnet points list? | Easy BACnet",
-    question="What is a BACnet points list?",
-    description="A BACnet points list inventories every object a device exposes: type, instance, name, present value and units. What it contains and why.",
-    answer_html="""<p>A BACnet points list is an inventory of every data object a BACnet
+    title="What is a BACnet IP points list? | Easy BACnet",
+    question="What is a BACnet IP points list?",
+    description="A BACnet IP points list inventories every object a device exposes: type, instance, name, present value and units. What it contains and why.",
+    answer_html="""<p>A BACnet IP points list is an inventory of every data object a BACnet
     device exposes to the network. Each row is one point &mdash; a sensor reading, a
     setpoint, a command, or a status flag &mdash; identified by its <em>object type</em>
     (Analog Input, Binary Output, and so on) and its <em>instance number</em>, usually
@@ -344,10 +344,10 @@ GUIDES.append(dict(
   <a href="vendor-asking-for-bacnet-information.html">what to send when a vendor
   asks for your BACnet information</a>. If you need to produce one from a live
   system, see
-  <a href="how-to-find-your-bacnet-points-list.html">how to find your BACnet points list</a>.</p>
+  <a href="how-to-find-your-bacnet-points-list.html">how to find your BACnet IP points list</a>.</p>
 """,
     related=[
-        ("guides/how-to-find-your-bacnet-points-list", "How do I find my BACnet points list?"),
+        ("guides/how-to-find-your-bacnet-points-list", "How do I find my BACnet IP points list?"),
         ("guides/vendor-asking-for-bacnet-information", "A vendor asked for my BACnet information &mdash; what do I send?"),
         ("guides/bacnet-object-types-explained", "BACnet object types explained"),
     ],
@@ -355,12 +355,12 @@ GUIDES.append(dict(
 
 GUIDES.append(dict(
     slug="guides/how-to-find-your-bacnet-points-list",
-    title="How do I find my BACnet points list? | Easy BACnet",
-    question="How do I find my BACnet points list?",
-    description="Scan a building network with an Android phone, read every point on each BACnet device, and export the whole list as a CSV in minutes.",
+    title="How do I find my BACnet IP points list? | Easy BACnet",
+    question="How do I find my BACnet IP points list?",
+    description="Scan a building network with an Android phone, read every point on each BACnet IP device, and export the whole list as a CSV in minutes.",
     answer_html="""<p>There are four routes, easiest first: ask your controls contractor
     for the submittal documents, export a points list from your building management
-    system's front end, scan the network with a BACnet discovery tool, or read the
+    system's front end, scan the network with a BACnet IP discovery tool, or read the
     <code>Object_List</code> property from each controller directly. Scanning is the
     only one that is guaranteed to reflect what is actually on the network today
     rather than what was installed on paper.</p>""",
@@ -401,7 +401,7 @@ GUIDES.append(dict(
   controls VLAN.</p>
 
   <h2>4. Read Object_List directly</h2>
-  <p>If you are writing your own tooling: every BACnet device object exposes the
+  <p>If you are writing your own tooling: every BACnet IP device object exposes the
   <code>Object_List</code> property (property identifier 76), which enumerates every
   object on that device. Read index 0 first to get the count, then read each index
   in turn, then read <code>Object_Name</code> (77) and <code>Present_Value</code>
@@ -414,11 +414,11 @@ GUIDES.append(dict(
 
   <h2>If the scan finds nothing</h2>
   <p>That is common and usually a network problem rather than a BACnet problem. See
-  <a href="why-cant-i-find-my-bacnet-devices.html">why can't I find my BACnet devices</a>.</p>
+  <a href="why-cant-i-find-my-bacnet-devices.html">why can't I find my BACnet IP devices</a>.</p>
 """,
     related=[
-        ("guides/what-is-a-bacnet-points-list", "What is a BACnet points list?"),
-        ("guides/why-cant-i-find-my-bacnet-devices", "Why can't I find my BACnet devices?"),
+        ("guides/what-is-a-bacnet-points-list", "What is a BACnet IP points list?"),
+        ("guides/why-cant-i-find-my-bacnet-devices", "Why can't I find my BACnet IP devices?"),
         ("guides/vendor-asking-for-bacnet-information", "A vendor asked for my BACnet information &mdash; what do I send?"),
     ],
 ))
@@ -444,7 +444,7 @@ GUIDES.append(dict(
     <a href="what-is-a-bacnet-points-list.html">what a points list is</a> and
     <a href="how-to-find-your-bacnet-points-list.html">how to produce one</a>.</li>
 
-    <li><strong>Device instance IDs.</strong> Every BACnet device has a unique
+    <li><strong>Device instance IDs.</strong> Every BACnet IP device has a unique
     instance number. Integrators address devices by this number, not by name, so a
     list of names alone will send them back to you.</li>
 
@@ -508,17 +508,17 @@ we will schedule a window and agree a priority level.
 Technical contact: [name, email].</code></pre>
 """,
     related=[
-        ("guides/what-is-a-bacnet-points-list", "What is a BACnet points list?"),
-        ("guides/how-to-find-your-bacnet-points-list", "How do I find my BACnet points list?"),
+        ("guides/what-is-a-bacnet-points-list", "What is a BACnet IP points list?"),
+        ("guides/how-to-find-your-bacnet-points-list", "How do I find my BACnet IP points list?"),
         ("guides/bacnet-device-id-explained", "What is a BACnet Device ID?"),
     ],
 ))
 
 GUIDES.append(dict(
     slug="guides/why-cant-i-find-my-bacnet-devices",
-    title="Why can't I find my BACnet devices? | Easy BACnet",
-    question="Why can't I find my BACnet devices when I scan?",
-    description="The usual reasons a BACnet scan finds nothing: wrong subnet, blocked broadcasts, no BBMD, mobile data on, or the wrong UDP port. How to fix each.",
+    title="Why can't I find my BACnet IP devices? | Easy BACnet",
+    question="Why can't I find my BACnet IP devices when I scan?",
+    description="The usual reasons a BACnet IP scan finds nothing: wrong subnet, blocked broadcasts, no BBMD, mobile data on, or the wrong UDP port. How to fix each.",
     answer_html="""<p>Almost always because the <em>Who-Is</em> broadcast is not
     reaching the devices. The usual causes, in order of how often they turn out to be
     the problem: you are on a different IP subnet and there is no BBMD forwarding
@@ -584,7 +584,7 @@ GUIDES.append(dict(
 """,
     related=[
         ("guides/subnets", "What is a subnet, and why doesn&rsquo;t the switch give me the right one?"),
-        ("guides/how-to-find-your-bacnet-points-list", "How do I find my BACnet points list?"),
+        ("guides/how-to-find-your-bacnet-points-list", "How do I find my BACnet IP points list?"),
         ("guides/bacnet-device-id-explained", "What is a BACnet Device ID?"),
     ],
 ))
@@ -593,14 +593,14 @@ GUIDES.append(dict(
     slug="guides/subnets",
     title="What is a subnet, and why doesn't the switch give me the right one? | Easy BACnet",
     question="Why am I on the wrong network even though I'm plugged into the switch?",
-    description="Being plugged into a switch doesn't mean you're on the building's controls network. What a subnet is, why a switch port can hand you the wrong one (VLANs, DHCP, static IPs), and how to get on the right one to find your BACnet devices.",
+    description="Being plugged into a switch doesn't mean you're on the building's controls network. What a subnet is, why a switch port can hand you the wrong one (VLANs, DHCP, static IPs), and how to get on the right one to find your BACnet IP devices.",
     answer_html="""<p>Plugging a cable into a switch only gives you a physical
     connection. Which <strong>network</strong> you actually land on &mdash; the
     <em>subnet</em> &mdash; is decided by how that switch port is configured, by
     the address a DHCP server hands you, or by the static address set on your own
     device. A single switch commonly carries several separate networks at once, so
     it can easily place you on the office or guest network instead of the controls
-    network. BACnet discovery only reaches your own subnet, so when you are on the
+    network. BACnet IP discovery only reaches your own subnet, so when you are on the
     wrong one the scan finds nothing even though the cable is plugged in and the
     link light is on.</p>""",
     body_html="""
@@ -653,7 +653,7 @@ GUIDES.append(dict(
   &mdash; or on <code>169.254.x.x</code> &mdash; that mismatch is why nothing was
   found. This is the single most useful thing to check, and to share.</p>
 
-  <h2>Why this stops a BACnet scan specifically</h2>
+  <h2>Why this stops a BACnet IP scan specifically</h2>
   <p>BACnet/IP discovery works by broadcasting a <em>Who-Is</em> and listening for
   replies. A broadcast stays inside your own subnet; it does not cross routers or
   VLAN boundaries. So being on the wrong subnet doesn't just make things slow
@@ -674,7 +674,7 @@ GUIDES.append(dict(
     <li><strong>Ask whether there's a BBMD.</strong> If one exists, it can forward
     discovery from another subnet &mdash; you'll need its address.</li>
     <li><strong>Use a known device address.</strong> If you already know a
-    controller's IP and it is reachable through a router, Easy BACnet's Advanced Mode
+    controller's IP and it is reachable through a router, Easy BACnet's Browser Mode
     can add it directly by IP without a broadcast.</li>
   </ul>
 
@@ -687,8 +687,9 @@ GUIDES.append(dict(
   which network your connection lands on.</p>
 """,
     related=[
-        ("guides/why-cant-i-find-my-bacnet-devices", "Why can't I find my BACnet devices?"),
+        ("guides/why-cant-i-find-my-bacnet-devices", "Why can't I find my BACnet IP devices?"),
         ("guides/what-is-a-bbmd", "What is a BBMD?"),
+        ("guides/who-to-call-it-hvac-or-controls", "Who do I call &mdash; IT, HVAC, or controls/BMS?"),
         ("guides/cant-find-what-im-looking-for", "The app can&rsquo;t find what I&rsquo;m looking for"),
     ],
 ))
@@ -771,7 +772,7 @@ GUIDES.append(dict(
   can check nothing was left behind.</p>
 """,
     related=[
-        ("guides/what-is-a-bacnet-points-list", "What is a BACnet points list?"),
+        ("guides/what-is-a-bacnet-points-list", "What is a BACnet IP points list?"),
         ("guides/bacnet-object-types-explained", "BACnet object types explained"),
         ("guides/vendor-asking-for-bacnet-information", "A vendor asked for my BACnet information &mdash; what do I send?"),
     ],
@@ -835,7 +836,7 @@ GUIDES.append(dict(
   &mdash; but they all mean the same pair.</p>
 """,
     related=[
-        ("guides/what-is-a-bacnet-points-list", "What is a BACnet points list?"),
+        ("guides/what-is-a-bacnet-points-list", "What is a BACnet IP points list?"),
         ("guides/bacnet-priority-and-stuck-overrides", "Why is my BACnet point stuck?"),
     ],
 ))
@@ -894,7 +895,7 @@ GUIDES.append(dict(
 """,
     related=[
         ("guides/vendor-asking-for-bacnet-information", "A vendor asked for my BACnet information &mdash; what do I send?"),
-        ("guides/why-cant-i-find-my-bacnet-devices", "Why can't I find my BACnet devices?"),
+        ("guides/why-cant-i-find-my-bacnet-devices", "Why can't I find my BACnet IP devices?"),
     ],
 ))
 
@@ -910,9 +911,9 @@ GUIDES.append(dict(
 
 GUIDES.append(dict(
     slug="guides/how-to-use-easy-bacnet",
-    title="How to use Easy BACnet to get a points list | Easy BACnet",
-    question="How do I use Easy BACnet to get a points list off a building?",
-    description="Step by step: connect to the building network, scan for BACnet devices, look at their points, and email the whole lot as a CSV. Five minutes, no laptop.",
+    title="How to Get a BACnet IP Points List Off a Building | Easy BACnet",
+    question="How do I get a BACnet IP points list off a building?",
+    description="Step by step: connect to the building network, scan for BACnet IP devices, look at their points, and email the whole lot as a CSV. Five minutes, no laptop.",
     answer_html="""<p>Connect your phone to the same network as the building
     controls, open the app and tap the <strong>Easy BACnet</strong> card, tap
     <strong>Scan for Devices</strong>, wait for the scan to finish, then tap
@@ -935,7 +936,7 @@ GUIDES.append(dict(
 
   <h2>Step 1 &mdash; Open Easy BACnet</h2>
   <p>The app opens on a choice of three cards: <strong>Easy BACnet</strong> (the
-  simple flow this guide covers), <strong>Advanced Mode</strong> (a diagnostic
+  simple flow this guide covers), <strong>Browser Mode</strong> (a diagnostic
   console), and <strong>Custom Remotes</strong>. Tap <strong>Easy BACnet</strong>.</p>
 
   <h2>Step 2 &mdash; Scan</h2>
@@ -1007,8 +1008,8 @@ GUIDES.append(dict(
     related=[
         ("guides/how-to-write-to-a-bacnet-point", "How do I write to a BACnet point with Easy BACnet, and release it?"),
         ("guides/how-to-build-a-custom-remote", "How do I build a custom remote in Easy BACnet?"),
-        ("guides/why-cant-i-find-my-bacnet-devices", "Why can't I find my BACnet devices?"),
-        ("guides/what-is-a-bacnet-points-list", "What is a BACnet points list?"),
+        ("guides/why-cant-i-find-my-bacnet-devices", "Why can't I find my BACnet IP devices?"),
+        ("guides/what-is-a-bacnet-points-list", "What is a BACnet IP points list?"),
     ],
 ))
 
@@ -1102,7 +1103,7 @@ GUIDES.append(dict(
 """,
     related=[
         ("guides/bacnet-priority-and-stuck-overrides", "BACnet priority and stuck overrides"),
-        ("guides/how-to-use-easy-bacnet", "How do I use Easy BACnet to get a points list?"),
+        ("guides/how-to-use-easy-bacnet", "How do I get a BACnet IP points list?"),
         ("guides/how-to-build-a-custom-remote", "How do I build a custom remote in Easy BACnet?"),
         ("guides/bacnet-object-types-explained", "BACnet object types explained"),
     ],
@@ -1111,7 +1112,7 @@ GUIDES.append(dict(
 GUIDES.append(dict(
     slug="guides/how-to-build-a-custom-remote",
     title="How to build a custom remote in Easy BACnet | Easy BACnet",
-    question="How do I build a custom remote for a BACnet device in Easy BACnet?",
+    question="How do I build a custom remote for a BACnet IP device in Easy BACnet?",
     description="Build a drag-and-drop control screen for one device: setpoints, toggles, readouts and a release button. The free one-remote limit explained.",
     answer_html="""<p>Open a device from your scan results, tap the menu and choose
     <strong>Custom Remote</strong>, then tap <strong>Edit</strong> and
@@ -1207,7 +1208,7 @@ GUIDES.append(dict(
 """,
     related=[
         ("guides/how-to-write-to-a-bacnet-point", "How do I write to a BACnet point with Easy BACnet, and release it?"),
-        ("guides/how-to-use-easy-bacnet", "How do I use Easy BACnet to get a points list?"),
+        ("guides/how-to-use-easy-bacnet", "How do I get a BACnet IP points list?"),
         ("guides/bacnet-priority-and-stuck-overrides", "BACnet priority and stuck overrides"),
     ],
 ))
@@ -1301,8 +1302,9 @@ GUIDES.append(dict(
   phone is on, and they will know the answer for their site in seconds.</p>
 """,
     related=[
-        ("guides/why-cant-i-find-my-bacnet-devices", "Why can't I find my BACnet devices?"),
-        ("guides/how-to-use-easy-bacnet", "How do I use Easy BACnet to get a points list?"),
+        ("guides/why-cant-i-find-my-bacnet-devices", "Why can't I find my BACnet IP devices?"),
+        ("guides/who-to-call-it-hvac-or-controls", "Who do I call &mdash; IT, HVAC, or controls/BMS?"),
+        ("guides/how-to-use-easy-bacnet", "How do I get a BACnet IP points list?"),
         ("guides/bacnet-device-id-explained", "BACnet Device IDs explained"),
     ],
 ))
@@ -1357,7 +1359,7 @@ GUIDES.append(dict(
   the same ground from the Modbus side.</p>
 """,
     related=[
-        ("guides/what-is-a-bacnet-points-list", "What is a BACnet points list?"),
+        ("guides/what-is-a-bacnet-points-list", "What is a BACnet IP points list?"),
         ("guides/who-is-i-am-explained", "BACnet Who-Is and I-Am explained"),
         ("guides/bacnet-object-types-explained", "BACnet object types explained"),
     ],
@@ -1367,9 +1369,9 @@ GUIDES.append(dict(
     slug="guides/who-is-i-am-explained",
     title="BACnet Who-Is and I-Am explained | Easy BACnet",
     question="What are BACnet Who-Is and I-Am?",
-    description="Who-Is is a broadcast asking which devices exist; each replies I-Am with its instance, vendor and capabilities. How BACnet discovery works.",
+    description="Who-Is is a broadcast asking which devices exist; each replies I-Am with its instance, vendor and capabilities. How BACnet IP discovery works.",
     answer_html="""<p><strong>Who-Is</strong> and <strong>I-Am</strong> are the two
-    messages behind BACnet discovery. A tool broadcasts a <em>Who-Is</em> meaning
+    messages behind BACnet IP discovery. A tool broadcasts a <em>Who-Is</em> meaning
     &ldquo;who is out there?&rdquo;, and every device that hears it answers with an
     <em>I-Am</em> carrying its Device Instance number, the vendor, and what it can do.
     Collect the replies and you have a device list &mdash; which is exactly what Easy
@@ -1397,12 +1399,12 @@ GUIDES.append(dict(
   different IP subnet never hears it &mdash; unless a
   <a href="what-is-a-bbmd.html">BBMD</a> bridges the two. That is the single most common
   reason a scan comes back empty: see
-  <a href="why-cant-i-find-my-bacnet-devices.html">why can't I find my BACnet devices?</a>.
+  <a href="why-cant-i-find-my-bacnet-devices.html">why can't I find my BACnet IP devices?</a>.
   Devices on a serial <a href="bacnet-mstp-vs-bacnet-ip.html">MS/TP</a> trunk answer too,
   as long as a router carries the traffic onto IP.</p>
 """,
     related=[
-        ("guides/why-cant-i-find-my-bacnet-devices", "Why can't I find my BACnet devices?"),
+        ("guides/why-cant-i-find-my-bacnet-devices", "Why can't I find my BACnet IP devices?"),
         ("guides/what-is-a-bbmd", "What is a BBMD?"),
         ("guides/bacnet-device-id-explained", "BACnet Device IDs explained"),
     ],
@@ -1414,7 +1416,7 @@ GUIDES.append(dict(
     question="What is a BBMD, and when do I need one?",
     description="A BBMD forwards BACnet/IP broadcasts across subnets, because routers do not. Without one, equipment on another subnet cannot be discovered.",
     answer_html="""<p>A <strong>BBMD</strong> &mdash; BACnet Broadcast Management Device
-    &mdash; forwards BACnet/IP broadcasts from one IP subnet to another. BACnet discovery
+    &mdash; forwards BACnet/IP broadcasts from one IP subnet to another. BACnet IP discovery
     leans on broadcasts, and IP routers deliberately do not pass broadcasts, so equipment
     on a different subnet is invisible until a BBMD carries the broadcast across. You need
     one whenever BACnet/IP has to span more than a single subnet.</p>""",
@@ -1444,12 +1446,12 @@ GUIDES.append(dict(
   is no BBMD reaching your phone, the scan finds nothing &mdash; not because the app failed,
   but because the broadcast never crossed the router. The reliable fix on site is to get
   the phone onto the <strong>same subnet</strong> as the controllers; see
-  <a href="why-cant-i-find-my-bacnet-devices.html">why can't I find my BACnet devices?</a>.</p>
+  <a href="why-cant-i-find-my-bacnet-devices.html">why can't I find my BACnet IP devices?</a>.</p>
 """,
     related=[
-        ("guides/why-cant-i-find-my-bacnet-devices", "Why can't I find my BACnet devices?"),
+        ("guides/why-cant-i-find-my-bacnet-devices", "Why can't I find my BACnet IP devices?"),
         ("guides/who-is-i-am-explained", "BACnet Who-Is and I-Am explained"),
-        ("guides/what-port-does-bacnet-use", "What port does BACnet use?"),
+        ("guides/what-port-does-bacnet-use", "What port does BACnet IP use?"),
     ],
 ))
 
@@ -1481,7 +1483,7 @@ GUIDES.append(dict(
   <p>On MS/TP a device has a small <strong>MAC address</strong> (0&ndash;127) on its
   trunk, plus a <strong>network number</strong> for that trunk. A <strong>BACnet
   router</strong> joins the MS/TP trunk to BACnet/IP, so from the IP side each MS/TP
-  device appears as a normal BACnet device with its Device Instance. That routing is why
+  device appears as a normal BACnet IP device with its Device Instance. That routing is why
   Easy BACnet, which speaks BACnet/IP over Wi-Fi, can still list and read MS/TP
   controllers &mdash; provided a router is carrying them onto the subnet your phone is on.</p>
 
@@ -1491,21 +1493,22 @@ GUIDES.append(dict(
   sit on the IP network directly with their own IP address.</p>
 """,
     related=[
+        ("guides/does-easy-bacnet-support-mstp-rs485", "Does Easy BACnet support MS/TP or RS-485?"),
         ("guides/who-is-i-am-explained", "BACnet Who-Is and I-Am explained"),
-        ("guides/what-port-does-bacnet-use", "What port does BACnet use?"),
-        ("guides/why-cant-i-find-my-bacnet-devices", "Why can't I find my BACnet devices?"),
+        ("guides/what-port-does-bacnet-use", "What port does BACnet IP use?"),
+        ("guides/why-cant-i-find-my-bacnet-devices", "Why can't I find my BACnet IP devices?"),
     ],
 ))
 
 GUIDES.append(dict(
     slug="guides/what-port-does-bacnet-use",
-    title="What port does BACnet use? | Easy BACnet",
-    question="What port does BACnet use?",
+    title="What port does BACnet IP use? | Easy BACnet",
+    question="What port does BACnet IP use?",
     description="BACnet/IP uses UDP port 47808 (0xBAC0) by default; extra networks use 47809 and up. Easy BACnet checks the common range automatically.",
     answer_html="""<p>BACnet/IP uses <strong>UDP port 47808</strong> by default &mdash; that
     is <code>0xBAC0</code> in hex, which is where the number comes from. It is UDP, not TCP,
     and discovery relies on broadcasts to that port. Where a single IP subnet carries more
-    than one BACnet network, the extra networks use <strong>47809</strong> and up.</p>""",
+    than one BACnet IP network, the extra networks use <strong>47809</strong> and up.</p>""",
     body_html="""
   <h2>47808, and why</h2>
   <p>The default port is 47808 decimal, chosen because in hexadecimal it reads
@@ -1530,14 +1533,14 @@ GUIDES.append(dict(
     related=[
         ("guides/what-is-a-bbmd", "What is a BBMD?"),
         ("guides/bacnet-mstp-vs-bacnet-ip", "BACnet MS/TP vs BACnet/IP"),
-        ("guides/why-cant-i-find-my-bacnet-devices", "Why can't I find my BACnet devices?"),
+        ("guides/why-cant-i-find-my-bacnet-devices", "Why can't I find my BACnet IP devices?"),
     ],
 ))
 
 GUIDES.append(dict(
     slug="guides/bacnet-scanner-app-android",
-    title="BACnet scanner app for Android | Easy BACnet",
-    question="Is there a BACnet scanner app for Android?",
+    title="BACnet IP scanner app for Android | Easy BACnet",
+    question="Is there a BACnet IP scanner app for Android?",
     description="Yes. How to discover, read and command BACnet/IP devices from an Android phone, what a phone can and cannot reach, and the subnet and MS/TP catches.",
     answer_html="""<p>Yes &mdash; <a href="../index.html">Easy BACnet</a> is an
     Android app that broadcasts a BACnet <em>Who-Is</em>, lists every BACnet/IP
@@ -1562,7 +1565,7 @@ GUIDES.append(dict(
   wrong network. Guest Wi-Fi, a separate controls VLAN, or a switch handing out an
   address in the wrong range will all leave you shouting into a room the controllers
   cannot hear. See <a href="why-cant-i-find-my-bacnet-devices.html">why can't I find
-  my BACnet devices?</a> and <a href="subnets.html">what is a subnet, and why doesn't
+  my BACnet IP devices?</a> and <a href="subnets.html">what is a subnet, and why doesn't
   the switch give me the right one?</a></p>
 
   <h2>What a phone can and cannot reach</h2>
@@ -1597,7 +1600,7 @@ GUIDES.append(dict(
 """,
     related=[
         ("guides/how-to-use-easy-bacnet", "How do I use Easy BACnet to scan and read?"),
-        ("guides/why-cant-i-find-my-bacnet-devices", "Why can't I find my BACnet devices?"),
+        ("guides/why-cant-i-find-my-bacnet-devices", "Why can't I find my BACnet IP devices?"),
         ("guides/subnets", "What is a subnet, and why doesn't the switch give me the right one?"),
         ("guides/how-to-write-to-a-bacnet-point", "How do I write to a BACnet point?"),
     ],
@@ -1607,7 +1610,7 @@ GUIDES.append(dict(
     slug="guides/read-bacnet-values-from-phone",
     title="How to read BACnet values from a phone | Easy BACnet",
     question="How do I read BACnet values from a phone?",
-    description="Step by step: join the controls network, discover BACnet devices, open a point and read its live present value, units and status — from an Android phone, no laptop.",
+    description="Step by step: join the controls network, discover BACnet IP devices, open a point and read its live present value, units and status — from an Android phone, no laptop.",
     answer_html="""<p>Join your phone to the same network as the controls, open
     <a href="../index.html">Easy BACnet</a>, tap <strong>Scan for Devices</strong>,
     open the device you want and then the point you want, and its live
@@ -1623,7 +1626,7 @@ GUIDES.append(dict(
     controls Wi-Fi, or plug into the network with a USB-Ethernet adapter. A phone on
     guest Wi-Fi or mobile data reaches nothing &mdash; and that is the network, not
     the app. See <a href="why-cant-i-find-my-bacnet-devices.html">why can't I find my
-    BACnet devices?</a> and <a href="subnets.html">the subnet guide</a> if the scan
+    BACnet IP devices?</a> and <a href="subnets.html">the subnet guide</a> if the scan
     is empty.</li>
     <li><strong>No password.</strong> BACnet has no login. If you are on the network,
     the devices answer.</li>
@@ -1636,7 +1639,7 @@ GUIDES.append(dict(
   so it keeps asking rather than trusting one shot. A counter shows devices as they
   answer.</p>
   <figure class="shot">
-    <img src="../img/scan.png" alt="Easy BACnet scanning a network and listing the BACnet devices that answered" loading="lazy">
+    <img src="../img/scan.png" alt="Easy BACnet scanning a network and listing the BACnet IP devices that answered" loading="lazy">
     <figcaption>A scan in progress &mdash; devices appear as they answer the Who-Is.</figcaption>
   </figure>
 
@@ -1646,7 +1649,7 @@ GUIDES.append(dict(
   controller this takes a moment, because it reads the points one at a time on
   purpose, which is the only approach that works with every controller ever made.</p>
   <figure class="shot">
-    <img src="../img/devices.png" alt="A list of discovered BACnet devices with names, Device IDs and IP addresses" loading="lazy">
+    <img src="../img/devices.png" alt="A list of discovered BACnet IP devices with names, Device IDs and IP addresses" loading="lazy">
     <figcaption>Discovered devices, each with its name, Device ID and IP.</figcaption>
   </figure>
 
@@ -1658,7 +1661,7 @@ GUIDES.append(dict(
   hundreds of points, use the search box. Not sure what the object types mean? See
   <a href="bacnet-object-types-explained.html">BACnet object types explained</a>.</p>
   <figure class="shot">
-    <img src="../img/points.png" alt="The point list for a BACnet device showing analog and binary objects with live values" loading="lazy">
+    <img src="../img/points.png" alt="The point list for a BACnet IP device showing analog and binary objects with live values" loading="lazy">
     <figcaption>A device's points, each showing its live value.</figcaption>
   </figure>
 
@@ -1698,7 +1701,7 @@ GUIDES.append(dict(
 """,
     related=[
         ("guides/how-to-use-easy-bacnet", "How do I use Easy BACnet to scan and read?"),
-        ("guides/bacnet-scanner-app-android", "Is there a BACnet scanner app for Android?"),
+        ("guides/bacnet-scanner-app-android", "Is there a BACnet IP scanner app for Android?"),
         ("guides/bacnet-object-types-explained", "BACnet object types explained"),
         ("guides/how-to-write-to-a-bacnet-point", "How do I write to a BACnet point?"),
     ],
@@ -1706,9 +1709,9 @@ GUIDES.append(dict(
 
 GUIDES.append(dict(
     slug="guides/bacnet-device-shows-offline",
-    title="BACnet device shows offline? Causes & fixes | Easy BACnet",
-    question="Why does my BACnet device show offline?",
-    description="A BACnet device that shows offline is usually a network or discovery problem, not dead hardware — wrong subnet, dropped broadcasts, a firewall on UDP 47808, or a duplicate ID.",
+    title="BACnet IP device shows offline? Causes & fixes | Easy BACnet",
+    question="Why does my BACnet IP device show offline?",
+    description="A BACnet IP device that shows offline is usually a network or discovery problem, not dead hardware — wrong subnet, dropped broadcasts, a firewall on UDP 47808, or a duplicate ID.",
     answer_html="""<p>&ldquo;Offline&rdquo; in BACnet almost always means <em>I stopped
     hearing from it</em>, not <em>it is broken</em>. The usual causes, most common
     first: your phone or client is on the wrong subnet so the broadcast never reaches
@@ -1730,12 +1733,12 @@ GUIDES.append(dict(
   <h3>1. Wrong subnet (by far the most common)</h3>
   <p>Controls equipment usually sits on its own subnet or VLAN. If your phone is on
   guest Wi-Fi, the office network, or a different scope, the broadcast that finds
-  BACnet devices never reaches them and everything looks offline. See
+  BACnet IP devices never reaches them and everything looks offline. See
   <a href="subnets.html">what is a subnet, and why doesn't the switch give me the right
   one?</a></p>
 
   <h3>2. Dropped broadcast packets</h3>
-  <p>BACnet discovery is a broadcast, and Wi-Fi access points drop broadcast packets
+  <p>BACnet IP discovery is a broadcast, and Wi-Fi access points drop broadcast packets
   freely under load. A device that appears one scan and vanishes the next, or shows
   offline intermittently, is often this. Scanning repeatedly &mdash; which a good tool
   does automatically &mdash; works around it.</p>
@@ -1780,7 +1783,7 @@ GUIDES.append(dict(
   </div>
 """,
     related=[
-        ("guides/why-cant-i-find-my-bacnet-devices", "Why can't I find my BACnet devices?"),
+        ("guides/why-cant-i-find-my-bacnet-devices", "Why can't I find my BACnet IP devices?"),
         ("guides/subnets", "What is a subnet, and why doesn't the switch give me the right one?"),
         ("guides/bacnet-device-id-explained", "What is a BACnet Device ID?"),
         ("guides/what-is-a-bbmd", "What is a BBMD?"),
@@ -1937,9 +1940,9 @@ GUIDES.append(dict(
 
 GUIDES.append(dict(
     slug="guides/export-bacnet-points-to-csv",
-    title="Export a BACnet points list to CSV (and EDE) | Easy BACnet",
-    question="How do I export a BACnet points list to CSV, and what is an EDE file?",
-    description="How to get a BACnet device's points out as a CSV you can open in Excel or hand to an integrator — from a phone — and how that relates to the EDE format vendors ask for.",
+    title="Export a BACnet IP points list to CSV (and EDE) | Easy BACnet",
+    question="How do I export a BACnet IP points list to CSV, and what is an EDE file?",
+    description="How to get a BACnet IP device's points out as a CSV you can open in Excel or hand to an integrator — from a phone — and how that relates to the EDE format vendors ask for.",
     answer_html="""<p>Scan the device, read its points, and export &mdash; a CSV with
     each object's name, type, instance, present value, units and status is what
     &ldquo;a points list&rdquo; usually means, and it opens straight in Excel.
@@ -1955,7 +1958,7 @@ GUIDES.append(dict(
   object it is, its number, and usually a live value and units. Unlike Modbus, BACnet
   devices can be <em>asked</em> what they contain &mdash; so this list can be built by
   reading the device, not by hunting for a document. See
-  <a href="what-is-a-bacnet-points-list.html">what is a BACnet points list?</a></p>
+  <a href="what-is-a-bacnet-points-list.html">what is a BACnet IP points list?</a></p>
 
   <h2>Getting it out as a CSV from a phone</h2>
   <ol>
@@ -1993,7 +1996,7 @@ GUIDES.append(dict(
   </div>
 """,
     related=[
-        ("guides/what-is-a-bacnet-points-list", "What is a BACnet points list?"),
+        ("guides/what-is-a-bacnet-points-list", "What is a BACnet IP points list?"),
         ("guides/how-to-use-easy-bacnet", "How do I use Easy BACnet to scan and read?"),
         ("guides/vendor-asking-for-bacnet-information", "A vendor asked for my BACnet information"),
         ("guides/read-bacnet-values-from-phone", "How do I read BACnet values from a phone?"),
@@ -2002,11 +2005,11 @@ GUIDES.append(dict(
 
 GUIDES.append(dict(
     slug="guides/test-bacnet-device-without-bms",
-    title="Test a BACnet device without a BMS | Easy BACnet",
-    question="How do I test a BACnet device without a BMS?",
-    description="You don't need the building management system to prove a BACnet device works. How to discover it, read its points and check control response with just a phone on the network.",
+    title="Test a BACnet IP device without a BMS | Easy BACnet",
+    question="How do I test a BACnet IP device without a BMS?",
+    description="You don't need the building management system to prove a BACnet IP device works. How to discover it, read its points and check control response with just a phone on the network.",
     answer_html="""<p>You do not need the building management system, a laptop, or the
-    integrator to prove a BACnet device is alive and working. Any BACnet client on the
+    integrator to prove a BACnet IP device is alive and working. Any BACnet client on the
     same network can do it &mdash; including <a href="../index.html">Easy BACnet</a> on
     a phone. Join the network, run a Who-Is, and if the device answers with its name and
     Device ID it is online and speaking BACnet. Read its points to confirm the sensors
@@ -2027,7 +2030,7 @@ GUIDES.append(dict(
   <p>Run a scan. If the device answers a Who-Is with its name, Device ID and IP, it is
   powered, on the network, and speaking BACnet/IP &mdash; three things confirmed at
   once. If it does not answer, that is a network or address problem, not necessarily a
-  dead device: see <a href="bacnet-device-shows-offline.html">why does my BACnet device
+  dead device: see <a href="bacnet-device-shows-offline.html">why does my BACnet IP device
   show offline?</a></p>
 
   <h3>2. Prove the sensors read (inputs)</h3>
@@ -2063,9 +2066,9 @@ GUIDES.append(dict(
 """,
     related=[
         ("guides/read-bacnet-values-from-phone", "How do I read BACnet values from a phone?"),
-        ("guides/bacnet-device-shows-offline", "Why does my BACnet device show offline?"),
+        ("guides/bacnet-device-shows-offline", "Why does my BACnet IP device show offline?"),
         ("guides/how-to-write-to-a-bacnet-point", "How do I write to a BACnet point?"),
-        ("guides/export-bacnet-points-to-csv", "How do I export a BACnet points list to CSV?"),
+        ("guides/export-bacnet-points-to-csv", "How do I export a BACnet IP points list to CSV?"),
     ],
 ))
 
@@ -2113,7 +2116,7 @@ GUIDES.append(dict(
   work and use a phone tool for the walk-around &mdash; discovery, a quick read, a
   careful override and release, a CSV for the file. The desktop explorers are strong;
   the open niche is <em>portable</em>, and that is where a phone wins. See
-  <a href="bacnet-scanner-app-android.html">is there a BACnet scanner app for
+  <a href="bacnet-scanner-app-android.html">is there a BACnet IP scanner app for
   Android?</a></p>
   </div>
 
@@ -2124,10 +2127,191 @@ GUIDES.append(dict(
   saved custom control panels. Reading and commissioning a device costs nothing.</p>
 """,
     related=[
-        ("guides/bacnet-scanner-app-android", "Is there a BACnet scanner app for Android?"),
+        ("guides/bacnet-scanner-app-android", "Is there a BACnet IP scanner app for Android?"),
         ("guides/read-bacnet-values-from-phone", "How do I read BACnet values from a phone?"),
         ("guides/how-to-use-easy-bacnet", "How do I use Easy BACnet to scan and read?"),
-        ("guides/test-bacnet-device-without-bms", "How do I test a BACnet device without a BMS?"),
+        ("guides/test-bacnet-device-without-bms", "How do I test a BACnet IP device without a BMS?"),
+    ],
+))
+
+GUIDES.append(dict(
+    slug="guides/does-easy-bacnet-support-mstp-rs485",
+    title="Does Easy BACnet support MS/TP or RS-485? | Easy BACnet",
+    question="Does Easy BACnet support MS/TP or RS-485?",
+    description="No. Easy BACnet is a BACnet IP tool and does not connect to an MS/TP (RS-485) serial trunk directly. It does read MS/TP devices that are routed onto the IP network through a BACnet router. What that means in practice.",
+    answer_html="""<p><strong>No &mdash; not directly, and not at this time.</strong> Easy
+    BACnet talks <strong>BACnet IP</strong> over your phone's Wi-Fi or a
+    USB-Ethernet adapter. A phone has no RS-485 serial port, so the app cannot plug
+    into or read an <a href="bacnet-mstp-vs-bacnet-ip.html">MS/TP</a> (RS-485)
+    trunk on its own. It <em>can</em> see MS/TP devices when they are routed onto
+    the IP network by a BACnet router &mdash; you reach them through the router, not
+    by wiring into the serial bus.</p>""",
+    body_html="""
+  <h2>The short version</h2>
+  <p>Easy BACnet is a BACnet IP browser and control tool. It does two things with
+  MS/TP:</p>
+  <ul>
+    <li><strong>Direct MS/TP / RS-485 connection: not supported.</strong> The app
+    does not speak to a serial trunk, and there is no plan for a phone to do so &mdash;
+    phones have no RS-485 hardware.</li>
+    <li><strong>Routed MS/TP over IP: supported.</strong> If a BACnet router (or a
+    controller with a built-in router) advertises its MS/TP devices onto BACnet IP,
+    those devices appear in a scan and you can read and command them through the
+    router. Easy BACnet shows their routed network number and MAC so you can tell
+    them apart from native IP devices.</li>
+  </ul>
+
+  <div class="callout">
+  <p>We would rather state this plainly than have you discover it in a plant room:
+  if the only path to your controllers is a bare RS-485 MS/TP trunk with no router
+  onto IP, Easy BACnet cannot reach them, and no phone app can. You need a device
+  that bridges MS/TP onto the IP network first.</p>
+  </div>
+
+  <h2>Why a phone can't touch MS/TP directly</h2>
+  <p><a href="bacnet-mstp-vs-bacnet-ip.html">MS/TP</a> runs over an RS-485 serial
+  pair &mdash; two or three wires, a token passed from device to device. BACnet IP
+  runs over the ordinary data network on UDP 47808. They are the same language on
+  completely different wiring. Reading MS/TP directly needs an RS-485 serial
+  interface, which phones do not have and which a laptop only gets with a dedicated
+  USB-to-RS-485 adapter and MS/TP software. Easy BACnet stays on the IP side on
+  purpose: it is the side a phone can actually reach.</p>
+
+  <h2>How to reach MS/TP devices anyway</h2>
+  <ul>
+    <li><strong>Through the router they already sit behind.</strong> Most buildings
+    put a BACnet router (often part of a supervisory controller or gateway) between
+    the MS/TP trunks and the IP backbone. If yours does, those MS/TP devices are
+    already on IP as far as your phone is concerned &mdash; scan and they show up.</li>
+    <li><strong>Confirm a router exists.</strong> If a whole set of controllers is
+    missing from a scan and they are known to be MS/TP, ask whoever owns the controls
+    whether those trunks are routed onto IP, and where the router is. That is a
+    <a href="who-to-call-it-hvac-or-controls.html">controls / BMS question</a>, not a
+    network or app one.</li>
+  </ul>
+
+  <h2>Might direct MS/TP come later?</h2>
+  <p>Not for the phone app &mdash; the hardware limit is real. The honest answer is
+  that Easy BACnet is, and is meant to be, a BACnet IP tool. If you need to sit on a
+  serial trunk directly, that is a job for a laptop with an RS-485 adapter and
+  purpose-built MS/TP software.</p>
+""",
+    related=[
+        ("guides/bacnet-mstp-vs-bacnet-ip", "BACnet MS/TP vs BACnet/IP"),
+        ("guides/why-cant-i-find-my-bacnet-devices", "Why can't I find my BACnet IP devices?"),
+        ("guides/who-to-call-it-hvac-or-controls", "Who do I call &mdash; IT, HVAC, or controls/BMS?"),
+    ],
+))
+
+GUIDES.append(dict(
+    slug="guides/who-to-call-it-hvac-or-controls",
+    title="Who do I call: IT, HVAC, or the controls/BMS contractor? | Easy BACnet",
+    question="Who do I call when something's wrong &mdash; IT, HVAC, or the controls contractor?",
+    description="Most BACnet IP problems belong to one of three providers: IT/network, the HVAC/mechanical contractor, or the controls/BMS integrator. A plain map of who owns what, which one to call for each symptom, and what to have ready so the call is short.",
+    answer_html="""<p>Match the problem to the provider. If you <strong>can't reach the
+    equipment on the network</strong> (nothing scans, wrong subnet, a firewall),
+    that's your <strong>IT / network</strong> provider. If the equipment is reachable
+    but <strong>the physical machine is misbehaving</strong> (a fan that won't run, no
+    heating, a tripped unit), that's the <strong>HVAC / mechanical</strong>
+    contractor. If the equipment runs but <strong>the control logic, points, schedules
+    or overrides are wrong</strong>, that's the <strong>controls / BMS integrator</strong>
+    &mdash; the company that programmed the system. Easy BACnet helps you tell which of
+    the three you're looking at; it doesn't replace any of them.</p>""",
+    body_html="""
+  <h2>Three providers, three kinds of problem</h2>
+  <p>On almost every building, three different companies own three different layers.
+  Knowing which one to call &mdash; and not wasting a day with the wrong one &mdash; is
+  half the job.</p>
+
+  <h3>IT / network provider</h3>
+  <p>Owns the wires, switches, Wi-Fi, VLANs, IP addresses and firewalls &mdash; the
+  network the controllers ride on. Call them when the problem is
+  <strong>reachability</strong>: you can't get onto the controls network, you're on
+  the wrong <a href="subnets.html">subnet</a>, a scan finds nothing, or a firewall is
+  blocking BACnet IP (UDP 47808). They cannot help with what a controller is doing,
+  only whether you can talk to it.</p>
+
+  <h3>HVAC / mechanical contractor</h3>
+  <p>Owns the physical equipment &mdash; the air handlers, chillers, boilers, pumps,
+  fans, dampers and valves, and the wiring to them. Call them when the
+  <strong>machine itself</strong> is the problem: a fan motor that won't start, a
+  compressor that's locked out, no airflow, a water leak, a unit that's mechanically
+  tripped. The app may read a point correctly and the equipment still be broken &mdash;
+  that's their domain.</p>
+
+  <h3>Controls / BMS integrator</h3>
+  <p>Also called the temperature controls contractor, ATC, or building-automation
+  integrator &mdash; the company that <strong>programmed and commissioned</strong> the
+  control system. Owns the controllers, the BACnet points, the sequences of
+  operation, schedules, setpoints, alarms and graphics. Call them when the equipment
+  is healthy and reachable but the <strong>logic is wrong</strong>: a point is
+  <a href="bacnet-priority-and-stuck-overrides.html">stuck in override</a>, a schedule
+  isn't running, a setpoint won't hold, a device is
+  <a href="bacnet-device-id-explained.html">unconfigured or has a duplicate ID</a>, or
+  a value reads right but nothing acts on it.</p>
+
+  <h2>Which one do I call? (symptom &rarr; owner)</h2>
+  <table>
+    <tr><th>What you're seeing</th><th>Who owns it</th></tr>
+    <tr><td>Scan finds nothing; you may be on the wrong subnet or on guest Wi-Fi</td><td>IT / network</td></tr>
+    <tr><td>You can reach some devices but a firewall or VLAN blocks others</td><td>IT / network</td></tr>
+    <tr><td>You need a static IP, a switch port on the controls VLAN, or a BBMD address</td><td>IT / network</td></tr>
+    <tr><td>A device answers, but the fan/pump/compressor physically won't run</td><td>HVAC / mechanical</td></tr>
+    <tr><td>No heating or cooling, a leak, a mechanically tripped or locked-out unit</td><td>HVAC / mechanical</td></tr>
+    <tr><td>A point is stuck in override and won't release</td><td>Controls / BMS</td></tr>
+    <tr><td>A schedule, setpoint or sequence isn't behaving; a value reads right but nothing happens</td><td>Controls / BMS</td></tr>
+    <tr><td>Unconfigured devices, duplicate Device IDs, or missing points after commissioning</td><td>Controls / BMS</td></tr>
+    <tr><td>MS/TP controllers aren't visible and you're not sure they're routed onto IP</td><td>Controls / BMS</td></tr>
+  </table>
+
+  <h2>What to have ready before you call</h2>
+  <p>The same handful of facts turns a long call into a short one. Easy BACnet gives
+  you most of them:</p>
+  <ul>
+    <li><strong>Your phone's address and subnet mask</strong> (the app shows these when
+    a scan finds nothing) &mdash; the first thing IT will ask.</li>
+    <li><strong>The Device ID, name and IP</strong> of the unit in question, from the
+    scan.</li>
+    <li><strong>The point name and what it's doing</strong> &mdash; its present value,
+    units, status, and which priority is commanding it &mdash; for a controls call.</li>
+    <li><strong>What you expected versus what you saw.</strong> "AHU-2 supply fan
+    command reads On at priority 8 but the fan isn't turning" tells all three providers
+    exactly whose problem it is.</li>
+    <li><strong>Which switch or jack you're plugged into</strong>, if it's a network
+    question.</li>
+  </ul>
+  <p>Exporting the scan as a CSV and attaching it is often the fastest way to give an
+  integrator what they need &mdash; see
+  <a href="vendor-asking-for-bacnet-information.html">what to send when a vendor asks
+  for your BACnet information</a>.</p>
+
+  <h2>The grey areas &mdash; who to call first</h2>
+  <ul>
+    <li><strong>"I can't find any devices."</strong> Usually IT / network first
+    (you're likely on the wrong subnet). If IT confirms you're on the controls network
+    and devices are known to be MS/TP, it becomes a controls question &mdash; are those
+    trunks <a href="does-easy-bacnet-support-mstp-rs485.html">routed onto IP</a>?</li>
+    <li><strong>"The value looks wrong."</strong> Decide whether the <em>number</em> is
+    wrong (a sensor reading nonsense &rarr; controls or mechanical) or the number is
+    right but nothing acts on it (a stuck override or bad sequence &rarr; controls).</li>
+    <li><strong>"It worked yesterday."</strong> Ask what changed &mdash; a network
+    change (IT), a part that failed (mechanical), or a programming change (controls).</li>
+  </ul>
+
+  <h2>Where Easy BACnet fits</h2>
+  <p>Think of the app as a flashlight, not a repair. It tells you what's on the
+  network, what each point reads, and who is commanding it &mdash; enough to point at
+  the right provider with evidence instead of a guess. It does not fix a network, a
+  motor, or a control program, and it is
+  <a href="does-easy-bacnet-support-mstp-rs485.html">BACnet IP only</a> &mdash; it
+  won't reach a bare MS/TP serial trunk. None of "call your provider" is a cop-out:
+  these are three different trades, and the fastest fix is the right one on the phone.</p>
+""",
+    related=[
+        ("guides/subnets", "Why am I on the wrong network even though I'm plugged into the switch?"),
+        ("guides/cant-find-what-im-looking-for", "The app can&rsquo;t find what I&rsquo;m looking for"),
+        ("guides/does-easy-bacnet-support-mstp-rs485", "Does Easy BACnet support MS/TP or RS-485?"),
+        ("guides/vendor-asking-for-bacnet-information", "A vendor asked for my BACnet information &mdash; what do I send?"),
     ],
 ))
 
@@ -2252,7 +2436,7 @@ TOOLS.append(dict(
     bits are the type, the bottom 22 bits are the instance. This tool goes both ways:
     pick a type and instance to get the encoded number, or paste a raw Object Identifier
     to see what it means. Background: <a href="guides/what-is-a-bacnet-points-list.html">what
-    is a BACnet points list?</a> and <a href="guides/bacnet-object-types-explained.html">BACnet
+    is a BACnet IP points list?</a> and <a href="guides/bacnet-object-types-explained.html">BACnet
     object types explained</a>.</p>""",
     tool_html="""
   <div class="tool">
@@ -2320,9 +2504,9 @@ window.addEventListener('DOMContentLoaded',function(){encId();decId();});
 """,
     related=[
         ("guides/bacnet-object-types-explained", "BACnet object types explained"),
-        ("guides/what-is-a-bacnet-points-list", "What is a BACnet points list?"),
+        ("guides/what-is-a-bacnet-points-list", "What is a BACnet IP points list?"),
         ("guides/bacnet-device-id-explained", "What is a BACnet Device ID?"),
-        ("guides/bacnet-scanner-app-android", "Is there a BACnet scanner app for Android?"),
+        ("guides/bacnet-scanner-app-android", "Is there a BACnet IP scanner app for Android?"),
     ],
 ))
 
@@ -2501,8 +2685,9 @@ footer a{color:var(--mut); text-decoration:underline}
     <div class="grid">
       <div class="cell"><div class="n">01 / DISCOVER</div>
         <h3>Discover the network</h3>
-        <p>Finds every BACnet/IP device on the subnet, including devices reached through a
-        BACnet router on an MS/TP trunk.</p></div>
+        <p>Finds every BACnet/IP device on the subnet, including MS/TP devices reached
+        through a BACnet router. <strong>BACnet IP only</strong> &mdash; it does not connect
+        to an MS/TP (RS-485) serial trunk directly.</p></div>
       <div class="cell"><div class="n">02 / BROWSE</div>
         <h3>Browse devices &amp; points</h3>
         <p>Every object on every device &mdash; type, instance, name, live value, units,
@@ -2541,7 +2726,7 @@ footer a{color:var(--mut); text-decoration:underline}
   <div class="wrap">
     <h2>Using the app</h2>
     <ul class="linklist">
-      <li><a href="guides/how-to-use-easy-bacnet.html">How do I use Easy BACnet to get a points list off a building?</a></li>
+      <li><a href="guides/how-to-use-easy-bacnet.html">How do I get a BACnet IP points list off a building?</a></li>
       <li><a href="guides/how-to-write-to-a-bacnet-point.html">How do I write to a BACnet point, and release it afterwards?</a></li>
       <li><a href="guides/how-to-build-a-custom-remote.html">How do I build a custom remote for a device?</a></li>
       <li><a href="guides/cant-find-what-im-looking-for.html">The app can&rsquo;t find what I&rsquo;m looking for &mdash; what do I do?</a></li>
