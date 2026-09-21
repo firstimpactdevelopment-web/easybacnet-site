@@ -15,15 +15,26 @@ URL is known. Everything else is relative.
 """
 
 import io
+import json
 import os
 import re
+import sys
+import urllib.error
+import urllib.request
 import html as html_module
 
 BASE_URL = "https://easybacnet.com"
 
+# IndexNow (Bing, Yandex, Seznam, Naver, …) instant-recrawl key. The key file
+# below is served at BASE_URL/<key>.txt and IS the ownership proof — its
+# contents must equal the key. Google does not consume IndexNow, so this is a
+# free supplement to the sitemap, not a Google-ranking lever. Ping AFTER a
+# deploy is live:  python build_site.py --ping
+INDEXNOW_KEY = "e9a7c4f20b8d46139f5c1a7e63d02b8f"
+
 # Freshness signal. Bump when guide content is meaningfully revised.
-UPDATED = "2026-09-18"            # ISO, for JSON-LD and sitemap <lastmod>
-UPDATED_HUMAN = "18 September 2026"  # for the visible "Updated" line
+UPDATED = "2026-09-21"            # ISO, for JSON-LD and sitemap <lastmod>
+UPDATED_HUMAN = "21 September 2026"  # for the visible "Updated" line
 
 HERE = os.path.dirname(os.path.abspath(__file__))
 
@@ -3030,7 +3041,31 @@ footer a{color:var(--mut); text-decoration:underline}
 """
 
 
-def main():
+def ping_indexnow(urls):
+    """Tell IndexNow-consuming engines (Bing/Yandex/Seznam/Naver) to recrawl.
+    Safe to call repeatedly; run it after a deploy is live."""
+    payload = json.dumps({
+        "host": "easybacnet.com",
+        "key": INDEXNOW_KEY,
+        "keyLocation": "%s/%s.txt" % (BASE_URL, INDEXNOW_KEY),
+        "urlList": urls,
+    }).encode("utf-8")
+    req = urllib.request.Request(
+        "https://api.indexnow.org/indexnow",
+        data=payload,
+        headers={"Content-Type": "application/json; charset=utf-8"},
+        method="POST",
+    )
+    try:
+        with urllib.request.urlopen(req, timeout=20) as resp:
+            print("IndexNow: submitted %d URLs -> HTTP %d (200/202 = accepted)" % (len(urls), resp.status))
+    except urllib.error.HTTPError as e:
+        print("IndexNow: HTTP %d %s (422 = key/URL mismatch; ensure %s.txt is deployed)" % (e.code, e.reason, INDEXNOW_KEY))
+    except Exception as e:  # network-dead plant rooms etc. — never fail the build
+        print("IndexNow: ping skipped/failed — %s" % e)
+
+
+def main(ping=False):
     for g in GUIDES:
         write(
             g["slug"] + ".html",
@@ -3075,6 +3110,13 @@ def main():
     write("sitemap.xml", "\n".join(sm) + "\n")
 
     write("robots.txt", "User-agent: *\nAllow: /\nSitemap: %s/sitemap.xml\n" % BASE_URL)
+
+    # IndexNow key file (its contents ARE the ownership proof) + optional ping.
+    write(INDEXNOW_KEY + ".txt", INDEXNOW_KEY + "\n")
+    if ping:
+        clean = [BASE_URL + "/" if _to_clean_url(u) == "/" else BASE_URL + "/" + _to_clean_url(u)
+                 for u in urls]
+        ping_indexnow(clean)
 
     # Custom domain + host hints
     write("CNAME", "easybacnet.com")
@@ -3128,4 +3170,4 @@ def main():
 
 
 if __name__ == "__main__":
-    main()
+    main(ping="--ping" in sys.argv)
