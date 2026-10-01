@@ -4276,6 +4276,10 @@ def main(ping=False):
 
     write("robots.txt", "User-agent: *\nAllow: /\nSitemap: %s/sitemap.xml\n" % BASE_URL)
 
+    # AdMob app-ads.txt (app publisher pub-6721099502169382). Must sit at the
+    # root of the developer-website domain entered on the Play store listing.
+    write("app-ads.txt", "google.com, pub-6721099502169382, DIRECT, f08c47fec0942fa0\n")
+
     # IndexNow key file (its contents ARE the ownership proof) + optional ping.
     write(INDEXNOW_KEY + ".txt", INDEXNOW_KEY + "\n")
     if ping:
