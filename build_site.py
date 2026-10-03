@@ -1132,8 +1132,8 @@ GUIDES.append(dict(
   <h2>Step 4 &mdash; Export</h2>
   <p>Back on the main screen, tap <strong>Export Results</strong>. On the free
   version the app first asks <em>Watch a short ad?</em> &mdash; choose
-  <strong>Watch ad</strong> to continue, <strong>Remove ads</strong> to see the
-  one-time unlock, or <strong>Cancel</strong>. No ad ever plays unless you choose it,
+  <strong>Watch ad</strong> to continue, <strong>Remove ads</strong> to see Easy
+  BACnet Pro, or <strong>Cancel</strong>. No ad ever plays unless you choose it,
   and if no ad can load (no signal in the plant room) the export simply goes ahead.</p>
   <p>The app then reads every point on every device &mdash; names, present values,
   units and status. A progress box (<em>Exporting BACnet IP Results</em>) shows which
@@ -1303,7 +1303,8 @@ GUIDES.append(dict(
     four-column grid, tap one to rename, resize, recolour or set its write priority, then tap
     <strong>Done</strong>. Saved remotes live under <strong>My Remotes</strong>; long-press one
     to export it as an <code>.ebremote</code> file. The free version keeps one remote (opening
-    it asks to show a short ad); a one-time unlock removes ads and the limit.</p>""",
+    it asks to show a short ad); Easy BACnet Pro, a $9.99-a-year subscription, removes the ads
+    and the limit.</p>""",
     body_html="""
   <div class="callout">
   <p>Need one screen for <strong>several</strong> devices &mdash; a whole boiler room? That is
@@ -1442,19 +1443,21 @@ GUIDES.append(dict(
   <p>The file is plain JSON holding the layout, the device's ID and its last known address. It
   holds no values from the building.</p>
 
-  <h2>Free vs unlocked</h2>
-  <p>Scanning, reading, writing and exporting are free. Custom remotes are the one paid
-  feature, handled gently: on the free version you can keep <strong>one</strong> remote (for
+  <h2>Free vs Easy BACnet Pro</h2>
+  <p>Scanning, reading, writing and exporting are free. Custom remotes are limited on the
+  free version, but gently: on the free version you can keep <strong>one</strong> remote (for
   one device). Opening that saved remote asks <em>Watch a short ad?</em> &mdash; choose
   <strong>Watch ad</strong>, <strong>Remove ads</strong> or <strong>Cancel</strong>; no ad
   plays unless you choose it. If no ad can load &mdash; common in a plant room with no signal
   &mdash; the remote just opens, so you are never locked out of your own controls. Building or
   importing a second remote shows <em>One remote on the free version</em> with an
   <strong>Unlock</strong> button.</p>
-  <p>A single <strong>one-time purchase</strong> (<em>Remove ads &amp; unlimited remotes</em>,
-  priced by Google Play in your currency) removes the ads and lifts the limit: as many remotes
-  as you like, on as many devices as you look after. Remotes never expire either way. There is
-  no subscription.</p>
+  <p><strong>Easy BACnet Pro</strong> is a Google Play subscription: $9.99 a year (Play shows
+  the price in your currency), with a 14-day free trial if you have never had it before. It
+  removes the ads and lifts the limit: as many remotes as you like, on as many devices as you
+  look after. Cancel any time in Google Play &rsaquo; Subscriptions; Pro stays on until the end
+  of the year you paid for. If it ends, your remotes are kept &mdash; nothing is deleted &mdash;
+  but the free limit and the ads come back.</p>
 """,
     related=[
         ("guides/how-to-build-a-control-panel", "How do I build a control panel for several devices?"),
@@ -1477,8 +1480,8 @@ GUIDES.append(dict(
     devices from the menu's <strong>Devices&hellip;</strong> &mdash; up to 32 per panel &mdash;
     set the <strong>Grid width</strong>, drag controls into place, then tap
     <strong>Done</strong> to use it live. The builder is in beta; the free version keeps one
-    panel driving one device, and the one-time unlock allows unlimited panels with up to 32
-    devices each.</p>""",
+    panel driving one device, and Easy BACnet Pro ($9.99 a year) allows unlimited panels with
+    up to 32 devices each.</p>""",
     body_html="""
   <h2>Remote or control panel?</h2>
   <p>A <a href="how-to-build-a-custom-remote.html">custom remote</a> is one screen for
@@ -1597,14 +1600,14 @@ GUIDES.append(dict(
     A single-device remote file (<code>.ebremote</code>) belongs in Custom Remotes instead.</li>
   </ul>
 
-  <h2>Free vs unlocked</h2>
+  <h2>Free vs Easy BACnet Pro</h2>
   <p>The free version keeps <strong>one</strong> control panel, driving its primary device only;
   trying to add a second device shows <em>Multiple devices is a Pro feature</em>, and a second
   panel shows <em>One panel on the free version</em>. Importing a multi-device panel on the free
   version keeps the layout but points every control at the primary device. Opening a panel never
-  needs an ad. The one-time unlock &mdash; the same purchase that removes ads and lifts the
-  remotes limit &mdash; allows unlimited panels with up to 32 devices each. They never
-  expire.</p>
+  needs an ad. Easy BACnet Pro &mdash; the same $9.99-a-year subscription that removes ads and
+  lifts the remotes limit &mdash; allows unlimited panels with up to 32 devices each. If the
+  subscription ends, your panels are kept as they are, but the free limits apply again.</p>
 
   <h2>Tips from the field</h2>
   <ul>
@@ -2784,8 +2787,9 @@ GUIDES.append(dict(
   <h2>A note on &ldquo;free&rdquo;</h2>
   <p>Watch what &ldquo;free&rdquo; includes. Some free tools read but do not write; some
   gate the download behind a lead form; some are free for personal use only. Easy BACnet
-  is free to scan, read, write and export; a one-time purchase only lifts the limit on
-  saved custom control panels. Reading and commissioning a device costs nothing.</p>
+  is free to scan, read, write and export; the optional Easy BACnet Pro subscription
+  ($9.99 a year) only removes the ads and lifts the limits on saved custom remotes and
+  control panels. Reading and commissioning a device costs nothing.</p>
 """,
     related=[
         ("guides/bacnet-scanner-app-android", "Is there a BACnet IP scanner app for Android?"),
