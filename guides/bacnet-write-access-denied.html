@@ -122,12 +122,12 @@
   "@graph": [
     {
       "@type": "FAQPage",
-      "datePublished": "2026-09-30",
-      "dateModified": "2026-09-30",
+      "datePublished": "2026-10-03",
+      "dateModified": "2026-10-03",
       "mainEntity": [{
         "@type": "Question",
         "name": "What does BACnet 'Write Access Denied' mean, and how do I fix it?",
-        "acceptedAnswer": { "@type": "Answer", "text": "“Write Access Denied” is BACnet telling you the property you aimed at cannot be written the way you tried — it is a permission answer from the device, not a network error. The usual reasons: the property is read-only (you cannot write an input's Present_Value directly), the object is not commandable so it has no priority array to write into, the point is locked by Out_Of_Service or the controller's own program, or you wrote the right thing to the wrong property. The device is healthy; it is declining this particular write." }
+        "acceptedAnswer": { "@type": "Answer", "text": "“Write Access Denied” is the device refusing your write on its own rules. Communication worked; the controller received the request and declined it. The usual reasons, most common first: you wrote to an input point, whose Present_Value belongs to the physical sensor; the object or property is read-only on that device; the controller requires the point to be Out Of Service before it accepts an external write; or the point is locked by the controller's own program. The fix is to write to a different point, or to change how the device is configured, not to retry the same write." }
       }]
     },
     {
@@ -150,79 +150,70 @@
 
 <article>
   <h1>What does BACnet 'Write Access Denied' mean, and how do I fix it?</h1>
-  <p class="updated">Updated 30 September 2026</p>
+  <p class="updated">Updated 3 October 2026</p>
 
   <div class="answer">
     <strong>Short answer</strong>
-    <p>&ldquo;Write Access Denied&rdquo; is BACnet telling you the
-    property you aimed at cannot be written the way you tried &mdash; it is a
-    permission answer from the device, not a network error. The usual reasons: the
-    property is read-only (you cannot write an input's Present_Value directly), the
-    object is not commandable so it has no priority array to write into, the point is
-    locked by <em>Out_Of_Service</em> or the controller's own program, or you wrote
-    the right thing to the wrong property. The device is healthy; it is declining this
-    particular write.</p>
+    <p>&ldquo;Write Access Denied&rdquo; is the device refusing your
+    write on its own rules. Communication worked; the controller received the request
+    and declined it. The usual reasons, most common first: you wrote to an input point,
+    whose Present_Value belongs to the physical sensor; the object or property is
+    read-only on that device; the controller requires the point to be Out Of Service
+    before it accepts an external write; or the point is locked by the controller's own
+    program. The fix is to write to a different point, or to change how the device is
+    configured, not to retry the same write.</p>
   </div>
 
 
-  <h2>What the error actually is</h2>
-  <p>It is a BACnet error class <em>property</em>, error code <em>write-access-denied</em>,
-  returned by the device in response to your WriteProperty. That means communication
-  worked end to end &mdash; the device received the request, understood it, and refused
-  it on rules. So this is never a wiring or subnet problem; it is about <em>what</em>
-  you tried to write.</p>
+  <h2>What the error is</h2>
+  <p>It is a BACnet error with class <em>property</em> and code
+  <em>write-access-denied</em>, sent back by the device in reply to your WriteProperty.
+  That tells you two useful things. The network and the device are fine. And the
+  problem is <em>what</em> you tried to write, so retrying or changing the value will
+  not help.</p>
+  <p>Other error codes mean other things. <em>invalid-data-type</em> means the value
+  was the wrong kind (text where a number was expected); <em>value-out-of-range</em>
+  means the number was outside what the point accepts; <em>unknown-property</em> or
+  <em>unknown-object</em> means you addressed something that does not exist. Only
+  <em>write-access-denied</em> is a permissions answer.</p>
 
-  <h2>The common reasons, and the fix</h2>
+  <h2>Why a device refuses, in order of likelihood</h2>
 
-  <h3>1. The property is read-only</h3>
-  <p>You cannot write the Present_Value of an Analog Input or Binary Input &mdash; those
-  reflect a physical sensor and are read-only by definition. If you need to force a
-  value for testing, that is what <em>Out_Of_Service</em> plus the manual override is
-  for, not a direct write. Writing to an <em>output</em> or <em>value</em> object is
-  the writable case.</p>
-
-  <h3>2. The object is not commandable</h3>
-  <p>Only commandable objects (typically outputs, and value objects the vendor made
-  commandable) have the 16-slot priority array you write into. Write to a
-  non-commandable object and you get access denied. Check the object type &mdash; see
+  <h3>1. It is an input point</h3>
+  <p>The Present_Value of an Analog Input, Binary Input or Multi-state Input is the
+  sensor reading, and the device will not let the network overwrite it. Easy BACnet
+  warns you before you try. If you need to force a reading for testing, the BACnet
+  way is to set <em>Out_Of_Service</em> true first, which disconnects the object from
+  the sensor; many devices do not allow that over the network either. Check the
+  object type: the points you can command are Outputs and Values. See
   <a href="bacnet-object-types-explained">BACnet object types explained</a>.</p>
 
-  <h3>3. You wrote the value instead of a priority</h3>
-  <p>On a commandable point you write Present_Value <em>at a priority</em> (1&ndash;16).
-  Some controllers reject a write that does not specify a priority, or reject writes at
-  priorities they reserve. Choose a priority &mdash; 8 is the usual manual-operator
-  slot &mdash; and write there. See
-  <a href="bacnet-priority-and-stuck-overrides">BACnet priority and stuck
-  overrides</a>.</p>
+  <h3>2. The object or property is read-only on this device</h3>
+  <p>Not every Value object is commandable; the vendor decides. Configuration
+  properties such as Object_Name, Units or Description are commonly read-only too.
+  If the vendor's documentation marks it read-only, there is no way round it over
+  BACnet.</p>
 
-  <h3>4. The controller's program owns it</h3>
-  <p>Some devices lock points that their internal logic controls, or require the point
-  to be out of service before an external write is allowed. This is a device policy;
-  the vendor's manual will say so, and forcing past it is not something to do on live
-  equipment without understanding what the program expects.</p>
+  <h3>3. The device wants Out_Of_Service first</h3>
+  <p>Some controllers accept external writes to a point only while it is marked Out
+  Of Service, so the controller's own logic stops driving it. This is a device policy
+  and it is in the manual. Be careful: a point left Out Of Service shows the forced
+  value rather than reality until someone clears it.</p>
 
-  <h3>5. Genuinely protected</h3>
-  <p>Configuration properties, and some vendors' whole objects, are simply not
-  writable over BACnet by design. If the manual says read-only, it is read-only.</p>
+  <h3>4. The controller's program owns the point</h3>
+  <p>Some vendors lock points that their internal logic controls, or restrict which
+  priorities an outside tool may use. Forcing past that on live equipment is not a
+  good idea without knowing what the program expects. Ask the
+  <a href="who-to-call-it-hvac-or-controls">controls contractor</a> which
+  points are meant to be commanded from outside.</p>
 
-  <h2>How to work out which</h2>
-  <ol>
-    <li><strong>Look at the object type.</strong> Input? It is read-only &mdash; you want
-    an output or value object.</li>
-    <li><strong>Check whether it is commandable</strong> (does it have a priority
-    array?). If not, there is nothing to write.</li>
-    <li><strong>Write Present_Value at priority 8</strong> rather than as a plain
-    value.</li>
-    <li><strong>Read the vendor manual</strong> for points the program locks or that
-    need Out_Of_Service first.</li>
-  </ol>
-  <div class="callout">
-  <p><a href="../">Easy BACnet</a> only offers a write where the object is
-  commandable, defaults to a sensible priority, and reads the priority array back so
-  you can see whether the write took &mdash; which turns &ldquo;access denied&rdquo;
-  from a mystery into an obvious &ldquo;that point is not writable.&rdquo; See
-  <a href="how-to-write-to-a-bacnet-point">how to write to a BACnet point</a>.</p>
-  </div>
+  <h2>What does not cause it</h2>
+  <p>Leaving the priority out does not. A WriteProperty with no priority lands at
+  priority 16, the lowest; the write is accepted, it just may be outranked. That is
+  the &ldquo;I wrote it and nothing changed&rdquo; case, which is covered in
+  <a href="bacnet-value-does-not-change-when-written">why doesn't my BACnet
+  value change when I write to it?</a> Easy BACnet always sends a priority (8 by
+  default), so this does not arise from the app.</p>
 
 </article>
   <nav class="more">

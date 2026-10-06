@@ -122,8 +122,8 @@
   "@graph": [
     {
       "@type": "FAQPage",
-      "datePublished": "2026-09-30",
-      "dateModified": "2026-09-30",
+      "datePublished": "2026-10-03",
+      "dateModified": "2026-10-03",
       "mainEntity": [{
         "@type": "Question",
         "name": "Why is my BACnet point stuck, and how do I release an override?",
@@ -150,7 +150,7 @@
 
 <article>
   <h1>Why is my BACnet point stuck, and how do I release an override?</h1>
-  <p class="updated">Updated 30 September 2026</p>
+  <p class="updated">Updated 3 October 2026</p>
 
   <div class="answer">
     <strong>Short answer</strong>
@@ -185,48 +185,45 @@
     <tr><td>16</td><td>Lowest; often where the normal control program writes</td></tr>
   </table>
 
-  <p>Only 1, 2, 5, 6 and 8 are assigned meanings by the standard. The rest are
-  available, and every vendor uses them slightly differently &mdash; which is exactly
-  why you should agree a priority level in writing before letting an integrator
-  command anything.</p>
+  <p>Only 1, 2, 5, 6 and 8 have meanings assigned by the standard. The rest are
+  available and every vendor uses them a little differently, so agree a priority
+  level with an integrator before they command anything. A write that carries no
+  priority at all lands at 16.</p>
 
   <h2>Why the point is stuck</h2>
-  <p>Someone wrote a value at a priority and never released it. The usual suspects:</p>
+  <p>Someone wrote a value at a priority and never released it. In rough order of
+  how often it happens:</p>
   <ul>
-    <li>A technician overrode a point at priority 8 to test something and went home.</li>
-    <li>An integration or analytics platform commands a point on a schedule and
+    <li>A technician overrode a point at priority 8 to test something and left.</li>
+    <li>A graphics page has an override control that writes but no obvious release.</li>
+    <li>An integration or analytics platform that commands points on a schedule
     stopped running, leaving its last command in place.</li>
-    <li>A graphics page has an override control that writes but has no obvious
-    release button.</li>
-    <li>Someone wrote at a <em>higher</em> priority than the control program, so the
-    program keeps writing to slot 16 and nothing happens. The program looks broken;
-    it is being outranked.</li>
   </ul>
-
-  <p>Reading the priority array tells you immediately which slot is occupied, and
-  therefore who to blame. A point being held at priority 8 is a person; at 16, it is
-  probably the control program doing its job.</p>
+  <p>The active priority tells you who is holding it. Priority 8 is a person with a
+  tool. Priority 16 is usually the control program. Priority 1, 2, 5 or 6 is a safety
+  or equipment-protection function and should be left alone.</p>
+  <p>A related case that looks the same from the outside: the control program is
+  still writing at 16 and something at a higher priority is outranking it. The
+  program is not broken; it is losing. Releasing the higher slot fixes it.</p>
 
   <h2>How to release it</h2>
   <p>Write <code>NULL</code> to <code>Present_Value</code> at the priority that is
-  holding the point. Writing a normal value at a lower priority will not help &mdash;
-  the higher slot still wins. Writing NULL at the wrong priority clears an empty slot
-  and changes nothing.</p>
+  holding the point. Writing a normal value at a lower priority does nothing, because
+  the higher slot still wins. Writing NULL at a priority that is already empty also
+  does nothing. After releasing, re-read the point: control should drop to the next
+  occupied slot or to <code>Relinquish_Default</code>.</p>
 
-  <p>After releasing, re-read the point. Control should drop to the next occupied
-  slot or to <code>Relinquish_Default</code>.</p>
-
-  <h2>The rule that keeps you out of trouble</h2>
-  <p>Release every point you take command of before you leave site. A commanded
-  point does not expire. A damper you drove to 100% to prove an actuator works will
-  still be at 100% next February unless somebody clears it, and the control program
-  will have no way to tell you it is being overruled.</p>
-
-  <p>If you are writing from <a href="../">Easy BACnet</a>: the point detail
-  screen shows which priority currently commands the point and what it falls back to,
-  and the <em>Release to Auto</em> button writes NULL at the priority you select.
-  Every write and release in a session is recorded in the session write log so you
-  can check nothing was left behind.</p>
+  <h2>Release before you leave</h2>
+  <p>A commanded point does not expire. A damper driven to 100% to test an actuator
+  stays at 100% until somebody clears it, and the control program cannot tell anyone
+  it is being overruled. Release every point you take command of before you leave
+  site.</p>
+  <p>In <a href="../">Easy BACnet</a>, the point screen shows
+  <strong>Commanded At</strong> (the active priority and its value) and
+  <strong>Falls Back To</strong> (the relinquish default), and <strong>Release to
+  Auto</strong> writes NULL at the priority you choose. Menu &rarr; <strong>Session
+  write log</strong> lists every write and release since the app started, so you can
+  check nothing was left behind.</p>
 
 </article>
   <nav class="more">

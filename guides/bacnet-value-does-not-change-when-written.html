@@ -122,12 +122,12 @@
   "@graph": [
     {
       "@type": "FAQPage",
-      "datePublished": "2026-09-30",
-      "dateModified": "2026-09-30",
+      "datePublished": "2026-10-03",
+      "dateModified": "2026-10-03",
       "mainEntity": [{
         "@type": "Question",
         "name": "Why doesn't my BACnet value change when I write to it?",
-        "acceptedAnswer": { "@type": "Answer", "text": "You wrote the point, got no error, and nothing moved. In BACnet that almost always means something at a higher priority is already in command. A commandable point obeys the highest active slot in its 16-level priority array, so a write at priority 8 does nothing while priority 5 is held. The other possibilities: you wrote at a priority the equipment's logic immediately overrides on its next cycle, you wrote a read-only property, or the write went to the wrong object. Reading the priority array tells you which in one look." }
+        "acceptedAnswer": { "@type": "Answer", "text": "You wrote the point, the device accepted it, and nothing moved. Re-read the point and look at what changed. If the Present Value did not change, something at a higher priority is holding the point: your write landed in its slot and is being outranked. If the value changed but the equipment did not, the point is overridden at the hardware, Out Of Service, or the machine itself has a problem. If the value changed and then snapped back, the controller's own program is rewriting it. The point screen in Easy BACnet shows which priority is in command, which tells you which of the three you have." }
       }]
     },
     {
@@ -150,65 +150,79 @@
 
 <article>
   <h1>Why doesn't my BACnet value change when I write to it?</h1>
-  <p class="updated">Updated 30 September 2026</p>
+  <p class="updated">Updated 3 October 2026</p>
 
   <div class="answer">
     <strong>Short answer</strong>
-    <p>You wrote the point, got no error, and nothing moved. In BACnet
-    that almost always means <strong>something at a higher priority is already in
-    command</strong>. A commandable point obeys the highest active slot in its 16-level
-    priority array, so a write at priority 8 does nothing while priority 5 is held. The
-    other possibilities: you wrote at a priority the equipment's logic immediately
-    overrides on its next cycle, you wrote a read-only property, or the write went to
-    the wrong object. Reading the priority array tells you which in one look.</p>
+    <p>You wrote the point, the device accepted it, and nothing moved.
+    Re-read the point and look at what changed. If the <strong>Present Value did not
+    change</strong>, something at a higher priority is holding the point: your write
+    landed in its slot and is being outranked. If the <strong>value changed but the
+    equipment did not</strong>, the point is overridden at the hardware, Out Of Service,
+    or the machine itself has a problem. If the value <strong>changed and then snapped
+    back</strong>, the controller's own program is rewriting it. The point screen in
+    Easy BACnet shows which priority is in command, which tells you which of the three
+    you have.</p>
   </div>
 
 
-  <h2>The priority array is the whole story</h2>
-  <p>A commandable BACnet point does not simply hold the last value written. It has
-  sixteen priority slots, and its Present_Value follows the <em>highest-priority slot
-  that currently has a value</em>. If slot 5 holds 72 and you write 68 at slot 8, the
-  point stays at 72 &mdash; your write landed, it is just being outranked. This is
-  working exactly as designed, and it is the number-one reason a write &ldquo;does
-  nothing.&rdquo; See <a href="bacnet-priority-and-stuck-overrides">BACnet priority
-  and stuck overrides</a>.</p>
+  <h2>First, re-read the point</h2>
+  <p>Easy BACnet re-reads the point after every write, so the value on screen is what
+  the device reports, not what you sent. Compare it with what you wrote, and look at
+  <strong>Commanded At</strong>. Then pick the case below.</p>
 
-  <h2>Work through it in order</h2>
+  <h2>Case 1 &mdash; the value did not change</h2>
+  <p>A commandable point has sixteen priority slots and follows the highest-priority
+  slot that holds a value (1 is highest). If slot 5 holds 72 and you write 68 at slot
+  8, the point stays at 72. Your write was accepted and stored; it is simply outranked.
+  <strong>Commanded At</strong> shows the winning priority and its value.</p>
+  <p>Two things to check:</p>
+  <ul>
+    <li><strong>Which slot is winning, and whose is it?</strong> Priority 1 and 2 are
+    life safety, 5 is critical equipment, 6 is minimum on/off. If one of those holds
+    the point, the control system has a reason and you should leave it. Priority 8 is
+    another operator or a tool like this one; a stuck 8 is usually an override someone
+    forgot to release.</li>
+    <li><strong>Did your write carry a priority?</strong> A WriteProperty with no
+    priority lands at 16, the lowest, so anything else wins. Easy BACnet always sends
+    one (8 by default); some other tools do not.</li>
+  </ul>
+  <p>The right fix is usually to <strong>release</strong> the slot that should not be
+  held (write NULL at that priority) so the point falls back to the program, rather
+  than to write at a higher priority and pile one override on another. See
+  <a href="how-to-release-a-bacnet-override">how to release a BACnet override</a>
+  and <a href="bacnet-priority-and-stuck-overrides">BACnet priority and stuck
+  overrides</a>.</p>
 
-  <h3>1. Read the priority array</h3>
-  <p>Look at all sixteen slots. If any slot <em>above</em> the one you wrote holds a
-  value, that is what is winning. Common culprits: a manual override left in slot 8 by
-  a previous technician, or the building program holding a low-numbered slot.</p>
+  <h2>Case 2 &mdash; the value changed, the equipment did not</h2>
+  <p>The controller accepted the command and shows your value, but the fan did not
+  start or the valve did not move. The controller is no longer the problem:</p>
+  <ul>
+    <li><strong>The point is Overridden.</strong> The <em>Overridden</em> status flag
+    means something local to the device, typically a hand/off/auto switch at the
+    equipment, is forcing the output. Nothing written over the network will move it.</li>
+    <li><strong>The point is Out Of Service.</strong> The object is disconnected from
+    its hardware for testing, so Present_Value changes freely and drives nothing.</li>
+    <li><strong>The machine has a fault.</strong> A tripped overload, a locked-out
+    compressor, a failed actuator. The command is correct; the mechanical side is not.</li>
+  </ul>
+  <p>Check the point's status flags (see
+  <a href="bacnet-status-flags-explained">status flags explained</a>). Overridden
+  and Out Of Service are a controls visit; a healthy point with a dead machine is an
+  HVAC visit.</p>
 
-  <h3>2. Decide the right way to win</h3>
-  <p>You can write at a higher priority than the one holding it &mdash; but understand
-  what you are overriding before you do, because you may be fighting the safety logic.
-  Often the correct fix is not to write higher but to <strong>release</strong> the slot
-  that should not be held (write NULL to relinquish it), letting the point fall back to
-  the program.</p>
+  <h2>Case 3 &mdash; the value changed, then snapped back</h2>
+  <p>The controller's own logic writes that point every program cycle at the same or a
+  higher priority, so your value lasts a second. You cannot win that from outside, and
+  on a live system you should not try. If you need to hold the point, the program has
+  to be changed or the point released from its control, which is a job for the
+  <a href="who-to-call-it-hvac-or-controls">controls contractor</a>.</p>
 
-  <h3>3. Check you wrote at a priority at all</h3>
-  <p>Writing Present_Value as a bare value, with no priority, behaves inconsistently
-  across controllers &mdash; some take it, some ignore it. Write explicitly at a
-  priority (8 is the usual manual slot).</p>
-
-  <h3>4. Rule out read-only and wrong-object</h3>
-  <p>If the point is an input or a non-commandable object, a &ldquo;successful&rdquo;
-  write may have gone nowhere useful &mdash; or returned
-  <a href="bacnet-write-access-denied">Write Access Denied</a>. Confirm you are on
-  a commandable output or value object.</p>
-
-  <h3>5. The program rewrites it every cycle</h3>
-  <p>If the value flicks to yours for a second and then snaps back, the controller's
-  own logic is writing that point on its scan at a higher priority. You cannot win that
-  from outside without addressing the program &mdash; and you usually should not.</p>
-
-  <div class="callout">
-  <p><a href="../">Easy BACnet</a> reads the full priority array after every
-  write and shows which slot is in command, so &ldquo;nothing happened&rdquo; becomes
-  &ldquo;priority 5 is holding it&rdquo; &mdash; the difference between guessing and
-  knowing. It also offers a one-tap release to hand a stuck slot back to Auto.</p>
-  </div>
+  <h2>If the write was refused instead</h2>
+  <p>If the device answered with an error rather than accepting the write, that is a
+  different problem: see
+  <a href="bacnet-write-access-denied">what does BACnet Write Access Denied
+  mean?</a> Input points and read-only Value objects fall in that category.</p>
 
 </article>
   <nav class="more">

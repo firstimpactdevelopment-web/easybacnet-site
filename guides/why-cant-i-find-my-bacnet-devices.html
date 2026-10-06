@@ -122,12 +122,12 @@
   "@graph": [
     {
       "@type": "FAQPage",
-      "datePublished": "2026-09-30",
-      "dateModified": "2026-09-30",
+      "datePublished": "2026-10-03",
+      "dateModified": "2026-10-03",
       "mainEntity": [{
         "@type": "Question",
         "name": "Why can't I find my BACnet IP devices when I scan?",
-        "acceptedAnswer": { "@type": "Answer", "text": "Almost always because the Who-Is broadcast is not reaching the devices. The usual causes, in order of how often they turn out to be the problem: you are on a different IP subnet and there is no BBMD forwarding broadcasts; the Wi-Fi access point is dropping or filtering broadcast traffic; client isolation is on; the devices use a non-standard UDP port; or the devices sit on an MS/TP trunk behind a BACnet router. Finding nothing at all points at the network, not at the devices." }
+        "acceptedAnswer": { "@type": "Answer", "text": "Because the Who-Is broadcast is not reaching the devices. A scan only reaches equipment on the same IP subnet as your phone, so the first thing to rule out is that you are on the office or guest network instead of the controls network. After that, in order: the Wi-Fi is dropping or blocking broadcasts, the devices use a non-standard UDP port, or a firewall is blocking 47808. A scan that finds nothing at all is a network problem. The devices themselves are rarely the cause." }
       }]
     },
     {
@@ -150,80 +150,94 @@
 
 <article>
   <h1>Why can't I find my BACnet IP devices when I scan?</h1>
-  <p class="updated">Updated 30 September 2026</p>
+  <p class="updated">Updated 3 October 2026</p>
 
   <div class="answer">
     <strong>Short answer</strong>
-    <p>Almost always because the <em>Who-Is</em> broadcast is not
-    reaching the devices. The usual causes, in order of how often they turn out to be
-    the problem: you are on a different IP subnet and there is no BBMD forwarding
-    broadcasts; the Wi-Fi access point is dropping or filtering broadcast traffic;
-    client isolation is on; the devices use a non-standard UDP port; or the devices
-    sit on an MS/TP trunk behind a BACnet router. Finding nothing at all points at
-    the network, not at the devices.</p>
+    <p>Because the <em>Who-Is</em> broadcast is not reaching the
+    devices. A scan only reaches equipment on the same IP subnet as your phone, so the
+    first thing to rule out is that you are on the office or guest network instead of
+    the controls network. After that, in order: the Wi-Fi is dropping or blocking
+    broadcasts, the devices use a non-standard UDP port, or a firewall is blocking
+    47808. A scan that finds nothing at all is a network problem. The devices
+    themselves are rarely the cause.</p>
   </div>
 <div class="shotrow"><figure><img src="../img/no-devices.png" alt="When a scan finds nothing" width="480" height="1068" loading="lazy"><figcaption>When a scan finds nothing</figcaption></figure></div>
 
-  <h2>Work through these in order</h2>
+  <h2>Check these in order</h2>
 
-  <h3>1. Are you on the same IP subnet?</h3>
-  <p>BACnet/IP discovery is a broadcast, and broadcasts do not cross routers. If the
-  controllers are on 10.20.30.0/24 and your phone got a DHCP address on the guest
-  network at 192.168.1.0/24, you will find nothing and the system is working
-  correctly. This is the single most common cause.</p>
-  <p>The fix is either to get onto the controls subnet, or to have a
-  <strong>BBMD</strong> (BACnet Broadcast Management Device) configured to forward
-  broadcasts between subnets. Many sites have one; you need its address and, for a
-  client on a foreign subnet, foreign device registration support in your tool &mdash; in
-  Easy BACnet that is menu &rarr; <strong>BBMD for remote networks&hellip;</strong>. For a
-  single controller whose IP you know, <strong>Add device by IP&hellip;</strong> reaches it
-  directly. See <a href="bacnet-add-device-by-ip">add a device by IP</a>.</p>
+  <h3>1. Is the phone on the controls network?</h3>
+  <p>Broadcasts do not cross routers, so your phone has to be on the same subnet as
+  the controllers. When a scan finds nothing, Easy BACnet shows the phone's own IP
+  address and subnet mask. Compare it with a controller's address (on its label, in
+  its front-panel menu, or in the hand-over documents). With a 255.255.255.0 mask the
+  first three numbers must match: a phone on 192.168.1.20 can find a controller on
+  192.168.1.50 but not one on 10.20.30.50.</p>
+  <p>If they do not match, you are on the wrong network. Guest Wi-Fi and the office
+  network are the usual culprits; controls normally sit on their own network or VLAN.
+  An address starting <code>169.254</code> means no DHCP server answered and the phone
+  made one up, which is common when you plug straight into a controls switch. See
+  <a href="subnets">what is a subnet, and why doesn't the switch give me the
+  right one?</a> for how to get onto the right one.</p>
+  <p>If Wi-Fi shows <em>Connected, no internet</em>, turn mobile data off and scan
+  again. Android can route traffic over mobile data when the Wi-Fi has no internet
+  access.</p>
 
-  <h3>2. Is Wi-Fi eating the broadcast?</h3>
-  <p>Access points routinely rate-limit or drop broadcast frames, and a single
-  Who-Is can vanish without trace. A tool that sends Who-Is once and gives up will
-  intermittently find nothing on Wi-Fi even when everything is correct. Re-broadcasting
-  throughout the discovery window fixes this &mdash;
-  <a href="../">Easy BACnet</a> keeps re-sending for the whole scan for this reason,
-  and if broadcasts still go unanswered it contacts each address on your subnet directly.</p>
-  <p>If you can, test on a wired connection to rule this out.</p>
+  <h3>2. Is the network blocking the broadcast?</h3>
+  <p>Wi-Fi access points drop broadcast frames under load, and guest or corporate
+  Wi-Fi often has client isolation on, which stops wireless clients reaching other
+  devices at all. Easy BACnet re-sends Who-Is throughout the scan, and if nothing
+  answers it contacts each address on the subnet directly. If devices turn up that
+  way, the scan summary says they <em>only answered when contacted directly</em>:
+  the network is blocking broadcast replies, and other BACnet tools on that Wi-Fi
+  will see nothing. The fix is a wired connection (a USB-Ethernet adapter into the
+  controls switch) or a network that allows the traffic.</p>
 
-  <h3>3. Is client isolation enabled?</h3>
-  <p>Guest and corporate wireless networks frequently enable client isolation (also
-  called AP isolation), which blocks traffic between wireless clients and often
-  between wireless clients and parts of the wired network. Broadcast discovery cannot get
-  through it. A direct, per-address query sometimes can &mdash; Easy BACnet tries this
-  automatically and tells you when devices <em>only answered when contacted directly</em>
-  &mdash; but the real fix is a network that allows it, or a wired connection.</p>
+  <h3>3. Are the devices on a non-standard port?</h3>
+  <p>The standard is UDP 47808 (0xBAC0). Sites that run more than one BACnet network
+  over the same wire put the others on 47809, 47810 and up. Easy BACnet checks the
+  common alternates during a scan, but a device on an unusual port can be added
+  with <strong>Add device by IP&hellip;</strong> and the right port typed in.</p>
 
-  <h3>4. Are the devices on a non-standard port?</h3>
-  <p>The standard is UDP 47808 (0xBAC0). Sites that run multiple logical BACnet
-  networks over one physical wire often move some onto 47809, 47810, and upward.
-  A scanner that only checks 47808 will miss them entirely.</p>
-
-  <h3>5. Are the devices behind a BACnet router?</h3>
-  <p>MS/TP devices &mdash; most VAV boxes, many unitary controllers &mdash; are not on
-  the IP network at all. They sit on a twisted-pair trunk behind a router that
-  forwards for them. They should still answer a Who-Is, but replies come back with a
-  network number and MAC address rather than a plain IP, and token-passing on the
-  trunk makes them slow: allow several seconds per request rather than one.</p>
-
-  <h3>6. Is a firewall in the way?</h3>
-  <p>Host firewalls and VLAN access lists both block UDP 47808 readily. On a phone
-  this is rarely the issue; on a laptop it often is.</p>
+  <h3>4. Is a firewall or access list in the way?</h3>
+  <p>A switch or router access list can block UDP 47808 between VLANs even when
+  addressing is correct. Phones have no host firewall to worry about, so if the
+  first three checks pass this is a question for whoever runs the network.</p>
 
   <h2>If you find some devices but not others</h2>
-  <p>That rules out most of the above and points at either a non-standard port for
-  the missing ones, an MS/TP trunk whose router is not forwarding, or devices that
-  are genuinely offline. It is also worth checking for
-  <a href="bacnet-device-id-explained">duplicate device IDs</a> &mdash; two
-  controllers claiming the same instance number can make one appear to vanish.</p>
+  <ul>
+    <li><strong>They are on another segment.</strong> The ones you found are on your
+    subnet; the missing ones are behind a router. Add a known one by IP, or scan
+    through the site's BBMD (below).</li>
+    <li><strong>They are MS/TP devices behind a router that is not forwarding.</strong>
+    MS/TP devices normally answer a Who-Is through their router, with a network
+    number and MAC address instead of a plain IP. If a whole trunk is missing, the
+    router or the trunk is the problem, which is a controls question.</li>
+    <li><strong>The missing device is off</strong> or unplugged. Check power and the
+    link light before anything else.</li>
+    <li><strong>Two devices share a Device ID.</strong> One of them can appear to
+    vanish, or the two swap places between scans. The scan summary warns about
+    duplicates. See <a href="duplicate-bacnet-device-id">duplicate Device IDs</a>.</li>
+  </ul>
 
   <h2>If devices appear with no name or no points</h2>
-  <p>The device answered discovery but is refusing or failing property reads. Common
-  causes: the device is busy, it only supports segmented responses for its object
-  list and your client does not, or it is an unconfigured unit still sitting on the
-  factory-default device ID.</p>
+  <p>The device answered discovery but is failing property reads. Give a large
+  controller a minute, then back out and open it again. If it still shows nothing,
+  it may be busy, it may only serve its object list in a form the client cannot
+  read, or it may be an unconfigured unit still on the factory-default Device ID
+  (the scan flags these as <em>needs commissioning</em>).</p>
+
+  <h2>Reaching devices on another subnet</h2>
+  <p>Two options in the menu (three dots, top right):</p>
+  <ul>
+    <li><strong>Add device by IP&hellip;</strong> contacts one controller directly at
+    an address you know. It works across routers because it is not a broadcast. See
+    <a href="bacnet-add-device-by-ip">add a device by IP</a>.</li>
+    <li><strong>BBMD for remote networks&hellip;</strong> registers the phone with the
+    site's BBMD so scans reach the subnets it serves. You need the BBMD's address from
+    whoever manages the controls network. See <a href="what-is-a-bbmd">what is a
+    BBMD?</a></li>
+  </ul>
 
 </article>
   <nav class="more">

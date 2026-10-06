@@ -122,12 +122,12 @@
   "@graph": [
     {
       "@type": "FAQPage",
-      "datePublished": "2026-09-30",
-      "dateModified": "2026-09-30",
+      "datePublished": "2026-10-03",
+      "dateModified": "2026-10-03",
       "mainEntity": [{
         "@type": "Question",
         "name": "Why does my BACnet IP device show offline?",
-        "acceptedAnswer": { "@type": "Answer", "text": "“Offline” in BACnet almost always means I stopped hearing from it, not it is broken. The usual causes, most common first: your phone or client is on the wrong subnet so the broadcast never reaches it, a Wi-Fi access point is dropping the broadcast packets, a firewall is blocking UDP 47808, the device shares a Device ID or network number with another device, or it genuinely lost power or its network link. A device showing a fault flag is a different thing from one showing offline — worth separating first." }
+        "acceptedAnswer": { "@type": "Answer", "text": "“Offline” in BACnet means I stopped hearing from it, which is usually a network problem rather than dead hardware. In order of likelihood: your phone is on a different subnet so the broadcast never reaches the device, the Wi-Fi is dropping broadcasts, a firewall or access list is blocking UDP 47808, two devices share a Device ID, or the device really has lost power or its network link. Before any of that, make sure you are looking at a device that does not answer, and not at a point with a fault flag, which is a different problem." }
       }]
     },
     {
@@ -150,81 +150,74 @@
 
 <article>
   <h1>Why does my BACnet IP device show offline?</h1>
-  <p class="updated">Updated 30 September 2026</p>
+  <p class="updated">Updated 3 October 2026</p>
 
   <div class="answer">
     <strong>Short answer</strong>
-    <p>&ldquo;Offline&rdquo; in BACnet almost always means <em>I stopped
-    hearing from it</em>, not <em>it is broken</em>. The usual causes, most common
-    first: your phone or client is on the wrong subnet so the broadcast never reaches
-    it, a Wi-Fi access point is dropping the broadcast packets, a firewall is blocking
-    UDP 47808, the device shares a Device ID or network number with another device, or
-    it genuinely lost power or its network link. A device showing a <em>fault</em> flag
-    is a different thing from one showing offline &mdash; worth separating first.</p>
+    <p>&ldquo;Offline&rdquo; in BACnet means <em>I stopped hearing from
+    it</em>, which is usually a network problem rather than dead hardware. In order
+    of likelihood: your phone is on a different subnet so the broadcast never reaches
+    the device, the Wi-Fi is dropping broadcasts, a firewall or access list is blocking
+    UDP 47808, two devices share a Device ID, or the device really has lost power or
+    its network link. Before any of that, make sure you are looking at a device that
+    does not answer, and not at a point with a <em>fault</em> flag, which is a
+    different problem.</p>
   </div>
 
 
-  <h2>Offline versus fault &mdash; not the same</h2>
-  <p>First separate two things people both call &ldquo;offline&rdquo;. A device that
-  does not answer discovery or reads at all is a <strong>communication</strong>
-  problem &mdash; the causes below. A device that answers fine but whose
-  <em>points</em> show a fault or unreliable flag is a <strong>health</strong> problem
-  on the equipment &mdash; a failed sensor, not a network fault. If you can read the
-  device but a point looks wrong, that is fault, not offline.</p>
+  <h2>Offline or fault?</h2>
+  <p>People use &ldquo;offline&rdquo; for two different things. A device that does
+  not answer discovery or reads is a <strong>communication</strong> problem, and
+  the rest of this guide is about that. A device that answers but has a point
+  showing <em>Fault</em> or an impossible value has a <strong>sensor or wiring</strong>
+  problem on the equipment. If you can open the device and read its points, it is
+  not offline. See <a href="bacnet-status-flags-explained">status flags
+  explained</a> for the fault case.</p>
 
-  <h2>The causes of a truly unreachable device</h2>
+  <h2>Work through these in order</h2>
 
-  <h3>1. Wrong subnet (by far the most common)</h3>
-  <p>Controls equipment usually sits on its own subnet or VLAN. If your phone is on
-  guest Wi-Fi, the office network, or a different scope, the broadcast that finds
-  BACnet IP devices never reaches them and everything looks offline. See
-  <a href="subnets">what is a subnet, and why doesn't the switch give me the right
-  one?</a></p>
+  <h3>1. Is your phone on the same subnet?</h3>
+  <p>Controls equipment normally sits on its own subnet or VLAN. A phone on guest
+  Wi-Fi or the office network never receives the device's reply, so everything
+  looks offline. When a scan finds nothing, the app shows the phone's IP and mask;
+  compare them with the device's address. If they differ, see
+  <a href="subnets">what is a subnet, and why doesn't the switch give me the
+  right one?</a> A device on another subnet needs a
+  <a href="what-is-a-bbmd">BBMD</a> or a direct add by IP (step 3) to be seen
+  at all.</p>
 
-  <h3>2. Dropped broadcast packets</h3>
-  <p>BACnet IP discovery is a broadcast, and Wi-Fi access points drop broadcast packets
-  freely under load. A device that appears one scan and vanishes the next, or shows
-  offline intermittently, is often this. Scanning repeatedly &mdash; which a good tool
-  does automatically &mdash; works around it.</p>
+  <h3>2. Scan again</h3>
+  <p>Discovery is a broadcast, and Wi-Fi access points drop broadcasts under load.
+  A device that shows up in one scan and is gone in the next is usually this. The
+  app repeats the Who-Is through each scan and then tries each address directly,
+  but a second scan, or a wired connection, settles it.</p>
 
-  <h3>3. A firewall on UDP 47808</h3>
-  <p>BACnet/IP lives on UDP <strong>47808</strong> (0xBAC0). A software firewall,
-  antivirus, or a locked-down switch dropping that port makes devices unreachable even
-  on the right subnet. See <a href="what-port-does-bacnet-use">what port does
+  <h3>3. Add it directly by IP</h3>
+  <p>Menu &rarr; <strong>Add device by IP&hellip;</strong> sends a directed message
+  instead of a broadcast. If the device answers that, it is online and the problem
+  is purely that broadcasts are not getting through: another subnet, client
+  isolation, or a switch that filters them. If it does not answer, carry on.</p>
+
+  <h3>4. Is UDP 47808 blocked, or is the device on another port?</h3>
+  <p>BACnet/IP uses UDP <strong>47808</strong>. An access list between VLANs, or a
+  device set to 47809 or higher, keeps it unreachable even from the right subnet.
+  The port can be typed in when adding by IP; the access list is a question for
+  the network team. See <a href="what-port-does-bacnet-use">what port does
   BACnet use?</a></p>
 
-  <h3>4. A duplicate Device ID or network number</h3>
-  <p>Two devices sharing a Device ID, or a duplicated network number, makes devices
-  appear and disappear or answer for each other &mdash; a classic &ldquo;it is online,
-  no it is not&rdquo; symptom. If it started when equipment was added, suspect this.
-  See <a href="bacnet-device-id-explained">BACnet Device IDs explained</a>.</p>
-
-  <h3>5. It is on another subnet with no BBMD</h3>
-  <p>Broadcasts do not cross a router by themselves. A device on a different segment
-  needs a <a href="what-is-a-bbmd">BBMD</a> or a directed add-by-IP, or it will
-  always look absent from your side.</p>
+  <h3>5. Does another device share its Device ID?</h3>
+  <p>Two devices with the same ID, or two MS/TP devices with the same MAC behind one
+  router, answer for each other. The symptom is a device that flickers between
+  online and offline, or whose name and IP change between scans. The scan summary
+  warns about both. See <a href="duplicate-bacnet-device-id">duplicate Device
+  IDs</a>.</p>
 
   <h3>6. It really is down</h3>
-  <p>Lost power, a pulled network cable, a dead MS/TP trunk behind its router. Once the
-  five above are ruled out, this is what is left &mdash; and now you know to look at the
-  equipment, not the network.</p>
-
-  <h2>A quick order to check in</h2>
-  <ol>
-    <li>Confirm your phone's IP is on the <strong>same subnet</strong> as the controls.</li>
-    <li><strong>Scan again</strong> a couple of times &mdash; dropped broadcasts hide
-    devices.</li>
-    <li>Try adding the device <strong>directly by IP</strong>; if that works, it is a
-    broadcast/subnet problem, not a dead device.</li>
-    <li>Check for <strong>duplicate IDs</strong> in what you did find.</li>
-    <li>Ask whoever runs the network about <strong>UDP 47808</strong> and VLANs.</li>
-  </ol>
-  <div class="callout">
-  <p><a href="../">Easy BACnet</a> re-broadcasts discovery throughout each scan
-  (and falls back to contacting each address directly) to beat dropped packets, shows your phone's own subnet when a scan
-  is empty, and flags duplicate Device IDs when it sees them &mdash; the three things
-  behind most &ldquo;offline&rdquo; reports.</p>
-  </div>
+  <p>Lost power, a pulled cable, a dead switch port, or an MS/TP trunk that has
+  stopped behind its router. Once the steps above are ruled out, this is what is
+  left, and it is time to look at the equipment. A ping from a laptop on the same
+  network confirms it: see <a href="is-my-bacnet-device-online-ping-test">is my
+  BACnet device online?</a></p>
 
 </article>
   <nav class="more">
