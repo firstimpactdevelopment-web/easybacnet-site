@@ -229,6 +229,22 @@ def page(slug, title, question, answer_html, body_html, related, description):
       }]
     },
     {
+      "@type": "Article",
+      "headline": %(q)s,
+      "datePublished": "%(pub)s",
+      "dateModified": "%(pub)s",
+      "mainEntityOfPage": "%(base)s/%(slug)s.html",
+      "image": "%(base)s/img/og-image.png",
+      "author": { "@id": "%(base)s/#org" },
+      "publisher": {
+        "@type": "Organization",
+        "@id": "%(base)s/#org",
+        "name": "Easy BACnet",
+        "url": "%(base)s/",
+        "logo": { "@type": "ImageObject", "url": "%(base)s/logo-512.png" }
+      }
+    },
+    {
       "@type": "BreadcrumbList",
       "itemListElement": [
         { "@type": "ListItem", "position": 1, "name": "Home", "item": "%(base)s/index.html" },
@@ -250,6 +266,7 @@ def page(slug, title, question, answer_html, body_html, related, description):
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <link rel="icon" type="image/svg+xml" href="icon.svg">
+<link rel="apple-touch-icon" href="/apple-touch-icon.png">
 <title>%(title)s</title>
 <meta name="description" content="%(description)s">
 <link rel="canonical" href="%(base)s/%(slug)s.html">
@@ -3778,6 +3795,7 @@ TOOL_TEMPLATE = """<!doctype html>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <link rel="icon" type="image/svg+xml" href="icon.svg">
+<link rel="apple-touch-icon" href="/apple-touch-icon.png">
 <title>{{TITLE}}</title>
 <meta name="description" content="{{DESC}}">
 <link rel="canonical" href="{{BASE}}/{{SLUG}}.html">
@@ -3916,6 +3934,7 @@ INDEX = """<!doctype html>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <link rel="icon" type="image/svg+xml" href="icon.svg">
+<link rel="apple-touch-icon" href="/apple-touch-icon.png">
 <title>Easy BACnet &mdash; scan, read &amp; control BACnet/IP devices</title>
 <meta name="description" content="Free Android app to scan a network for BACnet IP devices, read and command points by priority, build custom remotes, and export an Excel report.">
 <link rel="canonical" href="{{BASE}}/index.html">
@@ -4033,7 +4052,7 @@ footer a{color:var(--mut); text-decoration:underline}
       "@id": "{{BASE}}/#org",
       "name": "Easy BACnet",
       "url": "{{BASE}}/",
-      "logo": "{{BASE}}/icon.svg"
+      "logo": "{{BASE}}/logo-512.png"
     },
     {
       "@type": "WebSite",
@@ -4283,7 +4302,9 @@ def main(ping=False):
 
     # sitemap + robots so crawlers and agents can enumerate the whole set
     # <loc> values are normalised to extensionless clean URLs in write().
-    urls = (["index.html", "privacy.html", "privacy-desktop.html", "terms.html"]
+    # privacy-desktop.html is live (the PC app links to it) but kept out of the
+    # sitemap and noindexed until the PC version is announced on the site.
+    urls = (["index.html", "privacy.html", "terms.html"]
             + [t["slug"] + ".html" for t in TOOLS]
             + [g["slug"] + ".html" for g in GUIDES])
     sm = ['<?xml version="1.0" encoding="UTF-8"?>',
@@ -4317,6 +4338,7 @@ def main(ping=False):
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <link rel="icon" type="image/svg+xml" href="icon.svg">
+<link rel="apple-touch-icon" href="/apple-touch-icon.png">
 <title>Page not found &mdash; Easy BACnet</title>
 <meta name="robots" content="noindex">
 <meta name="theme-color" content="#14171a">
