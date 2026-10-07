@@ -922,7 +922,7 @@ GUIDES.append(dict(
 
 GUIDES.append(dict(
     slug="guides/bacnet-object-types-explained",
-    title="BACnet object types explained | Easy BACnet",
+    title="BACnet Object Types: Full List with Type Numbers | Easy BACnet",
     question="What do the BACnet object types mean?",
     description="Reference table of BACnet object types: Analog and Binary Input/Output/Value, Multi-state, Device, Schedule, Trend Log and the rest, with what each is for.",
     answer_html="""<p>BACnet describes everything in a controller as an
@@ -2086,9 +2086,9 @@ GUIDES.append(dict(
 
 GUIDES.append(dict(
     slug="guides/what-port-does-bacnet-use",
-    title="What port does BACnet IP use? | Easy BACnet",
+    title="BACnet Port: UDP 47808 (0xBAC0), the Default BACnet IP Port",
     question="What port does BACnet IP use?",
-    description="BACnet/IP uses UDP port 47808 (0xBAC0) by default; extra networks use 47809 and up. Easy BACnet checks the common range automatically.",
+    description="The default BACnet port is UDP 47808 (0xBAC0). Why it is UDP, not TCP, when sites use 47809 and up, what to open in a firewall, and how to check a device answers.",
     answer_html="""<p>BACnet/IP uses <strong>UDP port 47808</strong> by default &mdash; that
     is <code>0xBAC0</code> in hex, which is where the number comes from. It is UDP, not TCP,
     and discovery relies on broadcasts to that port. Where a single IP subnet carries more
