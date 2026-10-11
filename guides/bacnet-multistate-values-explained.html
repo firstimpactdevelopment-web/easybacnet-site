@@ -116,6 +116,23 @@
              border-left:3px solid var(--accent); border-radius:12px;
              padding:1rem 1.25rem; margin:1.75rem 0; }
   .callout p:last-child { margin-bottom:0; }
+
+  figure.diagram { margin:2rem 0; background:#171b1f; border:1px solid var(--line);
+                   border-radius:14px; padding:1rem 1rem .85rem; }
+  figure.diagram svg { display:block; width:100%; height:auto; max-width:560px; margin:0 auto; }
+  figure.diagram svg text { font-family:"Manrope",system-ui,-apple-system,"Segoe UI",Roboto,Arial,sans-serif; }
+  figure.diagram svg .mono { font-family:"IBM Plex Mono",ui-monospace,Consolas,monospace; }
+  figure.diagram figcaption { color:var(--muted); font-size:.86rem; line-height:1.45;
+                              margin-top:.75rem; text-align:center; }
+  /* Phones: go edge to edge and keep labels readable; wide diagrams swipe. */
+  @media (max-width: 520px) {
+    figure.diagram { margin:1.75rem -1.25rem; border-radius:0; border-left:0; border-right:0;
+                     padding:.85rem 0 .75rem; }
+    figure.diagram .dg-scroll { overflow-x:auto; -webkit-overflow-scrolling:touch; padding:0 .75rem; }
+    figure.diagram svg { min-width:480px; }
+    figure.diagram figcaption { padding:0 1.25rem; }
+    figure.diagram figcaption::after { content:" (swipe to see it all)"; opacity:.7; }
+  }
 </style>
 <script type="application/ld+json">
 {
@@ -123,19 +140,19 @@
   "@graph": [
     {
       "@type": "FAQPage",
-      "datePublished": "2026-10-03",
-      "dateModified": "2026-10-03",
+      "datePublished": "2026-10-11",
+      "dateModified": "2026-10-11",
       "mainEntity": [{
         "@type": "Question",
         "name": "What do BACnet binary and multi-state values mean?",
-        "acceptedAnswer": { "@type": "Answer", "text": "Binary and multi-state points don't carry a measured number — they carry a state. A binary point is one of two states (typically Off/On or Inactive/Active). A multi-state point picks one option from a numbered list — for a fan that might be 1 = Off, 2 = Low, 3 = High. The value you read is the state number; the meaning comes from the list of states, not from engineering units. Easy BACnet shows and lets you command these by their state." }
+        "acceptedAnswer": { "@type": "Answer", "text": "Binary and multi-state points hold a state, not a measurement. A binary point is Inactive or Active (0 or 1), which usually means Off or On. A multi-state point holds a number from 1 to N that picks an entry from its State_Text list; for a fan that might be 1 = Off, 2 = Low, 3 = High. The number on its own tells you nothing until you know that list. Neither kind has engineering units." }
       }]
     },
     {
       "@type": "Article",
       "headline": "What do BACnet binary and multi-state values mean?",
-      "datePublished": "2026-10-03",
-      "dateModified": "2026-10-03",
+      "datePublished": "2026-10-11",
+      "dateModified": "2026-10-11",
       "mainEntityOfPage": "https://easybacnet.com/guides/bacnet-multistate-values-explained.html",
       "image": "https://easybacnet.com/img/og-image.png",
       "author": { "@id": "https://easybacnet.com/#org" },
@@ -167,66 +184,71 @@
 
 <article>
   <h1>What do BACnet binary and multi-state values mean?</h1>
-  <p class="updated">Updated 3 October 2026</p>
+  <p class="updated">Updated 11 October 2026</p>
 
   <div class="answer">
     <strong>Short answer</strong>
-    <p><strong>Binary and multi-state points don't carry a measured number &mdash;
-    they carry a <em>state</em>.</strong> A binary point is one of two states (typically Off/On
-    or Inactive/Active). A multi-state point picks one option from a numbered list &mdash; for a
-    fan that might be 1&nbsp;=&nbsp;Off, 2&nbsp;=&nbsp;Low, 3&nbsp;=&nbsp;High. The value you read
-    is the state number; the meaning comes from the list of states, not from
-    <a href="bacnet-engineering-units-explained">engineering units</a>. Easy BACnet shows
-    and lets you command these by their state.</p>
+    <p><strong>Binary and multi-state points hold a state, not a
+    measurement.</strong> A binary point is Inactive or Active (0 or 1), which usually means
+    Off or On. A multi-state point holds a number from 1 to N that picks an entry from its
+    <code>State_Text</code> list; for a fan that might be 1&nbsp;=&nbsp;Off, 2&nbsp;=&nbsp;Low,
+    3&nbsp;=&nbsp;High. The number on its own tells you nothing until you know that list.
+    Neither kind has <a href="bacnet-engineering-units-explained">engineering
+    units</a>.</p>
   </div>
 <div class="shotrow"><figure><img src="../img/point.png" alt="A multi-state point and its options" width="480" height="1068" loading="lazy"><figcaption>A multi-state point and its options</figcaption></figure></div>
 
   <h2>Three families of point</h2>
-  <p>It helps to see where binary and multi-state sit alongside the analog points you've
-  probably met already:</p>
   <table>
-    <tr><th>Family</th><th>Value looks like</th><th>Example</th></tr>
-    <tr><td>Analog</td><td>A number with <a href="bacnet-engineering-units-explained">units</a></td><td>72.4 &deg;F, 45% RH, 1200 cfm</td></tr>
-    <tr><td>Binary</td><td>One of two states</td><td>Fan command: Off / On</td></tr>
-    <tr><td>Multi-state</td><td>One of a numbered list</td><td>Fan speed: 1 Off, 2 Low, 3 Med, 4 High</td></tr>
+    <tr><th>Family</th><th>Present_Value</th><th>Example</th></tr>
+    <tr><td>Analog (AI, AO, AV)</td><td>A number with <a href="bacnet-engineering-units-explained">units</a></td><td><code>RM-214 ZN-T</code> 72.4 &deg;F</td></tr>
+    <tr><td>Binary (BI, BO, BV)</td><td>Inactive or Active</td><td><code>AHU-1 SF-C</code> Off / On</td></tr>
+    <tr><td>Multi-state (MSI, MSO, MSV)</td><td>An integer 1&ndash;N</td><td><code>FCU-3 FAN-SPD</code> 1 Off, 2 Low, 3 Med, 4 High</td></tr>
   </table>
 
   <h2>Binary points</h2>
-  <p>A binary object (Binary Input, Binary Output, Binary Value) is on or off &mdash; internally
-  0 or 1, shown as Inactive/Active or Off/On. Inputs report a state (a status switch, a proof
-  contact); outputs and values can be commanded. Because it's just two states, commanding one is
-  simply choosing which. Bear in mind the state names are set by the integrator, so
-  &ldquo;Active&rdquo; might mean &ldquo;running,&rdquo; &ldquo;occupied,&rdquo; or
-  &ldquo;alarm&rdquo; depending on the point &mdash; read the point name, not just the state.</p>
+  <p>A binary object's Present_Value is Inactive (0) or Active (1). Inputs report a contact,
+  such as a fan status current switch or a filter DP switch; outputs and values can be
+  commanded. The device can also hold <code>Inactive_Text</code> and
+  <code>Active_Text</code> (&ldquo;Off/On&rdquo;, &ldquo;Unoccupied/Occupied&rdquo;,
+  &ldquo;Normal/Alarm&rdquo;). Easy BACnet shows binary values as <em>Active (On)</em> or
+  <em>Inactive (Off)</em>, so go by the point name for what Active means on that point.
+  Watch for <code>Polarity</code> on binary I/O: a reversed point reads Active when the
+  contact is open.</p>
 
   <h2>Multi-state points</h2>
-  <p>A multi-state object (Multi-state Input, Output, or Value) holds one value from a numbered
-  list. The catch that trips people up: <strong>BACnet multi-state values start at 1, not 0</strong>.
-  State 1 is the first option, state 2 the second, and so on. So a fan speed of &ldquo;3&rdquo;
-  means the third option in that point's list &mdash; which you have to look at to know is
-  &ldquo;High.&rdquo; Where the device provides them, Easy BACnet shows the state text so you're
-  choosing &ldquo;High,&rdquo; not memorising that High is number 3.</p>
+  <p>A multi-state object holds an integer from 1 to <code>Number_Of_States</code>.
+  <strong>It starts at 1, not 0</strong>, and 0 is not a valid value. The names live in the
+  optional <code>State_Text</code> array, where the first entry is state 1. Common examples
+  are occupancy modes (1 Occupied, 2 Unoccupied, 3 Standby), HVAC modes, and fan speeds.</p>
+<figure class="diagram"><div class="dg-scroll"><svg viewBox="0 0 560 274" role="img" aria-label="A multi-state value: Present_Value numbers map to names through State_Text" xmlns="http://www.w3.org/2000/svg"><defs><marker id="ah-acc" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" fill="#ff9a1f"/></marker><marker id="ah-ok" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" fill="#5cc98a"/></marker><marker id="ah-bad" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" fill="#ff6b6b"/></marker><marker id="ah-mut" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" fill="#9aa4ad"/></marker><marker id="ah-blue" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" fill="#6fb3ff"/></marker><marker id="ah-fg" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" fill="#f3f5f6"/></marker></defs><text x="20" y="26" font-size="14" fill="#f3f5f6" text-anchor="start" font-weight="700" class="mono">MSV 1  HVAC-MODE</text><rect x="20" y="44" width="120" height="40" rx="8" fill="#1d2227" stroke="#3a434c" stroke-width="1.5"/><text x="80" y="70" font-size="16" fill="#f3f5f6" text-anchor="middle" font-weight="700" class="mono">1</text><line x1="140" y1="64" x2="226" y2="64" stroke="#3a434c" stroke-width="2"/><rect x="230" y="44" width="150" height="40" rx="8" fill="#1d2227" stroke="#3a434c" stroke-width="1.5"/><text x="305" y="70" font-size="15" fill="#f3f5f6" text-anchor="middle" font-weight="700">Off</text><rect x="20" y="94" width="120" height="40" rx="8" fill="#1d2227" stroke="#3a434c" stroke-width="1.5"/><text x="80" y="120" font-size="16" fill="#f3f5f6" text-anchor="middle" font-weight="700" class="mono">2</text><line x1="140" y1="114" x2="226" y2="114" stroke="#3a434c" stroke-width="2"/><rect x="230" y="94" width="150" height="40" rx="8" fill="#1d2227" stroke="#3a434c" stroke-width="1.5"/><text x="305" y="120" font-size="15" fill="#f3f5f6" text-anchor="middle" font-weight="700">Heat</text><rect x="20" y="144" width="120" height="40" rx="8" fill="#2a2116" stroke="#ff9a1f" stroke-width="1.5"/><text x="80" y="170" font-size="16" fill="#ff9a1f" text-anchor="middle" font-weight="700" class="mono">3</text><line x1="140" y1="164" x2="226" y2="164" stroke="#ff9a1f" stroke-width="2" marker-end="url(#ah-acc)"/><rect x="230" y="144" width="150" height="40" rx="8" fill="#2a2116" stroke="#ff9a1f" stroke-width="1.5"/><text x="305" y="170" font-size="15" fill="#ff9a1f" text-anchor="middle" font-weight="700">Cool</text><rect x="20" y="194" width="120" height="40" rx="8" fill="#1d2227" stroke="#3a434c" stroke-width="1.5"/><text x="80" y="220" font-size="16" fill="#f3f5f6" text-anchor="middle" font-weight="700" class="mono">4</text><line x1="140" y1="214" x2="226" y2="214" stroke="#3a434c" stroke-width="2"/><rect x="230" y="194" width="150" height="40" rx="8" fill="#1d2227" stroke="#3a434c" stroke-width="1.5"/><text x="305" y="220" font-size="15" fill="#f3f5f6" text-anchor="middle" font-weight="700">Auto</text><text x="80" y="260" font-size="12" fill="#9aa4ad" text-anchor="middle" font-weight="500" class="mono">Present_Value</text><text x="305" y="260" font-size="12" fill="#9aa4ad" text-anchor="middle" font-weight="500" class="mono">State_Text</text><text x="400" y="92" font-size="12" fill="#9aa4ad" text-anchor="start" font-weight="500" class="mono">Number_Of_States = 4</text><text x="400" y="154" font-size="13" fill="#ff9a1f" text-anchor="start" font-weight="700">Present_Value 3</text><text x="400" y="172" font-size="13" fill="#ff9a1f" text-anchor="start" font-weight="700">means “Cool”</text><text x="400" y="216" font-size="12.5" fill="#9aa4ad" text-anchor="start" font-weight="500">Counting starts at 1.</text><text x="400" y="234" font-size="12.5" fill="#9aa4ad" text-anchor="start" font-weight="500">0 is never valid.</text></svg></div><figcaption>Multi-state points are numbers; State_Text gives them names.</figcaption></figure>
+  <p>On the point screen Easy BACnet shows the raw state number, and you write a multi-state
+  point by entering the number. Check the State_Text in the head-end or the contractor's
+  points list so you know that 3 means High on this point. A Multi-state control on a custom
+  remote reads State_Text for you, as described below.</p>
 
   <div class="callout">
-  <p><strong>Read the number as an index, not a measurement.</strong> A multi-state value of 2
-  is &ldquo;the second option,&rdquo; not &ldquo;2 of something.&rdquo; The meaning lives in the
-  point's list of states.</p>
+  <p><strong>Read the number as a list position.</strong> A multi-state value of 2 is
+  &ldquo;the second state,&rdquo; and the same 2 can mean Low on one point and Unoccupied on
+  another.</p>
   </div>
 
   <h2>Commanding them</h2>
-  <p>Commandable binary and multi-state points obey the same
-  <a href="bacnet-priority-and-stuck-overrides">priority array</a> as analog points: you
-  command a state at a chosen priority, it holds, and you
-  <a href="how-to-release-a-bacnet-override">release</a> it to hand control back. The only
-  difference is that you're picking a state (On, or &ldquo;High&rdquo;) rather than typing a
-  number with units. Everything in <a href="is-it-safe-to-write-to-bacnet">writing
-  responsibly</a> still applies.</p>
+  <p>Commandable binary and multi-state points use the same
+  <a href="bacnet-priority-and-stuck-overrides">priority array</a> as analog points:
+  you write a state at a priority, it holds, and you
+  <a href="how-to-release-a-bacnet-override">release</a> it to hand control back. BOs
+  and MSOs are always commandable; BVs and MSVs only if the vendor made them so. Writing a
+  multi-state value above Number_Of_States is rejected by the device. See
+  <a href="is-it-safe-to-write-to-bacnet">writing responsibly</a>.</p>
 
   <h2>On a custom remote</h2>
-  <p>Binary points map naturally to a toggle or button, and multi-state points to a small set of
-  buttons or a picker &mdash; which is exactly what the
-  <a href="how-to-build-a-custom-remote">custom remote builder</a> gives you: a real
-  On/Off switch or a Low/Med/High selector for the equipment you touch most.</p>
+  <p>In the <a href="how-to-build-a-custom-remote">custom remote builder</a>, a binary
+  point fits a <strong>Toggle</strong> (on and off) or an <strong>Indicator</strong> status
+  light, and a multi-state point fits the <strong>Multi-state</strong> control (pick a named
+  state). When you add a Multi-state control, the app reads the point's State_Text, or
+  Number_Of_States if there's no text, and fills in the state names. You can edit them under
+  <em>State names</em>, one per line, first line = state 1.</p>
 
 </article>
   <nav class="more">

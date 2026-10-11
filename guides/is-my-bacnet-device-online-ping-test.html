@@ -37,7 +37,7 @@
 <link rel="icon" type="image/svg+xml" href="icon.svg">
 <link rel="apple-touch-icon" href="/apple-touch-icon.png">
 <title>Is my BACnet device online? Ping test | Easy BACnet</title>
-<meta name="description" content="A hands-on test that separates a network problem from a BACnet problem: find the device IP, ping it, then try a directed read, and what each result means.">
+<meta name="description" content="A hands-on test that separates a network problem from a BACnet problem: find the device IP, try a directed read, then ping it, and what each result means.">
 <link rel="canonical" href="https://easybacnet.com/guides/is-my-bacnet-device-online-ping-test">
 <meta name="robots" content="index, follow">
 <meta name="theme-color" content="#14171a">
@@ -47,12 +47,12 @@
 <meta property="og:type" content="article">
 <meta property="og:site_name" content="Easy BACnet">
 <meta property="og:title" content="Is my BACnet device online? Ping test | Easy BACnet">
-<meta property="og:description" content="A hands-on test that separates a network problem from a BACnet problem: find the device IP, ping it, then try a directed read, and what each result means.">
+<meta property="og:description" content="A hands-on test that separates a network problem from a BACnet problem: find the device IP, try a directed read, then ping it, and what each result means.">
 <meta property="og:url" content="https://easybacnet.com/guides/is-my-bacnet-device-online-ping-test">
 <meta property="og:image" content="https://easybacnet.com/img/og-image.png">
 <meta name="twitter:card" content="summary_large_image">
 <meta name="twitter:title" content="Is my BACnet device online? Ping test | Easy BACnet">
-<meta name="twitter:description" content="A hands-on test that separates a network problem from a BACnet problem: find the device IP, ping it, then try a directed read, and what each result means.">
+<meta name="twitter:description" content="A hands-on test that separates a network problem from a BACnet problem: find the device IP, try a directed read, then ping it, and what each result means.">
 <meta name="twitter:image" content="https://easybacnet.com/img/og-image.png">
 <style>
   :root { color-scheme: dark; --fg:#f3f5f6; --bg:#14171a; --muted:#9aa4ad;
@@ -116,6 +116,23 @@
              border-left:3px solid var(--accent); border-radius:12px;
              padding:1rem 1.25rem; margin:1.75rem 0; }
   .callout p:last-child { margin-bottom:0; }
+
+  figure.diagram { margin:2rem 0; background:#171b1f; border:1px solid var(--line);
+                   border-radius:14px; padding:1rem 1rem .85rem; }
+  figure.diagram svg { display:block; width:100%; height:auto; max-width:560px; margin:0 auto; }
+  figure.diagram svg text { font-family:"Manrope",system-ui,-apple-system,"Segoe UI",Roboto,Arial,sans-serif; }
+  figure.diagram svg .mono { font-family:"IBM Plex Mono",ui-monospace,Consolas,monospace; }
+  figure.diagram figcaption { color:var(--muted); font-size:.86rem; line-height:1.45;
+                              margin-top:.75rem; text-align:center; }
+  /* Phones: go edge to edge and keep labels readable; wide diagrams swipe. */
+  @media (max-width: 520px) {
+    figure.diagram { margin:1.75rem -1.25rem; border-radius:0; border-left:0; border-right:0;
+                     padding:.85rem 0 .75rem; }
+    figure.diagram .dg-scroll { overflow-x:auto; -webkit-overflow-scrolling:touch; padding:0 .75rem; }
+    figure.diagram svg { min-width:480px; }
+    figure.diagram figcaption { padding:0 1.25rem; }
+    figure.diagram figcaption::after { content:" (swipe to see it all)"; opacity:.7; }
+  }
 </style>
 <script type="application/ld+json">
 {
@@ -123,19 +140,19 @@
   "@graph": [
     {
       "@type": "FAQPage",
-      "datePublished": "2026-10-03",
-      "dateModified": "2026-10-03",
+      "datePublished": "2026-10-11",
+      "dateModified": "2026-10-11",
       "mainEntity": [{
         "@type": "Question",
         "name": "How do I tell if a BACnet device is really online before blaming the app?",
-        "acceptedAnswer": { "@type": "Answer", "text": "Two tests settle it. First, in Easy BACnet, use Add device by IP… with the controller's address: that contacts it directly, with no broadcast involved, and if it answers the device is online and your scan is being blocked by the network. If it does not answer, ping the address from a laptop on the same network. A failed ping means the network path is broken (wrong subnet, firewall, cable, wrong IP). A successful ping with no BACnet answer means the device is up but BACnet is blocked or misconfigured: the wrong port, a firewall that allows ping but not UDP 47808, or a device problem." }
+        "acceptedAnswer": { "@type": "Answer", "text": "Two tests settle it. First, in Easy BACnet, use Add device by IP… with the controller's address: that contacts it directly, with no broadcast involved. If it answers, the device is online and your scan is being blocked somewhere. If it doesn't, ping the address from a laptop or ping app on the same network. A failed ping means the network path is broken (wrong subnet, no gateway, firewall, cable, wrong IP). A successful ping with no BACnet answer means the device is up but BACnet isn't getting through: the wrong UDP port, a firewall that allows ping but not UDP 47808, or BACnet/IP not set up on the device." }
       }]
     },
     {
       "@type": "Article",
       "headline": "How do I tell if a BACnet device is really online before blaming the app?",
-      "datePublished": "2026-10-03",
-      "dateModified": "2026-10-03",
+      "datePublished": "2026-10-11",
+      "dateModified": "2026-10-11",
       "mainEntityOfPage": "https://easybacnet.com/guides/is-my-bacnet-device-online-ping-test.html",
       "image": "https://easybacnet.com/img/og-image.png",
       "author": { "@id": "https://easybacnet.com/#org" },
@@ -167,87 +184,95 @@
 
 <article>
   <h1>How do I tell if a BACnet device is really online before blaming the app?</h1>
-  <p class="updated">Updated 3 October 2026</p>
+  <p class="updated">Updated 11 October 2026</p>
 
   <div class="answer">
     <strong>Short answer</strong>
     <p>Two tests settle it. First, in Easy BACnet, use <strong>Add device
     by IP&hellip;</strong> with the controller's address: that contacts it directly, with
-    no broadcast involved, and if it answers the device is online and your scan is being
-    blocked by the network. If it does not answer, <strong>ping</strong> the address
-    from a laptop on the same network. A failed ping means the network path is broken
-    (wrong subnet, firewall, cable, wrong IP). A successful ping with no BACnet answer
-    means the device is up but BACnet is blocked or misconfigured: the wrong port, a
-    firewall that allows ping but not UDP 47808, or a device problem.</p>
+    no broadcast involved. If it answers, the device is online and your scan is being
+    blocked somewhere. If it doesn't, <strong>ping</strong> the address from a laptop or
+    ping app on the same network. A failed ping means the network path is broken (wrong
+    subnet, no gateway, firewall, cable, wrong IP). A successful ping with no BACnet
+    answer means the device is up but BACnet isn't getting through: the wrong UDP port, a
+    firewall that allows ping but not UDP 47808, or BACnet/IP not set up on the
+    device.</p>
   </div>
 
 
   <h2>Why test this way</h2>
-  <p>A scan can fail for many reasons, and most of them have nothing to do with the
-  device. These two tests separate the possibilities. A directed BACnet read proves
-  the device is alive and speaking BACnet. A ping proves only that packets can reach
-  the address. Running them in that order tells you whether you are dealing with a
-  broadcast problem, a network problem, or a BACnet configuration problem, and
-  therefore who to call.</p>
+  <p>A scan can fail for plenty of reasons that have nothing to do with the device. A
+  directed BACnet read proves the device is alive and speaking BACnet. A ping only proves
+  that IP packets reach the address. Doing them in that order tells you whether you have
+  a broadcast problem, a network problem or a BACnet configuration problem, and so who to
+  call.</p>
 
   <h2>Step 1 &mdash; find the device's IP address</h2>
   <p>If the device has ever appeared in a scan, its IP is shown under its name. If
-  not, look on the controller's label, its front-panel display, or the commissioning
-  sheet; ask the controls contractor; or ask the network team to read it from the
-  switch's DHCP or ARP table.</p>
+  not, check the head-end's device or network list, the as-built drawings or the
+  controller's label, ask the controls contractor, or ask the network team to look it up
+  in the switch's ARP or DHCP tables.</p>
 
   <h2>Step 2 &mdash; add it by IP in the app</h2>
   <p>In Easy BACnet Mode, menu (three dots) &rarr; <strong>Add device by IP&hellip;</strong>,
   type the address and port (47808 unless the site uses another) and tap
-  <strong>Add</strong>. The app sends a directed Who-Is and a direct read.</p>
+  <strong>Add</strong>. The app sends a directed Who-Is and a direct ReadProperty to that
+  address.</p>
   <ul>
     <li><strong>It answers.</strong> The device is online and speaking BACnet. Your
-    scan failed because the broadcast is not reaching it: you are on another subnet,
-    the Wi-Fi has client isolation on, or a switch filters broadcasts. For the whole
-    remote network you need the site's <a href="what-is-a-bbmd">BBMD</a>; for this
+    scan missed it because the broadcast isn't reaching it: it is on another subnet, the
+    Wi-Fi has client isolation on, or the network filters broadcasts. To scan a whole
+    remote subnet you need the site's <a href="what-is-a-bbmd">BBMD</a>; for this
     one device, you are done.</li>
     <li><strong>It does not answer</strong> (<em>No BACnet IP device answered
     at&hellip;</em>). Go to step 3.</li>
   </ul>
+<figure class="diagram"><div class="dg-scroll"><svg viewBox="0 0 560 424" role="img" aria-label="A broadcast scan stops at the router between subnets; a directed unicast request crosses it" xmlns="http://www.w3.org/2000/svg"><defs><marker id="ah-acc" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" fill="#ff9a1f"/></marker><marker id="ah-ok" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" fill="#5cc98a"/></marker><marker id="ah-bad" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" fill="#ff6b6b"/></marker><marker id="ah-mut" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" fill="#9aa4ad"/></marker><marker id="ah-blue" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" fill="#6fb3ff"/></marker><marker id="ah-fg" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" fill="#f3f5f6"/></marker></defs><rect x="16" y="14" width="528" height="124" rx="10" fill="none" stroke="#5cc98a" stroke-width="1.5" stroke-dasharray="6 5"/><text x="30" y="38" font-size="14" fill="#5cc98a" text-anchor="start" font-weight="700">Subnet A  ·  10.20.30.0/24</text><rect x="36" y="54" width="200" height="64" rx="10" fill="#1d2227" stroke="#ff9a1f" stroke-width="1.5"/><text x="136.0" y="82.0" font-size="15" fill="#f3f5f6" text-anchor="middle" font-weight="700">Your phone</text><text x="136.0" y="101.0" font-size="12.5" fill="#9aa4ad" text-anchor="middle" font-weight="500" class="mono">10.20.30.50</text><rect x="324" y="54" width="200" height="64" rx="10" fill="#1d2227" stroke="#3a434c" stroke-width="1.5"/><text x="424.0" y="82.0" font-size="15" fill="#f3f5f6" text-anchor="middle" font-weight="700">RTU-1</text><text x="424.0" y="101.0" font-size="12.5" fill="#9aa4ad" text-anchor="middle" font-weight="500" class="mono">10.20.30.11</text><line x1="236" y1="86" x2="320" y2="86" stroke="#5cc98a" stroke-width="2.5" marker-end="url(#ah-ok)"/><text x="278" y="78" font-size="12" fill="#5cc98a" text-anchor="middle" font-weight="500">Who-Is</text><path d="M210,118 V280 C210,300 424,296 424,318" stroke="#ff9a1f" stroke-width="2.5" fill="none" marker-end="url(#ah-acc)"/><text x="222" y="162" font-size="12" fill="#ff9a1f" text-anchor="start" font-weight="500" class="mono">unicast to 10.20.40.15</text><path d="M80,118 V223 H168" stroke="#ff6b6b" stroke-width="2.5" fill="none" stroke-dasharray="5 4"/><line x1="167" y1="214" x2="185" y2="232" stroke="#ff6b6b" stroke-width="3"/><line x1="167" y1="232" x2="185" y2="214" stroke="#ff6b6b" stroke-width="3"/><text x="30" y="252" font-size="12" fill="#ff6b6b" text-anchor="start" font-weight="500">broadcast stops here</text><rect x="186" y="196" width="200" height="54" rx="10" fill="#1d2227" stroke="#6fb3ff" stroke-width="1.5"/><text x="286.0" y="219.0" font-size="15" fill="#f3f5f6" text-anchor="middle" font-weight="700">IP router / firewall</text><text x="286.0" y="238.0" font-size="12.5" fill="#9aa4ad" text-anchor="middle" font-weight="500" class="mono">between VLANs</text><rect x="16" y="282" width="528" height="128" rx="10" fill="none" stroke="#9aa4ad" stroke-width="1.5" stroke-dasharray="6 5"/><text x="30" y="306" font-size="14" fill="#9aa4ad" text-anchor="start" font-weight="700">Subnet B  ·  10.20.40.0/24</text><rect x="324" y="322" width="200" height="64" rx="10" fill="#1d2227" stroke="#3a434c" stroke-width="1.5"/><text x="424.0" y="350.0" font-size="15" fill="#f3f5f6" text-anchor="middle" font-weight="700">AHU-2</text><text x="424.0" y="369.0" font-size="12.5" fill="#9aa4ad" text-anchor="middle" font-weight="500" class="mono">10.20.40.15</text><text x="36" y="348" font-size="14" fill="#ff9a1f" text-anchor="start" font-weight="700">Add device by IP</text><text x="36" y="368" font-size="13" fill="#9aa4ad" text-anchor="start" font-weight="500">(or a BBMD) gets</text><text x="36" y="386" font-size="13" fill="#9aa4ad" text-anchor="start" font-weight="500">you across</text></svg></div><figcaption>Broadcasts stay inside a subnet. Reaching another one needs a direct (unicast) request or a BBMD.</figcaption></figure>
 
   <h2>Step 3 &mdash; ping it</h2>
-  <p>Ping from a device on the same network as the controller; a laptop plugged into
-  the controls switch is ideal. Open a command prompt and type <code>ping</code> and
-  the address, for example <code>ping 10.20.30.41</code>. A ping app on the phone does
-  the same job. You want replies, not &ldquo;request timed out&rdquo; or
-  &ldquo;destination unreachable&rdquo;.</p>
+  <p>Ping from something on the same network as the phone; a laptop plugged into the
+  controls switch is ideal. Open a command prompt and type <code>ping</code> and the
+  address, for example <code>ping 10.20.30.41</code>. A ping app on the phone does the
+  same job. You want replies, not &ldquo;request timed out&rdquo; or &ldquo;destination
+  host unreachable&rdquo;.</p>
 
   <h3>The ping fails</h3>
-  <p>The device cannot be reached on the network, so no BACnet tool will see it until
-  that is fixed. Causes, most likely first:</p>
+  <p>The device can't be reached over IP, so no BACnet tool will see it until that is
+  fixed. Common causes:</p>
   <ul>
     <li>You are on a <a href="subnets">different subnet</a> with no route to it.
     Get onto the controls network and try again.</li>
-    <li>The IP is wrong, or the device moved to a new DHCP address.</li>
-    <li>A cable is unplugged, a switch port is dead, or the unit is powered down.</li>
-    <li>A firewall or VLAN access list blocks the path. Some block ping on purpose while
-    allowing everything else, so a failed ping on a managed network is not final proof.</li>
+    <li>The controller has no default gateway set, or the wrong one, so it can't reply
+    to anything outside its own subnet. Common on controls networks that were set up
+    flat and later routed.</li>
+    <li>The IP is wrong, or the device picked up a new DHCP address.</li>
+    <li>A cable is unplugged, a switch port is dead or disabled, or the unit is powered
+    down.</li>
+    <li>A firewall or VLAN access list blocks the path. Some networks block ping on
+    purpose and allow BACnet, so on a managed network a failed ping is not final
+    proof.</li>
   </ul>
-  <p>This is an <strong>IT / network</strong> conversation, unless you can see the device
-  itself is unpowered.</p>
+  <p>This is usually an <strong>IT / network</strong> conversation, unless you can see
+  the device itself is dead.</p>
 
   <h3>The ping succeeds, but step 2 failed</h3>
   <p>The device is on the network but not answering BACnet at that address and port.
   Possible reasons:</p>
   <ul>
-    <li><strong>Wrong UDP port.</strong> Sites running several BACnet networks on one
-    wire use 47809 and up. Ping ignores ports; BACnet does not. Try the add again with
-    the right port. See <a href="what-port-does-bacnet-use">what port does BACnet
-    use?</a></li>
+    <li><strong>Wrong UDP port.</strong> Some sites run BACnet/IP on another port in the
+    47808&ndash;47823 range, most often 47809. Ping doesn't use ports; BACnet does. Try the
+    add again with the right port. See <a href="what-port-does-bacnet-use">what port
+    does BACnet use?</a></li>
     <li><strong>A firewall allows ping but blocks UDP 47808.</strong> They are separate
     rules and it is common to have one without the other. Network team.</li>
-    <li><strong>The address belongs to a router, not the device.</strong> An MS/TP
-    controller has no IP of its own; the IP you have may be its router, which answers
-    ping but only forwards BACnet for trunks that are configured. See
-    <a href="does-easy-bacnet-support-mstp-rs485">does Easy BACnet support MS/TP?</a></li>
-    <li><strong>BACnet is disabled or misconfigured on the device</strong>, or it shares
-    a <a href="duplicate-bacnet-device-id">Device ID</a> with another unit.
-    Controls contractor.</li>
+    <li><strong>The address belongs to a router or gateway, not the device.</strong> An
+    MS/TP controller has no IP of its own; the IP you have may be its BACnet router, which
+    answers ping but only reaches MS/TP devices on trunks that are configured and healthy.
+    See <a href="does-easy-bacnet-support-mstp-rs485">does Easy BACnet support
+    MS/TP?</a></li>
+    <li><strong>BACnet/IP isn't set up on that interface.</strong> It may be disabled,
+    bound to the controller's other Ethernet port, or not yet configured on a new
+    gateway. Controls contractor.</li>
   </ul>
 
   <h3>Both work, but the device shows no points or no values</h3>

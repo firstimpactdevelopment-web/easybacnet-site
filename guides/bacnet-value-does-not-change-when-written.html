@@ -37,7 +37,7 @@
 <link rel="icon" type="image/svg+xml" href="icon.svg">
 <link rel="apple-touch-icon" href="/apple-touch-icon.png">
 <title>BACnet value won't change when written? | Easy BACnet</title>
-<meta name="description" content="You wrote a BACnet point and nothing changed. Usually a higher priority already commands it, the write missed the priority array, or it is read-only.">
+<meta name="description" content="You wrote a BACnet point and nothing changed. Usually a higher priority already commands it, the program overwrites it, or the output is overridden locally.">
 <link rel="canonical" href="https://easybacnet.com/guides/bacnet-value-does-not-change-when-written">
 <meta name="robots" content="index, follow">
 <meta name="theme-color" content="#14171a">
@@ -47,12 +47,12 @@
 <meta property="og:type" content="article">
 <meta property="og:site_name" content="Easy BACnet">
 <meta property="og:title" content="BACnet value won't change when written? | Easy BACnet">
-<meta property="og:description" content="You wrote a BACnet point and nothing changed. Usually a higher priority already commands it, the write missed the priority array, or it is read-only.">
+<meta property="og:description" content="You wrote a BACnet point and nothing changed. Usually a higher priority already commands it, the program overwrites it, or the output is overridden locally.">
 <meta property="og:url" content="https://easybacnet.com/guides/bacnet-value-does-not-change-when-written">
 <meta property="og:image" content="https://easybacnet.com/img/og-image.png">
 <meta name="twitter:card" content="summary_large_image">
 <meta name="twitter:title" content="BACnet value won't change when written? | Easy BACnet">
-<meta name="twitter:description" content="You wrote a BACnet point and nothing changed. Usually a higher priority already commands it, the write missed the priority array, or it is read-only.">
+<meta name="twitter:description" content="You wrote a BACnet point and nothing changed. Usually a higher priority already commands it, the program overwrites it, or the output is overridden locally.">
 <meta name="twitter:image" content="https://easybacnet.com/img/og-image.png">
 <style>
   :root { color-scheme: dark; --fg:#f3f5f6; --bg:#14171a; --muted:#9aa4ad;
@@ -116,6 +116,23 @@
              border-left:3px solid var(--accent); border-radius:12px;
              padding:1rem 1.25rem; margin:1.75rem 0; }
   .callout p:last-child { margin-bottom:0; }
+
+  figure.diagram { margin:2rem 0; background:#171b1f; border:1px solid var(--line);
+                   border-radius:14px; padding:1rem 1rem .85rem; }
+  figure.diagram svg { display:block; width:100%; height:auto; max-width:560px; margin:0 auto; }
+  figure.diagram svg text { font-family:"Manrope",system-ui,-apple-system,"Segoe UI",Roboto,Arial,sans-serif; }
+  figure.diagram svg .mono { font-family:"IBM Plex Mono",ui-monospace,Consolas,monospace; }
+  figure.diagram figcaption { color:var(--muted); font-size:.86rem; line-height:1.45;
+                              margin-top:.75rem; text-align:center; }
+  /* Phones: go edge to edge and keep labels readable; wide diagrams swipe. */
+  @media (max-width: 520px) {
+    figure.diagram { margin:1.75rem -1.25rem; border-radius:0; border-left:0; border-right:0;
+                     padding:.85rem 0 .75rem; }
+    figure.diagram .dg-scroll { overflow-x:auto; -webkit-overflow-scrolling:touch; padding:0 .75rem; }
+    figure.diagram svg { min-width:480px; }
+    figure.diagram figcaption { padding:0 1.25rem; }
+    figure.diagram figcaption::after { content:" (swipe to see it all)"; opacity:.7; }
+  }
 </style>
 <script type="application/ld+json">
 {
@@ -123,19 +140,19 @@
   "@graph": [
     {
       "@type": "FAQPage",
-      "datePublished": "2026-10-03",
-      "dateModified": "2026-10-03",
+      "datePublished": "2026-10-11",
+      "dateModified": "2026-10-11",
       "mainEntity": [{
         "@type": "Question",
         "name": "Why doesn't my BACnet value change when I write to it?",
-        "acceptedAnswer": { "@type": "Answer", "text": "You wrote the point, the device accepted it, and nothing moved. Re-read the point and look at what changed. If the Present Value did not change, something at a higher priority is holding the point: your write landed in its slot and is being outranked. If the value changed but the equipment did not, the point is overridden at the hardware, Out Of Service, or the machine itself has a problem. If the value changed and then snapped back, the controller's own program is rewriting it. The point screen in Easy BACnet shows which priority is in command, which tells you which of the three you have." }
+        "acceptedAnswer": { "@type": "Answer", "text": "You wrote the point, the device accepted it, and nothing happened. Re-read the point. If the Present Value did not change, a higher priority is in command and your write is sitting in its slot underneath it. If the value changed but the equipment did not, the output is overridden at the equipment, the point is Out Of Service, or the equipment has a fault. If the value changed and then went back, the controller's program is writing it. In Easy BACnet, Commanded At on the point screen shows which priority is in control, which usually tells you which case you have." }
       }]
     },
     {
       "@type": "Article",
       "headline": "Why doesn't my BACnet value change when I write to it?",
-      "datePublished": "2026-10-03",
-      "dateModified": "2026-10-03",
+      "datePublished": "2026-10-11",
+      "dateModified": "2026-10-11",
       "mainEntityOfPage": "https://easybacnet.com/guides/bacnet-value-does-not-change-when-written.html",
       "image": "https://easybacnet.com/img/og-image.png",
       "author": { "@id": "https://easybacnet.com/#org" },
@@ -167,79 +184,80 @@
 
 <article>
   <h1>Why doesn't my BACnet value change when I write to it?</h1>
-  <p class="updated">Updated 3 October 2026</p>
+  <p class="updated">Updated 11 October 2026</p>
 
   <div class="answer">
     <strong>Short answer</strong>
-    <p>You wrote the point, the device accepted it, and nothing moved.
-    Re-read the point and look at what changed. If the <strong>Present Value did not
-    change</strong>, something at a higher priority is holding the point: your write
-    landed in its slot and is being outranked. If the <strong>value changed but the
-    equipment did not</strong>, the point is overridden at the hardware, Out Of Service,
-    or the machine itself has a problem. If the value <strong>changed and then snapped
-    back</strong>, the controller's own program is rewriting it. The point screen in
-    Easy BACnet shows which priority is in command, which tells you which of the three
-    you have.</p>
+    <p>You wrote the point, the device accepted it, and nothing happened.
+    Re-read the point. If the <strong>Present Value did not change</strong>, a higher
+    priority is in command and your write is sitting in its slot underneath it. If the
+    <strong>value changed but the equipment did not</strong>, the output is overridden at
+    the equipment, the point is Out Of Service, or the equipment has a fault. If the value
+    <strong>changed and then went back</strong>, the controller's program is writing it.
+    In Easy BACnet, <strong>Commanded At</strong> on the point screen shows which priority is
+    in control, which usually tells you which case you have.</p>
   </div>
 
 
   <h2>First, re-read the point</h2>
-  <p>Easy BACnet re-reads the point after every write, so the value on screen is what
-  the device reports, not what you sent. Compare it with what you wrote, and look at
+  <p>Easy BACnet re-reads the point after every write, so the value on screen is what the
+  device reports, not what you sent. Compare it with what you wrote and look at
   <strong>Commanded At</strong>. Then pick the case below.</p>
 
   <h2>Case 1 &mdash; the value did not change</h2>
-  <p>A commandable point has sixteen priority slots and follows the highest-priority
-  slot that holds a value (1 is highest). If slot 5 holds 72 and you write 68 at slot
-  8, the point stays at 72. Your write was accepted and stored; it is simply outranked.
-  <strong>Commanded At</strong> shows the winning priority and its value.</p>
+  <p>A commandable point has a 16-slot priority array and follows the highest-priority slot
+  that is not NULL (1 is highest). If something holds slot 5 and you write at slot 8, your
+  value is stored but the point keeps following slot 5. <strong>Commanded At</strong> shows
+  the winning priority and its value.</p>
+<figure class="diagram"><div class="dg-scroll"><svg viewBox="0 0 560 458" role="img" aria-label="A 16-slot priority array: slot 8 at 55 F outranks slot 16 at 72 F, so Present_Value is 55 F" xmlns="http://www.w3.org/2000/svg"><defs><marker id="ah-acc" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" fill="#ff9a1f"/></marker><marker id="ah-ok" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" fill="#5cc98a"/></marker><marker id="ah-bad" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" fill="#ff6b6b"/></marker><marker id="ah-mut" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" fill="#9aa4ad"/></marker><marker id="ah-blue" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" fill="#6fb3ff"/></marker><marker id="ah-fg" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" fill="#f3f5f6"/></marker></defs><text x="20" y="26" font-size="14" fill="#f3f5f6" text-anchor="start" font-weight="700">Priority_Array  (1 = highest)</text><rect x="20" y="40" width="300" height="19" rx="4" fill="#1d2227" stroke="#3a434c" stroke-width="1.2"/><text x="30" y="54" font-size="11.5" fill="#9aa4ad" text-anchor="start" font-weight="500" class="mono">1</text><text x="56" y="54" font-size="11" fill="#6b757e" text-anchor="start" font-weight="500">Manual life safety  ·  NULL</text><rect x="20" y="62" width="300" height="19" rx="4" fill="#1d2227" stroke="#3a434c" stroke-width="1.2"/><text x="30" y="76" font-size="11.5" fill="#9aa4ad" text-anchor="start" font-weight="500" class="mono">2</text><text x="56" y="76" font-size="11" fill="#6b757e" text-anchor="start" font-weight="500">Automatic life safety  ·  NULL</text><rect x="20" y="84" width="300" height="19" rx="4" fill="#1d2227" stroke="#3a434c" stroke-width="1.2"/><text x="30" y="98" font-size="11.5" fill="#9aa4ad" text-anchor="start" font-weight="500" class="mono">3</text><text x="56" y="98" font-size="11" fill="#6b757e" text-anchor="start" font-weight="500" font-style="italic">NULL</text><rect x="20" y="106" width="300" height="19" rx="4" fill="#1d2227" stroke="#3a434c" stroke-width="1.2"/><text x="30" y="120" font-size="11.5" fill="#9aa4ad" text-anchor="start" font-weight="500" class="mono">4</text><text x="56" y="120" font-size="11" fill="#6b757e" text-anchor="start" font-weight="500" font-style="italic">NULL</text><rect x="20" y="128" width="300" height="19" rx="4" fill="#1d2227" stroke="#3a434c" stroke-width="1.2"/><text x="30" y="142" font-size="11.5" fill="#9aa4ad" text-anchor="start" font-weight="500" class="mono">5</text><text x="56" y="142" font-size="11" fill="#6b757e" text-anchor="start" font-weight="500">Critical equipment  ·  NULL</text><rect x="20" y="150" width="300" height="19" rx="4" fill="#1d2227" stroke="#3a434c" stroke-width="1.2"/><text x="30" y="164" font-size="11.5" fill="#9aa4ad" text-anchor="start" font-weight="500" class="mono">6</text><text x="56" y="164" font-size="11" fill="#6b757e" text-anchor="start" font-weight="500">Minimum on/off  ·  NULL</text><rect x="20" y="172" width="300" height="19" rx="4" fill="#1d2227" stroke="#3a434c" stroke-width="1.2"/><text x="30" y="186" font-size="11.5" fill="#9aa4ad" text-anchor="start" font-weight="500" class="mono">7</text><text x="56" y="186" font-size="11" fill="#6b757e" text-anchor="start" font-weight="500" font-style="italic">NULL</text><rect x="20" y="194" width="300" height="19" rx="4" fill="#3a2a12" stroke="#ff9a1f" stroke-width="1.2"/><text x="30" y="208" font-size="11.5" fill="#f3f5f6" text-anchor="start" font-weight="500" class="mono">8</text><text x="56" y="208" font-size="12" fill="#ff9a1f" text-anchor="start" font-weight="700">55.0 °F  — operator override</text><rect x="20" y="216" width="300" height="19" rx="4" fill="#1d2227" stroke="#3a434c" stroke-width="1.2"/><text x="30" y="230" font-size="11.5" fill="#9aa4ad" text-anchor="start" font-weight="500" class="mono">9</text><text x="56" y="230" font-size="11" fill="#6b757e" text-anchor="start" font-weight="500" font-style="italic">NULL</text><rect x="20" y="238" width="300" height="19" rx="4" fill="#1d2227" stroke="#3a434c" stroke-width="1.2"/><text x="30" y="252" font-size="11.5" fill="#9aa4ad" text-anchor="start" font-weight="500" class="mono">10</text><text x="56" y="252" font-size="11" fill="#6b757e" text-anchor="start" font-weight="500" font-style="italic">NULL</text><rect x="20" y="260" width="300" height="19" rx="4" fill="#1d2227" stroke="#3a434c" stroke-width="1.2"/><text x="30" y="274" font-size="11.5" fill="#9aa4ad" text-anchor="start" font-weight="500" class="mono">11</text><text x="56" y="274" font-size="11" fill="#6b757e" text-anchor="start" font-weight="500" font-style="italic">NULL</text><rect x="20" y="282" width="300" height="19" rx="4" fill="#1d2227" stroke="#3a434c" stroke-width="1.2"/><text x="30" y="296" font-size="11.5" fill="#9aa4ad" text-anchor="start" font-weight="500" class="mono">12</text><text x="56" y="296" font-size="11" fill="#6b757e" text-anchor="start" font-weight="500" font-style="italic">NULL</text><rect x="20" y="304" width="300" height="19" rx="4" fill="#1d2227" stroke="#3a434c" stroke-width="1.2"/><text x="30" y="318" font-size="11.5" fill="#9aa4ad" text-anchor="start" font-weight="500" class="mono">13</text><text x="56" y="318" font-size="11" fill="#6b757e" text-anchor="start" font-weight="500" font-style="italic">NULL</text><rect x="20" y="326" width="300" height="19" rx="4" fill="#1d2227" stroke="#3a434c" stroke-width="1.2"/><text x="30" y="340" font-size="11.5" fill="#9aa4ad" text-anchor="start" font-weight="500" class="mono">14</text><text x="56" y="340" font-size="11" fill="#6b757e" text-anchor="start" font-weight="500" font-style="italic">NULL</text><rect x="20" y="348" width="300" height="19" rx="4" fill="#1d2227" stroke="#3a434c" stroke-width="1.2"/><text x="30" y="362" font-size="11.5" fill="#9aa4ad" text-anchor="start" font-weight="500" class="mono">15</text><text x="56" y="362" font-size="11" fill="#6b757e" text-anchor="start" font-weight="500" font-style="italic">NULL</text><rect x="20" y="370" width="300" height="19" rx="4" fill="#232a31" stroke="#3a434c" stroke-width="1.2"/><text x="30" y="384" font-size="11.5" fill="#f3f5f6" text-anchor="start" font-weight="500" class="mono">16</text><text x="56" y="384" font-size="12" fill="#f3f5f6" text-anchor="start" font-weight="700">72.0 °F  — control program</text><rect x="20" y="406" width="300" height="34" rx="6" fill="#1d2227" stroke="#9aa4ad" stroke-width="1.5" stroke-dasharray="4 4"/><text x="32" y="428" font-size="12.5" fill="#9aa4ad" text-anchor="start" font-weight="500" class="mono">Relinquish_Default  72.0 °F</text><line x1="322" y1="203" x2="360" y2="203" stroke="#ff9a1f" stroke-width="2.5"/><rect x="360" y="163" width="184" height="80" rx="10" fill="#2a2116" stroke="#ff9a1f" stroke-width="1.5"/><text x="452" y="189" font-size="12.5" fill="#9aa4ad" text-anchor="middle" font-weight="500" class="mono">Present_Value</text><text x="452" y="217" font-size="24" fill="#ff9a1f" text-anchor="middle" font-weight="800">55.0 °F</text><text x="452" y="235" font-size="10" fill="#f3f5f6" text-anchor="start" font-weight="500"></text><text x="360" y="273" font-size="12.5" fill="#f3f5f6" text-anchor="start" font-weight="500">The lowest-numbered slot</text><text x="360" y="291" font-size="12.5" fill="#f3f5f6" text-anchor="start" font-weight="500">that isn’t NULL wins.</text><text x="360" y="319" font-size="12.5" fill="#9aa4ad" text-anchor="start" font-weight="500">Slot 16 is still there,</text><text x="360" y="337" font-size="12.5" fill="#9aa4ad" text-anchor="start" font-weight="500">just outranked.</text><text x="360" y="428" font-size="12" fill="#9aa4ad" text-anchor="start" font-weight="500">Used only when all</text><text x="360" y="444" font-size="12" fill="#9aa4ad" text-anchor="start" font-weight="500">16 slots are NULL</text></svg></div><figcaption>Sixteen slots, one winner: the lowest-numbered slot that holds a value.</figcaption></figure>
   <p>Two things to check:</p>
   <ul>
-    <li><strong>Which slot is winning, and whose is it?</strong> Priority 1 and 2 are
-    life safety, 5 is critical equipment, 6 is minimum on/off. If one of those holds
-    the point, the control system has a reason and you should leave it. Priority 8 is
-    another operator or a tool like this one; a stuck 8 is usually an override someone
-    forgot to release.</li>
-    <li><strong>Did your write carry a priority?</strong> A WriteProperty with no
-    priority lands at 16, the lowest, so anything else wins. Easy BACnet always sends
-    one (8 by default); some other tools do not.</li>
+    <li><strong>Which slot is winning?</strong> By the standard, 1 and 2 are manual and
+    automatic life safety, 5 is critical equipment control, and 6 is minimum on/off (a
+    fan's minimum run time holding a Binary Output, for example). If one of those holds the
+    point there is usually a reason; leave it until you know what it is. Anything else above
+    8 may be a head-end, a sequence, or an override another tech left behind.</li>
+    <li><strong>Did your write carry a priority?</strong> A WriteProperty with no priority
+    lands at 16, the lowest, so almost anything outranks it. Easy BACnet always sends one
+    (8 by default); some other tools and scripts do not.</li>
   </ul>
-  <p>The right fix is usually to <strong>release</strong> the slot that should not be
-  held (write NULL at that priority) so the point falls back to the program, rather
-  than to write at a higher priority and pile one override on another. See
+  <p>Usually the right fix is to <strong>release</strong> the slot that should not be held
+  (write NULL at that priority) so the point goes back to its program, rather than writing
+  at a higher priority and stacking another override on top. See
   <a href="how-to-release-a-bacnet-override">how to release a BACnet override</a>
   and <a href="bacnet-priority-and-stuck-overrides">BACnet priority and stuck
   overrides</a>.</p>
 
   <h2>Case 2 &mdash; the value changed, the equipment did not</h2>
-  <p>The controller accepted the command and shows your value, but the fan did not
-  start or the valve did not move. The controller is no longer the problem:</p>
+  <p>The controller shows your value but the fan did not start or the valve did not move.
+  The command got through; look past the BACnet side:</p>
   <ul>
-    <li><strong>The point is Overridden.</strong> The <em>Overridden</em> status flag
-    means something local to the device, typically a hand/off/auto switch at the
-    equipment, is forcing the output. Nothing written over the network will move it.</li>
-    <li><strong>The point is Out Of Service.</strong> The object is disconnected from
-    its hardware for testing, so Present_Value changes freely and drives nothing.</li>
-    <li><strong>The machine has a fault.</strong> A tripped overload, a locked-out
-    compressor, a failed actuator. The command is correct; the mechanical side is not.</li>
+    <li><strong>The point is Overridden.</strong> The <em>Overridden</em> status flag means
+    something local is forcing the output, typically a hand/off/auto switch on the controller
+    or the starter. Nothing written over the network moves it.</li>
+    <li><strong>The point is Out Of Service.</strong> The object is disconnected from its
+    hardware, so Present_Value changes but drives nothing.</li>
+    <li><strong>The equipment has a fault.</strong> A tripped overload, a compressor on
+    lockout, a failed actuator, a VFD in fault. The command is right; the mechanical or
+    electrical side is not.</li>
   </ul>
-  <p>Check the point's status flags (see
-  <a href="bacnet-status-flags-explained">status flags explained</a>). Overridden
-  and Out Of Service are a controls visit; a healthy point with a dead machine is an
-  HVAC visit.</p>
+  <p>Check the status flags (see
+  <a href="bacnet-status-flags-explained">status flags explained</a>). Overridden and
+  Out Of Service are for the controls side; a healthy point driving dead equipment is for
+  the mechanical or electrical side.</p>
 
-  <h2>Case 3 &mdash; the value changed, then snapped back</h2>
-  <p>The controller's own logic writes that point every program cycle at the same or a
-  higher priority, so your value lasts a second. You cannot win that from outside, and
-  on a live system you should not try. If you need to hold the point, the program has
-  to be changed or the point released from its control, which is a job for the
+  <h2>Case 3 &mdash; the value changed, then went back</h2>
+  <p>The controller's program is writing the same point. Often it is a non-commandable
+  Analog Value that the program sets every scan, so the last write wins and the program
+  writes last. Or the sequence commands it at a priority at or above yours. Either way you
+  cannot hold it from outside, and on a live system you should not try. The program needs
+  changing, or the sequence needs a proper override point, which is a job for the
   <a href="who-to-call-it-hvac-or-controls">controls contractor</a>.</p>
 
   <h2>If the write was refused instead</h2>
-  <p>If the device answered with an error rather than accepting the write, that is a
-  different problem: see
+  <p>If the device answered with an error rather than accepting the write, see
   <a href="bacnet-write-access-denied">what does BACnet Write Access Denied
-  mean?</a> Input points and read-only Value objects fall in that category.</p>
+  mean?</a> Input points and read-only objects fall there.</p>
 
 </article>
   <nav class="more">

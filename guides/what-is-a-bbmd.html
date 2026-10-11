@@ -116,6 +116,23 @@
              border-left:3px solid var(--accent); border-radius:12px;
              padding:1rem 1.25rem; margin:1.75rem 0; }
   .callout p:last-child { margin-bottom:0; }
+
+  figure.diagram { margin:2rem 0; background:#171b1f; border:1px solid var(--line);
+                   border-radius:14px; padding:1rem 1rem .85rem; }
+  figure.diagram svg { display:block; width:100%; height:auto; max-width:560px; margin:0 auto; }
+  figure.diagram svg text { font-family:"Manrope",system-ui,-apple-system,"Segoe UI",Roboto,Arial,sans-serif; }
+  figure.diagram svg .mono { font-family:"IBM Plex Mono",ui-monospace,Consolas,monospace; }
+  figure.diagram figcaption { color:var(--muted); font-size:.86rem; line-height:1.45;
+                              margin-top:.75rem; text-align:center; }
+  /* Phones: go edge to edge and keep labels readable; wide diagrams swipe. */
+  @media (max-width: 520px) {
+    figure.diagram { margin:1.75rem -1.25rem; border-radius:0; border-left:0; border-right:0;
+                     padding:.85rem 0 .75rem; }
+    figure.diagram .dg-scroll { overflow-x:auto; -webkit-overflow-scrolling:touch; padding:0 .75rem; }
+    figure.diagram svg { min-width:480px; }
+    figure.diagram figcaption { padding:0 1.25rem; }
+    figure.diagram figcaption::after { content:" (swipe to see it all)"; opacity:.7; }
+  }
 </style>
 <script type="application/ld+json">
 {
@@ -123,19 +140,19 @@
   "@graph": [
     {
       "@type": "FAQPage",
-      "datePublished": "2026-10-03",
-      "dateModified": "2026-10-03",
+      "datePublished": "2026-10-11",
+      "dateModified": "2026-10-11",
       "mainEntity": [{
         "@type": "Question",
         "name": "What is a BBMD, and when do I need one?",
-        "acceptedAnswer": { "@type": "Answer", "text": "A BBMD — BACnet Broadcast Management Device — forwards BACnet/IP broadcasts from one IP subnet to another. BACnet IP discovery leans on broadcasts, and IP routers deliberately do not pass broadcasts, so equipment on a different subnet is invisible until a BBMD carries the broadcast across. You need one whenever BACnet/IP has to span more than a single subnet." }
+        "acceptedAnswer": { "@type": "Answer", "text": "A BBMD (BACnet Broadcast Management Device) forwards BACnet/IP broadcasts from one IP subnet to another. Discovery depends on broadcasts, and IP routers do not pass them, so equipment on another subnet stays invisible to a Who-Is until a BBMD carries it across. You need one on each subnet whenever a single BACnet IP network spans more than one IP subnet. In practice it is usually a function switched on in a JACE, a supervisory controller or a BACnet router, not a separate box." }
       }]
     },
     {
       "@type": "Article",
       "headline": "What is a BBMD, and when do I need one?",
-      "datePublished": "2026-10-03",
-      "dateModified": "2026-10-03",
+      "datePublished": "2026-10-11",
+      "dateModified": "2026-10-11",
       "mainEntityOfPage": "https://easybacnet.com/guides/what-is-a-bbmd.html",
       "image": "https://easybacnet.com/img/og-image.png",
       "author": { "@id": "https://easybacnet.com/#org" },
@@ -167,48 +184,54 @@
 
 <article>
   <h1>What is a BBMD, and when do I need one?</h1>
-  <p class="updated">Updated 3 October 2026</p>
+  <p class="updated">Updated 11 October 2026</p>
 
   <div class="answer">
     <strong>Short answer</strong>
-    <p>A <strong>BBMD</strong> &mdash; BACnet Broadcast Management Device
-    &mdash; forwards BACnet/IP broadcasts from one IP subnet to another. BACnet IP discovery
-    leans on broadcasts, and IP routers deliberately do not pass broadcasts, so equipment
-    on a different subnet is invisible until a BBMD carries the broadcast across. You need
-    one whenever BACnet/IP has to span more than a single subnet.</p>
+    <p>A <strong>BBMD</strong> (BACnet Broadcast Management Device) forwards
+    BACnet/IP broadcasts from one IP subnet to another. Discovery depends on broadcasts, and
+    IP routers do not pass them, so equipment on another subnet stays invisible to a Who-Is
+    until a BBMD carries it across. You need one on each subnet whenever a single BACnet IP
+    network spans more than one IP subnet. In practice it is usually a function switched on
+    in a JACE, a supervisory controller or a BACnet router, not a separate box.</p>
   </div>
-<div class="shotrow"><figure><img src="../img/no-devices.png" alt="No BBMD, wrong subnet: nothing answers" width="480" height="1068" loading="lazy"><figcaption>No BBMD, wrong subnet: nothing answers</figcaption></figure></div>
+
 
   <h2>Why broadcasts are the problem</h2>
   <p>A <a href="who-is-i-am-explained">Who-Is</a> is a broadcast: it reaches every
-  device on the local subnet in one shot. That is efficient, but a router's whole job is
-  to <em>not</em> forward broadcasts, or they would flood the network. So the moment your
-  equipment sits on a different subnet from the tool looking for it, discovery stops at
-  the router.</p>
+  device on the local subnet in one shot. Routers stop broadcasts at the subnet edge by
+  design. So when the RTU controllers are on 10.20.30.0/24 and the head-end is on
+  10.20.40.0/24, discovery stops at the router. Directed (unicast) reads still cross it
+  fine; only the broadcast part breaks.</p>
 
   <h2>What a BBMD does</h2>
-  <p>One BBMD sits on each subnet that has BACnet/IP devices. The BBMDs know about each
-  other through a <strong>Broadcast Distribution Table</strong>. When a broadcast arrives
-  on one subnet, its BBMD wraps it up and unicasts it to the other BBMDs, which re-broadcast
-  it locally. The result is that a Who-Is sent on subnet A is heard by devices on subnet
-  B, without opening the routers to general broadcast traffic.</p>
+  <p>One BBMD sits on each subnet that has BACnet/IP devices, and each holds a
+  <strong>Broadcast Distribution Table</strong> (BDT) listing its peers. When a broadcast
+  appears on subnet A, A's BBMD sends it as a unicast to the BBMDs in its table, and each
+  one re-broadcasts it on its own subnet. A Who-Is on subnet A is then heard on subnet B
+  without opening the routers to broadcast traffic.</p>
+<figure class="diagram"><div class="dg-scroll"><svg viewBox="0 0 560 430" role="img" aria-label="Two BBMDs forward broadcasts between subnets; a foreign device registers with one BBMD" xmlns="http://www.w3.org/2000/svg"><defs><marker id="ah-acc" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" fill="#ff9a1f"/></marker><marker id="ah-ok" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" fill="#5cc98a"/></marker><marker id="ah-bad" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" fill="#ff6b6b"/></marker><marker id="ah-mut" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" fill="#9aa4ad"/></marker><marker id="ah-blue" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" fill="#6fb3ff"/></marker><marker id="ah-fg" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" fill="#f3f5f6"/></marker></defs><rect x="16" y="14" width="528" height="132" rx="10" fill="none" stroke="#9aa4ad" stroke-width="1.5" stroke-dasharray="6 5"/><text x="530" y="38" font-size="14" fill="#9aa4ad" text-anchor="end" font-weight="700">Subnet A  ·  10.20.30.0/24</text><rect x="36" y="54" width="220" height="70" rx="10" fill="#1d2227" stroke="#6fb3ff" stroke-width="1.5"/><text x="146.0" y="76.0" font-size="15" fill="#f3f5f6" text-anchor="middle" font-weight="700">BBMD A</text><text x="146.0" y="95.0" font-size="12.5" fill="#9aa4ad" text-anchor="middle" font-weight="500" class="mono">in the JACE</text><text x="146.0" y="112.0" font-size="12.5" fill="#9aa4ad" text-anchor="middle" font-weight="500" class="mono">10.20.30.5</text><rect x="304" y="54" width="220" height="70" rx="10" fill="#1d2227" stroke="#3a434c" stroke-width="1.5"/><text x="414.0" y="85.0" font-size="15" fill="#f3f5f6" text-anchor="middle" font-weight="700">RTU-1</text><text x="414.0" y="104.0" font-size="12.5" fill="#9aa4ad" text-anchor="middle" font-weight="500" class="mono">10.20.30.11</text><rect x="16" y="284" width="528" height="132" rx="10" fill="none" stroke="#9aa4ad" stroke-width="1.5" stroke-dasharray="6 5"/><text x="530" y="308" font-size="14" fill="#9aa4ad" text-anchor="end" font-weight="700">Subnet B  ·  10.20.40.0/24</text><rect x="36" y="324" width="220" height="70" rx="10" fill="#1d2227" stroke="#6fb3ff" stroke-width="1.5"/><text x="146.0" y="346.0" font-size="15" fill="#f3f5f6" text-anchor="middle" font-weight="700">BBMD B</text><text x="146.0" y="365.0" font-size="12.5" fill="#9aa4ad" text-anchor="middle" font-weight="500" class="mono">BACnet router</text><text x="146.0" y="382.0" font-size="12.5" fill="#9aa4ad" text-anchor="middle" font-weight="500" class="mono">10.20.40.1</text><rect x="304" y="324" width="220" height="70" rx="10" fill="#1d2227" stroke="#3a434c" stroke-width="1.5"/><text x="414.0" y="355.0" font-size="15" fill="#f3f5f6" text-anchor="middle" font-weight="700">AHU-2</text><text x="414.0" y="374.0" font-size="12.5" fill="#9aa4ad" text-anchor="middle" font-weight="500" class="mono">10.20.40.15</text><line x1="80" y1="128" x2="80" y2="318" stroke="#6fb3ff" stroke-width="2.5" marker-end="url(#ah-blue)"/><line x1="116" y1="318" x2="116" y2="128" stroke="#6fb3ff" stroke-width="2.5" marker-end="url(#ah-blue)"/><text x="132" y="196" font-size="12.5" fill="#6fb3ff" text-anchor="start" font-weight="500" class="mono">Forwarded-NPDU</text><text x="132" y="214" font-size="12" fill="#9aa4ad" text-anchor="start" font-weight="500">unicast UDP 47808</text><text x="132" y="230" font-size="12" fill="#9aa4ad" text-anchor="start" font-weight="500">each BBMD lists the</text><text x="132" y="246" font-size="12" fill="#9aa4ad" text-anchor="start" font-weight="500">other in its BDT</text><line x1="256" y1="359" x2="300" y2="359" stroke="#5cc98a" stroke-width="2.5" marker-end="url(#ah-ok)"/><text x="278" y="350" font-size="11" fill="#5cc98a" text-anchor="middle" font-weight="500">local</text><rect x="380" y="168" width="160" height="60" rx="10" fill="#1d2227" stroke="#ff9a1f" stroke-width="1.5"/><text x="460.0" y="194.0" font-size="15" fill="#f3f5f6" text-anchor="middle" font-weight="700">Foreign device</text><text x="460.0" y="213.0" font-size="12.5" fill="#9aa4ad" text-anchor="middle" font-weight="500" class="mono">phone / VPN laptop</text><path d="M380,186 C330,176 300,150 260,118" stroke="#ff9a1f" stroke-width="2.5" fill="none" marker-end="url(#ah-acc)"/><text x="540" y="250" font-size="11.5" fill="#ff9a1f" text-anchor="end" font-weight="500" class="mono">1. Register-Foreign-Device</text><text x="540" y="266" font-size="11.5" fill="#ff9a1f" text-anchor="end" font-weight="500" class="mono">2. Distribute-Broadcast</text></svg></div><figcaption>BBMDs pass broadcasts between subnets. A phone or laptop elsewhere registers as a foreign device to join in.</figcaption></figure>
+  <p>The usual commissioning mistakes: BDTs that do not match on every BBMD, two BBMDs on the
+  same subnet (broadcasts get duplicated), and a firewall between subnets that drops the
+  unicast UDP 47808 traffic between BBMDs.</p>
 
   <h2>Foreign Device Registration</h2>
-  <p>A tool that is not on any BACnet subnet &mdash; a laptop or phone on office Wi-Fi,
-  say &mdash; can ask a BBMD to include it as a <strong>foreign device</strong>. The BBMD
-  then forwards broadcasts to it directly for a time. It is the standard way a piece of
-  software reaches equipment it is not physically alongside.</p>
+  <p>A device that is not on a BACnet subnet, such as a laptop on a VPN or a tool on another
+  VLAN, can register with a BBMD as a <strong>foreign device</strong>. The BBMD forwards
+  broadcasts to it for a set time-to-live, and the tool hands its own broadcasts to the BBMD
+  to distribute. The tool has to re-register before the time runs out. Some BBMDs have
+  foreign-device registration turned off, or limit how many may register.</p>
 
   <h2>What this means for a phone scan</h2>
-  <p>Easy BACnet scans the subnet the phone is on. If the equipment is elsewhere and there
-  is no BBMD reaching your phone, the scan finds nothing &mdash; not because the app failed,
-  but because the broadcast never crossed the router. The reliable fix on site is to get
-  the phone onto the <strong>same subnet</strong> as the controllers; see
+  <p>Easy BACnet scans the subnet the phone is on. If the equipment is elsewhere and no BBMD
+  is set up for your phone, the scan finds nothing because the broadcast never crossed the
+  router. On site the dependable fix is to get the phone onto the <strong>same subnet</strong>
+  as the controllers; see
   <a href="why-cant-i-find-my-bacnet-devices">why can't I find my BACnet IP devices?</a>.</p>
 
   <h2>Scanning through a BBMD with Easy BACnet</h2>
-  <p>If the site has a BBMD and your phone can reach it, Easy BACnet can register with it as a
-  foreign device:</p>
+  <p>If the site has a BBMD and your phone can reach its IP address, Easy BACnet can register
+  with it as a foreign device:</p>
   <ol>
     <li>In <strong>Easy BACnet Mode</strong>, open the menu (three dots) &rarr; <strong>BBMD for
     remote networks&hellip;</strong>.</li>
@@ -218,8 +241,8 @@
     <li>Tap <strong>Scan for Devices</strong>. Each scan registers the phone with the BBMD and
     sends its Who-Is through it, as well as on the local subnet.</li>
   </ol>
-  <p>If the BBMD rejects the registration you will see a warning with its result code &mdash;
-  ask whoever manages it to allow foreign-device registration. If it does not answer, the scan
+  <p>If the BBMD rejects the registration you get a warning with its result code; ask whoever
+  manages it to allow foreign-device registration. If it does not answer at all, the scan
   covered the local network only. Tap <strong>Clear</strong> in the same dialog to stop using
   it. For a single known controller, <a href="bacnet-add-device-by-ip">add it by IP</a>
   instead.</p>

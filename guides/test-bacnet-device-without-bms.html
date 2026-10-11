@@ -116,6 +116,23 @@
              border-left:3px solid var(--accent); border-radius:12px;
              padding:1rem 1.25rem; margin:1.75rem 0; }
   .callout p:last-child { margin-bottom:0; }
+
+  figure.diagram { margin:2rem 0; background:#171b1f; border:1px solid var(--line);
+                   border-radius:14px; padding:1rem 1rem .85rem; }
+  figure.diagram svg { display:block; width:100%; height:auto; max-width:560px; margin:0 auto; }
+  figure.diagram svg text { font-family:"Manrope",system-ui,-apple-system,"Segoe UI",Roboto,Arial,sans-serif; }
+  figure.diagram svg .mono { font-family:"IBM Plex Mono",ui-monospace,Consolas,monospace; }
+  figure.diagram figcaption { color:var(--muted); font-size:.86rem; line-height:1.45;
+                              margin-top:.75rem; text-align:center; }
+  /* Phones: go edge to edge and keep labels readable; wide diagrams swipe. */
+  @media (max-width: 520px) {
+    figure.diagram { margin:1.75rem -1.25rem; border-radius:0; border-left:0; border-right:0;
+                     padding:.85rem 0 .75rem; }
+    figure.diagram .dg-scroll { overflow-x:auto; -webkit-overflow-scrolling:touch; padding:0 .75rem; }
+    figure.diagram svg { min-width:480px; }
+    figure.diagram figcaption { padding:0 1.25rem; }
+    figure.diagram figcaption::after { content:" (swipe to see it all)"; opacity:.7; }
+  }
 </style>
 <script type="application/ld+json">
 {
@@ -123,19 +140,19 @@
   "@graph": [
     {
       "@type": "FAQPage",
-      "datePublished": "2026-10-03",
-      "dateModified": "2026-10-03",
+      "datePublished": "2026-10-11",
+      "dateModified": "2026-10-11",
       "mainEntity": [{
         "@type": "Question",
         "name": "How do I test a BACnet IP device without a BMS?",
-        "acceptedAnswer": { "@type": "Answer", "text": "You do not need the building management system, a laptop, or the integrator to prove a BACnet IP device is alive and working. Any BACnet client on the same network can do it — including Easy BACnet on a phone. Join the network, run a Who-Is, and if the device answers with its name and Device ID it is online and speaking BACnet. Read its points to confirm the sensors report sane values, and — carefully — command a commandable point to confirm it responds. That is a full functional check with nothing but a phone." }
+        "acceptedAnswer": { "@type": "Answer", "text": "You do not need the head-end to prove a BACnet IP controller is up and working. Any BACnet client on the same subnet can do it, including Easy BACnet on a phone. Plug into the network, run a Who-Is, and if the controller answers with its Device ID it is powered, addressed and speaking BACnet. Read its inputs to check the sensors make sense, then, where it is safe, command an output, watch the equipment respond, and release it. That is a useful point-to-point check before the BMS is connected." }
       }]
     },
     {
       "@type": "Article",
       "headline": "How do I test a BACnet IP device without a BMS?",
-      "datePublished": "2026-10-03",
-      "dateModified": "2026-10-03",
+      "datePublished": "2026-10-11",
+      "dateModified": "2026-10-11",
       "mainEntityOfPage": "https://easybacnet.com/guides/test-bacnet-device-without-bms.html",
       "image": "https://easybacnet.com/img/og-image.png",
       "author": { "@id": "https://easybacnet.com/#org" },
@@ -167,61 +184,69 @@
 
 <article>
   <h1>How do I test a BACnet IP device without a BMS?</h1>
-  <p class="updated">Updated 3 October 2026</p>
+  <p class="updated">Updated 11 October 2026</p>
 
   <div class="answer">
     <strong>Short answer</strong>
-    <p>You do not need the building management system, a laptop, or the
-    integrator to prove a BACnet IP device is alive and working. Any BACnet client on the
-    same network can do it &mdash; including <a href="../">Easy BACnet</a> on
-    a phone. Join the network, run a Who-Is, and if the device answers with its name and
-    Device ID it is online and speaking BACnet. Read its points to confirm the sensors
-    report sane values, and &mdash; carefully &mdash; command a commandable point to
-    confirm it responds. That is a full functional check with nothing but a phone.</p>
+    <p>You do not need the head-end to prove a BACnet IP controller is up and
+    working. Any BACnet client on the same subnet can do it, including
+    <a href="../">Easy BACnet</a> on a phone. Plug into the network, run a Who-Is,
+    and if the controller answers with its Device ID it is powered, addressed and speaking
+    BACnet. Read its inputs to check the sensors make sense, then, where it is safe,
+    command an output, watch the equipment respond, and release it. That is a useful
+    point-to-point check before the BMS is connected.</p>
   </div>
 
 
   <h2>Why you can do this without the BMS</h2>
-  <p>BACnet has no login and no single master. Any device on the network can ask any
-  other device questions, and that is all a BMS does: it is a BACnet client with a
-  front end. A handheld client can perform the same discovery, reads and writes,
-  which makes a phone a good tool for commissioning checks, start-up and
-  &ldquo;is this new controller talking yet?&rdquo; before the BMS is connected.</p>
+  <p>BACnet IP has no login and no single master. A head-end is a BACnet client with
+  graphics, trends and schedules on top; a handheld client can do the same discovery, reads
+  and writes. That makes a phone handy at start-up, for checking a replacement controller,
+  or for &ldquo;is this new RTU controller talking yet?&rdquo; before the integrator has it
+  in the Supervisor.</p>
+
+  <h2>Before you start</h2>
+  <p>A new controller is often still on its factory IP address and Device ID. Find out what
+  they are (label, manual, or the commissioning tool) and give your phone's Ethernet adapter
+  a static IP on that subnet. If two new controllers share the same default Device ID, sort
+  that out before anything else; see
+  <a href="duplicate-bacnet-device-id">duplicate Device IDs</a>.</p>
 
   <h2>The test, step by step</h2>
 
   <h3>1. Prove it is on the network (discovery)</h3>
-  <p>Run a scan. If the device answers a Who-Is with its name, Device ID and IP, it is
-  powered, on the network, and speaking BACnet/IP &mdash; three things confirmed at
-  once. If it does not answer, that is a network or address problem, not necessarily a
-  dead device: see <a href="bacnet-device-shows-offline">why does my BACnet IP device
-  show offline?</a></p>
+  <p>Run a scan. If the controller answers a Who-Is with its Device ID and IP, it is
+  powered, on the network and speaking BACnet/IP. If it does not answer, that is a network
+  or addressing problem first, not necessarily a dead controller: see
+  <a href="bacnet-device-shows-offline">why does my BACnet IP device show offline?</a></p>
 
-  <h3>2. Prove the sensors read (inputs)</h3>
-  <p>Open the device and read its input points. Do the values make physical sense &mdash;
-  a room temperature near room temperature, a damper position between 0 and 100%? A
-  point flagged fault or unreliable, or reading an impossible number, points at a sensor
-  or wiring problem on the equipment. This alone catches a lot of commissioning faults.</p>
+  <h3>2. Check the inputs</h3>
+  <p>Open the device and read its input points. Do the values make sense? A zone
+  temperature around 70&nbsp;°F, an outdoor air temperature that matches the weather, a
+  damper feedback between 0 and 100%. A point flagged <em>Fault</em>, or reading -40 or
+  250, usually means an open or shorted sensor, a wiring error, or the wrong sensor type
+  configured.</p>
 
-  <h3>3. Prove it responds to control (outputs)</h3>
-  <p>On a commandable output, write a value at a manual priority and watch what happens
-  &mdash; a valve drives, a fan starts, the feedback point moves. Then <strong>release
-  it</strong> so you do not leave an override behind. This confirms the whole chain: the
-  controller received the command and the actuator obeyed. Do this only where it is safe
-  to move the equipment, and always release afterwards &mdash; see
+  <h3>3. Check the outputs respond</h3>
+  <p>On a commandable output, write a value at priority 8 and watch the equipment: the
+  valve strokes, the fan starts, the feedback point follows. Then <strong>release
+  it</strong> so you do not leave an override behind, and re-read to confirm it went back
+  to auto. Only do this where moving the equipment is safe and the people on site know. See
   <a href="how-to-write-to-a-bacnet-point">how to write to a BACnet point</a> and
   <a href="bacnet-priority-and-stuck-overrides">priority and stuck overrides</a>.</p>
+<figure class="diagram"><div class="dg-scroll"><svg viewBox="0 0 560 378" role="img" aria-label="Safe write cycle: read, write at priority 8, verify, release, verify" xmlns="http://www.w3.org/2000/svg"><defs><marker id="ah-acc" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" fill="#ff9a1f"/></marker><marker id="ah-ok" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" fill="#5cc98a"/></marker><marker id="ah-bad" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" fill="#ff6b6b"/></marker><marker id="ah-mut" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" fill="#9aa4ad"/></marker><marker id="ah-blue" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" fill="#6fb3ff"/></marker><marker id="ah-fg" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" fill="#f3f5f6"/></marker></defs><line x1="40" y1="56" x2="40" y2="90" stroke="#3a434c" stroke-width="2.5"/><circle cx="40" cy="36" r="20" fill="#232a31" stroke="#f3f5f6" stroke-width="2"/><text x="40" y="42" font-size="16" fill="#f3f5f6" text-anchor="middle" font-weight="800">1</text><text x="76" y="32" font-size="15" fill="#f3f5f6" text-anchor="start" font-weight="800">Read and note</text><text x="76" y="54" font-size="13" fill="#9aa4ad" text-anchor="start" font-weight="500">Present_Value, who holds it (Commanded At), the fallback</text><line x1="40" y1="130" x2="40" y2="164" stroke="#3a434c" stroke-width="2.5"/><circle cx="40" cy="110" r="20" fill="#232a31" stroke="#ff9a1f" stroke-width="2"/><text x="40" y="116" font-size="16" fill="#ff9a1f" text-anchor="middle" font-weight="800">2</text><text x="76" y="106" font-size="15" fill="#ff9a1f" text-anchor="start" font-weight="800">Write at priority 8</text><text x="76" y="128" font-size="13" fill="#9aa4ad" text-anchor="start" font-weight="500">One point, one value. Tell whoever runs the system.</text><line x1="40" y1="204" x2="40" y2="238" stroke="#3a434c" stroke-width="2.5"/><circle cx="40" cy="184" r="20" fill="#232a31" stroke="#f3f5f6" stroke-width="2"/><text x="40" y="190" font-size="16" fill="#f3f5f6" text-anchor="middle" font-weight="800">3</text><text x="76" y="180" font-size="15" fill="#f3f5f6" text-anchor="start" font-weight="800">Verify</text><text x="76" y="202" font-size="13" fill="#9aa4ad" text-anchor="start" font-weight="500">Re-read the point and look at the equipment itself</text><line x1="40" y1="278" x2="40" y2="312" stroke="#3a434c" stroke-width="2.5"/><circle cx="40" cy="258" r="20" fill="#232a31" stroke="#ff9a1f" stroke-width="2"/><text x="40" y="264" font-size="16" fill="#ff9a1f" text-anchor="middle" font-weight="800">4</text><text x="76" y="254" font-size="15" fill="#ff9a1f" text-anchor="start" font-weight="800">Release</text><text x="76" y="276" font-size="13" fill="#9aa4ad" text-anchor="start" font-weight="500">Write NULL at the same priority (Release to Auto)</text><circle cx="40" cy="332" r="20" fill="#232a31" stroke="#f3f5f6" stroke-width="2"/><text x="40" y="338" font-size="16" fill="#f3f5f6" text-anchor="middle" font-weight="800">5</text><text x="76" y="328" font-size="15" fill="#f3f5f6" text-anchor="start" font-weight="800">Verify it went back</text><text x="76" y="350" font-size="13" fill="#9aa4ad" text-anchor="start" font-weight="500">Commanded At empty or back to the program’s slot</text></svg></div><figcaption>The whole job, start to finish. Steps 4 and 5 are the ones people skip.</figcaption></figure>
 
   <h2>What a phone test can and cannot tell you</h2>
   <ul>
-    <li><strong>Can</strong>: confirm the device is online, that points read sane
-    values, that outputs respond to commands, and capture the whole lot as a
-    <a href="export-bacnet-points-to-csv">spreadsheet</a> for a record.</li>
+    <li><strong>Can</strong>: confirm the controller is online, that inputs read sensible
+    values, that outputs respond to commands, and capture the lot as a
+    <a href="export-bacnet-points-to-csv">spreadsheet</a> for the record.</li>
     <li><strong>Cannot</strong>: discover a whole other subnet without a
     <a href="what-is-a-bbmd">BBMD</a> (one known device can be
-    <a href="bacnet-add-device-by-ip">added by IP</a>), or plug straight into an MS/TP trunk &mdash;
-    those go through a router. And it does not replace the BMS's scheduling and trending;
-    it proves the device works, not that the whole sequence is programmed.</li>
+    <a href="bacnet-add-device-by-ip">added by IP</a>), or connect straight to an MS/TP
+    trunk; MS/TP controllers need a BACnet router. And it does not check schedules, trends,
+    alarms or the full sequence of operation. It proves the controller and its I/O work, not
+    that the programming is right.</li>
   </ul>
 
 </article>
