@@ -173,14 +173,9 @@ SCREENSHOTS = {
     "guides/what-is-bacnet": [("scan.png","A Who-Is scan finds every BACnet IP device"),
         ("devices.png","Each device that answered"),("points.png","One device’s points, named and typed")],
     "guides/bacnet-engineering-units-explained": [("points.png","Units shown next to every value")],
-    "guides/bacnet-status-flags-explained": [("point.png","Status flags on a point’s detail")],
-    "guides/how-to-release-a-bacnet-override": [("point.png","“Commanded At” shows the active priority"),
-        ("release.png","Releasing a point back to auto")],
-    "guides/bacnet-add-object-by-number": [("points.png","A device’s point list")],
     "guides/duplicate-bacnet-device-id": [("devices.png","Each device with its Device ID")],
     "guides/is-it-safe-to-write-to-bacnet": [("write.png","Choosing a value and priority"),
         ("release.png","Releasing back to auto")],
-    "guides/bacnet-multistate-values-explained": [("point.png","A multi-state point and its options")],
     "guides/export-bacnet-points-to-csv": [("scan.png","A finished scan, ready to export"),
         ("devices.png","Every device found goes into the spreadsheet")],
     "guides/bacnet-scanner-app-android": [("scan.png","A finished scan"),("devices.png","Every device found")],
@@ -716,12 +711,11 @@ GUIDES.append(dict(
   <p>Two options in the menu (three dots, top right):</p>
   <ul>
     <li><strong>Add device by IP&hellip;</strong> contacts one controller directly. It
-    crosses routers because it isn't a broadcast. See
-    <a href="bacnet-add-device-by-ip.html">add a device by IP</a>.</li>
+    crosses routers because it isn't a broadcast, so it works as long as the phone can
+    reach that address.</li>
     <li><strong>BBMD for remote networks&hellip;</strong> registers the phone with the
     site's BBMD as a foreign device so scans reach the subnets it serves. Get the
-    BBMD's address from whoever manages the controls network. See
-    <a href="what-is-a-bbmd.html">what is a BBMD?</a></li>
+    BBMD's address from whoever manages the controls network.</li>
   </ul>
 """,
     related=[
@@ -794,8 +788,7 @@ GUIDES.append(dict(
     yours before you're on site; a laptop or small travel router set to the static
     address is a common workaround.</li>
     <li><strong>Ask about a BBMD.</strong> If the site has one, Easy BACnet can
-    register with it from another subnet and discover through it. See
-    <a href="what-is-a-bbmd.html">what is a BBMD?</a></li>
+    register with it from another subnet and discover through it.</li>
     <li><strong>Add a known device by IP.</strong> If a controller's address is
     reachable through a router, <strong>Add device by IP&hellip;</strong> in the menu
     reaches it without a broadcast.</li>
@@ -809,7 +802,6 @@ GUIDES.append(dict(
 """,
     related=[
         ("guides/why-cant-i-find-my-bacnet-devices", "Why can't I find my BACnet IP devices?"),
-        ("guides/what-is-a-bbmd", "What is a BBMD?"),
         ("guides/who-to-call-it-hvac-or-controls", "Who do I call &mdash; IT, HVAC, or controls/BMS?"),
         ("guides/cant-find-what-im-looking-for", "The app can&rsquo;t find what I&rsquo;m looking for"),
     ],
@@ -1112,12 +1104,11 @@ GUIDES.append(dict(
   <ul>
     <li><strong>Add device by IP&hellip;</strong> &mdash; type the controller's
     <em>IP address or host name</em> and <em>UDP port</em> (47808 is standard) and tap
-    <strong>Add</strong>. See <a href="bacnet-add-device-by-ip.html">add a device by
-    IP</a>.</li>
+    <strong>Add</strong>. See add a device by
+    IP.</li>
     <li><strong>BBMD for remote networks&hellip;</strong> &mdash; enter the site's BBMD
     address once and every scan registers the phone with it as a foreign device, so
-    the Who-Is reaches the other subnets it serves. See
-    <a href="what-is-a-bbmd.html">what is a BBMD?</a></li>
+    the Who-Is reaches the other subnets it serves.</li>
   </ul>
 
   <h2>Step 3 &mdash; Look at what it found (optional)</h2>
@@ -1127,7 +1118,7 @@ GUIDES.append(dict(
   one property at a time with plain ReadProperty, because plenty of small controllers
   and gateways don't handle ReadPropertyMultiple or segmented replies well. It loads
   up to 2,000 objects automatically; past that, use the menu's <strong>Add object by
-  number</strong> (<a href="bacnet-add-object-by-number.html">how</a>).</p>
+  number</strong> (how).</p>
   <p>Tap a point to see its <strong>Present Value</strong>, <strong>Units</strong>,
   <strong>Status</strong> and <strong>Description</strong>, with a
   <strong>Refresh</strong> button for a fresh read. On commandable points you also
@@ -1513,8 +1504,7 @@ GUIDES.append(dict(
     <li><strong>Scan first.</strong> The builder picks devices from your last scan. If you have
     not scanned this session it says <em>Scan for devices first, then build a panel from what you
     find</em> and takes you to Easy BACnet Mode. Devices on another subnet can be added with
-    <strong>Add device by IP&hellip;</strong> or a <strong>BBMD</strong> before you start (see
-    <a href="bacnet-add-device-by-ip.html">add a device by IP</a>), or typed in by hand later.</li>
+    <strong>Add device by IP&hellip;</strong> or a <strong>BBMD</strong> before you start, or typed in by hand later.</li>
     <li><strong>Load the point lists</strong> of the devices you want to control (open each one
     from <strong>View Results</strong>) if you want to pick points by name. Otherwise you can
     enter any point by object type and instance number.</li>
@@ -1641,7 +1631,6 @@ GUIDES.append(dict(
     related=[
         ("guides/how-to-build-a-custom-remote", "How do I build a custom remote in Easy BACnet?"),
         ("guides/how-to-write-to-a-bacnet-point", "How do I write to a BACnet point with Easy BACnet, and release it?"),
-        ("guides/bacnet-add-device-by-ip", "Add a BACnet device by IP address"),
         ("guides/duplicate-bacnet-device-id", "Two devices have the same BACnet Device ID"),
     ],
 ))
@@ -1730,7 +1719,7 @@ GUIDES.append(dict(
     <li><strong>A big controller shows only part of its list.</strong> The app
     loads the first 2,000 objects and says so. Reach the rest with menu &rarr;
     <strong>Add object by number</strong>
-    (<a href="bacnet-add-object-by-number.html">how</a>).</li>
+    (how).</li>
   </ul>
 
   <h2>I see a point but no value</h2>
@@ -1798,7 +1787,7 @@ GUIDES.append(dict(
     <li><strong>It answers.</strong> The device is online and speaking BACnet. Your
     scan missed it because the broadcast isn't reaching it: it is on another subnet, the
     Wi-Fi has client isolation on, or the network filters broadcasts. To scan a whole
-    remote subnet you need the site's <a href="what-is-a-bbmd.html">BBMD</a>; for this
+    remote subnet you need the site's BBMD; for this
     one device, you are done.</li>
     <li><strong>It does not answer</strong> (<em>No BACnet IP device answered
     at&hellip;</em>). Go to step 3.</li>
@@ -1973,7 +1962,7 @@ GUIDES.append(dict(
 
   <h2>Why a scan sometimes finds nothing</h2>
   <p>Who-Is is a broadcast, and IP routers do not forward broadcasts, so a device on a
-  different subnet never hears it unless a <a href="what-is-a-bbmd.html">BBMD</a> carries
+  different subnet never hears it unless a BBMD carries
   it across. That is the usual reason a scan comes back empty: see
   <a href="why-cant-i-find-my-bacnet-devices.html">why can't I find my BACnet IP devices?</a>.
   Devices on an <a href="bacnet-mstp-vs-bacnet-ip.html">MS/TP</a> trunk answer too, because
@@ -1983,77 +1972,7 @@ GUIDES.append(dict(
 """,
     related=[
         ("guides/why-cant-i-find-my-bacnet-devices", "Why can't I find my BACnet IP devices?"),
-        ("guides/what-is-a-bbmd", "What is a BBMD?"),
         ("guides/bacnet-device-id-explained", "BACnet Device IDs explained"),
-    ],
-))
-
-GUIDES.append(dict(
-    slug="guides/what-is-a-bbmd",
-    title="What is a BBMD in BACnet? | Easy BACnet",
-    question="What is a BBMD, and when do I need one?",
-    description="A BBMD forwards BACnet/IP broadcasts across subnets, because routers do not. Without one, equipment on another subnet cannot be discovered.",
-    answer_html="""<p>A <strong>BBMD</strong> (BACnet Broadcast Management Device) forwards
-    BACnet/IP broadcasts from one IP subnet to another. Discovery depends on broadcasts, and
-    IP routers do not pass them, so equipment on another subnet stays invisible to a Who-Is
-    until a BBMD carries it across. You need one on each subnet whenever a single BACnet IP
-    network spans more than one IP subnet. In practice it is usually a function switched on
-    in a JACE, a supervisory controller or a BACnet router, not a separate box.</p>""",
-    body_html="""
-  <h2>Why broadcasts are the problem</h2>
-  <p>A <a href="who-is-i-am-explained.html">Who-Is</a> is a broadcast: it reaches every
-  device on the local subnet in one shot. Routers stop broadcasts at the subnet edge by
-  design. So when the RTU controllers are on 10.20.30.0/24 and the head-end is on
-  10.20.40.0/24, discovery stops at the router. Directed (unicast) reads still cross it
-  fine; only the broadcast part breaks.</p>
-
-  <h2>What a BBMD does</h2>
-  <p>One BBMD sits on each subnet that has BACnet/IP devices, and each holds a
-  <strong>Broadcast Distribution Table</strong> (BDT) listing its peers. When a broadcast
-  appears on subnet A, A's BBMD sends it as a unicast to the BBMDs in its table, and each
-  one re-broadcasts it on its own subnet. A Who-Is on subnet A is then heard on subnet B
-  without opening the routers to broadcast traffic.</p>
-{{fig:bbmd}}
-  <p>The usual commissioning mistakes: BDTs that do not match on every BBMD, two BBMDs on the
-  same subnet (broadcasts get duplicated), and a firewall between subnets that drops the
-  unicast UDP 47808 traffic between BBMDs.</p>
-
-  <h2>Foreign Device Registration</h2>
-  <p>A device that is not on a BACnet subnet, such as a laptop on a VPN or a tool on another
-  VLAN, can register with a BBMD as a <strong>foreign device</strong>. The BBMD forwards
-  broadcasts to it for a set time-to-live, and the tool hands its own broadcasts to the BBMD
-  to distribute. The tool has to re-register before the time runs out. Some BBMDs have
-  foreign-device registration turned off, or limit how many may register.</p>
-
-  <h2>What this means for a phone scan</h2>
-  <p>Easy BACnet scans the subnet the phone is on. If the equipment is elsewhere and no BBMD
-  is set up for your phone, the scan finds nothing because the broadcast never crossed the
-  router. On site the dependable fix is to get the phone onto the <strong>same subnet</strong>
-  as the controllers; see
-  <a href="why-cant-i-find-my-bacnet-devices.html">why can't I find my BACnet IP devices?</a>.</p>
-
-  <h2>Scanning through a BBMD with Easy BACnet</h2>
-  <p>If the site has a BBMD and your phone can reach its IP address, Easy BACnet can register
-  with it as a foreign device:</p>
-  <ol>
-    <li>In <strong>Easy BACnet Mode</strong>, open the menu (three dots) &rarr; <strong>BBMD for
-    remote networks&hellip;</strong>.</li>
-    <li>Enter the <strong>BBMD IP address</strong> and its UDP port (47808 is standard), then tap
-    <strong>Save</strong>. The app confirms <em>Scans will now also go through the BBMD at
-    &hellip;</em> and remembers the address.</li>
-    <li>Tap <strong>Scan for Devices</strong>. Each scan registers the phone with the BBMD and
-    sends its Who-Is through it, as well as on the local subnet.</li>
-  </ol>
-  <p>If the BBMD rejects the registration you get a warning with its result code; ask whoever
-  manages it to allow foreign-device registration. If it does not answer at all, the scan
-  covered the local network only. Tap <strong>Clear</strong> in the same dialog to stop using
-  it. For a single known controller, <a href="bacnet-add-device-by-ip.html">add it by IP</a>
-  instead.</p>
-""",
-    related=[
-        ("guides/why-cant-i-find-my-bacnet-devices", "Why can't I find my BACnet IP devices?"),
-        ("guides/who-is-i-am-explained", "BACnet Who-Is and I-Am explained"),
-        ("guides/what-port-does-bacnet-use", "What port does BACnet IP use?"),
     ],
 ))
 
@@ -2140,14 +2059,13 @@ GUIDES.append(dict(
   <p>If an access list between VLANs or a host firewall drops UDP 47808, discovery and reads
   fail even though the devices are fine; the network team needs to allow it in both
   directions. Broadcasts on 47808 do not cross a router at all; that takes a
-  <a href="what-is-a-bbmd.html">BBMD</a> on each subnet, and the BBMDs need unicast 47808
+  BBMD on each subnet, and the BBMDs need unicast 47808
   open between them. <a href="bacnet-mstp-vs-bacnet-ip.html">MS/TP</a> devices have no IP
   port; they sit on an RS-485 trunk and reach IP through a BACnet router. BACnet Secure
   Connect (BACnet/SC) is different again: it runs over TLS on TCP, typically port 443, and
   is not something Easy BACnet speaks.</p>
 """,
     related=[
-        ("guides/what-is-a-bbmd", "What is a BBMD?"),
         ("guides/bacnet-mstp-vs-bacnet-ip", "BACnet MS/TP vs BACnet/IP"),
         ("guides/why-cant-i-find-my-bacnet-devices", "Why can't I find my BACnet IP devices?"),
     ],
@@ -2187,11 +2105,11 @@ GUIDES.append(dict(
     <tr><td>BACnet/IP devices on the same subnet as the phone</td><td>Yes &mdash; the normal case, found by <em>Who-Is</em></td></tr>
     <tr><td>A specific device you can reach by IP but not by broadcast</td><td>Yes &mdash; add it directly by IP address</td></tr>
     <tr><td>MS/TP devices on an RS-485 trunk behind a BACnet router</td><td>Yes, through the router; they answer the Who-Is via it. See <a href="bacnet-mstp-vs-bacnet-ip.html">MS/TP vs BACnet/IP</a></td></tr>
-    <tr><td>Devices on another subnet, through the site's BBMD</td><td>Yes &mdash; enter the <a href="what-is-a-bbmd.html">BBMD</a> address and the app registers as a foreign device</td></tr>
+    <tr><td>Devices on another subnet, through the site's BBMD</td><td>Yes &mdash; enter the BBMD address and the app registers as a foreign device</td></tr>
     <tr><td>Devices on another subnet, with no BBMD</td><td>Only one at a time, by IP &mdash; broadcasts don't cross a router</td></tr>
     <tr><td>An RS-485 trunk wired straight to the phone</td><td>No &mdash; the app speaks BACnet IP only</td></tr>
   </table>
-  <p>Menu &rarr; <a href="bacnet-add-device-by-ip.html">Add device by IP&hellip;</a> and
+  <p>Menu &rarr; Add device by IP&hellip; and
   menu &rarr; <strong>BBMD for remote networks&hellip;</strong> cover the other-subnet cases.</p>
 
   <h2>Reading is safe; writing has rails</h2>
@@ -2215,7 +2133,6 @@ GUIDES.append(dict(
         ("guides/why-cant-i-find-my-bacnet-devices", "Why can't I find my BACnet IP devices?"),
         ("guides/subnets", "What is a subnet, and why doesn't the switch give me the right one?"),
         ("guides/how-to-write-to-a-bacnet-point", "How do I write to a BACnet point?"),
-        ("guides/best-free-bacnet-explorer", "What is the best free BACnet explorer tool?"),
         ("guides/what-is-bacnet", "What is BACnet?"),
     ],
 ))
@@ -2334,8 +2251,7 @@ GUIDES.append(dict(
   answer discovery or reads is a <strong>communication</strong> problem, and the rest of
   this guide covers that. A device that answers but has a point showing <em>Fault</em> or
   an impossible value (a zone temperature of -40, say) has a <strong>sensor or wiring</strong>
-  problem. If you can open the device and read its points, it is not offline. See
-  <a href="bacnet-status-flags-explained.html">status flags explained</a> for the fault case.</p>
+  problem. If you can open the device and read its points, it is not offline.</p>
 
   <h2>Work through these in order</h2>
 
@@ -2346,7 +2262,7 @@ GUIDES.append(dict(
   controller's address. If they differ, see
   <a href="subnets.html">what is a subnet, and why doesn't the switch give me the
   right one?</a> A device on another subnet needs a
-  <a href="what-is-a-bbmd.html">BBMD</a> or a direct add by IP (step 3).</p>
+  BBMD or a direct add by IP (step 3).</p>
 
   <h3>2. Scan again</h3>
   <p>Discovery is a broadcast, and broadcasts get dropped, especially over Wi-Fi. A device
@@ -2384,7 +2300,6 @@ GUIDES.append(dict(
         ("guides/why-cant-i-find-my-bacnet-devices", "Why can't I find my BACnet IP devices?"),
         ("guides/subnets", "What is a subnet, and why doesn't the switch give me the right one?"),
         ("guides/bacnet-device-id-explained", "What is a BACnet Device ID?"),
-        ("guides/what-is-a-bbmd", "What is a BBMD?"),
     ],
 ))
 
@@ -2491,8 +2406,7 @@ GUIDES.append(dict(
   <p>Usually the right fix is to <strong>release</strong> the slot that should not be held
   (write NULL at that priority) so the point goes back to its program, rather than writing
   at a higher priority and stacking another override on top. See
-  <a href="how-to-release-a-bacnet-override.html">how to release a BACnet override</a>
-  and <a href="bacnet-priority-and-stuck-overrides.html">BACnet priority and stuck
+  <a href="bacnet-priority-and-stuck-overrides.html">BACnet priority and stuck
   overrides</a>.</p>
 
   <h2>Case 2 &mdash; the value changed, the equipment did not</h2>
@@ -2508,8 +2422,7 @@ GUIDES.append(dict(
     lockout, a failed actuator, a VFD in fault. The command is right; the mechanical or
     electrical side is not.</li>
   </ul>
-  <p>Check the status flags (see
-  <a href="bacnet-status-flags-explained.html">status flags explained</a>). Overridden and
+  <p>Check the point's status flags. Overridden and
   Out Of Service are for the controls side; a healthy point driving dead equipment is for
   the mechanical or electrical side.</p>
 
@@ -2596,8 +2509,7 @@ GUIDES.append(dict(
     <em>Device</em>), so every controller and its IP is listed even if it returned no
     points.</li>
     <li>Any point whose <strong>Status</strong> is not <em>Normal</em> (in alarm, fault,
-    overridden or out of service) is shaded red. See
-    <a href="bacnet-status-flags-explained.html">status flags explained</a>.</li>
+    overridden or out of service) is shaded red.</li>
     <li>Device IDs, object numbers and counts are stored as numbers, so sorting and filtering
     work straight away. Present values keep the app's formatting (e.g. <em>Active (On)</em> for a
     binary point) and units use short symbols such as °F, % RH or kW.</li>
@@ -2703,8 +2615,8 @@ GUIDES.append(dict(
     values, that outputs respond to commands, and capture the lot as a
     <a href="export-bacnet-points-to-csv.html">spreadsheet</a> for the record.</li>
     <li><strong>Cannot</strong>: discover a whole other subnet without a
-    <a href="what-is-a-bbmd.html">BBMD</a> (one known device can be
-    <a href="bacnet-add-device-by-ip.html">added by IP</a>), or connect straight to an MS/TP
+    BBMD (one known device can be
+    added by IP), or connect straight to an MS/TP
     trunk; MS/TP controllers need a BACnet router. And it does not check schedules, trends,
     alarms or the full sequence of operation. It proves the controller and its I/O work, not
     that the programming is right.</li>
@@ -2715,60 +2627,6 @@ GUIDES.append(dict(
         ("guides/bacnet-device-shows-offline", "Why does my BACnet IP device show offline?"),
         ("guides/how-to-write-to-a-bacnet-point", "How do I write to a BACnet point?"),
         ("guides/export-bacnet-points-to-csv", "How do I export a BACnet IP points list to Excel or CSV?"),
-    ],
-))
-
-GUIDES.append(dict(
-    slug="guides/best-free-bacnet-explorer",
-    title="Best free BACnet explorer tools | Easy BACnet",
-    question="What is the best free BACnet explorer tool?",
-    description="The free BACnet explorers compared: YABE, CAS BACnet Explorer, the Contemporary Controls BDT and Wacnet, plus where a free phone tool fits fieldwork.",
-    answer_html="""<p>On a laptop, the common free choices are <strong>YABE</strong> (Yet
-    Another BACnet Explorer, open source, Windows), the <strong>Contemporary Controls BACnet
-    Discovery Tool</strong> (free, Windows) and <strong>Wacnet</strong> (open source, runs
-    anywhere Java does, browser interface). Chipkin's <strong>CAS BACnet Explorer</strong>
-    is a paid tool with a free trial. All of them need a laptop on the controls network.
-    For a quick check at the panel, <a href="../index.html">Easy BACnet</a> does discovery,
-    reading, writing and export from an Android phone, free.</p>""",
-    body_html="""
-  <h2>The tools</h2>
-  <table>
-    <tr><th>Tool</th><th>Platform</th><th>Reads</th><th>Writes</th><th>Cost</th><th>Notes</th></tr>
-    <tr><td>YABE</td><td>Windows</td><td>Yes</td><td>Yes</td><td>Free, open source</td><td>Capable, with a dense technical interface. Usually the first answer to &ldquo;free BACnet explorer&rdquo;.</td></tr>
-    <tr><td>Contemporary Controls BDT</td><td>Windows</td><td>Yes</td><td>Yes</td><td>Free</td><td>Lightweight discovery tool; handy with the maker's BACnet routers. Can graph points.</td></tr>
-    <tr><td>Wacnet</td><td>Windows, macOS, Linux (Java)</td><td>Yes</td><td>Yes</td><td>Free, open source</td><td>Single JAR, browser-based interface, REST API for scripting.</td></tr>
-    <tr><td>CAS BACnet Explorer</td><td>Windows</td><td>Yes</td><td>Yes</td><td>Paid, free trial</td><td>Polished commissioning tool from Chipkin.</td></tr>
-    <tr><td>Easy BACnet</td><td>Android</td><td>Yes</td><td>Yes</td><td>Free (optional Pro subscription)</td><td>Discovery, read, write at a chosen priority with release, Excel export. BACnet IP only.</td></tr>
-  </table>
-
-  <h2>Which one</h2>
-  <ul>
-    <li><strong>Longer work at a Windows laptop:</strong> YABE, or CAS BACnet Explorer if you
-    want something more polished and have the budget.</li>
-    <li><strong>A quick check on a laptop, or a Mac:</strong> Wacnet. On Windows the
-    Contemporary Controls tool is also quick to set up.</li>
-    <li><strong>Checking equipment without getting the laptop out:</strong> Easy BACnet with a
-    USB-C Ethernet adapter. Discovery, live values, a write and release, and an
-    <a href="export-bacnet-points-to-csv.html">Excel export</a>. See
-    <a href="bacnet-scanner-app-android.html">is there a BACnet IP scanner app for
-    Android?</a></li>
-  </ul>
-  <p>Plenty of techs carry both: a laptop tool for commissioning and deeper work, and a
-  phone for quick checks.</p>
-
-  <h2>What &ldquo;free&rdquo; covers</h2>
-  <p>Check the terms before relying on a tool: some put the download behind a form, some are
-  time-limited trials, some are free for non-commercial use only. Easy BACnet is free to
-  scan, read and write; the free version asks for one short video ad per export and per
-  opening of a saved custom remote, and keeps one custom remote. Easy BACnet Pro ($9.99 a
-  year, with a 14-day free trial) removes the ads and allows unlimited custom remotes. It
-  adds no extra reading or writing features.</p>
-""",
-    related=[
-        ("guides/bacnet-scanner-app-android", "Is there a BACnet IP scanner app for Android?"),
-        ("guides/read-bacnet-values-from-phone", "How do I read BACnet values from a phone?"),
-        ("guides/how-to-use-easy-bacnet", "How do I use Easy BACnet to scan and read?"),
-        ("guides/test-bacnet-device-without-bms", "How do I test a BACnet IP device without a BMS?"),
     ],
 ))
 
@@ -2914,7 +2772,7 @@ GUIDES.append(dict(
     missing controllers are MS/TP, it becomes a controls question: are those trunks
     <a href="does-easy-bacnet-support-mstp-rs485.html">routed onto IP</a>?</li>
     <li><strong>&ldquo;The value looks wrong.&rdquo;</strong> Check the
-    <a href="bacnet-status-flags-explained.html">status flags</a>. A FAULT on a sensor is
+    status flags. A FAULT on a sensor is
     usually wiring or a failed sensor (controls, sometimes mechanical). A sane value that
     nothing acts on is usually an override or sequence problem (controls).</li>
     <li><strong>&ldquo;It worked yesterday.&rdquo;</strong> Ask what changed: a network change,
@@ -3058,10 +2916,10 @@ GUIDES.append(dict(
     <tr><td><strong><a href="bacnet-priority-and-stuck-overrides.html">Priority array</a></strong></td><td>16 slots on a commandable object. The lowest-numbered slot holding a value wins (1 is highest).</td></tr>
     <tr><td><strong>Command priority</strong></td><td>The slot (1&ndash;16) you write at. 8 is conventionally Manual Operator; 1&ndash;2 are life safety, 5 critical equipment, 6 minimum on/off; programs often use 10&ndash;16.</td></tr>
     <tr><td><strong>Relinquish_Default</strong></td><td>The value the object uses when every priority slot is empty.</td></tr>
-    <tr><td><strong>Release (relinquish)</strong></td><td>Writing NULL to a slot to clear it. See <a href="how-to-release-a-bacnet-override.html">how to release an override</a>.</td></tr>
+    <tr><td><strong>Release (relinquish)</strong></td><td>Writing NULL to a slot to clear it. See <a href="bacnet-priority-and-stuck-overrides.html">how to release an override</a>.</td></tr>
     <tr><td><strong>Commandable</strong></td><td>Has a priority array. Analog/Binary/Multi-state Outputs always do; Values (AV, BV, MSV) only if the vendor built them that way. Inputs never do.</td></tr>
     <tr><td><strong>Out_Of_Service</strong></td><td>A property that disconnects <code>Present_Value</code> from the physical I/O so it can be written for testing.</td></tr>
-    <tr><td><strong><a href="bacnet-status-flags-explained.html">Status_Flags</a></strong></td><td>Four flags on a point: IN_ALARM, FAULT, OVERRIDDEN, OUT_OF_SERVICE.</td></tr>
+    <tr><td><strong>Status_Flags</strong></td><td>Four flags on a point: IN_ALARM, FAULT, OVERRIDDEN, OUT_OF_SERVICE.</td></tr>
   </table>
 
   <h2>Networking and wiring</h2>
@@ -3071,7 +2929,7 @@ GUIDES.append(dict(
     <tr><td><strong><a href="bacnet-mstp-vs-bacnet-ip.html">MS/TP</a></strong></td><td>BACnet over an RS-485 twisted pair, common for VAVs and unit controllers. Devices are addressed by a MAC (0&ndash;127 for masters). A phone can't reach it directly.</td></tr>
     <tr><td><strong>BACnet router</strong></td><td>Connects BACnet networks, typically MS/TP trunks to BACnet IP, so routed devices can be reached from IP.</td></tr>
     <tr><td><strong>Network number</strong></td><td>The BACnet number of a network segment (e.g. each MS/TP trunk). Routed devices are addressed by network number plus MAC.</td></tr>
-    <tr><td><strong><a href="what-is-a-bbmd.html">BBMD</a></strong></td><td>BACnet/IP Broadcast Management Device. Forwards BACnet broadcasts such as Who-Is between IP subnets, and accepts foreign-device registrations.</td></tr>
+    <tr><td><strong>BBMD</strong></td><td>BACnet/IP Broadcast Management Device. Forwards BACnet broadcasts such as Who-Is between IP subnets, and accepts foreign-device registrations.</td></tr>
     <tr><td><strong>Foreign device</strong></td><td>A tool on another subnet that registers with a BBMD so it can send and receive broadcasts through it.</td></tr>
     <tr><td><strong><a href="subnets.html">Subnet</a></strong></td><td>The IP range your phone is on. A broadcast scan only reaches devices on the same subnet unless a BBMD is used.</td></tr>
     <tr><td><strong>BACnet/SC</strong></td><td>Secure Connect, a newer TLS-based BACnet transport. Easy BACnet doesn't speak it; it's BACnet IP only.</td></tr>
@@ -3155,327 +3013,7 @@ GUIDES.append(dict(
     related=[
         ("guides/bacnet-object-types-explained", "BACnet object types explained"),
         ("guides/what-is-a-bacnet-points-list", "What is a BACnet IP points list?"),
-        ("guides/bacnet-multistate-values-explained", "BACnet binary and multi-state values explained"),
         ("guides/export-bacnet-points-to-csv", "Export BACnet points to Excel"),
-    ],
-))
-
-GUIDES.append(dict(
-    slug="guides/bacnet-status-flags-explained",
-    title="BACnet Status_Flags explained | Easy BACnet",
-    question="What do BACnet status flags (fault, alarm, overridden, out of service) mean?",
-    description="BACnet points carry four status flags: In Alarm, Fault, Overridden and Out Of Service. What each one means and when a value can't be trusted.",
-    answer_html="""<p><strong>Most BACnet point objects have a <code>Status_Flags</code>
-    property with four true/false flags: IN_ALARM, FAULT, OVERRIDDEN and
-    OUT_OF_SERVICE.</strong> FAULT means the device doesn't trust the reading (an open or
-    shorted sensor, for example). OVERRIDDEN means something local to the controller, like a
-    hand switch, is driving the point. OUT_OF_SERVICE means the point has been disconnected
-    from its physical I/O. IN_ALARM means the object's own alarm limits have been crossed.
-    Easy BACnet shows the flags in the Status field, or <em>Normal</em> when none are set.</p>""",
-    body_html="""
-  <h2>The four flags</h2>
-{{fig:statusflags}}
-
-  <h3>FAULT</h3>
-  <p>The object's <code>Reliability</code> is something other than no-fault-detected:
-  open circuit, shorted, over range, under range, communication failure and so on. Treat
-  <code>Present_Value</code> as junk. An open thermistor typically reads very cold and a
-  shorted one very hot, so <code>RTU-3 SA-T</code> at &minus;40&nbsp;&deg;F with FAULT set is
-  a wiring or sensor problem, not a frozen duct. Check this flag first when a number looks
-  impossible.</p>
-
-  <h3>OVERRIDDEN</h3>
-  <p>The point is being driven by something local to the controller rather than over BACnet,
-  such as an HOA switch on an output board or a local override at the controller. A command
-  you send over the network may have no effect while it's set. This is not the same as a
-  <a href="bacnet-priority-and-stuck-overrides.html">priority-array command</a>: a value
-  sitting at priority 8 does not set OVERRIDDEN, so a point can be commanded and still read
-  <em>Normal</em>. Check <em>Commanded At</em> on the point screen for that.</p>
-
-  <h3>OUT_OF_SERVICE</h3>
-  <p><code>Out_Of_Service</code> is true, so <code>Present_Value</code> is disconnected from
-  the physical input or output and can be written directly. That's handy during
-  checkout. It's also a common leftover: an AI left out of service shows whatever was typed
-  into it, not the real temperature, and the sequence runs on that fake value.</p>
-{{fig:outofservice}}
-
-  <h3>IN_ALARM</h3>
-  <p>The object's <code>Event_State</code> is not normal, meaning limits configured on the
-  object itself (high/low limits, for example) have been crossed. The reading can be
-  perfectly valid. Many sites do their alarming in the head-end instead, so a value can be
-  well out of range in the BAS and still show no IN_ALARM flag in the controller.</p>
-
-  <h2>Reading them in Easy BACnet</h2>
-  <p>Open a point and look at the <strong>Status</strong> row. It says <em>Normal</em> when no
-  flag is set, or lists the ones that are, e.g. <em>FAULT</em> or <em>OVERRIDDEN, OUT OF
-  SERVICE</em>. Where the device reports it, the point screen also has a separate
-  <strong>Out Of Service</strong> row showing true or false.</p>
-
-  <div class="callout">
-  <p><strong>Quick read.</strong> FAULT: don't trust the value. OUT_OF_SERVICE: the value
-  was put there by hand. OVERRIDDEN: something at the controller is driving it. IN_ALARM:
-  the value is real but outside its limits.</p>
-  </div>
-
-  <h2>Status in an export</h2>
-  <p>In an <a href="export-bacnet-points-to-csv.html">exported points list</a> the Status
-  column carries the same text, and any row that isn't <em>Normal</em> is shaded red. Sort
-  or filter on that column to find failed sensors and points left out of service across a
-  device.</p>
-""",
-    related=[
-        ("guides/bacnet-priority-and-stuck-overrides", "BACnet priority and stuck overrides"),
-        ("guides/bacnet-value-does-not-change-when-written", "I wrote a value but nothing changed"),
-        ("guides/bacnet-object-types-explained", "BACnet object types explained"),
-        ("guides/how-to-build-a-custom-remote", "How to build a custom remote"),
-    ],
-))
-
-GUIDES.append(dict(
-    slug="guides/how-to-release-a-bacnet-override",
-    title="How to release a BACnet override (relinquish) | Easy BACnet",
-    question="How do I release a BACnet override and give control back to automatic?",
-    description="Releasing a BACnet override means writing NULL to the priority slot you commanded so the control program takes back over. Step by step, and which slot.",
-    answer_html="""<p><strong>You release an override by writing NULL to the priority slot
-    that holds it, not by writing the &ldquo;normal&rdquo; value back.</strong> A command sits
-    in one of the point's 16 priority slots until that slot is cleared. In Easy BACnet, turn
-    on write mode, open the point and tap <strong>Release to Auto</strong>. The app writes
-    NULL at the priority shown in the confirmation (8 unless you chose another), and control
-    drops to the next occupied slot, usually the program's own command, or to
-    Relinquish_Default if every slot is empty.</p>""",
-    body_html="""
-  <h2>Why writing a value back doesn't release it</h2>
-  <p>A commandable point has a 16-slot
-  <a href="bacnet-priority-and-stuck-overrides.html">priority array</a>, and the
-  lowest-numbered slot holding a value wins. Say <code>VAV-2-14 ZN-SP</code> has the program
-  writing 72 at priority 16 and you write 68 at priority 8. If you later write 72 at 8, the
-  point still reads 72, but it's still your manual command holding it. When the schedule
-  changes the setpoint at 16, nothing happens, because 8 beats 16. Writing NULL at 8 clears
-  your slot and lets 16 take over again.</p>
-{{fig:release}}
-
-  <h2>Release a point, step by step</h2>
-  <ol>
-    <li><strong>Turn on write mode</strong> from the menu on the main screen (or the
-    <em>Enable Write Mode</em> button on the point). The release button only appears with
-    write mode on.</li>
-    <li><strong>Open the point.</strong> <em>Commanded At</em> shows the priority in control
-    and the value there; <em>Falls Back To</em> shows the Relinquish_Default.</li>
-    <li><strong>Check whose command it is.</strong> If you wrote it, it's probably at 8. If
-    Commanded At shows a lower number than the slot you used, someone else's command is on
-    top and releasing yours won't change the value.</li>
-    <li><strong>Tap Release to Auto.</strong> The confirmation names the priority it will
-    clear and what the point should fall back to. Tap <strong>Release it</strong> and the app
-    writes NULL to that slot.</li>
-    <li><strong>Check the result.</strong> The app re-reads the point. Commanded At should
-    now show the next occupied priority, or <em>Not commanded</em> if the array is empty.</li>
-  </ol>
-  <p>Release uses priority 8 unless you picked a different priority on that point screen. If
-  you commanded at, say, 10, tap <strong>Write Value</strong>, choose 10, tap
-  <strong>Review&hellip;</strong>, cancel the confirmation, then tap Release to Auto; the
-  confirmation will now say priority 10. The <strong>Session write log</strong> in the main
-  menu lists what you wrote and at which priority.</p>
-
-  <div class="callout">
-  <p><strong>Only release slots you're responsible for.</strong> Clearing a slot another
-  operator or the head-end put there takes away their command too. If a point is held at a
-  higher slot (life safety at 1&ndash;2, critical equipment at 5, minimum on/off at 6),
-  releasing your 8 won't change the value, and that's correct.</p>
-  </div>
-
-  <h2>&ldquo;I released it but nothing changed&rdquo;</h2>
-  <ul>
-    <li><strong>Another slot is still holding it.</strong> Look at Commanded At. You can only
-    clear the slot you wrote to.</li>
-    <li><strong>The point isn't commandable.</strong> If there's no Commanded At row and no
-    Release to Auto button, the object has no priority array. Your write replaced
-    Present_Value directly; there is nothing to release. Write the original value back, or
-    wait for the program to overwrite it.</li>
-    <li><strong>Something at the controller is driving it.</strong> A hand switch, or a point
-    flagged <a href="bacnet-status-flags-explained.html">OVERRIDDEN or Out Of Service</a>,
-    takes precedence over network commands. That's a
-    <a href="who-to-call-it-hvac-or-controls.html">controls or mechanical</a> visit.</li>
-    <li><strong>The values happen to match.</strong> If the program's value equals what you
-    had commanded, the number won't move, but control has still gone back to the program.</li>
-  </ul>
-
-  <h2>Before you leave site</h2>
-  <p>Release everything you commanded. A forgotten priority-8 write is the usual reason the
-  next tech finds a point <a href="bacnet-priority-and-stuck-overrides.html">stuck in
-  override</a> weeks later. Write mode turns itself off each time the app starts, but that
-  doesn't touch commands already sitting in a controller. Only a release clears those.</p>
-""",
-    related=[
-        ("guides/bacnet-priority-and-stuck-overrides", "BACnet priority and stuck overrides"),
-        ("guides/how-to-write-to-a-bacnet-point", "How to write to a BACnet point"),
-        ("guides/is-it-safe-to-write-to-bacnet", "Is it safe to write to a BACnet point?"),
-        ("guides/bacnet-status-flags-explained", "BACnet status flags explained"),
-    ],
-))
-
-GUIDES.append(dict(
-    slug="guides/bacnet-add-device-by-ip",
-    title="Add a BACnet device by IP address | Easy BACnet",
-    question="A device won't show up in a scan &mdash; can I add it by IP address?",
-    description="When a BACnet IP scan can't reach a device (another subnet, blocked broadcasts, no BBMD) you can add it directly by IP address. How, and what to check.",
-    answer_html="""<p><strong>Yes. If you know the controller's IP address, Easy BACnet can
-    contact it directly instead of relying on a broadcast.</strong> A normal scan broadcasts
-    <a href="who-is-i-am-explained.html">Who-Is</a>, and broadcasts stop at the IP router
-    unless a <a href="what-is-a-bbmd.html">BBMD</a> forwards them. Use <strong>Add device by
-    IP&hellip;</strong> and the app sends its requests straight to that address, so a
-    controller on another subnet, or on a network that drops broadcasts, can still be read as
-    long as the phone has a route to it.</p>""",
-    body_html="""
-  <h2>When to add a device by IP</h2>
-  <ul>
-    <li>The controller is on a <strong>different <a href="subnets.html">subnet</a></strong>.
-    For example, you're on 10.20.1.x at the JACE panel, but the chiller plant controllers are
-    on 10.20.5.x, and there's no <a href="what-is-a-bbmd.html">BBMD</a>.</li>
-    <li>The network <strong>drops broadcasts</strong> (some managed switches, client isolation
-    on Wi-Fi) but passes unicast.</li>
-    <li>You only need <strong>one known controller</strong> and don't want to scan a large
-    site.</li>
-    <li>A scan finds everything <em>except</em> one controller whose IP you have.</li>
-  </ul>
-{{fig:subnets}}
-
-  <h2>What you need</h2>
-  <ul>
-    <li><strong>The controller's IP address.</strong> From the as-builts or points list, the
-    head-end's device list, a label in the panel, or the controller's own display.</li>
-    <li><strong>A route to it.</strong> If it's on another subnet, the phone needs a gateway
-    that routes there, and the controller needs a correct default gateway of its own or it
-    can't reply. UDP 47808 has to be allowed both ways.</li>
-    <li><strong>Its UDP port, if not 47808.</strong> Sites running more than one BACnet IP
-    network sometimes use 47809 or another port in the 47808&ndash;47823 (0xBAC0&ndash;0xBACF)
-    range.</li>
-  </ul>
-
-  <h2>How to do it in Easy BACnet</h2>
-  <ol>
-    <li>In <strong>Easy BACnet Mode</strong>, open the menu (three dots, top right) and tap
-    <strong>Add device by IP&hellip;</strong>. In <strong>Browser Mode</strong> it's a button
-    under <em>Scan the network</em>. It's unavailable while a scan is running.</li>
-    <li>Enter the <strong>IP address or host name</strong> (e.g. 10.20.5.21) and the
-    <strong>UDP port</strong>. Leave 47808 unless the site uses another port.</li>
-    <li>Tap <strong>Add</strong>. While it shows <em>Contacting&hellip;</em>, the app sends a
-    directed Who-Is plus a direct ReadProperty to that address. The read matters because many
-    devices answer a Who-Is with a broadcast I-Am on their own subnet, which won't reach you;
-    a ReadProperty always gets a reply sent back to you.</li>
-    <li>If the address is a BACnet router, it can answer for the MS/TP controllers behind it,
-    so you may see <em>Added 12 device(s)</em>. They join your results like scanned devices:
-    browse points, write, export, or build a
-    <a href="how-to-build-a-custom-remote.html">custom remote</a>.</li>
-  </ol>
-  <p>If nothing replies you'll get <em>No BACnet IP device answered at&hellip;</em>. Work
-  through the checks below.</p>
-
-  <h2>Seeing a whole remote subnet: BBMD</h2>
-  <p>If the site has a BBMD, open the menu and tap <strong>BBMD for remote
-  networks&hellip;</strong>, enter the <strong>BBMD IP address</strong> (and port), and tap
-  <strong>Save</strong>. Each scan then registers the phone with the BBMD as a foreign device
-  and sends the Who-Is through it, so devices on the subnets it serves are found too.
-  <strong>Clear</strong> goes back to the local subnet only. If the BBMD refuses the
-  registration, foreign-device registration probably isn't enabled on it, and the scan
-  result tells you so.</p>
-
-  <div class="callout">
-  <p><strong>Adding one device by IP doesn't make the rest of that subnet visible.</strong>
-  For the whole network you need a BBMD, which is a conversation with the controls
-  contractor.</p>
-  </div>
-
-  <h2>If it still doesn't answer</h2>
-  <ol>
-    <li><strong>Check the address and port.</strong> A typo, or a device on 47809 when you
-    asked on 47808, gets silence.</li>
-    <li><strong>Make sure the IP is current.</strong> As-builts go stale, and a controller
-    left on DHCP can move.</li>
-    <li><strong>Ping it.</strong> No reply means a network problem, not BACnet (though some
-    controllers ignore ping). See
-    <a href="is-my-bacnet-device-online-ping-test.html">is my BACnet device online?</a></li>
-    <li><strong>Ask about firewalls and ACLs.</strong> If it pings but won't answer BACnet,
-    something in between is probably blocking UDP 47808. That's for
-    <a href="who-to-call-it-hvac-or-controls.html">whoever owns the network</a>.</li>
-  </ol>
-
-  <p>For the wider &ldquo;nothing shows up&rdquo; case, start with
-  <a href="why-cant-i-find-my-bacnet-devices.html">why can't I find my BACnet IP devices</a>.</p>
-""",
-    related=[
-        ("guides/why-cant-i-find-my-bacnet-devices", "Why can't I find my BACnet IP devices?"),
-        ("guides/what-is-a-bbmd", "What is a BBMD?"),
-        ("guides/is-my-bacnet-device-online-ping-test", "Is my BACnet device online? Ping test"),
-        ("guides/subnets", "What is a subnet?"),
-    ],
-))
-
-GUIDES.append(dict(
-    slug="guides/bacnet-add-object-by-number",
-    title="Add a BACnet object by number | Easy BACnet",
-    question="A point is missing from the list &mdash; can I add an object by number?",
-    description="Easy BACnet loads the first 2,000 objects on a huge controller. Reach any object beyond that directly by its object type and instance number. Here's how.",
-    answer_html="""<p><strong>Yes. If a point isn't in the list, you can add it by object type
-    and instance number.</strong> Easy BACnet builds the list by reading the device's
-    <a href="what-is-a-bacnet-points-list.html">Object_List</a> one entry at a time and then
-    each object's name, about two requests per object. On a very large device it stops after
-    the first 2,000 objects so you're not waiting ten minutes. Anything past that is still
-    reachable: tell the app you want, say, Analog Value 3001, and it reads that object
-    directly.</p>""",
-    body_html="""
-  <h2>Why the list can stop short</h2>
-  <p>Plant controllers, big supervisory devices and integration gateways can expose several
-  thousand objects. The app reads one property per request (it doesn't use
-  ReadPropertyMultiple or segmentation, so it works on small controllers that support
-  neither), which keeps it compatible but makes huge lists slow. When a device has more than
-  2,000 objects, the list says <em>Showing the first 2000 of N objects</em>. The points that
-  loaded work normally.</p>
-
-  <h2>Add the object you want</h2>
-  <ol>
-    <li><strong>Get the type and instance.</strong> For example AV 3001, BO 12, MSV 40. The
-    contractor's points list, the head-end's point properties or an earlier export will have
-    them.</li>
-    <li><strong>Open the device</strong> (from <strong>View Results</strong> or Browser Mode),
-    tap the menu (three dots) and choose <strong>Add object by number</strong>.</li>
-    <li><strong>Pick the object type</strong>: Analog Input, Analog Output, Analog Value,
-    Binary Input/Output/Value, or Multi-state Input/Output/Value. Type the
-    <strong>Instance number</strong> and tap <strong>Add</strong>.</li>
-    <li><strong>The app reads that one object</strong> and adds it to the list with its value,
-    units and status. From there you can open it, command it, or put it on a
-    <a href="how-to-build-a-custom-remote.html">custom remote</a>. If the device has no such
-    object, you'll see <em>The device has no&hellip;</em>.</li>
-  </ol>
-
-  <div class="callout">
-  <p><strong>You rarely need all of them.</strong> On a big plant controller you usually care
-  about a dozen points. Adding those by number is quicker than loading thousands.</p>
-  </div>
-
-  <h2>Don't know the number?</h2>
-  <ul>
-    <li><strong>Ask for the points list.</strong> Whoever
-    <a href="who-to-call-it-hvac-or-controls.html">programmed the controller</a> can give you
-    the type and instance.</li>
-    <li><strong>Check the head-end.</strong> Niagara, Metasys and most other front ends show
-    each point's BACnet object type and instance in its properties.</li>
-    <li><strong>Check an earlier export.</strong> If you
-    <a href="export-bacnet-points-to-csv.html">exported this device</a> before, the
-    spreadsheet has the types and instance numbers.</li>
-    <li><strong>Decode an Object Identifier.</strong> If you only have the raw 32-bit number,
-    the <a href="../bacnet-object-id-decoder.html">Object Identifier decoder</a> splits it
-    into type and instance.</li>
-  </ul>
-
-  <p>If the whole device is missing rather than one point, that's a discovery problem. See
-  <a href="why-cant-i-find-my-bacnet-devices.html">why can't I find my BACnet IP devices</a>
-  or <a href="bacnet-add-device-by-ip.html">add a device by IP</a>.</p>
-""",
-    related=[
-        ("guides/what-is-a-bacnet-points-list", "What is a BACnet IP points list?"),
-        ("guides/bacnet-object-types-explained", "BACnet object types explained"),
-        ("guides/cant-find-what-im-looking-for", "The app can't find what I'm looking for"),
-        ("guides/bacnet-add-device-by-ip", "Add a BACnet device by IP"),
     ],
 ))
 
@@ -3564,7 +3102,7 @@ GUIDES.append(dict(
     answer_html="""<p><strong>Reading doesn't change anything. Writing commands live
     equipment.</strong> A write to a commandable point sits in its
     <a href="bacnet-priority-and-stuck-overrides.html">priority array</a> and holds until
-    someone <a href="how-to-release-a-bacnet-override.html">releases</a> it. If you know the
+    someone <a href="bacnet-priority-and-stuck-overrides.html">releases</a> it. If you know the
     point, write at a sensible priority (normally 8) and release when you're done, it's routine
     work. Commanding points you don't understand on an occupied building can upset comfort,
     waste energy or trip equipment. Easy BACnet keeps write mode off until you turn it on, and
@@ -3626,87 +3164,13 @@ GUIDES.append(dict(
   Every write shows a confirmation with the old value, the new value and the priority before
   anything is sent, and the app re-reads the point afterwards so you see what actually
   happened. On an input it warns you that the write will be ignored unless the point is out of
-  service. <a href="how-to-release-a-bacnet-override.html">Release to Auto</a> is on the same
+  service. <a href="bacnet-priority-and-stuck-overrides.html">Release to Auto</a> is on the same
   screen. The judgement is still yours.</p>
 """,
     related=[
         ("guides/how-to-write-to-a-bacnet-point", "How to write to a BACnet point"),
-        ("guides/how-to-release-a-bacnet-override", "How to release a BACnet override"),
         ("guides/bacnet-priority-and-stuck-overrides", "BACnet priority and stuck overrides"),
         ("guides/who-to-call-it-hvac-or-controls", "Who do I call &mdash; IT, HVAC, or controls/BMS?"),
-    ],
-))
-
-GUIDES.append(dict(
-    slug="guides/bacnet-multistate-values-explained",
-    title="BACnet binary and multi-state values explained | Easy BACnet",
-    question="What do BACnet binary and multi-state values mean?",
-    description="Not every BACnet point is a number. Binary points are Off/On; multi-state points pick from a list (1=Off, 2=Low, 3=High). How to read and write them.",
-    answer_html="""<p><strong>Binary and multi-state points hold a state, not a
-    measurement.</strong> A binary point is Inactive or Active (0 or 1), which usually means
-    Off or On. A multi-state point holds a number from 1 to N that picks an entry from its
-    <code>State_Text</code> list; for a fan that might be 1&nbsp;=&nbsp;Off, 2&nbsp;=&nbsp;Low,
-    3&nbsp;=&nbsp;High. The number on its own tells you nothing until you know that list.
-    Neither kind has <a href="bacnet-engineering-units-explained.html">engineering
-    units</a>.</p>""",
-    body_html="""
-  <h2>Three families of point</h2>
-  <table>
-    <tr><th>Family</th><th>Present_Value</th><th>Example</th></tr>
-    <tr><td>Analog (AI, AO, AV)</td><td>A number with <a href="bacnet-engineering-units-explained.html">units</a></td><td><code>RM-214 ZN-T</code> 72.4 &deg;F</td></tr>
-    <tr><td>Binary (BI, BO, BV)</td><td>Inactive or Active</td><td><code>AHU-1 SF-C</code> Off / On</td></tr>
-    <tr><td>Multi-state (MSI, MSO, MSV)</td><td>An integer 1&ndash;N</td><td><code>FCU-3 FAN-SPD</code> 1 Off, 2 Low, 3 Med, 4 High</td></tr>
-  </table>
-
-  <h2>Binary points</h2>
-  <p>A binary object's Present_Value is Inactive (0) or Active (1). Inputs report a contact,
-  such as a fan status current switch or a filter DP switch; outputs and values can be
-  commanded. The device can also hold <code>Inactive_Text</code> and
-  <code>Active_Text</code> (&ldquo;Off/On&rdquo;, &ldquo;Unoccupied/Occupied&rdquo;,
-  &ldquo;Normal/Alarm&rdquo;). Easy BACnet shows binary values as <em>Active (On)</em> or
-  <em>Inactive (Off)</em>, so go by the point name for what Active means on that point.
-  Watch for <code>Polarity</code> on binary I/O: a reversed point reads Active when the
-  contact is open.</p>
-
-  <h2>Multi-state points</h2>
-  <p>A multi-state object holds an integer from 1 to <code>Number_Of_States</code>.
-  <strong>It starts at 1, not 0</strong>, and 0 is not a valid value. The names live in the
-  optional <code>State_Text</code> array, where the first entry is state 1. Common examples
-  are occupancy modes (1 Occupied, 2 Unoccupied, 3 Standby), HVAC modes, and fan speeds.</p>
-{{fig:multistate}}
-  <p>On the point screen Easy BACnet shows the raw state number, and you write a multi-state
-  point by entering the number. Check the State_Text in the head-end or the contractor's
-  points list so you know that 3 means High on this point. A Multi-state control on a custom
-  remote reads State_Text for you, as described below.</p>
-
-  <div class="callout">
-  <p><strong>Read the number as a list position.</strong> A multi-state value of 2 is
-  &ldquo;the second state,&rdquo; and the same 2 can mean Low on one point and Unoccupied on
-  another.</p>
-  </div>
-
-  <h2>Commanding them</h2>
-  <p>Commandable binary and multi-state points use the same
-  <a href="bacnet-priority-and-stuck-overrides.html">priority array</a> as analog points:
-  you write a state at a priority, it holds, and you
-  <a href="how-to-release-a-bacnet-override.html">release</a> it to hand control back. BOs
-  and MSOs are always commandable; BVs and MSVs only if the vendor made them so. Writing a
-  multi-state value above Number_Of_States is rejected by the device. See
-  <a href="is-it-safe-to-write-to-bacnet.html">writing responsibly</a>.</p>
-
-  <h2>On a custom remote</h2>
-  <p>In the <a href="how-to-build-a-custom-remote.html">custom remote builder</a>, a binary
-  point fits a <strong>Toggle</strong> (on and off) or an <strong>Indicator</strong> status
-  light, and a multi-state point fits the <strong>Multi-state</strong> control (pick a named
-  state). When you add a Multi-state control, the app reads the point's State_Text, or
-  Number_Of_States if there's no text, and fills in the state names. You can edit them under
-  <em>State names</em>, one per line, first line = state 1.</p>
-""",
-    related=[
-        ("guides/bacnet-object-types-explained", "BACnet object types explained"),
-        ("guides/bacnet-engineering-units-explained", "BACnet engineering units explained"),
-        ("guides/how-to-write-to-a-bacnet-point", "How to write to a BACnet point"),
-        ("guides/how-to-build-a-custom-remote", "How to build a custom remote"),
     ],
 ))
 
@@ -3718,7 +3182,6 @@ GUIDE_GROUPS = [
         "bacnet-glossary",
         "what-is-a-bacnet-points-list",
         "bacnet-scanner-app-android",
-        "best-free-bacnet-explorer",
         "bacnet-vs-modbus",
     ]),
     ("Reading and exporting", [
@@ -3727,7 +3190,6 @@ GUIDE_GROUPS = [
         "how-to-find-your-bacnet-points-list",
         "export-bacnet-points-to-csv",
         "vendor-asking-for-bacnet-information",
-        "bacnet-add-object-by-number",
         "test-bacnet-device-without-bms",
     ]),
     ("When a scan finds nothing", [
@@ -3736,8 +3198,6 @@ GUIDE_GROUPS = [
         "subnets",
         "is-my-bacnet-device-online-ping-test",
         "bacnet-device-shows-offline",
-        "bacnet-add-device-by-ip",
-        "what-is-a-bbmd",
         "duplicate-bacnet-device-id",
         "does-easy-bacnet-support-mstp-rs485",
         "who-to-call-it-hvac-or-controls",
@@ -3745,7 +3205,6 @@ GUIDE_GROUPS = [
     ("Writing and overrides", [
         "is-it-safe-to-write-to-bacnet",
         "how-to-write-to-a-bacnet-point",
-        "how-to-release-a-bacnet-override",
         "bacnet-priority-and-stuck-overrides",
         "bacnet-value-does-not-change-when-written",
         "bacnet-write-access-denied",
@@ -3758,8 +3217,6 @@ GUIDE_GROUPS = [
         "bacnet-object-types-explained",
         "bacnet-device-id-explained",
         "bacnet-engineering-units-explained",
-        "bacnet-status-flags-explained",
-        "bacnet-multistate-values-explained",
         "who-is-i-am-explained",
         "what-port-does-bacnet-use",
         "bacnet-mstp-vs-bacnet-ip",
@@ -4192,7 +3649,6 @@ footer a{color:var(--mut); text-decoration:underline}
       <li><a href="guides/how-to-build-a-custom-remote.html">How do I build a custom remote for a device?</a></li>
       <li><a href="guides/how-to-build-a-control-panel.html">How do I build a control panel for several devices?</a></li>
       <li><a href="guides/export-bacnet-points-to-csv.html">How do I export a BACnet IP points list to Excel?</a></li>
-      <li><a href="guides/bacnet-add-device-by-ip.html">How do I add a device by IP address, or scan through a BBMD?</a></li>
       <li><a href="guides/cant-find-what-im-looking-for.html">The app can&rsquo;t find what I&rsquo;m looking for &mdash; what do I do?</a></li>
     </ul>
   </div>
@@ -4367,6 +3823,9 @@ def main(ping=False):
     # Custom domain + host hints
     write("CNAME", "easybacnet.com")
     write(".nojekyll", "")
+
+    # Guides removed 2026-10-12: send their old URLs to the closest live guide.
+    write("_redirects", "/guides/best-free-bacnet-explorer /guides/bacnet-scanner-app-android 301\n/guides/bacnet-add-object-by-number /guides/read-bacnet-values-from-phone 301\n/guides/bacnet-add-device-by-ip /guides/why-cant-i-find-my-bacnet-devices 301\n/guides/what-is-a-bbmd /guides/subnets 301\n/guides/how-to-release-a-bacnet-override /guides/bacnet-priority-and-stuck-overrides 301\n/guides/bacnet-status-flags-explained /guides/bacnet-glossary 301\n/guides/bacnet-multistate-values-explained /guides/bacnet-object-types-explained 301\n/guides/best-free-bacnet-explorer.html /guides/bacnet-scanner-app-android 301\n/guides/bacnet-add-object-by-number.html /guides/read-bacnet-values-from-phone 301\n/guides/bacnet-add-device-by-ip.html /guides/why-cant-i-find-my-bacnet-devices 301\n/guides/what-is-a-bbmd.html /guides/subnets 301\n/guides/how-to-release-a-bacnet-override.html /guides/bacnet-priority-and-stuck-overrides 301\n/guides/bacnet-status-flags-explained.html /guides/bacnet-glossary 301\n/guides/bacnet-multistate-values-explained.html /guides/bacnet-object-types-explained 301\n")
 
     # Standalone 404 page (not built via page())
     write("404.html", """<!doctype html>
