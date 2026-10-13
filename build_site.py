@@ -45,26 +45,36 @@ HERE = os.path.dirname(os.path.abspath(__file__))
 # tim.bruhn89 "Default Account for Firebase", created 2026-09-20).
 GA_MEASUREMENT_ID = "G-BH9W9B8YRJ"
 
-# GA4 with Consent Mode v2. Analytics storage defaults to DENIED and only
-# loads gtag/config after the visitor accepts the cookie banner (GDPR/ePrivacy).
-# Self-contained (own <style>, own banner DOM) so it can be dropped into any
-# page after the <meta charset> line. IP anonymisation is on; no ad signals.
+# Google AdSense (web ads) publisher -- firstimpactdevelopment@gmail.com, same
+# account as xivprofitability.com. Auto ads: placement is chosen in the AdSense
+# console, so pages only need the loader. EEA/UK/CH ad consent is handled by
+# Google's own certified CMP (AdSense > Privacy & messaging > GDPR message).
+ADSENSE_CLIENT = "ca-pub-8667608030467156"
+
+# GA4 with Consent Mode v2 + the AdSense loader. Analytics storage defaults to
+# DENIED and only loads gtag/config after the visitor accepts the cookie banner
+# (GDPR/ePrivacy). Ad consent is left to Google's CMP, so no ad_* default here
+# (a global "denied" would also throttle AdSense). Self-contained (own <style>,
+# own banner DOM) so it can be dropped into any page after the <meta charset>
+# line. IP anonymisation is on; GA gets no Google-signals/ad-personalisation.
 ANALYTICS = ("""
+<meta name="google-adsense-account" content="%(ads)s">
+<script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=%(ads)s" crossorigin="anonymous"></script>
 <!-- Google Analytics 4 (Consent Mode v2) — analytics cookies gated by the banner -->
 <script>
 (function(){
   var ID="%(ga)s", KEY="ga-consent", P="%(privacy)s";
   window.dataLayer=window.dataLayer||[];function gtag(){dataLayer.push(arguments);}window.gtag=gtag;
   gtag('js',new Date());
-  gtag('consent','default',{ad_storage:'denied',ad_user_data:'denied',ad_personalization:'denied',analytics_storage:'denied',wait_for_update:500});
+  gtag('consent','default',{analytics_storage:'denied',wait_for_update:500});
   var v=null;try{v=localStorage.getItem(KEY);}catch(e){}
-  function load(){if(window.__ga)return;window.__ga=1;var s=document.createElement('script');s.async=true;s.src='https://www.googletagmanager.com/gtag/js?id='+ID;document.head.appendChild(s);gtag('config',ID,{anonymize_ip:true});}
+  function load(){if(window.__ga)return;window.__ga=1;var s=document.createElement('script');s.async=true;s.src='https://www.googletagmanager.com/gtag/js?id='+ID;document.head.appendChild(s);gtag('config',ID,{anonymize_ip:true,allow_google_signals:false,allow_ad_personalization_signals:false});}
   function grant(){gtag('consent','update',{analytics_storage:'granted'});load();}
   if(v==='granted'){grant();}
   function banner(){
     if(v==='granted'||v==='denied')return;
     var d=document.createElement('div');d.className='cookie-consent';
-    d.innerHTML='<p>We use Google Analytics to understand which guides help. No ads, no cross-site tracking. <a href="'+P+'">Privacy policy</a>.</p><div class="cc-row"><button type="button" id="cc-no">Decline</button><button type="button" id="cc-yes">Accept</button></div>';
+    d.innerHTML='<p>We use Google Analytics to see which guides help. Ads from Google AdSense keep the guides free. <a href="'+P+'">Privacy policy</a>.</p><div class="cc-row"><button type="button" id="cc-no">Decline</button><button type="button" id="cc-yes">Accept</button></div>';
     document.body.appendChild(d);
     d.querySelector('#cc-yes').onclick=function(){try{localStorage.setItem(KEY,'granted');}catch(e){}grant();d.remove();};
     d.querySelector('#cc-no').onclick=function(){try{localStorage.setItem(KEY,'denied');}catch(e){}d.remove();};
@@ -80,7 +90,7 @@ ANALYTICS = ("""
 .cookie-consent button{font:inherit;font-weight:700;padding:.5rem 1.15rem;border-radius:8px;border:1px solid #3a424c;background:transparent;color:#f3f5f6;cursor:pointer}
 .cookie-consent #cc-yes{background:#ff9a1f;border-color:#ff9a1f;color:#0d0f11}
 </style>
-""" % {"ga": GA_MEASUREMENT_ID, "privacy": BASE_URL + "/privacy"})
+""" % {"ga": GA_MEASUREMENT_ID, "privacy": BASE_URL + "/privacy", "ads": ADSENSE_CLIENT})
 
 CSS = """
   :root { color-scheme: dark; --fg:#f3f5f6; --bg:#14171a; --muted:#9aa4ad;
@@ -3812,6 +3822,9 @@ def main(ping=False):
     # AdMob app-ads.txt (app publisher pub-6721099502169382). Must sit at the
     # root of the developer-website domain entered on the Play store listing.
     write("app-ads.txt", "google.com, pub-6721099502169382, DIRECT, f08c47fec0942fa0\n")
+
+    # AdSense ads.txt (web publisher pub-8667608030467156).
+    write("ads.txt", "google.com, %s, DIRECT, f08c47fec0942fa0\n" % ADSENSE_CLIENT.replace("ca-", ""))
 
     # IndexNow key file (its contents ARE the ownership proof) + optional ping.
     write(INDEXNOW_KEY + ".txt", INDEXNOW_KEY + "\n")
