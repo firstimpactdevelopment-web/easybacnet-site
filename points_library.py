@@ -877,7 +877,6 @@ def mfr_page(mslug, models, all_groups, gws=()):
         desc = "Free %s BACnet points lists for %d models: object types, instances, names, units and access, with CSV and EDE downloads." % (name, len(models))
     h1 = ('<p class="eyebrow">Manufacturer</p><h1><span class="mfr">%s</span> BACnet points lists</h1>'
           '<p class="updated">Updated %s</p>' % (esc(name), UPDATED_HUMAN))
-    others = [g for s, g in all_groups.items() if s != mslug]
     body = """
 <p class="lede">Every %(name)s BACnet points list we have: %(nm)d models, %(total)s BACnet objects in all.
 Pick a model to see its full object table with types, instance numbers, units and read/write access,
@@ -888,13 +887,10 @@ documentation and links back to the original PDF.</p></div>
  aria-label="Filter models" data-filter="models"><span class="count" data-count-for="models">%(nm)d of %(nm)d shown</span></div>
 <ul class="grid" id="models">%(cards)s</ul>
 %(gws)s
-<h2>Other manufacturers</h2>
-<ul class="grid">%(others)s</ul>
 """ % {"name": esc(name), "nm": len(models), "total": "{:,}".format(total),
        "gws": gateway_section(name, [g for g in gws if g["manufacturer_slug"] != mslug]),
        "kinds": esc("Covers " + ", ".join(k.lower() for k in kinds)) if kinds else "BACnet equipment",
-       "cards": "".join(card(m) for m in models),
-       "others": "".join(mfr_card(g) for g in others)}
+       "cards": "".join(card(m) for m in models)}
     item_list = {"@type": "ItemList", "itemListElement": [
         {"@type": "ListItem", "position": i, "url": clean(model_path(m)), "name": model_title(m)}
         for i, m in enumerate(models, 1)]}
@@ -968,10 +964,7 @@ BACnet gateway on the unit&rsquo;s own bus. Each indoor unit then appears as a s
 mode, setpoint, room temperature, fan speed, alarm) whose instance numbers follow the gateway&rsquo;s numbering
 rule &mdash; see the integration notes on each list.</p></div>
 <ul class="grid">%(cards)s</ul>
-<h2>Other manufacturers</h2>
-<ul class="grid">%(others)s</ul>
-""" % {"brand": esc(brand), "cards": "".join(card(m) for m in gws),
-       "others": "".join(mfr_card(g) for g in groups.values())}
+""" % {"brand": esc(brand), "cards": "".join(card(m) for m in gws)}
     item_list = {"@type": "ItemList", "itemListElement": [
         {"@type": "ListItem", "position": i, "url": clean(model_path(m)), "name": model_title(m)}
         for i, m in enumerate(gws, 1)]}
