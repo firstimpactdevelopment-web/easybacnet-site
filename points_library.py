@@ -993,36 +993,6 @@ def brand_card(bslug, brand, gws):
 # Hub
 # ---------------------------------------------------------------------------
 
-HUB_FAQ = [
-    ("What is a BACnet points list?",
-     "A BACnet points list is the table of objects a controller exposes on the network, each with an object "
-     "type (Analog Input, Binary Value and so on), an instance number, a name, engineering units and whether it "
-     "can be written. Integrators use it to map equipment into a building management system before they connect."),
-    ("Where can I find the BACnet points list for my equipment?",
-     "Start with the manufacturer's BACnet integration guide or points-list document - this library collects the "
-     "free public ones, re-typed into searchable tables with downloads. If your model isn't here, ask the "
-     "manufacturer's controls support for the BACnet points list or EDE file, or read the object list straight "
-     "off the device with a BACnet IP browser."),
-    ("What are the minimum BACnet points to integrate a unit with a BMS?",
-     "Usually a handful: a BMS enable or occupancy command, a mode or start/stop command, one or two setpoints, "
-     "and status, alarm and key temperature readbacks. Each list here has a Minimum points to map table with the "
-     "exact objects for that model, plus notes on enable, heartbeat and BMS-supplied sensor values."),
-    ("What is a BACnet heartbeat or communication timeout?",
-     "Many controllers only accept BMS-written values (setpoints, space temperature, occupancy) while the BMS keeps "
-     "rewriting them. If writes stop for longer than the timeout, the unit falls back to local control or default "
-     "values. The integration notes on each list say which points have a timeout and how long it is, where the "
-     "manufacturer documents it."),
-    ("What is an EDE file?",
-     "EDE (Engineering Data Exchange) is a semicolon-separated spreadsheet layout from the European BACnet "
-     "Interest Group for exchanging BACnet object lists between tools. Every list here can be downloaded as EDE, "
-     "CSV or JSON. Set the device instance to match your unit before importing an EDE file."),
-    ("Are these points lists official?",
-     "They are re-typed from each manufacturer's own free documentation, and every page links to the source "
-     "document and revision. Point availability varies with firmware, options and configuration, so confirm "
-     "against the live device before relying on a point."),
-]
-
-
 def hub_page(groups, brands=None):
     brands = brands or {}
     gw_only = {b: v for b, v in brands.items() if b not in groups}
@@ -1061,32 +1031,10 @@ name, engineering units and read/write access, ready to download as CSV or EDE.<
 <div class="tools"><input class="search" type="search" placeholder="Model, part number or equipment &mdash; e.g. Symbio, VRV, chiller, drive&hellip;"
  aria-label="Search all models" data-filter="all"><span class="count" data-count-for="all">%(nm)d of %(nm)d shown</span></div>
 <ul class="grid" id="all">%(cards)s</ul>
-<h2>What is a BACnet points list?</h2>
-<div class="answer"><b>Short answer</b><p>A BACnet points list is the table of objects a controller exposes on
-the network &mdash; each with an object type (Analog Input, Binary Value&hellip;), an instance number, a name,
-units and whether it can be written. Integrators use it to map a unit into a building management system before
-they ever connect to it.</p></div>
-<p>Every list here is re-typed from the manufacturer&rsquo;s own free documentation and links to the original,
-so you can check the source and revision. Points vary by firmware and installed options, so treat a published
-list as what the controller <em>can</em> expose &mdash; then confirm on the live unit. A free BACnet IP browser
-such as <a href="/index.html">Easy BACnet</a> reads the real object list off any device and exports it to Excel.
-More background: <a href="/guides/what-is-a-bacnet-points-list.html">What is a BACnet points list?</a> &middot;
-<a href="/guides/how-to-find-your-bacnet-points-list.html">How to find your BACnet points list</a> &middot;
-<a href="/guides/bacnet-object-types-explained.html">BACnet object types explained</a>.</p>
-<h2>Questions integrators ask</h2>
-<div class="faq">%(faq)s</div>
-<h2>Formats</h2>
-<ul class="notes">
-<li><strong>CSV</strong> &mdash; one row per object: type, instance, name, description, units, access, states. Opens in Excel.</li>
-<li><strong>EDE</strong> &mdash; the B.I.G.-EU Engineering Data Exchange layout (semicolon-separated) used by many
-BACnet engineering tools. Set the device instance to match your unit before importing.</li>
-<li><strong>JSON</strong> &mdash; the same data for scripts, and a <a href="/bacnet-points-lists/index.json">catalogue of every list</a>.</li>
-</ul>
 """ % {"nm": len(models), "ng": len(groups), "total": "{:,}".format(total), "options": options,
        "mcards": "".join(mfr_card(g) for g in groups.values())
                  + "".join(brand_card(s, b, gws) for s, (b, gws) in gw_only.items()),
        "ccards": "".join(cat_card(c, ms) for c, ms in group_by_category(models)),
-       "faq": "".join("<details><summary>%s</summary><p>%s</p></details>" % (esc(q), esc(a)) for q, a in HUB_FAQ[1:]),
        "cards": "".join(card(m) for m in models)}
     catalog = {"@type": "DataCatalog", "@id": url + "#catalog", "name": "Easy BACnet points-list library",
                "url": url, "description": desc, "publisher": {"@id": ORG["@id"]},
@@ -1098,10 +1046,8 @@ BACnet engineering tools. Set the device instance to match your unit before impo
     page_ld = {"@type": "CollectionPage", "@id": url, "url": url, "name": title, "description": desc,
                "dateModified": UPDATED, "isPartOf": {"@id": BASE_URL + "/#site"}, "mainEntity": item_list,
                "publisher": {"@id": ORG["@id"]}}
-    faq_ld = {"@type": "FAQPage", "mainEntity": [
-        {"@type": "Question", "name": q, "acceptedAnswer": {"@type": "Answer", "text": a}} for q, a in HUB_FAQ]}
     return shell(relpath, title, desc, h1, body,
-                 graph(ORG, page_ld, catalog, faq_ld, breadcrumb_ld(crumbs, url)), crumbs)
+                 graph(ORG, page_ld, catalog, breadcrumb_ld(crumbs, url)), crumbs)
 
 
 # ---------------------------------------------------------------------------
