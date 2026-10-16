@@ -481,11 +481,8 @@ full object table, the minimum points an integrator needs, enable and heartbeat 
 <div class="tools"><input class="search" type="search" placeholder="Filter %(heading_l)s&hellip;"
  aria-label="Filter models" data-filter="models"><span class="count" data-count-for="models">%(n)d of %(n)d shown</span></div>
 <ul class="grid" id="models">%(cards)s</ul>
-<h2>Other equipment types</h2>
-<ul class="grid">%(others)s</ul>
 """ % {"n": len(models), "heading_l": esc(heading.lower()), "nm": len(mfrs), "mfrs": esc(", ".join(mfrs)),
-       "cards": "".join(card(m) for m in models),
-       "others": "".join(cat_card(c, ms) for c, ms in all_cats if c[0] != cslug)}
+       "cards": "".join(card(m) for m in models)}
     item_list = {"@type": "ItemList", "itemListElement": [
         {"@type": "ListItem", "position": i, "url": clean(model_path(m)), "name": model_title(m)}
         for i, m in enumerate(models, 1)]}
