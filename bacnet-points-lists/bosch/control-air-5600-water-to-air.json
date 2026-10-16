@@ -1,0 +1,1676 @@
+{
+ "manufacturer": "Bosch",
+ "manufacturer_slug": "bosch",
+ "model": "Control Air 5600 - Water to Air (WAZ software)",
+ "model_slug": "control-air-5600-water-to-air",
+ "aliases": [
+  "Control Air 5600",
+  "WAZ 1.03",
+  "Bosch WSHP DDC",
+  "Bosch water source heat pump BACnet",
+  "Bosch TT Water to Air"
+ ],
+ "equipment_type": "Water-source heat pump controller",
+ "applies_to": "Bosch water-to-air (water source) heat pumps fitted with the Control Air 5600 DDC controller running WAZ zone software.",
+ "summary": "The Control Air 5600 is Bosch's factory-mounted DDC controller for water-source heat pumps. It speaks BACnet MS/TP (or BACnet over ARC156, Modbus, N2 and Lon) and exposes occupancy, mode, setpoint, sensor, configuration and alarm points as AV/BV/MSV objects. The same point list also documents Modbus registers and N2/LON equivalents.",
+ "bacnet_transport": [
+  "BACnet MS/TP",
+  "BACnet ARC156"
+ ],
+ "firmware": "WAZ.1.03",
+ "default_device_instance": null,
+ "access_inferred": false,
+ "notes": [
+  "Object names end in _1 as printed in the points list.",
+  "Two names were split across lines in the PDF and were re-joined here: eq_temp_1 (AV 1902) and zs_sen_combo_sel_1 (AV 40).",
+  "Many AV points are configuration selectors (input/output assignments); several only matter when that option (economizer, hot gas reheat, VFD, CO2, damper) is installed.",
+  "Writable points are those not marked read-only in the list."
+ ],
+ "source": {
+  "title": "Bosch TT - Water to Air Network Integration Points List",
+  "doc_number": "WAZ.1.03",
+  "revision_date": null,
+  "url": "https://www.bosch-homecomfort.com/us/media/country_pool/service/technical_guides/ipl_waz_1_03.pdf"
+ },
+ "integration": {
+  "summary": "Leave Control Source at its default (BAS Occupancy Command), then command occupied/unoccupied with occupancy_cmd_1 and set the occupied cooling/heating setpoints. Choose the zone temperature source (ZS sensor, remote sensor or BAS value) and, if the BMS supplies the temperature, write bas_sen_val_1. Monitor current_alarm_1, alm_status_1 and the effective zone temperature.",
+  "minimum_points": [
+   {
+    "ref": "BV 1",
+    "name": "occupancy_cmd_1",
+    "why": "BAS occupied command; 1 enables unit operation"
+   },
+   {
+    "ref": "AV 15",
+    "name": "ctrl_source_1",
+    "why": "Occupancy source; 2 = BAS occupancy command (default)"
+   },
+   {
+    "ref": "MV 3",
+    "name": "zone_mode_1",
+    "why": "Auto / heat / cool / off"
+   },
+   {
+    "ref": "AV 4",
+    "name": "occ_clg_stpt_1",
+    "why": "Occupied cooling setpoint"
+   },
+   {
+    "ref": "AV 2",
+    "name": "occ_htg_stpt_1",
+    "why": "Occupied heating setpoint"
+   },
+   {
+    "ref": "AV 7",
+    "name": "eff_zone_temp_1",
+    "why": "Zone temperature in use"
+   },
+   {
+    "ref": "AV 17",
+    "name": "current_alarm_1",
+    "why": "Active alarm code"
+   },
+   {
+    "ref": "BV 24",
+    "name": "alm_status_1",
+    "why": "Alarm present flag"
+   },
+   {
+    "ref": "BV 75",
+    "name": "bas_smoke_1",
+    "why": "Network smoke / emergency shutdown input"
+   },
+   {
+    "ref": "AV 19",
+    "name": "bas_sen_val_1",
+    "why": "Zone temperature written by the BMS"
+   }
+  ],
+  "enable": "Set ctrl_source_1 (AV 15) to 2 = BAS Occupancy Command (factory default) and write occupancy_cmd_1 (BV 1) = 1 to occupy the unit. Other sources are a digital input enable, keypad schedule or manual on. The BAS loop enable point (loop_enabled_1, BV 23) must be 1 to allow heating/cooling; it defaults to 1.",
+  "heartbeat": "No communication timeout is described. If the BAS temperature source is used and nothing is ever written, the zone temperature defaults to 74 °F; after that the last written value is used indefinitely.",
+  "remote_sensors": "Set the compressor control mode (comp_mode_1, AV 64) to 2 = Zone Control - BAS Sensor and write the zone temperature to bas_sen_val_1 (AV 19). BAS humidity goes to bas_rh_sen_val_1 (AV 56) with rh_bas_sel_1 (AV 51); BAS CO2 to bas_co2_val_1 (AV 49) with co2_bas_ena_1 (AV 106); mixed air to bas_mat_1 (AV 86); outdoor air to effective_oat_1 (AV 29).",
+  "setup": [
+   "BACnet MS/TP runs on the EIA-485 port; the BAS Port Settings DIP switches select the protocol (BACnet MS/TP, N2, Modbus) and baud rate (9.6 to 76.8 kbps), the same for every controller on the trunk.",
+   "The two rotary dials set the MAC address (tens and ones); the controller only reads them at power-up, so change them with power off.",
+   "A Communication jumper selects EIA-485 (MS/TP, N2, Modbus, Lon) or BACnet over ARC156 at 156 kbps.",
+   "Setpoints and configuration can also be changed locally with a BACview terminal or Virtual BACview."
+  ],
+  "gotchas": [
+   "With a ZS or remote sensor selected, the controller looks for it during the first 30 s after power-up; if missing, the unit stays unoccupied, alarms and shows -60 °F.",
+   "Writing bas_smoke_1 = 1 shuts the supply fan, compressors and reheat valve off.",
+   "The input/output configuration AVs (in1/in2/ao/bo cfg) change how hardware I/O is used; treat them as commissioning settings, not operating points.",
+   "There is a 1-minute delay when the unit changes between heating and cooling."
+  ]
+ },
+ "points": [
+  {
+   "type": "AV",
+   "instance": 15,
+   "name": "ctrl_source_1",
+   "description": "Control Source",
+   "units": "",
+   "access": "W",
+   "states": "0 = Digital Input Enable (e.g. Room Occupancy Sensor) 1 = Keypad Schedule 2 = BAS Occupancy Command (Default) 3 = Factory Use Only 4 = Manual On-Continuous"
+  },
+  {
+   "type": "BV",
+   "instance": 1,
+   "name": "occupancy_cmd_1",
+   "description": "Occupancy Command (BAS)",
+   "units": "",
+   "access": "W",
+   "states": "0 = Unoccupied (Default) 1 = Occupied (Enables Unit Operation)"
+  },
+  {
+   "type": "BV",
+   "instance": 75,
+   "name": "bas_smoke_1",
+   "description": "BAS Smoke Input / Emergency Shutdown",
+   "units": "",
+   "access": "W",
+   "states": "0 = Normal (Default)"
+  },
+  {
+   "type": "MV",
+   "instance": 4,
+   "name": "zone_mode_stat_1",
+   "description": "Zone Mode Status",
+   "units": "",
+   "access": "R",
+   "states": "1 = Auto (Default) 2 = Heat 3 = Cool 5 = Off"
+  },
+  {
+   "type": "AV",
+   "instance": 24,
+   "name": "mode_status_1",
+   "description": "Unit Mode Status",
+   "units": "",
+   "access": "R",
+   "states": "0 = Straight Cool 2 = Heat pump (Default)"
+  },
+  {
+   "type": "MV",
+   "instance": 3,
+   "name": "zone_mode_1",
+   "description": "Set Zone Mode",
+   "units": "",
+   "access": "W",
+   "states": "1 = Auto (Default) 2 = Heat 3 = Cool 5 = Off"
+  },
+  {
+   "type": "AV",
+   "instance": 64,
+   "name": "comp_mode_1",
+   "description": "Compressor Control Mode",
+   "units": "",
+   "access": "W",
+   "states": "0 = Zone Control - ZS (Default) 1 = Discharge Air Control 2 = Zone Control - BAS Sensor 3 = Zone Control - Remote Sensor"
+  },
+  {
+   "type": "AV",
+   "instance": 108,
+   "name": "ao3_cfg_sel_1",
+   "description": "Analog Output 3 Options Configuration",
+   "units": "",
+   "access": "W",
+   "states": "0 = Not Used (Default) 1 = Modulating Outdoor Air Damper Control"
+  },
+  {
+   "type": "AV",
+   "instance": 83,
+   "name": "ao2_cfg_sel_1",
+   "description": "Analog Output 2 Options Configuration",
+   "units": "",
+   "access": "W",
+   "states": "0 = Not Used (Default) 1 = Modulating Hot Gas Reheat Valve Control"
+  },
+  {
+   "type": "AV",
+   "instance": 82,
+   "name": "ao1_cfg_sel_1",
+   "description": "Analog Output 1 Options Configuration",
+   "units": "",
+   "access": "W",
+   "states": "0 = Not Used (Default) 1 =Variable Frequence Drive Signal Control 2 =Mixed Air SCR Preheat Control 3 =SCR Controlled Aux Electric Heat"
+  },
+  {
+   "type": "AV",
+   "instance": 113,
+   "name": "bo5_cfg_sel_1",
+   "description": "Output 5 Options Configuration",
+   "units": "",
+   "access": "W",
+   "states": "0 = Not Used (Default) 1 = Hot Gas Reheat for Humidity Control 2 = Auxiliary Electric Heat Control 3 = Fresh Air Damper Control 4 = Condenser Water Valve (Loop Valve) Control 6 = Water-Side Economizer Control 7 = Boilerless Electric Heat Control"
+  },
+  {
+   "type": "AV",
+   "instance": 112,
+   "name": "bo4_cfg_sel_1",
+   "description": "Output 4 Options Configuration",
+   "units": "",
+   "access": "W",
+   "states": "155 = \"1\" 0 = Not Used (Default) 1 = Economizer Valve 2 = Boilerless Control 3 = Fresh Air Damper Control"
+  },
+  {
+   "type": "AV",
+   "instance": 110,
+   "name": "in1_cfg_sel_1",
+   "description": "Input 1 Configuration",
+   "units": "",
+   "access": "W",
+   "states": "0 = Not Used (Default) 2 = Digital Input Enable (e.g. Room Occupancy Sensor) 3 = RH Probe Sensor"
+  },
+  {
+   "type": "AV",
+   "instance": 111,
+   "name": "in2_cfg_sel_1",
+   "description": "Input 2 Configuration",
+   "units": "",
+   "access": "W",
+   "states": "0 = Not Used 1 = Zone Remote Sensor 2 = Outdoor Air Temperature Sensor 3 = Entering Water Temperature Sensor (Default) 4 = Mixed Air Temperature Sensor 5 = Relative Humidity Sensor (Probe) 6 = Digital Enable (e.g. Room Occupancy Sensor) 7 = Return Air Temperature Sensor"
+  },
+  {
+   "type": "AV",
+   "instance": 60,
+   "name": "di5_mode_1",
+   "description": "DI5 Mode (Digital Input 5)",
+   "units": "",
+   "access": "W",
+   "states": "0 = Dirty Filter Switch 1 = Entering Water Temp Sensor - Economizer/Boilerless 2 = Differential Pressure Switch 3 = Secondary Condensate Pan 4 = Fan Status Switch 5 = Valve End Switch 6 = Damper End Switch 7 = Smoke Detector Switch 8 = Pump Status Switch 9 = MIxed Air Temp Sensor - Mixed Air Control 10 = Input Expansion Module (IEM) 11 = Not Used (Default)"
+  },
+  {
+   "type": "BV",
+   "instance": 7,
+   "name": "lckout_resp_1",
+   "description": "Fan Response for Comp Lockout",
+   "units": "",
+   "access": "W",
+   "states": "0 = Do not lock fan upon compressor lockout (Default) 1 = Lock fan upon compressor lockout"
+  },
+  {
+   "type": "AV",
+   "instance": 41,
+   "name": "zs_sensor_en_1",
+   "description": "ZS Sensor Enable",
+   "units": "",
+   "access": "W",
+   "states": "0 = No ZS Sensors 1 = ZS Sensors Enabled (Default)"
+  },
+  {
+   "type": "AV",
+   "instance": 1904,
+   "name": "eq_rh_1",
+   "description": "Equipment Touch RH",
+   "units": "",
+   "access": "W",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 1902,
+   "name": "eq_temp_1",
+   "description": "Equipment Touch Temp",
+   "units": "",
+   "access": "W",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 40,
+   "name": "zs_sen_combo_sel_1",
+   "description": "ZS Sensor Combo Selector",
+   "units": "",
+   "access": "W",
+   "states": "0 = Temp Only 1 = RH Only 2 = CO2 Only 3 = Temp + RH 4 = Temp + CO2 5 = RH + CO2 6 = Temp + RH + CO2 (Default) 7 = No ZS Sensor"
+  },
+  {
+   "type": "AV",
+   "instance": 42,
+   "name": "stpt_adj_lim_1",
+   "description": "ZS Sensor Setpoint Adjustment Limit",
+   "units": "°F",
+   "access": "W",
+   "states": ""
+  },
+  {
+   "type": "BV",
+   "instance": 95,
+   "name": "enable_push_button_1",
+   "description": "Sensor Override Enable/Disable",
+   "units": "",
+   "access": "W",
+   "states": "0 = ZS Sensor Override NOT Allowed 1 = ZS Sensor Override Allowed (Default)"
+  },
+  {
+   "type": "BV",
+   "instance": 94,
+   "name": "override_status_1",
+   "description": "Override Status",
+   "units": "",
+   "access": "R",
+   "states": "0 = Normal 1 = ZS Sensor in Override Mode"
+  },
+  {
+   "type": "AV",
+   "instance": 115,
+   "name": "tlo_rem_1",
+   "description": "Override Time Remaining",
+   "units": "",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 4,
+   "name": "occ_clg_stpt_1",
+   "description": "Setpoint",
+   "units": "°F",
+   "access": "W",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 2,
+   "name": "occ_htg_stpt_1",
+   "description": "Setpoint",
+   "units": "°F",
+   "access": "W",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 1,
+   "name": "unocc_clg_stpt_1",
+   "description": "Setpoint",
+   "units": "°F",
+   "access": "W",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 3,
+   "name": "unocc_htg_stpt_1",
+   "description": "Setpoint",
+   "units": "°F",
+   "access": "W",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 5,
+   "name": "eff_clg_stpt_1",
+   "description": "Effective Cooling Setpoint",
+   "units": "°F",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 6,
+   "name": "eff_htg_stpt_1",
+   "description": "Effective Heating Setpoint",
+   "units": "°F",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 7,
+   "name": "eff_zone_temp_1",
+   "description": "Zone Temperature",
+   "units": "°F",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "BV",
+   "instance": 22,
+   "name": "nsb_status_1",
+   "description": "Night Setback (NSB) Status",
+   "units": "",
+   "access": "R",
+   "states": "0 = Night Setback disabled 1 = Night Setback enabled"
+  },
+  {
+   "type": "BV",
+   "instance": 26,
+   "name": "ztmp_hi_1",
+   "description": "High ZS Zone Sensor Temperature Alarm",
+   "units": "",
+   "access": "R",
+   "states": "0 = Normal 1 = High Zone Temperature(Default: 10 °F Above Setpoint)"
+  },
+  {
+   "type": "BV",
+   "instance": 27,
+   "name": "ztmp_lo_1",
+   "description": "Low ZS Zone Sensor Temperature Alarm",
+   "units": "",
+   "access": "R",
+   "states": "0 = Normal 1 = Low Zone Temperature(Default: 10 °F Below Setpoint)"
+  },
+  {
+   "type": "BV",
+   "instance": 28,
+   "name": "zone_sen_1",
+   "description": "ZS Zone Sensor Hardware Failure Alarm",
+   "units": "",
+   "access": "R",
+   "states": "0 = Normal 1 = Sensor Failure (Check: ZS Sensor Hardware)"
+  },
+  {
+   "type": "AV",
+   "instance": 9,
+   "name": "eff_remzone_temp_1",
+   "description": "Effect Zone Remote Temperature",
+   "units": "",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 31,
+   "name": "zone_rem_sen_val_1",
+   "description": "Remote Temp or Return Air Temp Value",
+   "units": "",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 16,
+   "name": "sys_status_1",
+   "description": "System Status",
+   "units": "",
+   "access": "R",
+   "states": "0 = Unoccupied 1 = Occupied 2 = Fan Only 3 = Heating 4 = Cooling 5 = Transition to Cool 6 = Transition to Heat 7 = Air Economizer 8 = Unit Locked 9 = Aux Heat 10 = Re-Heat 11 = Manual Re-Heat 12 = Transition to Re-Heat 13 = Free Cooling 14 = Transition to Free Cooling 15 = Water-Side Economizer"
+  },
+  {
+   "type": "AV",
+   "instance": 13,
+   "name": "clg_pct_1",
+   "description": "Cooling Demand Percentage",
+   "units": "",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 12,
+   "name": "htg_pct_1",
+   "description": "Heating Demand Percentage",
+   "units": "%",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 11,
+   "name": "eff_lwt_1",
+   "description": "Leaving Water Temperature (LWT)",
+   "units": "°F",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 10,
+   "name": "eff_dat_1",
+   "description": "Effect Disch Air Temp",
+   "units": "°F",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 75,
+   "name": "eff_oat_1",
+   "description": "Outdoor Air Temperature (OAT)",
+   "units": "°F",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 30,
+   "name": "dat_stpt_1",
+   "description": "Discharged Air Temperature Setpoint",
+   "units": "°F",
+   "access": "W",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 8,
+   "name": "rst_temp_source_1",
+   "description": "Temperature Reset Source",
+   "units": "",
+   "access": "W",
+   "states": "0 = Outside Air Temperature Reset (Default) 1 = Mixed Air (or Return Air) Temperature Reset"
+  },
+  {
+   "type": "AV",
+   "instance": 78,
+   "name": "oat_sel_sta_1",
+   "description": "Outside Air Temperature Sensor Source Status",
+   "units": "",
+   "access": "R",
+   "states": "1 = BAS OAT Sensor 2 = Hard-Wired OAT Sensor (Default)"
+  },
+  {
+   "type": "AV",
+   "instance": 71,
+   "name": "oat_rst_mode_1",
+   "description": "Temperature Reset Mode",
+   "units": "",
+   "access": "W",
+   "states": "0 = Single 1 = Multiple (Default)"
+  },
+  {
+   "type": "AV",
+   "instance": 69,
+   "name": "oat_reset1_1",
+   "description": "Single Reset/Free Cooling Reset Temperature",
+   "units": "°F",
+   "access": "W",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 72,
+   "name": "oat_reset2_1",
+   "description": "Part Cool Reset Temperature",
+   "units": "°F",
+   "access": "W",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 74,
+   "name": "oat_reset3_1",
+   "description": "Full Cool Reset Temperature",
+   "units": "°F",
+   "access": "W",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 92,
+   "name": "oat_reset_ht_1",
+   "description": "Heating Reset Temperature",
+   "units": "°F",
+   "access": "W",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 73,
+   "name": "oat_sel_1",
+   "description": "Outside Air Temperature Sensor",
+   "units": "",
+   "access": "W",
+   "states": "1 = BAS OAT Sensor 2 = Hard-Wired OAT Sensor (Default)"
+  },
+  {
+   "type": "BV",
+   "instance": 87,
+   "name": "oat_sen_1",
+   "description": "Outside Air Temperature Sensor Failure",
+   "units": "",
+   "access": "R",
+   "states": "0 = Normal 1 = Sensor Failure (Check Sensor Hardware"
+  },
+  {
+   "type": "AV",
+   "instance": 28,
+   "name": "eff_hgr_mod_vlv1_1",
+   "description": "Hot Gas Reheat Modulating Valve Status",
+   "units": "",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 68,
+   "name": "enabled_clstages_1",
+   "description": "Compressor Enabled Stages",
+   "units": "",
+   "access": "R",
+   "states": "0 = No Stages Enabled 1 = 1 Stage Enabled 2 = 2 Stages Enabled"
+  },
+  {
+   "type": "AV",
+   "instance": 58,
+   "name": "dat_stpt_diff_1",
+   "description": "Supply Air Setpoint Differential",
+   "units": "°F",
+   "access": "W",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 63,
+   "name": "sat_hi_trip_1",
+   "description": "Supply Air High Differential Trip",
+   "units": "°F",
+   "access": "W",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 77,
+   "name": "sat_lo_trip_1",
+   "description": "Supply Air Low Differential Trip",
+   "units": "°F",
+   "access": "W",
+   "states": ""
+  },
+  {
+   "type": "BV",
+   "instance": 86,
+   "name": "csat_hi_1",
+   "description": "High Cooling Supply Air Temperature in DAC",
+   "units": "",
+   "access": "R",
+   "states": "0 = Normal 1 = Alarm Active"
+  },
+  {
+   "type": "BV",
+   "instance": 149,
+   "name": "hsat_lo_1",
+   "description": "Low Heating Supply Air Temperature in DAC",
+   "units": "",
+   "access": "R",
+   "states": "0 = Normal 1 = Active (Default: <80 °F)"
+  },
+  {
+   "type": "AV",
+   "instance": 67,
+   "name": "eff_dat_stpt_1",
+   "description": "Effective Discharge Air Temperature Setpoint",
+   "units": "°F",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 116,
+   "name": "zt_reset_1",
+   "description": "Effective ZS Sensor Temperature",
+   "units": "",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "BV",
+   "instance": 21,
+   "name": "occ_status_1",
+   "description": "Occupancy Status",
+   "units": "",
+   "access": "R",
+   "states": "0 = Unoccupied 1 = Occupied"
+  },
+  {
+   "type": "BV",
+   "instance": 17,
+   "name": "fan_cmd_1",
+   "description": "Fan Output Cmd",
+   "units": "",
+   "access": "R",
+   "states": "0 = Fan Output Off 1 = Fan Output On"
+  },
+  {
+   "type": "BV",
+   "instance": 15,
+   "name": "rev_vlv_cmd_1",
+   "description": "Reversing Valve Output Status",
+   "units": "",
+   "access": "R",
+   "states": "0 = Reversing Valve De-energized 1 = Reversing Valve Energized"
+  },
+  {
+   "type": "BV",
+   "instance": 11,
+   "name": "cmp_stg1_cmd_1",
+   "description": "Comp Stage1 Output Cmd",
+   "units": "",
+   "access": "R",
+   "states": "0 = Compressor 1 Off 1 = Compressor 1 On"
+  },
+  {
+   "type": "BV",
+   "instance": 12,
+   "name": "cmp_stg2_cmd_1",
+   "description": "Comp Stage2 Output Cmd",
+   "units": "",
+   "access": "R",
+   "states": "0 = Compressor 2 Off 1 = Compressor 2 On"
+  },
+  {
+   "type": "AV",
+   "instance": 14,
+   "name": "cmp_stgs_1",
+   "description": "Compressor Stages",
+   "units": "",
+   "access": "R",
+   "states": "1 = 1 Compressor 1 Stage 2 = 2 Compressor 2 Stages 5 = 1 Compressor 2 Stages"
+  },
+  {
+   "type": "AV",
+   "instance": 120,
+   "name": "comp_state_1",
+   "description": "Compressor Status",
+   "units": "",
+   "access": "R",
+   "states": "0 = Normal/Off 1 = Compressor Locked 2 = Compressor Overriden \"ON\" 3 = Compressor Shutdown/Alarm"
+  },
+  {
+   "type": "BV",
+   "instance": 24,
+   "name": "alm_status_1",
+   "description": "Alarm Status",
+   "units": "",
+   "access": "R",
+   "states": "0 = System Normal 1 = System in Alarm"
+  },
+  {
+   "type": "AV",
+   "instance": 17,
+   "name": "current_alarm_1",
+   "description": "Current Alarm Condition Status",
+   "units": "",
+   "access": "R",
+   "states": "0 = No Alarm, 1-10 = UPM Fault Code (See UPM Alarms below) 20 = Output Overridden via Keypad 30 = Sensor Failure 40 = Leaving Water Temp Alarm 50 = Zone Temp Alarm 60 = Discharge Air Temperature Alarm 70 = Filter Alarm/Compressors 1 & 2 Runtime 80 = Zone Humidity Alarm 90 = High CO2 Level Alarm 100 = Differential Pressure Switch (DPS) Alarm"
+  },
+  {
+   "type": "BV",
+   "instance": 32,
+   "name": "lvg_hi_1",
+   "description": "High Leaving Water Temperature",
+   "units": "",
+   "access": "R",
+   "states": "0 = Normal 1 = Alarm (Default: >135 °F)"
+  },
+  {
+   "type": "BV",
+   "instance": 33,
+   "name": "lvg_lo_1",
+   "description": "Low Leaving Water Temperature",
+   "units": "",
+   "access": "R",
+   "states": "0 = Normal 1 = Alarm (Default: <40 °F)"
+  },
+  {
+   "type": "BV",
+   "instance": 29,
+   "name": "dat_hi_1",
+   "description": "High Discharge Air Temperature",
+   "units": "",
+   "access": "R",
+   "states": "0 = Normal 1 = Alarm (Default: >70 °F)"
+  },
+  {
+   "type": "BV",
+   "instance": 30,
+   "name": "dat_lo_1",
+   "description": "Discharge Air Temperature Alarm",
+   "units": "",
+   "access": "R",
+   "states": "0 = Normal 1 = Low DAT Alarm (Default: <75 °F)"
+  },
+  {
+   "type": "BV",
+   "instance": 5,
+   "name": "hp1_2st_1",
+   "description": "UPM Safety - High Pressure Alarm",
+   "units": "",
+   "access": "R",
+   "states": "0 = Normal 1 = High Pressure Alarm (UPM-I code = 1; UPM-II codes = 1,3)"
+  },
+  {
+   "type": "BV",
+   "instance": 4,
+   "name": "lp1_2st_1",
+   "description": "UPM Safety - Low Pressure Alarm",
+   "units": "",
+   "access": "R",
+   "states": "0 = Normal 1 = Low Pressure Alarm (UPM-I code = 2; UPM-II codes = 2,4)"
+  },
+  {
+   "type": "BV",
+   "instance": 8,
+   "name": "frz_2st_1",
+   "description": "UPM Safety - Condenser Coil Freeze Alarm",
+   "units": "",
+   "access": "R",
+   "states": "0 = Normal 1 = Condenser Freeze Alarm(UPM-I code = 3; UPM-II codes = 5,9)"
+  },
+  {
+   "type": "BV",
+   "instance": 9,
+   "name": "con_2st_1",
+   "description": "UPM Safety - High Condensate Alarm",
+   "units": "",
+   "access": "R",
+   "states": "0 = Normal 1 = Condensate Overflow Alarm(UPM-I code = 4; UPM-II code = 6)"
+  },
+  {
+   "type": "BV",
+   "instance": 10,
+   "name": "brn_2st_1",
+   "description": "UPM Safety - Brownout Alarm",
+   "units": "",
+   "access": "R",
+   "states": "0 = Normal 1 = Brownout Alarm (UPM-I code = 5; UPM-II code = 7)"
+  },
+  {
+   "type": "BV",
+   "instance": 90,
+   "name": "frz_evap_2st_1",
+   "description": "UPM Safety - Evaporator Coil Freeze Alarm",
+   "units": "",
+   "access": "R",
+   "states": "0 = Normal 1 = Evaporator Freeze Alarm (UPM-I code = 6; UPM-II codes = 8,10)"
+  },
+  {
+   "type": "BV",
+   "instance": 104,
+   "name": "a2l_2st_1",
+   "description": "UPM Safety - A2L Alarm",
+   "units": "",
+   "access": "W",
+   "states": "0 = Normal 1 = A2L Alarm (UPM-I code = 7; UPM-II codes = 11)"
+  },
+  {
+   "type": "BV",
+   "instance": 106,
+   "name": "comm_2st_1",
+   "description": "UPM Safety - Communication Alarm",
+   "units": "",
+   "access": "W",
+   "states": "0 = Normal 1 = Communication Alarm (UPM-II codes = 12)"
+  },
+  {
+   "type": "BV",
+   "instance": 25,
+   "name": "upm_rst_1",
+   "description": "UPM Reset",
+   "units": "",
+   "access": "W",
+   "states": "0 = Reset Off (Default) 1 = Reset On"
+  },
+  {
+   "type": "BV",
+   "instance": 39,
+   "name": "upm_input_1",
+   "description": "UPM Input Alarm",
+   "units": "",
+   "access": "R",
+   "states": "0 = UPM Connected 1 = UPM Connection Failure(Check Alarm Hardware Configuration)"
+  },
+  {
+   "type": "BV",
+   "instance": 34,
+   "name": "lvg_sen_1",
+   "description": "Leaving Water Temperature Sensor Failure",
+   "units": "",
+   "access": "R",
+   "states": "0 = Normal 1 = Sensor Failure (Check Sensor Hardware"
+  },
+  {
+   "type": "BV",
+   "instance": 31,
+   "name": "da_sen_1",
+   "description": "Discharge Air Temperature Sensor",
+   "units": "",
+   "access": "R",
+   "states": "0 = Sensor Normal 1 = Sensor Failure Alarm (Check Sensor Hardware Configuration)"
+  },
+  {
+   "type": "BV",
+   "instance": 37,
+   "name": "do_lock_1",
+   "description": "Digital Override Lock Alarm",
+   "units": "",
+   "access": "R",
+   "states": "0 = Normal 1 = Digital Override Enabled Alarm"
+  },
+  {
+   "type": "BV",
+   "instance": 38,
+   "name": "input_lock_1",
+   "description": "Inputs Override Status",
+   "units": "",
+   "access": "R",
+   "states": "0 = Normal 1 = Software Lock Enabled"
+  },
+  {
+   "type": "BV",
+   "instance": 2,
+   "name": "dup_in12_1",
+   "description": "Duplicate Input 1&2 Alarm",
+   "units": "",
+   "access": "R",
+   "states": "0 = Normal 1 = Alarm (Check input configuration for conflicts)"
+  },
+  {
+   "type": "BV",
+   "instance": 35,
+   "name": "comp1_rntm_1",
+   "description": "Compressor 1 Runtime",
+   "units": "",
+   "access": "R",
+   "states": "1 = Auto (cycle with compressor) 4 = On (Default)"
+  },
+  {
+   "type": "BV",
+   "instance": 36,
+   "name": "comp2_rntm_1",
+   "description": "Compressor 2 Runtime",
+   "units": "",
+   "access": "R",
+   "states": "0 = Normal 1 = Timer Has Expired (Default: >8760 Hours)"
+  },
+  {
+   "type": "BV",
+   "instance": 13,
+   "name": "cmp1_rntm_rst_1",
+   "description": "Compressor 1 Runtime Reset",
+   "units": "",
+   "access": "W",
+   "states": "0 = Reset Off (Default) 1 = Reset On"
+  },
+  {
+   "type": "BV",
+   "instance": 14,
+   "name": "cmp2_rntm_rst_1",
+   "description": "Compressor 2 Runtime Reset",
+   "units": "",
+   "access": "W",
+   "states": "0 = Reset Off (Default) 1 = Reset On"
+  },
+  {
+   "type": "BV",
+   "instance": 41,
+   "name": "zrem_hi_1",
+   "description": "High Remote Temperature Alarm",
+   "units": "",
+   "access": "R",
+   "states": "0 = Normal 1 = High Zone Temperature(Default: 10 °F Above Setpoint)"
+  },
+  {
+   "type": "BV",
+   "instance": 42,
+   "name": "zrem_lo_1",
+   "description": "Low Remote Temperature Alarm",
+   "units": "",
+   "access": "R",
+   "states": "0 = Normal 1 = Low Zone Temperature(Default: 10 °F Below Setpoint)"
+  },
+  {
+   "type": "BV",
+   "instance": 43,
+   "name": "zrem_sen_1",
+   "description": "Remote Temperature Sensor Hardware Failure Alarm",
+   "units": "",
+   "access": "R",
+   "states": "0 = Normal 1 = Sensor Failure (Check Remote Sensor Hardware)"
+  },
+  {
+   "type": "BV",
+   "instance": 80,
+   "name": "ewt_sen_1",
+   "description": "Entering Water Temperature Sensor Alarm",
+   "units": "",
+   "access": "R",
+   "states": "0 = Normal 1 = Sensor Failure Alarm (Check Hardware)"
+  },
+  {
+   "type": "BV",
+   "instance": 6,
+   "name": "aecon_status_1",
+   "description": "Air Economizer Status",
+   "units": "",
+   "access": "R",
+   "states": "0 = Inactive 1 = Active"
+  },
+  {
+   "type": "AV",
+   "instance": 100,
+   "name": "oat_hi_lim_aecon_1",
+   "description": "OAT high limit for Air Econ",
+   "units": "°F",
+   "access": "W",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 117,
+   "name": "oat_lo_lim_aecon_1",
+   "description": "OAT low limit for Air Econ",
+   "units": "°F",
+   "access": "W",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 118,
+   "name": "rh_hi_lim_aecon_1",
+   "description": "Outdoor RH high limit for Air Econ",
+   "units": "%",
+   "access": "W",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 119,
+   "name": "rh_lo_lim_aecon_1",
+   "description": "Outdoor RH low limit for Air Econ",
+   "units": "%",
+   "access": "W",
+   "states": ""
+  },
+  {
+   "type": "BV",
+   "instance": 91,
+   "name": "htg_econ_1",
+   "description": "Boilerless Status",
+   "units": "",
+   "access": "R",
+   "states": "0 = Off 1 = On (Electric Heating)"
+  },
+  {
+   "type": "BV",
+   "instance": 92,
+   "name": "clg_econ_1",
+   "description": "Economizer Cooling Command",
+   "units": "",
+   "access": "R",
+   "states": "0 = On 1 = Off"
+  },
+  {
+   "type": "AV",
+   "instance": 62,
+   "name": "eff_ewt_1",
+   "description": "Entering Water Temperature",
+   "units": "°F",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "BV",
+   "instance": 79,
+   "name": "cwv_cmd_1",
+   "description": "Condenser Water Valve Output",
+   "units": "",
+   "access": "R",
+   "states": "0 = Closed 1 = Open"
+  },
+  {
+   "type": "BV",
+   "instance": 68,
+   "name": "ves_status_1",
+   "description": "Valve End Switch Status",
+   "units": "",
+   "access": "R",
+   "states": "0 = Off 1 = Valve End Switch Detected"
+  },
+  {
+   "type": "BV",
+   "instance": 150,
+   "name": "ves_hand_1",
+   "description": "Valve Switch Hand",
+   "units": "",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "BV",
+   "instance": 151,
+   "name": "ves_fail_1",
+   "description": "Valve End Switch Alarm",
+   "units": "",
+   "access": "R",
+   "states": "0 = Normal 1 = Active"
+  },
+  {
+   "type": "BV",
+   "instance": 77,
+   "name": "dps_alarm_1",
+   "description": "Differential Pressure Switch (DPS) Alarm",
+   "units": "",
+   "access": "R",
+   "states": "0 = Normal 1 = Alarm"
+  },
+  {
+   "type": "BV",
+   "instance": 20,
+   "name": "aux_htg_cmd_1",
+   "description": "Aux Heat Output Cmd",
+   "units": "",
+   "access": "R",
+   "states": "0 = Aux Heat Off 1 = Aux Heat On"
+  },
+  {
+   "type": "AV",
+   "instance": 175,
+   "name": "pre_htg_ovrde_1",
+   "description": "Pre-Heat Output Override",
+   "units": "",
+   "access": "W",
+   "states": "0 = Do not allow override (Default) 1 = allow override"
+  },
+  {
+   "type": "AV",
+   "instance": 121,
+   "name": "mat_pid_1",
+   "description": "SCR Electric Heat Output",
+   "units": "%",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "BV",
+   "instance": 40,
+   "name": "filter_1",
+   "description": "Filter Service Alarm",
+   "units": "",
+   "access": "R",
+   "states": "0 = Off 1 = Service Filter Alarm"
+  },
+  {
+   "type": "BV",
+   "instance": 19,
+   "name": "fan_rntm_rst_1",
+   "description": "Reset Fan Runtime",
+   "units": "",
+   "access": "W",
+   "states": "0 = Reset Off (Default) 1 = Reset On"
+  },
+  {
+   "type": "MV",
+   "instance": 2,
+   "name": "fan_mode_1",
+   "description": "Set Fan Mode",
+   "units": "",
+   "access": "W",
+   "states": "1 = Auto (Cycel with Compressor) 4 = On (Default)"
+  },
+  {
+   "type": "MV",
+   "instance": 1,
+   "name": "fan_mode_stat_1",
+   "description": "Fan Mode Status",
+   "units": "",
+   "access": "R",
+   "states": "1 = Auto (Cycel with Compressor) 4 = On (Default)"
+  },
+  {
+   "type": "BV",
+   "instance": 66,
+   "name": "fan_status_1",
+   "description": "Fan Running Status",
+   "units": "",
+   "access": "R",
+   "states": "0 = Off 1 = On - Fan Running"
+  },
+  {
+   "type": "BV",
+   "instance": 83,
+   "name": "saf_hand_1",
+   "description": "Fan Hand Mode Alarm",
+   "units": "",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "BV",
+   "instance": 82,
+   "name": "saf_switch_fail_1",
+   "description": "Supply Air Fan Switch Failure",
+   "units": "",
+   "access": "R",
+   "states": "0 = Normal 1 = Alarm (Check Fan Hardware)"
+  },
+  {
+   "type": "AV",
+   "instance": 20,
+   "name": "eff_zone_humid_1",
+   "description": "Zone Humidity",
+   "units": "%",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 21,
+   "name": "occ_zhumid_stpt_1",
+   "description": "Occupied Zone Humidity Setpoint",
+   "units": "%",
+   "access": "W",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 22,
+   "name": "zhumid_stpt_diff_1",
+   "description": "Zone Humidity Setpoint Differential",
+   "units": "%",
+   "access": "W",
+   "states": ""
+  },
+  {
+   "type": "BV",
+   "instance": 44,
+   "name": "eff_hgrv_cmd_1",
+   "description": "Hot Gas ReHeat Valve Status",
+   "units": "",
+   "access": "R",
+   "states": "0 = Valve Off 1 = Valve On"
+  },
+  {
+   "type": "BV",
+   "instance": 45,
+   "name": "zhumid_hi_1",
+   "description": "High Humidity Alarm",
+   "units": "",
+   "access": "R",
+   "states": "0 = Normal 1 = High Humidity (Default: 10% above Setpoint)"
+  },
+  {
+   "type": "BV",
+   "instance": 46,
+   "name": "zhumid_lo_1",
+   "description": "Low Humidity Alarm",
+   "units": "",
+   "access": "R",
+   "states": "0 = Normal 1 = Low Humidity (Default: 30% below Setpoint)"
+  },
+  {
+   "type": "BV",
+   "instance": 47,
+   "name": "zhumid_sen_1",
+   "description": "Humidity Sensor Hardware Failure Alarm",
+   "units": "",
+   "access": "R",
+   "states": "0 = Normal 1 = Sensor Failure (Check RH Sensor Hardware Configuration)"
+  },
+  {
+   "type": "AV",
+   "instance": 50,
+   "name": "iem_mode_1",
+   "description": "Input Expansion Module Mode",
+   "units": "",
+   "access": "W",
+   "states": "0 = Dirty Filter Switch, Fan Status Switch, Valve End Switch (Default) 1 = Smoke Detector Switch, Fan Status Switch, Valve End Switch 2 = Dirty Filter Switch, Fan Status Switch, Differential Pressure Switch 3 = Smoke Detector Switch, Fan Status Switch, Dirty Filter Switch 4 = Dirty Filter Switch, Fan Status Switch, Damper End Switch 5 = Smoke Detector Switch, Fan Status Switch, Secondary Drain Pan 6 = Dirty Filter Switch, Fan Status Switch, Pump Status"
+  },
+  {
+   "type": "BV",
+   "instance": 67,
+   "name": "allow_fan_alrm_1",
+   "description": "Enable/Disable Fan Status Switch in IEM",
+   "units": "",
+   "access": "W",
+   "states": "0 = FSS on IEM disabled (Default)"
+  },
+  {
+   "type": "BV",
+   "instance": 69,
+   "name": "allow_ves_alrm_1",
+   "description": "Enable/Disable Valve Switch in IEM",
+   "units": "",
+   "access": "W",
+   "states": "0 = VES on IEM disabled (Default)"
+  },
+  {
+   "type": "BV",
+   "instance": 71,
+   "name": "smoke_alrm_enable_1",
+   "description": "Smoke Alarm Enable/Disable",
+   "units": "",
+   "access": "W",
+   "states": "0 = SDS on IEM disabled (Default) 1 = SDS on IEM Enabled"
+  },
+  {
+   "type": "AV",
+   "instance": 87,
+   "name": "eff_mat_1",
+   "description": "Mixed Air Temperature (MAT)",
+   "units": "°F",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 84,
+   "name": "mat_sel_status_1",
+   "description": "Mix Air Temperature Source Status",
+   "units": "",
+   "access": "R",
+   "states": "0 = BAS MAT 1 = Wired MAT"
+  },
+  {
+   "type": "AV",
+   "instance": 85,
+   "name": "mat_sel_1",
+   "description": "Mixed Air Temperature Sensor",
+   "units": "",
+   "access": "W",
+   "states": "0 = BAS MAT Sensor 1 = Hard-Wired MAT Sensor (Default)"
+  },
+  {
+   "type": "AV",
+   "instance": 90,
+   "name": "mat_stpt_1",
+   "description": "Mixed Air Temperature Setpoint",
+   "units": "°F",
+   "access": "W",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 61,
+   "name": "ma_preheat_1",
+   "description": "Electric Preheat Output",
+   "units": "",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "BV",
+   "instance": 89,
+   "name": "mat_low_1",
+   "description": "Low Mixed Air Temperature",
+   "units": "",
+   "access": "R",
+   "states": "0 = Normal 1 = Alarm (Default: <38 °F)"
+  },
+  {
+   "type": "BV",
+   "instance": 88,
+   "name": "mat_sen_1",
+   "description": "Mix Air Temperature Sensor Failure",
+   "units": "",
+   "access": "R",
+   "states": "0 = Normal 1 = Sensor Failure (Check Sensor Hardware"
+  },
+  {
+   "type": "BV",
+   "instance": 3,
+   "name": "pump_cmd_1",
+   "description": "Circulation Pump Output Command",
+   "units": "",
+   "access": "R",
+   "states": "0 = Pump Running 1 = Pump Off"
+  },
+  {
+   "type": "BV",
+   "instance": 56,
+   "name": "pss_fail_1",
+   "description": "Circulation Pump Switch Failure Alarm",
+   "units": "",
+   "access": "R",
+   "states": "0 = Normal 1 = Active"
+  },
+  {
+   "type": "BV",
+   "instance": 57,
+   "name": "pump_status_1",
+   "description": "Pump Switch Status",
+   "units": "",
+   "access": "R",
+   "states": "0 = Off 1 = Pump Switch Detected"
+  },
+  {
+   "type": "BV",
+   "instance": 58,
+   "name": "pss_hand_1",
+   "description": "Circulation Pump Switch In Hand Alarm",
+   "units": "",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "BV",
+   "instance": 50,
+   "name": "conpump_1",
+   "description": "Secondary Condensate Pump Alarm",
+   "units": "",
+   "access": "R",
+   "states": "0 = Normal 1 = Alarm Active"
+  },
+  {
+   "type": "BV",
+   "instance": 81,
+   "name": "smoke_1",
+   "description": "Smoke Event Alarm Notification",
+   "units": "",
+   "access": "R",
+   "states": "0 = Normal 1 = Alarm"
+  },
+  {
+   "type": "BV",
+   "instance": 70,
+   "name": "smoke_status_1",
+   "description": "Smoke Event Status",
+   "units": "",
+   "access": "R",
+   "states": "0 = Normal 1 = Smoke Detector Active"
+  },
+  {
+   "type": "AV",
+   "instance": 25,
+   "name": "eff_zn_co2_lev_1",
+   "description": "Zone CO2 Level",
+   "units": "ppm",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 27,
+   "name": "zn_co2_hi_trip_1",
+   "description": "Zone CO2 High Trip",
+   "units": "ppm",
+   "access": "W",
+   "states": ""
+  },
+  {
+   "type": "BV",
+   "instance": 51,
+   "name": "zn_co2_fail_1",
+   "description": "CO2 Hardware Failure Alarm",
+   "units": "",
+   "access": "R",
+   "states": "0 = Normal 1 = Sensor Failure (Check CO2 Hardware Configuration)"
+  },
+  {
+   "type": "BV",
+   "instance": 48,
+   "name": "zn_co2_hi_1",
+   "description": "High CO2 Alarm",
+   "units": "",
+   "access": "R",
+   "states": "0 = Normal 1 = High CO2 Level (Default: >1200 PPM)"
+  },
+  {
+   "type": "AV",
+   "instance": 107,
+   "name": "dmp_opt_sel_1",
+   "description": "Damper Option Selection",
+   "units": "",
+   "access": "W",
+   "states": "0 = Damper Opens when Fan Runs (Default) 1 = Damper Opens when Occupied 2 = Damper Opens for Free Cooling (Air Economizer)"
+  },
+  {
+   "type": "BV",
+   "instance": 49,
+   "name": "damper_cmd_1",
+   "description": "Damper Command",
+   "units": "",
+   "access": "R",
+   "states": "0 = Closed 1 = Open"
+  },
+  {
+   "type": "BV",
+   "instance": 93,
+   "name": "des_status_1",
+   "description": "Damper End Switch",
+   "units": "",
+   "access": "R",
+   "states": "0 = Damper Closed 1 = Damper Open"
+  },
+  {
+   "type": "AV",
+   "instance": 81,
+   "name": "eff_dpr_pos_screen_1",
+   "description": "Modulating Damper Position",
+   "units": "%",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 79,
+   "name": "min_mdpr_pos_1",
+   "description": "Minimum Damper Position",
+   "units": "",
+   "access": "W",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 97,
+   "name": "mdpr_occ_sel_1",
+   "description": "Damper Occupancy Selection",
+   "units": "",
+   "access": "W",
+   "states": "0 = Disabled 1 = Occupied (Default) 2 = Unoccupied 3 = Any Occupancy"
+  },
+  {
+   "type": "AV",
+   "instance": 55,
+   "name": "eff_sa_fan_speed_1",
+   "description": "Static Air Fan Speed",
+   "units": "%",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 53,
+   "name": "eff_sa_sta_press_1",
+   "description": "Supply Air Duct Static Pressure",
+   "units": "in. W.C.",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 52,
+   "name": "sta_press_stpt_1",
+   "description": "Static Press Setpoint",
+   "units": "in. W.C.",
+   "access": "W",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 59,
+   "name": "saf_min_speed_1",
+   "description": "Supply Air Fan Minimum Speed",
+   "units": "",
+   "access": "W",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 54,
+   "name": "sa_sta_hi_trip_1",
+   "description": "Supply Air Static Pressure High Trip",
+   "units": "in. W.C.",
+   "access": "W",
+   "states": ""
+  },
+  {
+   "type": "BV",
+   "instance": 65,
+   "name": "sas_sen_1",
+   "description": "Static Air Pressure Sensor Hardware Alarm",
+   "units": "",
+   "access": "R",
+   "states": "0 = Normal 1 = Sensor Failure (Check Static Pressure Hardware Configuration)"
+  },
+  {
+   "type": "BV",
+   "instance": 64,
+   "name": "sas_hi_1",
+   "description": "High Static Pressure Alarm",
+   "units": "",
+   "access": "R",
+   "states": "0 = Normal 1 = High Static Pressure (Default: > 2.75\" H20)"
+  },
+  {
+   "type": "AV",
+   "instance": 23,
+   "name": "unit_mode_1",
+   "description": "Unit Mode",
+   "units": "",
+   "access": "W",
+   "states": "0 = Cooling only 2 = Heat Pump (Default)"
+  },
+  {
+   "type": "AV",
+   "instance": 114,
+   "name": "stages_1",
+   "description": "Compressor Stages Selection",
+   "units": "",
+   "access": "W",
+   "states": "1 = 1 Compressor 1 Stage (UPM-I Alarm Codes Used) 2 = 2 Compressor 2 Stages (UPM-II Alarm Codes Used) 5 = 1 Compressor 2 Stages (UPM-I Alarm Codes Used) (Default)"
+  },
+  {
+   "type": "AV",
+   "instance": 94,
+   "name": "coil_cfg_1",
+   "description": "Evaporator Coil Configuration Selection",
+   "units": "",
+   "access": "W",
+   "states": "0 = Parallel (Default) 1 = Series"
+  },
+  {
+   "type": "BV",
+   "instance": 23,
+   "name": "loop_enabled_1",
+   "description": "BAS Loop Enable/Disable",
+   "units": "",
+   "access": "W",
+   "states": "0 = Disable Heat/Cool 1 = Allow Heat/Cool Operation (Default)"
+  },
+  {
+   "type": "AV",
+   "instance": 51,
+   "name": "rh_bas_sel_1",
+   "description": "BAS Relative Humidity Enable/Disable",
+   "units": "",
+   "access": "W",
+   "states": "0 = BAS RH Sensor 1 = Hard-Wired RH Sensor (Default)"
+  },
+  {
+   "type": "AV",
+   "instance": 106,
+   "name": "co2_bas_ena_1",
+   "description": "CO2 BAS Enable/Disable",
+   "units": "",
+   "access": "W",
+   "states": "0 = BAS CO2 Sensor 1 = Hard-Wired CO2 Sensor (Default)"
+  },
+  {
+   "type": "AV",
+   "instance": 49,
+   "name": "bas_co2_val_1",
+   "description": "BAS CO2 Sensor Value",
+   "units": "ppm",
+   "access": "W",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 86,
+   "name": "bas_mat_1",
+   "description": "BAS Mixed Air Temp",
+   "units": "°F",
+   "access": "W",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 29,
+   "name": "effective_oat_1",
+   "description": "BAS Outside Air Temperature",
+   "units": "°F",
+   "access": "W",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 56,
+   "name": "bas_rh_sen_val_1",
+   "description": "BAS RH Sensor Value",
+   "units": "%",
+   "access": "W",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 19,
+   "name": "bas_sen_val_1",
+   "description": "BAS Temperature Sensor Value",
+   "units": "°F",
+   "access": "W",
+   "states": ""
+  }
+ ],
+ "short_model": "Control Air 5600 Water-to-Air",
+ "page": "https://easybacnet.com/bacnet-points-lists/bosch/control-air-5600-water-to-air",
+ "note": "Re-typed from the manufacturer's public documentation (see source). Point availability varies by firmware and options; verify against the live device."
+}

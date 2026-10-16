@@ -1,0 +1,787 @@
+{
+  "manufacturer": "Lochinvar",
+  "manufacturer_slug": "lochinvar",
+  "model": "Crest",
+  "model_slug": "crest",
+  "aliases": [
+    "Crest FB",
+    "Crest OF",
+    "Crest FCB",
+    "Hellcat"
+  ],
+  "equipment_type": "Condensing boiler controller",
+  "applies_to": "Crest FB/OF 751-6001 and FCB 1000-6000 condensing boilers (the manual uses the same map for Hellcat).",
+  "summary": "The Crest boiler exposes BACnet MS/TP through Lochinvar's Modbus/BACnet communication board. Besides the usual enable, temperature, firing rate and status/blocking/lockout codes, larger and FCB models add dual-burner, damper, O2 trim and cascade member lockout points.",
+  "bacnet_transport": [
+    "BACnet MS/TP"
+  ],
+  "firmware": null,
+  "default_device_instance": "Base + MAC address: 610000 for FB 751-2001, 670000 for FB 2501-6001, 680000 for FCB1000-6000 (base can be changed)",
+  "notes": [
+    "BACnet needs the optional Lochinvar Modbus/BACnet communication board; address and baud rate are set on its dip switches.",
+    "The BACnet board is an MS/TP master only, so MAC addresses 0-127 are usable.",
+    "AV 0 (Configuration) is a bitmask: set a bit to 1 to make the appliance use the BAS-written value instead of its own input.",
+    "BAS-supplied temperatures must be rewritten every few seconds and other commands at least every 4 minutes, or the unit reverts to local control.",
+    "Temperatures are in °C on the bus.",
+    "Several points only exist on certain Crest sizes; the size range is given in the point description."
+  ],
+  "integration": {
+    "summary": "Pick the BMS control mode at the boiler, then write AV 0 Configuration so the unit knows which values the BAS will supply. After that the BAS sends an enable, a rate command (AV 2), or both, and keeps rewriting them. Status, temperatures and the status, blocking and lockout codes can be read without taking control.",
+    "minimum_points": [
+      {
+        "ref": "AV 0",
+        "name": "Configuration",
+        "why": "Tells the unit which inputs come from the BAS; resend before commands"
+      },
+      {
+        "ref": "BV 0",
+        "name": "Boiler Enable",
+        "why": "Enable / call for heat from the BAS"
+      },
+      {
+        "ref": "AV 2",
+        "name": "0-10 Volt Input / Rate Command / Setpoint Command",
+        "why": "Rate command: firing % or setpoint, per BMS Type"
+      },
+      {
+        "ref": "AI 8",
+        "name": "Outlet Temperature",
+        "why": "Outlet temperature"
+      },
+      {
+        "ref": "AI 11",
+        "name": "Firing Rate",
+        "why": "Firing rate"
+      },
+      {
+        "ref": "AI 13",
+        "name": "Boiler Status Code",
+        "why": "Status code"
+      },
+      {
+        "ref": "AI 15",
+        "name": "Boiler Lockout Code",
+        "why": "Lockout code"
+      },
+      {
+        "ref": "AV 5",
+        "name": "Outdoor Temperature",
+        "why": "Outdoor temperature from the BAS, if used"
+      }
+    ],
+    "enable": "Set the Demand Configuration under Main Menu > Setup > BMS. ENABLE active / BMS inactive: local setpoints plus BV 0 enable. ENABLE and BMS active: BV 0 enable plus AV 2 rate or setpoint command. ENABLE inactive / BMS active: AV 2 modulation % or setpoint alone. Always set the matching AV 0 bits first. AV 2 means firing % or temperature setpoint depending on the BMS Type setting (Power or Setpoint); as a setpoint it is scaled like a 0-10 V signal between the BMS temperatures at low and high input.",
+    "heartbeat": "If BAS-written temperatures stop arriving within the timeout, the unit reverts to its own sensor inputs. On Crest the timeout is programmable from 5 to 120 s (Main Menu > Setup > BAS); Lochinvar recommends the shortest value. On Hellcat and Regent it is fixed at 300 s. Other commands must be refreshed at least every 4 minutes or the boiler runs on its own inputs.",
+    "remote_sensors": "Set the AV 0 bits for the values the BAS will supply, then write them to the analog values: AV 3 tank setpoint, AV 4 tank temperature, AV 5 outdoor temperature, AV 6 system supply temperature, AV 7 system return temperature. Values are in °C. Temperatures must be rewritten every few seconds or the unit returns to its own sensors.",
+    "setup": [
+      "MAC address from dip switches 1-8 (master only, so 0-127); baud from switches 9-10: 9600, 19200, 38400 or 76800.",
+      "Device instance = base + MAC address; bases are 610000 (FB 751-2001), 670000 (FB 2501-6001) and 680000 (FCB1000-6000). The base can be changed (0-4194048)."
+    ],
+    "gotchas": [
+      "The manual says to resend the AV 0 configuration bits before each command.",
+      "In a cascade only the Leader needs the BACnet board for control; it then reports cascade totals only, so fit a board to every unit to see each one.",
+      "Without BMS mode active the board is monitor-only: the read-only points can be polled while the unit runs on its own controls.",
+      "Several BI/AI points exist only on certain Crest sizes or on FCB models; check the size notes in each description."
+    ]
+  },
+  "source": {
+    "title": "Modbus and BACnet Communication Instructions (Crest FB/OF751-6001, FCB1000-6000 & Regent IWH500-1000)",
+    "doc_number": "100161012_2000020084",
+    "revision_date": "Rev X, 04/26",
+    "url": "https://assets.lochinvar.com/damroot/Original/10017/MODB_100161012_2000020084_REV%20X_(71343).pdf"
+  },
+  "points": [
+    {
+      "type": "BV",
+      "instance": 0,
+      "name": "Boiler Enable",
+      "description": "BAS enable command for the appliance",
+      "units": "",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "BV",
+      "instance": 4,
+      "name": "Tank Thermostat",
+      "description": "Tank / DHW thermostat call",
+      "units": "",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "BI",
+      "instance": 0,
+      "name": "Manual Reset High Limit",
+      "description": "Safety / proving switch status",
+      "units": "",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "BI",
+      "instance": 1,
+      "name": "Flow Switch",
+      "description": "Safety / proving switch status",
+      "units": "",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "BI",
+      "instance": 2,
+      "name": "Gas Pressure Switch",
+      "description": "Safety / proving switch status",
+      "units": "",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "BI",
+      "instance": 3,
+      "name": "Louver Proving Switch",
+      "description": "Safety / proving switch status",
+      "units": "",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "BI",
+      "instance": 4,
+      "name": "Proof of Closure",
+      "description": "Gas valve proof of closure (FCB1000-6001 only; usable on FB/OF4001-6001)",
+      "units": "",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "BI",
+      "instance": 5,
+      "name": "Blocked Drain Switch",
+      "description": "Safety / proving switch status",
+      "units": "",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "BI",
+      "instance": 7,
+      "name": "Flame 1",
+      "description": "Flame status",
+      "units": "",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "BI",
+      "instance": 8,
+      "name": "Enable",
+      "description": "Enable input status (Crest 751-6001 only)",
+      "units": "",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "BI",
+      "instance": 9,
+      "name": "Tank Thermostat",
+      "description": "Tank / DHW thermostat call (Crest 751-6001 only)",
+      "units": "",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "BI",
+      "instance": 10,
+      "name": "Blocked Vent Switch",
+      "description": "Safety / proving switch status",
+      "units": "",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "BI",
+      "instance": 12,
+      "name": "Fan 2 Proving Switch",
+      "description": "Second fan proving switch (751-6001 only; older dual-fan models)",
+      "units": "",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "BI",
+      "instance": 17,
+      "name": "Internal LWCO",
+      "description": "Safety / proving switch status (Crest FCB1000-6001 only)",
+      "units": "",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "BI",
+      "instance": 18,
+      "name": "Gas Pressure Switch 2",
+      "description": "Safety / proving switch status (Crest FCB1000-6001 only)",
+      "units": "",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "BI",
+      "instance": 20,
+      "name": "Flue Damper Switch",
+      "description": "Safety / proving switch status",
+      "units": "",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "BI",
+      "instance": 22,
+      "name": "Flame 2",
+      "description": "Flame status",
+      "units": "",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "BI",
+      "instance": 25,
+      "name": "Enable",
+      "description": "Enable input status (Crest FCB1000-6001 only)",
+      "units": "",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "BI",
+      "instance": 29,
+      "name": "Tank Thermostat",
+      "description": "Tank / DHW thermostat call (Crest FCB1000-6001 only)",
+      "units": "",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "BI",
+      "instance": 32,
+      "name": "Run Time Contacts",
+      "description": "Output or relay status",
+      "units": "",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "BI",
+      "instance": 33,
+      "name": "Alarm Contacts",
+      "description": "Output or relay status",
+      "units": "",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "BI",
+      "instance": 34,
+      "name": "Boiler Pump",
+      "description": "Output or relay status",
+      "units": "",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "BI",
+      "instance": 35,
+      "name": "DHW Pump",
+      "description": "Output or relay status",
+      "units": "",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "BI",
+      "instance": 36,
+      "name": "Louver Relay",
+      "description": "Output or relay status",
+      "units": "",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "BI",
+      "instance": 37,
+      "name": "Gas Valve 1",
+      "description": "Output or relay status",
+      "units": "",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "BI",
+      "instance": 38,
+      "name": "System Pump",
+      "description": "Output or relay status",
+      "units": "",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "BI",
+      "instance": 40,
+      "name": "DHW Recirc Pump",
+      "description": "Output or relay status (Crest FCB1000-6001 only)",
+      "units": "",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "BI",
+      "instance": 43,
+      "name": "Flue Damper Output",
+      "description": "Output or relay status",
+      "units": "",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "BI",
+      "instance": 45,
+      "name": "Gas Valve 2",
+      "description": "Output or relay status",
+      "units": "",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "BI",
+      "instance": 46,
+      "name": "Transition Gas Valve",
+      "description": "Output or relay status (Crest 751-1501 only)",
+      "units": "",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "BI",
+      "instance": 48,
+      "name": "Main Fan 1",
+      "description": "Output or relay status",
+      "units": "",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "BI",
+      "instance": 49,
+      "name": "Main Fan 2",
+      "description": "Output or relay status (Crest 2501-6001 only; Dual fan models only)",
+      "units": "",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "BI",
+      "instance": 50,
+      "name": "External Spark / HSI",
+      "description": "Output or relay status",
+      "units": "",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "BI",
+      "instance": 51,
+      "name": "Air Valve Trigger",
+      "description": "Output or relay status",
+      "units": "",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "BI",
+      "instance": 52,
+      "name": "Air Valve Proving",
+      "description": "Safety / proving switch status",
+      "units": "",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AI",
+      "instance": 0,
+      "name": "Binary Inputs 0-15",
+      "description": "Packed word of binary inputs 0-15",
+      "units": "",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AI",
+      "instance": 1,
+      "name": "Binary Inputs 16-31",
+      "description": "Packed word of binary inputs 16-31",
+      "units": "",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AI",
+      "instance": 2,
+      "name": "Binary Inputs 32-47",
+      "description": "Packed word of binary inputs 32-47",
+      "units": "",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AI",
+      "instance": 3,
+      "name": "System / Cascade Setpoint",
+      "description": "Setpoint value",
+      "units": "°C",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AI",
+      "instance": 4,
+      "name": "System Pump Speed",
+      "description": "Pump speed output",
+      "units": "%",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AI",
+      "instance": 5,
+      "name": "Cascade Total Power",
+      "description": "Total cascade firing capacity",
+      "units": "%",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AI",
+      "instance": 6,
+      "name": "Cascade Current Power",
+      "description": "Current cascade firing rate",
+      "units": "%",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AI",
+      "instance": 7,
+      "name": "Outlet Setpoint",
+      "description": "Setpoint value",
+      "units": "°C",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AI",
+      "instance": 8,
+      "name": "Outlet Temperature",
+      "description": "Temperature reading",
+      "units": "°C",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AI",
+      "instance": 9,
+      "name": "Inlet Temperature",
+      "description": "Temperature reading",
+      "units": "°C",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AI",
+      "instance": 10,
+      "name": "Flue Temperature",
+      "description": "Temperature reading",
+      "units": "°C",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AI",
+      "instance": 11,
+      "name": "Firing Rate",
+      "description": "Burner firing rate",
+      "units": "%",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AI",
+      "instance": 12,
+      "name": "Boiler Pump Speed",
+      "description": "Pump speed output",
+      "units": "%",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AI",
+      "instance": 13,
+      "name": "Boiler Status Code",
+      "description": "Current operating status code",
+      "units": "",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AI",
+      "instance": 14,
+      "name": "Boiler Blocking Code",
+      "description": "Active blocking (soft lockout) code",
+      "units": "",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AI",
+      "instance": 15,
+      "name": "Boiler Lockout Code",
+      "description": "Active lockout code",
+      "units": "",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AI",
+      "instance": 18,
+      "name": "Air Damper Target Angle",
+      "description": "Combustion / flow value (Crest FCB1000-6001 only)",
+      "units": "",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AI",
+      "instance": 19,
+      "name": "Gas Damper Target Angle",
+      "description": "Combustion / flow value (Crest FCB1000-6001 only)",
+      "units": "",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AI",
+      "instance": 20,
+      "name": "Fan Speed Target",
+      "description": "Combustion / flow value (Crest FCB1000-6001 only)",
+      "units": "",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AI",
+      "instance": 22,
+      "name": "O2 Sensor Status",
+      "description": "Combustion / flow value (Crest FCB1000-6001 only)",
+      "units": "",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AI",
+      "instance": 23,
+      "name": "Current Trim Factor",
+      "description": "Combustion / flow value (Crest FCB1000-6001 only)",
+      "units": "",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AI",
+      "instance": 24,
+      "name": "Barometer",
+      "description": "Combustion / flow value (Crest FCB1000-6001 only)",
+      "units": "",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AI",
+      "instance": 25,
+      "name": "Binary Inputs 48-63",
+      "description": "Packed word of binary inputs 48-63",
+      "units": "",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AI",
+      "instance": 26,
+      "name": "Lock-Out Error Leader",
+      "description": "Lockout flag for this cascade unit",
+      "units": "",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AI",
+      "instance": 27,
+      "name": "Lock-Out Error Member 1",
+      "description": "Lockout flag for this cascade unit",
+      "units": "",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AI",
+      "instance": 28,
+      "name": "Lock-Out Error Member 2",
+      "description": "Lockout flag for this cascade unit",
+      "units": "",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AI",
+      "instance": 29,
+      "name": "Lock-Out Error Member 3",
+      "description": "Lockout flag for this cascade unit",
+      "units": "",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AI",
+      "instance": 30,
+      "name": "Lock-Out Error Member 4",
+      "description": "Lockout flag for this cascade unit",
+      "units": "",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AI",
+      "instance": 31,
+      "name": "Lock-Out Error Member 5",
+      "description": "Lockout flag for this cascade unit",
+      "units": "",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AI",
+      "instance": 32,
+      "name": "Lock-Out Error Member 6",
+      "description": "Lockout flag for this cascade unit",
+      "units": "",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AI",
+      "instance": 33,
+      "name": "Lock-Out Error Member 7",
+      "description": "Lockout flag for this cascade unit",
+      "units": "",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AI",
+      "instance": 35,
+      "name": "Flame 1",
+      "description": "Flame status (Crest FCB1000-6001 only)",
+      "units": "",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AI",
+      "instance": 36,
+      "name": "Flame 2",
+      "description": "Flame status (Crest FCB1000-6001 only)",
+      "units": "",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AI",
+      "instance": 37,
+      "name": "Corrected O2 Reading",
+      "description": "Combustion / flow value (Crest FCB1000-6001 only)",
+      "units": "",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 0,
+      "name": "Configuration",
+      "description": "Bitmask selecting which values the BAS supplies",
+      "units": "",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 1,
+      "name": "Coils",
+      "description": "Packed word of the binary value commands",
+      "units": "",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 2,
+      "name": "0-10 Volt Input / Rate Command / Setpoint Command",
+      "description": "BAS rate or setpoint command (0-100%)",
+      "units": "%",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 3,
+      "name": "Tank Setpoint",
+      "description": "Setpoint value",
+      "units": "°C",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 4,
+      "name": "Tank Temperature",
+      "description": "Temperature reading",
+      "units": "°C",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 5,
+      "name": "Outdoor Temperature",
+      "description": "Temperature reading",
+      "units": "°C",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 6,
+      "name": "System Supply Temperature",
+      "description": "Temperature reading",
+      "units": "°C",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 7,
+      "name": "System Return Temperature",
+      "description": "Temperature reading",
+      "units": "°C",
+      "access": "W",
+      "states": ""
+    }
+  ]
+}

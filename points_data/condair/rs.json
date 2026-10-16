@@ -1,0 +1,657 @@
+{
+  "manufacturer": "Condair",
+  "manufacturer_slug": "condair",
+  "model": "Condair RS",
+  "model_slug": "rs",
+  "aliases": [
+    "Condair RS II",
+    "RS resistive steam humidifier",
+    "Nortec RS"
+  ],
+  "equipment_type": "Electric resistive steam humidifier",
+  "applies_to": "Condair RS / RS II single and dual cylinder (A/B) resistive steam humidifiers.",
+  "summary": "The Condair RS is an electric heating-element steam humidifier with one or two cylinders. The Integrated Controller exposes BACnet IP and MS/TP on-board. Objects report per-cylinder status, level, capacity, maintenance countdowns and safety chain inputs, plus two-channel setpoints and writable demand inputs for main and limiter signals.",
+  "bacnet_transport": [
+    "BACnet IP",
+    "BACnet MS/TP"
+  ],
+  "firmware": null,
+  "default_device_instance": 1001,
+  "access_inferred": false,
+  "notes": [
+    "BACnet is built into the Integrated Controller (RJ45 for BACnet IP, RS485 for MS/TP master or slave); it ships with the BACnet protocol set to Off.",
+    "Factory Node ID (device instance) is 1001 and the MS/TP MAC is 127; BACnet IP uses UDP 47808 and supports registering with a BBMD.",
+    "To command the unit over BACnet set Controls > Signal Settings > Source to BACnet; the demand/humidity AO must then be rewritten within the Signal Timeout (default 300 s) or the unit stops with warning W35.",
+    "Points marked optional only report when that option is fitted; capacity, pressure and temperature units follow the controller's Metric/Imperial setting.",
+    "Cylinder B objects only apply to dual-cylinder units; channel 2 is used for a limiter (e.g. supply-air high limit) when dual signal control is enabled.",
+    "BI 28 is Furnace Fan on UL units and External Pipe Flush on CE units."
+  ],
+  "source": {
+    "title": "BACnet on-board - Addendum manual for installation and operation (DL II, ME II, RS II, RO-E and Vita)",
+    "doc_number": "2603582-F",
+    "revision_date": "2026-07",
+    "url": "https://www.condair.co.uk/consense/bms-communication-ic-2.0/am_bms_interface_bacnet_on_board_2603582_en.pdf"
+  },
+  "integration": {
+    "summary": "Enable BACnet in the Integrated Controller, set the signal source to BACnet, and write demand or RH to AO 15012 (and a limiter value to AO 15014 if dual signal control is used) within the signal timeout. Read cylinder A/B status, the error status and code, and actual capacity.",
+    "minimum_points": [
+      {
+        "ref": "AO 15012",
+        "name": "RH or Demand CH1 via BACnet",
+        "why": "Channel 1 demand or RH from the BMS"
+      },
+      {
+        "ref": "AO 15014",
+        "name": "RH or Demand CH2 via BACnet",
+        "why": "Channel 2 limiter signal (dual signal control)"
+      },
+      {
+        "ref": "MI 5109",
+        "name": "Device Status Cyl. A",
+        "why": "Cylinder A status"
+      },
+      {
+        "ref": "MI 5110",
+        "name": "Device Status Cyl. B",
+        "why": "Cylinder B status (dual units)"
+      },
+      {
+        "ref": "MI 5159",
+        "name": "Error Status",
+        "why": "Maintenance/error status"
+      },
+      {
+        "ref": "AI 10020",
+        "name": "ErrorWarning Code",
+        "why": "Active error or warning code"
+      },
+      {
+        "ref": "AI 10225",
+        "name": "Actual Hum. Capacity",
+        "why": "Actual humidifying capacity"
+      },
+      {
+        "ref": "AV 15102",
+        "name": "Capacity Limitation",
+        "why": "Capacity limitation"
+      }
+    ],
+    "enable": "Set Menu > password 8808 > Controls > Signal Settings > Source to BACnet and pick the Control Mode (Demand, RH P or RH PI; On/Off also exists). With Source left at Analog the unit ignores BACnet control values.",
+    "heartbeat": "When the signal source is not Analog, the demand/humidity value written over BACnet must be refreshed within the Signal Timeout (1-300 s, default 300 s). If it is not, warning W35 Signal Timeout is raised and the unit stops until a new value arrives, so the BMS must keep rewriting the AO.",
+    "remote_sensors": "In Demand mode the BMS writes the required output (0-100 %) to the RH/Demand AO. In RH P or RH PI mode the BMS writes the measured humidity there and the controller's own setpoint, P-band and I-time AVs do the control. Do not connect a hard-wired demand or sensor signal while the BACnet signal is used. Channel 2 (AO 15014) is only active with dual signal control, typically a supply-air high limit.",
+    "setup": [
+      "BACnet settings are under Menu > password 8808 > Network > BACnet Settings; the BACnet Protocol parameter ships Off (options MS/TP Master, MS/TP Slave, BACnet/IP) and the controller restarts after changing it.",
+      "Node ID (device instance) defaults to 1001 (range 1-4194303); BACnet IP port defaults to 47808.",
+      "IP addressing defaults to DHCP; if no DHCP server answers the controller falls back to an APIPA 169.254.x.x address.",
+      "Foreign Device registration to a BBMD is Off by default; BBMD port 47808 and re-register time 10 are the factory values.",
+      "MS/TP: MAC defaults to 127 (0-127 master, 0-254 slave), baud 9600 (up to 115200); fit jumper JP6 only on the first and last device, remove JP8, and tie GND between all devices."
+    ],
+    "gotchas": [
+      "Cylinder B objects only mean something on dual-cylinder units.",
+      "BI 28 is Remote Furnace/Fan on UL units and External Pipe Flush on CE units.",
+      "RS Drain AVs: write 1 to start, 0 to stop; a read of 100 means off.",
+      "Capacity units follow the Metric/Imperial setting."
+    ]
+  },
+  "points": [
+    {
+      "type": "DEV",
+      "instance": 1001,
+      "name": "Condair Controller",
+      "description": "Humidifier",
+      "units": "",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "Other",
+      "instance": 1,
+      "name": "Network Port IPv4",
+      "description": "Network-Port for BACnet IPv4 Communication",
+      "units": "",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "MI",
+      "instance": 5109,
+      "name": "Device Status Cyl. A",
+      "description": "Actual device status cylinder A",
+      "units": "",
+      "access": "R",
+      "states": "1=Initializing, 2=Diagnostic, 3=Stopped, 4=Break, 5=Level Test, 6=Standby, 7=Humidifying, 8=Filling, 9=Idle, 10=Draining, 11=Remote Off, 12=Keep Warm"
+    },
+    {
+      "type": "MI",
+      "instance": 5110,
+      "name": "Device Status Cyl. B",
+      "description": "Actual device status cylinder B",
+      "units": "",
+      "access": "R",
+      "states": "1=Initializing, 2=Diagnostic, 3=Stopped, 4=Break, 5=Level Test, 6=Standby, 7=Humidifying, 8=Filling, 9=Idle, 10=Draining, 11=Remote Off, 12=Keep Warm"
+    },
+    {
+      "type": "MI",
+      "instance": 5159,
+      "name": "Error Status",
+      "description": "Maintenance and error status",
+      "units": "",
+      "access": "R",
+      "states": "1=Service Info, 2=Warning, 3=RO Service, 4=Extended Maintenance, 5=Small Maintenance, 6=Activation Code, 7=Error"
+    },
+    {
+      "type": "MI",
+      "instance": 5123,
+      "name": "Nominal Voltage",
+      "description": "Nominal voltage device",
+      "units": "",
+      "access": "R",
+      "states": "1=200 V, 2=208 V, 3=230 V, 4=240 V, 5=380V, 6=400 V, 7=415 V, 8=440 V, 9=460 V, 10=480 V, 11=500 V, 12=550 V, 13=600 V"
+    },
+    {
+      "type": "AI",
+      "instance": 15044,
+      "name": "Level Cyl. A",
+      "description": "Water level cylinder A",
+      "units": "",
+      "access": "R",
+      "states": "1=no level, 2=low, 3=low-mid, 4=mid, 5=mid-high, 6=high"
+    },
+    {
+      "type": "AI",
+      "instance": 15045,
+      "name": "Level Cyl. B",
+      "description": "Water level cylinder B",
+      "units": "",
+      "access": "R",
+      "states": "1=no level, 2=low, 3=low-mid, 4=mid, 5=mid-high, 6=high"
+    },
+    {
+      "type": "AI",
+      "instance": 10020,
+      "name": "ErrorWarning Code",
+      "description": "Code of the latest pending error or warning",
+      "units": "",
+      "access": "R",
+      "states": "0=No error"
+    },
+    {
+      "type": "AI",
+      "instance": 10219,
+      "name": "Operating Hours",
+      "description": "Total hours of operation since commissioning",
+      "units": "h",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AI",
+      "instance": 15124,
+      "name": "Operating Hours Cyl. A",
+      "description": "Total hours of operation since commissioning of cylinder A",
+      "units": "h",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AI",
+      "instance": 15125,
+      "name": "Operating Hours Cyl. B",
+      "description": "Total hours of operation since commissioning of cylinder B",
+      "units": "h",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AI",
+      "instance": 10221,
+      "name": "System Demand",
+      "description": "Actual demand of the system",
+      "units": "%",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AI",
+      "instance": 15103,
+      "name": "Control CH1",
+      "description": "Actual humidity or demand signal CH1",
+      "units": "%",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AI",
+      "instance": 15104,
+      "name": "Control CH2",
+      "description": "Actual humidity or demand signal CH2",
+      "units": "%",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AI",
+      "instance": 10216,
+      "name": "Max Hum. Capacity",
+      "description": "Maximum humidifying capacity",
+      "units": "kg/h or lb/h",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AI",
+      "instance": 15117,
+      "name": "Max Hum. Capacity Cyl. A",
+      "description": "Maximum humidifying capacity cylinder A",
+      "units": "kg/h or lb/h",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AI",
+      "instance": 15118,
+      "name": "Max Hum. Capacity Cyl. B",
+      "description": "Maximum humidifying capacity cylinder B",
+      "units": "kg/h or lb/h",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AI",
+      "instance": 10225,
+      "name": "Actual Hum. Capacity",
+      "description": "Actual humidifying capacity",
+      "units": "kg/h or lb/h",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AI",
+      "instance": 15025,
+      "name": "Actual Hum. Capacity Cyl. A",
+      "description": "Actual humidifying capacity cylinder A",
+      "units": "kg/h or lb/h",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AI",
+      "instance": 15026,
+      "name": "Actual Hum. Capacity Cyl. B",
+      "description": "Actual humidifying capacity cylinder B",
+      "units": "kg/h or lb/h",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AI",
+      "instance": 15120,
+      "name": "Next Small Maintenance Cyl. A",
+      "description": "Due date of next small maintenance cylinder A",
+      "units": "h",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AI",
+      "instance": 15121,
+      "name": "Next Small Maintenance Cyl. B",
+      "description": "Due date of next small maintenance cylinder B",
+      "units": "h",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AI",
+      "instance": 15122,
+      "name": "Next Extended Maint. Cyl. A",
+      "description": "Due date of next extended maintenance cylinder A",
+      "units": "h",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AI",
+      "instance": 15123,
+      "name": "Next Extended Maint. Cyl. B",
+      "description": "Due date of next extended maintenance cylinder B",
+      "units": "h",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 15094,
+      "name": "Setpoint CH1",
+      "description": "Setpoint humidity channel 1",
+      "units": "%",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 15095,
+      "name": "Setpoint CH2",
+      "description": "Setpoint humidity channel 2",
+      "units": "%",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 15096,
+      "name": "P-Band CH1",
+      "description": "Proportional band humidity channel 1",
+      "units": "%",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 15097,
+      "name": "P-Band CH2",
+      "description": "Proportional band humidity channel 2",
+      "units": "%",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 15098,
+      "name": "I-Time CH1",
+      "description": "Integral time humidity channel 1",
+      "units": "min",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 15099,
+      "name": "I-Time CH2",
+      "description": "Integral time humidity channel 2",
+      "units": "min",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 15102,
+      "name": "Capacity Limitation",
+      "description": "Limitation of the maximum possible ouput",
+      "units": "%",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 30504,
+      "name": "RS Drain",
+      "description": "Remote RS drain",
+      "units": "%",
+      "access": "W",
+      "states": "Read: 100=Off, 0 - 99=Progress draining in %, Write: 0=Stop draining, 1=Start draining cylinder A + B"
+    },
+    {
+      "type": "AV",
+      "instance": 30502,
+      "name": "RS Drain Cyl. A",
+      "description": "Remote RS drain cylinder A",
+      "units": "%",
+      "access": "W",
+      "states": "Read: 100=Off, 0 - 99=Progress draining in %, Write: 0=Stop draining, 1=Start draining cylinder A"
+    },
+    {
+      "type": "AV",
+      "instance": 30503,
+      "name": "RS Drain Cyl. B",
+      "description": "Remote RS drain cylinder B",
+      "units": "%",
+      "access": "W",
+      "states": "Read: 100=Off, 0 - 99=Progress draining in %, Write: 0=Stop draining, 1=Start draining cylinder B"
+    },
+    {
+      "type": "AO",
+      "instance": 15012,
+      "name": "RH or Demand CH1 via BACnet",
+      "description": "Actual humidity or demand via BACnet channel 1",
+      "units": "%",
+      "access": "C",
+      "states": ""
+    },
+    {
+      "type": "AO",
+      "instance": 15014,
+      "name": "RH or Demand CH2 via BACnet",
+      "description": "Actual humidity or demand via BACnet channel 2",
+      "units": "%",
+      "access": "C",
+      "states": ""
+    },
+    {
+      "type": "BI",
+      "instance": 5011,
+      "name": "Overheat Switch Cyl. A",
+      "description": "Overheat switch cylinder A",
+      "units": "",
+      "access": "R",
+      "states": "0=Open, 1=Closed (=ok)"
+    },
+    {
+      "type": "BI",
+      "instance": 5012,
+      "name": "Overheat Switch Cyl. B",
+      "description": "Overheat switch cylinder B",
+      "units": "",
+      "access": "R",
+      "states": "0=Open, 1=Closed (=ok)"
+    },
+    {
+      "type": "BI",
+      "instance": 5017,
+      "name": "Safety Loop Cyl. A",
+      "description": "External safety loop cylinder A",
+      "units": "",
+      "access": "R",
+      "states": "0=Open, 1=Closed (=ok)"
+    },
+    {
+      "type": "BI",
+      "instance": 5018,
+      "name": "Safety Loop Cyl. B",
+      "description": "External safety loop cylinder B",
+      "units": "",
+      "access": "R",
+      "states": "0=Open, 1=Closed (=ok)"
+    },
+    {
+      "type": "BI",
+      "instance": 5013,
+      "name": "Security Floater Cyl. A",
+      "description": "Security floater cylinder A",
+      "units": "",
+      "access": "R",
+      "states": "0=Open, 1=Closed (=ok)"
+    },
+    {
+      "type": "BI",
+      "instance": 5014,
+      "name": "Security Floater Cyl. B",
+      "description": "Security floater cylinder B",
+      "units": "",
+      "access": "R",
+      "states": "0=Open, 1=Closed (=ok)"
+    },
+    {
+      "type": "BI",
+      "instance": 5015,
+      "name": "Heating Voltage Cyl. A",
+      "description": "Heating voltage cylinder A",
+      "units": "",
+      "access": "R",
+      "states": "0=Off, 1=On"
+    },
+    {
+      "type": "BI",
+      "instance": 5016,
+      "name": "Heating Voltage Cyl. B",
+      "description": "Heating voltage cylinder B",
+      "units": "",
+      "access": "R",
+      "states": "0=Off, 1=On"
+    },
+    {
+      "type": "BI",
+      "instance": 5021,
+      "name": "Blower Pack Cyl. A",
+      "description": "Blower pack ready cylinder A",
+      "units": "",
+      "access": "R",
+      "states": "0=Off, 1=On (ready)"
+    },
+    {
+      "type": "BI",
+      "instance": 5022,
+      "name": "Blower Pack Cyl. B",
+      "description": "Blower pack ready cylinder B",
+      "units": "",
+      "access": "R",
+      "states": "0=Off, 1=On (ready)"
+    },
+    {
+      "type": "BI",
+      "instance": 5027,
+      "name": "Main Contactor Cyl. A",
+      "description": "Main contactor cylinder A",
+      "units": "",
+      "access": "R",
+      "states": "0=Off, 1=On"
+    },
+    {
+      "type": "BI",
+      "instance": 5028,
+      "name": "Main Contactor Cyl. B",
+      "description": "Main contactor cylinder B",
+      "units": "",
+      "access": "R",
+      "states": "0=Off, 1=On"
+    },
+    {
+      "type": "BI",
+      "instance": 5029,
+      "name": "Relay Pump Cyl. A",
+      "description": "Relay pump cylinder A",
+      "units": "",
+      "access": "R",
+      "states": "0=Off, 1=On"
+    },
+    {
+      "type": "BI",
+      "instance": 5030,
+      "name": "Relay Pump Cyl. B",
+      "description": "Relay pump cylinder B",
+      "units": "",
+      "access": "R",
+      "states": "0=Off, 1=On"
+    },
+    {
+      "type": "BI",
+      "instance": 5089,
+      "name": "Inlet Valve 1 Cyl. A",
+      "description": "Inlet valve 1 cylinder A",
+      "units": "",
+      "access": "R",
+      "states": "0=Closed, 1=Open"
+    },
+    {
+      "type": "BI",
+      "instance": 5090,
+      "name": "Inlet Valve 1 Cyl. B",
+      "description": "Inlet valve 1 cylinder B",
+      "units": "",
+      "access": "R",
+      "states": "0=Closed, 1=Open"
+    },
+    {
+      "type": "BI",
+      "instance": 5091,
+      "name": "Inlet Valve 2 Cyl. A",
+      "description": "Inlet valve 2 cylinder A",
+      "units": "",
+      "access": "R",
+      "states": "0=Closed, 1=Open"
+    },
+    {
+      "type": "BI",
+      "instance": 5092,
+      "name": "Inlet Valve 2 Cyl. B",
+      "description": "Inlet valve 2 cylinder B",
+      "units": "",
+      "access": "R",
+      "states": "0=Closed, 1=Open"
+    },
+    {
+      "type": "BI",
+      "instance": 5093,
+      "name": "Drain Cooling Valve Cyl. A",
+      "description": "Drain cooling valve cylinder A",
+      "units": "",
+      "access": "R",
+      "states": "0=Closed, 1=Open"
+    },
+    {
+      "type": "BI",
+      "instance": 5094,
+      "name": "Drain Cooling Valve Cyl. B",
+      "description": "Drain cooling valve cylinder B",
+      "units": "",
+      "access": "R",
+      "states": "0=Closed, 1=Open"
+    },
+    {
+      "type": "BI",
+      "instance": 5095,
+      "name": "Complete Drain Valve Cyl. A",
+      "description": "Complete drain valve cylinder A (optional)",
+      "units": "",
+      "access": "R",
+      "states": "0=Closed, 1=Open"
+    },
+    {
+      "type": "BI",
+      "instance": 5096,
+      "name": "Complete Drain Valve Cyl. B",
+      "description": "Complete drain valve cylinder B (optional)",
+      "units": "",
+      "access": "R",
+      "states": "0=Closed, 1=Open"
+    },
+    {
+      "type": "BI",
+      "instance": 5009,
+      "name": "Leakage Sensor",
+      "description": "Leakage Sensor (optional)",
+      "units": "",
+      "access": "R",
+      "states": "0=Leak, 1=OK"
+    },
+    {
+      "type": "BI",
+      "instance": 28,
+      "name": "Furnace Fan",
+      "description": "UL units: remote furnace/fan (optional)",
+      "units": "",
+      "access": "R",
+      "states": "0=Off, 1=On"
+    },
+    {
+      "type": "BI",
+      "instance": 28,
+      "name": "Ext. Pipe Flush",
+      "description": "CE units: external pipe flush (shares BI 28 with Furnace Fan) (optional)",
+      "units": "",
+      "access": "R",
+      "states": "0=Off, 1=On"
+    }
+  ],
+  "short_model": "RS (on-board BACnet)"
+}

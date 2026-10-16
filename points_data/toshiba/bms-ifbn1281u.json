@@ -1,0 +1,722 @@
+{
+  "manufacturer": "Toshiba",
+  "manufacturer_slug": "toshiba",
+  "model": "BN interface BMS-IFBN1281U",
+  "model_slug": "bms-ifbn1281u",
+  "aliases": [
+    "BMS-IFBN1281U-E",
+    "BMS-IFBN1281U-TR",
+    "Toshiba BACnet interface",
+    "Toshiba Carrier BN interface",
+    "TU2C-LINK BACnet"
+  ],
+  "equipment_type": "VRF BACnet gateway",
+  "applies_to": "Toshiba Carrier VRF indoor units, air-to-water heat pumps and RAC interfaces on TU2C-LINK (Uh line) or TCC-LINK.",
+  "summary": "The BN interface is a Toshiba Carrier gateway that converts the TU2C-LINK / TCC-LINK central control line to BACnet/IP, serving up to 128 indoor units (64 on TCC-LINK). Every indoor unit gets the same block of objects, with the instance built from the unit's central control address and a fixed per-function code. Objects only exist for units found during the gateway's air conditioner search mode.",
+  "bacnet_transport": [
+    "BACnet IP"
+  ],
+  "firmware": null,
+  "default_device_instance": 100,
+  "access_inferred": false,
+  "notes": [
+    "Instance formula: equipment number n (central control address, 1-128) x 256 + function code (e.g. ON/OFF status code 0x02 gives n*256+2). This file lists unit n=1.",
+    "In object names, *** stands for the air-conditioner number 1-128.",
+    "The manual prints the name Notice_Code1/MI_*** for all five notice-code objects; their object IDs differ (codes 0x63-0x67).",
+    "ATW (air-to-water), RAC interface and ventilation objects only apply when that equipment is connected; ATW and RAC interfaces cannot be connected at the same time.",
+    "Analog values follow the gateway's Celsius/Fahrenheit setting (BMS-IFBN1281U-E/-TR default Celsius).",
+    "Output objects expose a Priority_Array; Out_Of_Service is writable on the I/O objects."
+  ],
+  "source": {
+    "title": "BN interface Service Manual, BMS-IFBN1281U-E / BMS-IFBN1281U-TR",
+    "doc_number": "A10-2301-3",
+    "revision_date": "2024-05 (Revision 3)",
+    "url": "https://www.toshiba-airconditioning.eu/@@download-proxy?uid=bfc26091451b41b1814e41f0d95432ab"
+  },
+  "integration": {
+    "summary": "Give every indoor unit a central control address, run the BN interface's air conditioner search mode, then map each unit's block of objects (instance = address x 256 + code). Command through the output objects (start/stop, mode, fan, setpoint) and read the matching input objects back for status. Watch Alarm/BI, Alarm_Code/MI and Indoor_Communication_Failure for faults.",
+    "minimum_points": [
+      {
+        "ref": "BO 386",
+        "name": "State/BO_***",
+        "why": "Start/stop the indoor unit"
+      },
+      {
+        "ref": "BI 258",
+        "name": "State/BI_***",
+        "why": "Confirms the unit's on/off state"
+      },
+      {
+        "ref": "MO 387",
+        "name": "Mode/MO_***",
+        "why": "Sets heat/cool/fan/dry/auto"
+      },
+      {
+        "ref": "AO 388",
+        "name": "Temp/AO_***",
+        "why": "Writes the setpoint"
+      },
+      {
+        "ref": "AI 264",
+        "name": "Room_Temp/AI_***",
+        "why": "Room temperature at the unit"
+      },
+      {
+        "ref": "MO 389",
+        "name": "Fan/MO_***",
+        "why": "Sets fan speed"
+      },
+      {
+        "ref": "BI 320",
+        "name": "Alarm/BI_***",
+        "why": "Unit alarm flag"
+      },
+      {
+        "ref": "MI 257",
+        "name": "Alarm_Code/MI_***",
+        "why": "Check code present"
+      },
+      {
+        "ref": "BI 321",
+        "name": "Indoor_Communication_Failure_***",
+        "why": "Lost communication with the indoor unit"
+      },
+      {
+        "ref": "MO 393",
+        "name": "Inhibit/MO_***",
+        "why": "Lock out local remote start/stop, mode or setpoint"
+      }
+    ],
+    "enable": "No enable point is described; units can be commanded once they have a central control address and were found by air conditioner search mode. Inhibit/MO can prohibit local remote-controller changes to start/stop, mode and setpoint.",
+    "heartbeat": null,
+    "remote_sensors": null,
+    "setup": [
+      "Factory default IP 192.168.1.100, subnet 255.255.255.0, BACnet/IP on UDP 47808.",
+      "Default device instance = last byte of the IP address (100), so changing the IP changes the device instance unless 'User Setting' is chosen in the engineering tool.",
+      "IP, device instance and other settings are changed with Toshiba Carrier's Setting File Creation Software2 and uploaded as a DEF file (over the network or by USB flash drive).",
+      "Central control addresses must be set on every indoor unit; holding the Shutdown button for 4 s or more starts air conditioner search mode to build the unit list.",
+      "When multiple BN interfaces are used, each needs its own IP address and device instance."
+    ],
+    "gotchas": [
+      "Re-run air conditioner search mode after any change to central control, line or unit addresses, or after replacing the microSD card.",
+      "Auto cool/heat setpoints are only sent when cool setpoint >= heat setpoint, should be changed while the unit is in Auto, need 10 s between changes, and must not be written together in one WritePropertyMultiple.",
+      "Fan speed and louver objects cannot be used on units whose fan speed or louver options are fixed; in Dry mode fan speed is auto only.",
+      "Setpoint limits depend on the indoor unit type (18-29 °C standard FCU, 16-27 °C fresh-air intake unit).",
+      "Duplicate central control addresses stop the search from completing correctly; check the search results file (SearchObjectLog.tsv)."
+    ]
+  },
+  "points": [
+    {
+      "type": "DEV",
+      "instance": 100,
+      "name": "AC_CONTROLER",
+      "description": "BN interface device object (default instance = IP last byte)",
+      "units": "",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "BI",
+      "instance": 258,
+      "name": "State/BI_***",
+      "description": "Indoor unit on/off status",
+      "units": "",
+      "access": "R",
+      "states": "INACTIVE=Stop, ACTIVE=Start"
+    },
+    {
+      "type": "BO",
+      "instance": 386,
+      "name": "State/BO_***",
+      "description": "Indoor unit start/stop command",
+      "units": "",
+      "access": "C",
+      "states": "INACTIVE=Stop, ACTIVE=Start"
+    },
+    {
+      "type": "MI",
+      "instance": 259,
+      "name": "Mode/MI_***",
+      "description": "Operation mode status",
+      "units": "",
+      "access": "R",
+      "states": "Heat / Cool / Fan / Dry / Auto"
+    },
+    {
+      "type": "MO",
+      "instance": 387,
+      "name": "Mode/MO_***",
+      "description": "Operation mode command",
+      "units": "",
+      "access": "C",
+      "states": "Heat / Cool / Fan / Dry / Auto"
+    },
+    {
+      "type": "MI",
+      "instance": 261,
+      "name": "Fan/MI_***",
+      "description": "Fan speed status",
+      "units": "",
+      "access": "R",
+      "states": "Auto / HH / H / L / LL / H+ / L+"
+    },
+    {
+      "type": "MO",
+      "instance": 389,
+      "name": "Fan/MO_***",
+      "description": "Fan speed command",
+      "units": "",
+      "access": "C",
+      "states": "Auto / HH / H / L / LL / H+ / L+"
+    },
+    {
+      "type": "AI",
+      "instance": 260,
+      "name": "Temp/AI_***",
+      "description": "Setpoint status",
+      "units": "°C/°F",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AO",
+      "instance": 388,
+      "name": "Temp/AO_***",
+      "description": "Setpoint command",
+      "units": "°C/°F",
+      "access": "C",
+      "states": ""
+    },
+    {
+      "type": "AI",
+      "instance": 366,
+      "name": "AutoCoolSetpoint/AI_***",
+      "description": "Auto-mode cooling setpoint status",
+      "units": "°C/°F",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AO",
+      "instance": 494,
+      "name": "AutoCoolSetpoint/AO_***",
+      "description": "Auto-mode cooling setpoint command",
+      "units": "°C/°F",
+      "access": "C",
+      "states": ""
+    },
+    {
+      "type": "AI",
+      "instance": 367,
+      "name": "AutoHeatSetpoint/AI_***",
+      "description": "Auto-mode heating setpoint status",
+      "units": "°C/°F",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AO",
+      "instance": 495,
+      "name": "AutoHeatSetpoint/AO_***",
+      "description": "Auto-mode heating setpoint command",
+      "units": "°C/°F",
+      "access": "C",
+      "states": ""
+    },
+    {
+      "type": "AI",
+      "instance": 264,
+      "name": "Room_Temp/AI_***",
+      "description": "Room temperature (-39 to 150 °C range)",
+      "units": "°C/°F",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "MI",
+      "instance": 265,
+      "name": "Inhibit/MI_***",
+      "description": "Local remote permit/prohibit status",
+      "units": "",
+      "access": "R",
+      "states": "Permit/prohibit of start/stop, operation mode, temperature setting"
+    },
+    {
+      "type": "MO",
+      "instance": 393,
+      "name": "Inhibit/MO_***",
+      "description": "Local remote permit/prohibit command",
+      "units": "",
+      "access": "C",
+      "states": "Permit/prohibit of start/stop, operation mode, temperature setting"
+    },
+    {
+      "type": "BI",
+      "instance": 276,
+      "name": "Filter/BI_***",
+      "description": "Filter sign",
+      "units": "",
+      "access": "R",
+      "states": "Normal / Filter Sign"
+    },
+    {
+      "type": "BO",
+      "instance": 405,
+      "name": "Filter/BO_***",
+      "description": "Filter sign reset",
+      "units": "",
+      "access": "C",
+      "states": "- / Filter Sign Reset"
+    },
+    {
+      "type": "BI",
+      "instance": 320,
+      "name": "Alarm/BI_***",
+      "description": "Alarm status",
+      "units": "",
+      "access": "R",
+      "states": "No Alarm / Alarm"
+    },
+    {
+      "type": "MI",
+      "instance": 257,
+      "name": "Alarm_Code/MI_***",
+      "description": "Check code",
+      "units": "",
+      "access": "R",
+      "states": "No Check Code / Check Code"
+    },
+    {
+      "type": "MI",
+      "instance": 263,
+      "name": "Flap/MI_***",
+      "description": "Louver position status",
+      "units": "",
+      "access": "R",
+      "states": "Swing / F1 / F2 / F3 / F4 / F5 / Stop"
+    },
+    {
+      "type": "MO",
+      "instance": 391,
+      "name": "Flap/MO_***",
+      "description": "Louver position command",
+      "units": "",
+      "access": "C",
+      "states": "Swing / F1 / F2 / F3 / F4 / F5 / Stop"
+    },
+    {
+      "type": "BI",
+      "instance": 296,
+      "name": "VentilationState/BI_***",
+      "description": "Ventilation on/off status (option)",
+      "units": "",
+      "access": "R",
+      "states": "INACTIVE=Stop, ACTIVE=Start"
+    },
+    {
+      "type": "BO",
+      "instance": 424,
+      "name": "VentilationState/BO_***",
+      "description": "Ventilation start/stop (option)",
+      "units": "",
+      "access": "C",
+      "states": "INACTIVE=Stop, ACTIVE=Start"
+    },
+    {
+      "type": "MI",
+      "instance": 297,
+      "name": "VentilationMode/MI_***",
+      "description": "Ventilation mode status (option)",
+      "units": "",
+      "access": "R",
+      "states": "Bypass Mode / Heat Exchange Mode / Automatic Mode / 24-hours / Nighttime Heat purge"
+    },
+    {
+      "type": "MO",
+      "instance": 425,
+      "name": "VentilationMode/MO_***",
+      "description": "Ventilation mode command (option)",
+      "units": "",
+      "access": "C",
+      "states": "Bypass Mode / Heat Exchange Mode / Automatic Mode"
+    },
+    {
+      "type": "MI",
+      "instance": 332,
+      "name": "VentilationFan/MI_***",
+      "description": "Ventilation fan speed status (option)",
+      "units": "",
+      "access": "R",
+      "states": "H / M / Unbalanced"
+    },
+    {
+      "type": "MO",
+      "instance": 460,
+      "name": "VentilationFan/MO_***",
+      "description": "Ventilation fan speed command (option)",
+      "units": "",
+      "access": "C",
+      "states": "H / M / Unbalanced"
+    },
+    {
+      "type": "BI",
+      "instance": 340,
+      "name": "IndoorThermoState/BI_***",
+      "description": "Indoor unit thermo on/off status",
+      "units": "",
+      "access": "R",
+      "states": "Thermo ON / Thermo OFF"
+    },
+    {
+      "type": "MI",
+      "instance": 341,
+      "name": "IndoorSaveState/MI_***",
+      "description": "Save operation rate status (option)",
+      "units": "",
+      "access": "R",
+      "states": "No Save (100%) / XX% Save (100-50%) / 50% Save / 100% Save (forced thermo off)"
+    },
+    {
+      "type": "MO",
+      "instance": 469,
+      "name": "IndoorSaveState/MO_***",
+      "description": "Save operation rate command (option)",
+      "units": "",
+      "access": "C",
+      "states": "No Save (100%) / XX% Save (100-50%) / 50% Save / 100% Save (forced thermo off)"
+    },
+    {
+      "type": "BI",
+      "instance": 321,
+      "name": "Indoor_Communication_Failure_***",
+      "description": "Indoor unit communication failure",
+      "units": "",
+      "access": "R",
+      "states": "Normal / Alarm"
+    },
+    {
+      "type": "MI",
+      "instance": 266,
+      "name": "Facility_request /MI_***",
+      "description": "Facility request level",
+      "units": "",
+      "access": "R",
+      "states": "1 (Thermo off) to 16"
+    },
+    {
+      "type": "MI",
+      "instance": 355,
+      "name": "Notice_Code1/MI_***",
+      "description": "Notice code 1 (TU2C-LINK models)",
+      "units": "",
+      "access": "R",
+      "states": "No Notice Code / Notice Code"
+    },
+    {
+      "type": "MI",
+      "instance": 356,
+      "name": "Notice_Code1/MI_***",
+      "description": "Notice code 2 (TU2C-LINK models)",
+      "units": "",
+      "access": "R",
+      "states": "No Notice Code / Notice Code"
+    },
+    {
+      "type": "MI",
+      "instance": 357,
+      "name": "Notice_Code1/MI_***",
+      "description": "Notice code 3 (TU2C-LINK models)",
+      "units": "",
+      "access": "R",
+      "states": "No Notice Code / Notice Code"
+    },
+    {
+      "type": "MI",
+      "instance": 358,
+      "name": "Notice_Code1/MI_***",
+      "description": "Notice code 4 (TU2C-LINK models)",
+      "units": "",
+      "access": "R",
+      "states": "No Notice Code / Notice Code"
+    },
+    {
+      "type": "MI",
+      "instance": 359,
+      "name": "Notice_Code1/MI_***",
+      "description": "Notice code 5 (TU2C-LINK models)",
+      "units": "",
+      "access": "R",
+      "states": "No Notice Code / Notice Code"
+    },
+    {
+      "type": "BI",
+      "instance": 342,
+      "name": "AtwZone_State/BI_***",
+      "description": "ATW Zone1/2 on/off status",
+      "units": "",
+      "access": "R",
+      "states": "INACTIVE=Stop, ACTIVE=Start"
+    },
+    {
+      "type": "BO",
+      "instance": 470,
+      "name": "AtwZone_State/BO_***",
+      "description": "ATW Zone1/2 start/stop",
+      "units": "",
+      "access": "C",
+      "states": "INACTIVE=Stop, ACTIVE=Start"
+    },
+    {
+      "type": "BI",
+      "instance": 343,
+      "name": "AtwHWS_State/BI_***",
+      "description": "ATW hot water on/off status",
+      "units": "",
+      "access": "R",
+      "states": "INACTIVE=Stop, ACTIVE=Start"
+    },
+    {
+      "type": "BO",
+      "instance": 471,
+      "name": "AtwHWS_State/BO_***",
+      "description": "ATW hot water start/stop",
+      "units": "",
+      "access": "C",
+      "states": "INACTIVE=Stop, ACTIVE=Start"
+    },
+    {
+      "type": "BI",
+      "instance": 350,
+      "name": "AtwAutoTemp/BI_***",
+      "description": "ATW auto temp setting status",
+      "units": "",
+      "access": "R",
+      "states": "INACTIVE=OFF, ACTIVE=ON"
+    },
+    {
+      "type": "BO",
+      "instance": 478,
+      "name": "AtwAutoTemp/BO_***",
+      "description": "ATW auto temp setting on/off",
+      "units": "",
+      "access": "C",
+      "states": "INACTIVE=OFF, ACTIVE=ON"
+    },
+    {
+      "type": "BI",
+      "instance": 351,
+      "name": "AtwNightSetback/BI_***",
+      "description": "ATW night setback status",
+      "units": "",
+      "access": "R",
+      "states": "INACTIVE=OFF, ACTIVE=ON"
+    },
+    {
+      "type": "BO",
+      "instance": 479,
+      "name": "AtwNightSetback/BO_***",
+      "description": "ATW night setback on/off",
+      "units": "",
+      "access": "C",
+      "states": "INACTIVE=OFF, ACTIVE=ON"
+    },
+    {
+      "type": "BI",
+      "instance": 353,
+      "name": "AtwFrostProtection/BI_***",
+      "description": "ATW frost protection status",
+      "units": "",
+      "access": "R",
+      "states": "INACTIVE=OFF, ACTIVE=ON"
+    },
+    {
+      "type": "BO",
+      "instance": 481,
+      "name": "AtwFrostProtection/BO_***",
+      "description": "ATW frost protection on/off",
+      "units": "",
+      "access": "C",
+      "states": "INACTIVE=OFF, ACTIVE=ON"
+    },
+    {
+      "type": "BI",
+      "instance": 354,
+      "name": "AtwAntiBacteria/BI_***",
+      "description": "ATW anti-bacteria status",
+      "units": "",
+      "access": "R",
+      "states": "INACTIVE=OFF, ACTIVE=ON"
+    },
+    {
+      "type": "BO",
+      "instance": 482,
+      "name": "AtwAntiBacteria/BO_***",
+      "description": "ATW anti-bacteria on/off",
+      "units": "",
+      "access": "C",
+      "states": "INACTIVE=OFF, ACTIVE=ON"
+    },
+    {
+      "type": "AI",
+      "instance": 344,
+      "name": "AtwZone1_Setpoint/AI_***",
+      "description": "ATW Zone1 setpoint status",
+      "units": "°C/°F",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AO",
+      "instance": 472,
+      "name": "AtwZone1_Setpoint/AO_***",
+      "description": "ATW Zone1 setpoint command",
+      "units": "°C/°F",
+      "access": "C",
+      "states": ""
+    },
+    {
+      "type": "AI",
+      "instance": 345,
+      "name": "AtwZone2_Setpoint/AI_***",
+      "description": "ATW Zone2 setpoint status",
+      "units": "°C/°F",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AO",
+      "instance": 473,
+      "name": "AtwZone2_Setpoint/AO_***",
+      "description": "ATW Zone2 setpoint command",
+      "units": "°C/°F",
+      "access": "C",
+      "states": ""
+    },
+    {
+      "type": "AI",
+      "instance": 346,
+      "name": "AtwHWS_Setpoint/AI_***",
+      "description": "ATW hot water setpoint status",
+      "units": "°C/°F",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AO",
+      "instance": 474,
+      "name": "AtwHWS_Setpoint/AO_***",
+      "description": "ATW hot water setpoint command",
+      "units": "°C/°F",
+      "access": "C",
+      "states": ""
+    },
+    {
+      "type": "AI",
+      "instance": 347,
+      "name": "AtwZone1_CtrlTemp/AI_***",
+      "description": "ATW Zone1 control temperature",
+      "units": "°C/°F",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AI",
+      "instance": 348,
+      "name": "AtwZone2_CtrlTemp/AI_***",
+      "description": "ATW Zone2 control temperature",
+      "units": "°C/°F",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AI",
+      "instance": 349,
+      "name": "AtwHWS_CtrlTemp/AI_***",
+      "description": "ATW hot water control temperature",
+      "units": "°C/°F",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "BI",
+      "instance": 361,
+      "name": "RacPureFilter/BI_***",
+      "description": "RAC pure filter status",
+      "units": "",
+      "access": "R",
+      "states": "INACTIVE=OFF, ACTIVE=ON"
+    },
+    {
+      "type": "BI",
+      "instance": 362,
+      "name": "RacHiPower/BI_***",
+      "description": "RAC Hi-Power status",
+      "units": "",
+      "access": "R",
+      "states": "INACTIVE=OFF, ACTIVE=ON"
+    },
+    {
+      "type": "BO",
+      "instance": 490,
+      "name": "RacHiPower/BO_***",
+      "description": "RAC Hi-Power on/off",
+      "units": "",
+      "access": "C",
+      "states": "INACTIVE=OFF, ACTIVE=ON"
+    },
+    {
+      "type": "BI",
+      "instance": 363,
+      "name": "RacEco/BI_***",
+      "description": "RAC ECO status",
+      "units": "",
+      "access": "R",
+      "states": "INACTIVE=OFF, ACTIVE=ON"
+    },
+    {
+      "type": "BO",
+      "instance": 491,
+      "name": "RacEco/BO_***",
+      "description": "RAC ECO on/off",
+      "units": "",
+      "access": "C",
+      "states": "INACTIVE=OFF, ACTIVE=ON"
+    },
+    {
+      "type": "BI",
+      "instance": 364,
+      "name": "RacQuietFcu/BI_***",
+      "description": "RAC quiet indoor fan status",
+      "units": "",
+      "access": "R",
+      "states": "INACTIVE=OFF, ACTIVE=ON"
+    },
+    {
+      "type": "BO",
+      "instance": 492,
+      "name": "RacQuietFcu/BO_***",
+      "description": "RAC quiet indoor fan on/off",
+      "units": "",
+      "access": "C",
+      "states": "INACTIVE=OFF, ACTIVE=ON"
+    },
+    {
+      "type": "BI",
+      "instance": 365,
+      "name": "RacSilenceCdu/BI_***",
+      "description": "RAC silent outdoor unit status",
+      "units": "",
+      "access": "R",
+      "states": "INACTIVE=OFF, ACTIVE=ON"
+    },
+    {
+      "type": "BO",
+      "instance": 493,
+      "name": "RacSilenceCdu/BO_***",
+      "description": "RAC silent outdoor unit on/off",
+      "units": "",
+      "access": "C",
+      "states": "INACTIVE=OFF, ACTIVE=ON"
+    }
+  ]
+}

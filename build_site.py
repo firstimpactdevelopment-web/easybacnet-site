@@ -25,6 +25,7 @@ import html as html_module
 
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 import diagrams
+import points_library
 
 BASE_URL = "https://easybacnet.com"
 
@@ -297,6 +298,7 @@ def page(slug, title, question, answer_html, body_html, related, description):
 <header class="site">
   <a href="%(prefix)sindex.html" style="display:inline-flex;align-items:center;gap:.5rem;text-decoration:none"><img src="icon.svg" alt="" width="28" height="28" style="border-radius:7px"><b class="brand">Easy BACnet</b></a>
   <span class="muted">&middot; BACnet IP Controls made Easy</span>
+  <a href="%(prefix)sbacnet-points-lists/index.html" style="margin-left:1rem;font-family:'IBM Plex Mono',monospace;font-size:.72rem;letter-spacing:.12em;text-transform:uppercase;color:#ff9a1f">Points lists</a>
 </header>
 
 <article>
@@ -316,6 +318,7 @@ def page(slug, title, question, answer_html, body_html, related, description):
   Android app that scans a building network for BACnet IP devices, reads and
   commands their points, and exports the results as an Excel (.xlsx) spreadsheet.</p>
   <p><a href="%(prefix)sindex.html#guides">All guides</a> &middot;
+  <a href="%(prefix)sbacnet-points-lists/index.html">BACnet points lists by manufacturer</a> &middot;
   <a href="%(prefix)sterms.html">Terms of use</a> &middot;
   <a href="%(prefix)sprivacy.html">Privacy policy</a></p>
 </footer>
@@ -479,6 +482,7 @@ GUIDES.append(dict(
   <a href="how-to-find-your-bacnet-points-list.html">how to find your BACnet IP points list</a>.</p>
 """,
     related=[
+        ("bacnet-points-lists/index", "Free BACnet points lists by manufacturer"),
         ("guides/how-to-find-your-bacnet-points-list", "How do I find my BACnet IP points list?"),
         ("guides/vendor-asking-for-bacnet-information", "A vendor asked for my BACnet information &mdash; what do I send?"),
         ("guides/bacnet-object-types-explained", "BACnet object types explained"),
@@ -551,6 +555,7 @@ GUIDES.append(dict(
   See <a href="why-cant-i-find-my-bacnet-devices.html">why can't I find my BACnet IP devices</a>.</p>
 """,
     related=[
+        ("bacnet-points-lists/index", "Free BACnet points lists by manufacturer"),
         ("guides/what-is-a-bacnet-points-list", "What is a BACnet IP points list?"),
         ("guides/why-cant-i-find-my-bacnet-devices", "Why can't I find my BACnet IP devices?"),
         ("guides/vendor-asking-for-bacnet-information", "A vendor asked for my BACnet information &mdash; what do I send?"),
@@ -638,6 +643,7 @@ a window and agree on a priority.
 Technical contact: [name, email].</code></pre>
 """,
     related=[
+        ("bacnet-points-lists/index", "Free BACnet points lists by manufacturer"),
         ("guides/what-is-a-bacnet-points-list", "What is a BACnet IP points list?"),
         ("guides/how-to-find-your-bacnet-points-list", "How do I find my BACnet IP points list?"),
         ("guides/bacnet-device-id-explained", "What is a BACnet Device ID?"),
@@ -1461,7 +1467,7 @@ GUIDES.append(dict(
   own controls. Building or importing a second remote shows <em>One remote on the free
   version</em> with an <strong>Unlock</strong> button.</p>
   <p><strong>Easy BACnet Pro</strong> is a Google Play subscription: $9.99 a year (Play shows
-  the price in your currency), with a 14-day free trial if you have never had it before. It
+  the price in your currency). It
   removes the ads and the limit: as many remotes as you like, on as many devices as you look
   after. Cancel any time in Google Play &rsaquo; Subscriptions; Pro stays on until the end of
   the year you paid for. If it ends, your remotes are kept, but the free limit and the ads
@@ -3584,6 +3590,7 @@ footer a{color:var(--mut); text-decoration:underline}
   <div class="wrap">
     <a class="brand" href="index.html"><img src="icon.svg" alt=""><b>Easy BACnet</b></a>
     <span class="tag">BACnet IP Controls made Easy</span>
+    <a href="bacnet-points-lists/index.html" style="margin-left:1.2rem;font-family:'IBM Plex Mono',monospace;font-size:.72rem;letter-spacing:.14em;text-transform:uppercase">Points lists</a>
   </div>
 </div>
 
@@ -3661,6 +3668,39 @@ footer a{color:var(--mut); text-decoration:underline}
       <li><a href="guides/export-bacnet-points-to-csv.html">How do I export a BACnet IP points list to Excel?</a></li>
       <li><a href="guides/cant-find-what-im-looking-for.html">The app can&rsquo;t find what I&rsquo;m looking for &mdash; what do I do?</a></li>
     </ul>
+  </div>
+</section>
+
+<section class="band">
+  <div class="wrap">
+    <h2>BACnet points lists by manufacturer</h2>
+    <p>A free library of manufacturer BACnet points lists &mdash; object types, instance numbers, names, units and
+    read/write access for chillers, rooftops, VRF gateways, drives, valves and more, with CSV and EDE downloads.</p>
+    <ul class="linklist">
+      <li><a href="bacnet-points-lists/index.html">Browse BACnet points lists by manufacturer</a><span class="muted">Pick a manufacturer, then a model, and get its full BACnet object table.</span></li>
+    </ul>
+    <h3 class="grp">Popular lists</h3>
+    <ul class="linklist">
+      <li><a href="bacnet-points-lists/trane/symbio-700-precedent-axiom.html">Trane Symbio 700 (Precedent / Axiom) BACnet points list</a></li>
+      <li><a href="bacnet-points-lists/daikin-applied/microtech-iii-rooftop-self-contained.html">Daikin Applied MicroTech III rooftop BACnet points list</a></li>
+      <li><a href="bacnet-points-lists/carrier/rtu-open-v5.html">Carrier RTU Open v5 BACnet points list</a></li>
+      <li><a href="bacnet-points-lists/belimo/energy-valve-v4.html">Belimo Energy Valve V4 BACnet points list</a></li>
+      <li><a href="bacnet-points-lists/danfoss/vlt-hvac-drive-fc-102-mca-125.html">Danfoss VLT HVAC Drive FC 102 BACnet points list</a></li>
+      <li><a href="bacnet-points-lists/abb/ach580.html">ABB ACH580 BACnet points list</a></li>
+      <li><a href="bacnet-points-lists/mitsubishi-electric/bac-hd150.html">Mitsubishi Electric BAC-HD150 BACnet points list</a></li>
+      <li><a href="bacnet-points-lists/lochinvar/crest.html">Lochinvar Crest boiler BACnet points list</a></li>
+    </ul>
+    <h3 class="grp">By equipment type</h3>
+    <p><a href="bacnet-points-lists/equipment/chillers/index.html">Chillers</a> &middot;
+    <a href="bacnet-points-lists/equipment/rooftop-ahu-doas/index.html">Rooftop units, AHUs &amp; DOAS</a> &middot;
+    <a href="bacnet-points-lists/equipment/vrf-split-ac/index.html">VRF &amp; split AC</a> &middot;
+    <a href="bacnet-points-lists/equipment/heat-pumps/index.html">Heat pumps</a> &middot;
+    <a href="bacnet-points-lists/equipment/boilers/index.html">Boilers</a> &middot;
+    <a href="bacnet-points-lists/equipment/humidifiers/index.html">Humidifiers</a> &middot;
+    <a href="bacnet-points-lists/equipment/cooling-towers/index.html">Cooling towers</a> &middot;
+    <a href="bacnet-points-lists/equipment/drives-pumps/index.html">VFDs &amp; pumps</a> &middot;
+    <a href="bacnet-points-lists/equipment/valves-actuators/index.html">Valves &amp; actuators</a> &middot;
+    <a href="bacnet-points-lists/equipment/terminal-units/index.html">VAV &amp; fan coils</a></p>
   </div>
 </section>
 
@@ -3768,6 +3808,9 @@ def main(ping=False):
             ),
         )
 
+    # BACnet points-list library (points_library.py, data in points_data/).
+    lib_paths, lib_llms = points_library.build(write)
+
     # The homepage lists guides by topic, not in the order they were written.
     by_slug = {g["slug"]: g for g in GUIDES}
     placed = set()
@@ -3809,7 +3852,8 @@ def main(ping=False):
     # sitemap and noindexed until the PC version is announced on the site.
     urls = (["index.html", "privacy.html", "terms.html"]
             + [t["slug"] + ".html" for t in TOOLS]
-            + [g["slug"] + ".html" for g in GUIDES])
+            + [g["slug"] + ".html" for g in GUIDES]
+            + lib_paths)
     sm = ['<?xml version="1.0" encoding="UTF-8"?>',
           '<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">']
     for u in urls:
@@ -3883,6 +3927,8 @@ def main(ping=False):
     llms.append("## Guides")
     for g in GUIDES:
         llms.append("- %s: %s/%s" % (html_module.unescape(g["question"]), BASE_URL, g["slug"]))
+    llms.extend(lib_llms)
+    llms.append("")
     llms.append("- Easy BACnet home: %s/" % BASE_URL)
     llms.append("- Privacy policy: %s/privacy" % BASE_URL)
     write("llms.txt", "\n".join(llms) + "\n")

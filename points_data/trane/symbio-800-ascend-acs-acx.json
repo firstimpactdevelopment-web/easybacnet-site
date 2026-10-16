@@ -1,0 +1,3678 @@
+{
+  "manufacturer": "Trane",
+  "manufacturer_slug": "trane",
+  "model": "Symbio 800 Ascend ACS / ACX",
+  "model_slug": "symbio-800-ascend-acs-acx",
+  "aliases": [
+    "Ascend ACS",
+    "Ascend ACX",
+    "Ascend air-cooled chiller",
+    "Symbio 800 Ascend",
+    "BAS-PTS011"
+  ],
+  "equipment_type": "Air-cooled chiller controller",
+  "applies_to": "Trane Ascend model ACS and ACX air-cooled scroll chillers with Symbio 800 controls.",
+  "summary": "Ascend ACS/ACX chillers expose about 400 BACnet objects through the Symbio 800. Status values are AI/BI/MI, and the BAS writes a small set of AV/BV/MV objects for chilled and hot water setpoints, demand limit, mode, circuit lockouts and auto/stop. Most binary inputs are individual diagnostic flags.",
+  "bacnet_transport": [
+    "BACnet IP",
+    "BACnet MS/TP"
+  ],
+  "firmware": null,
+  "default_device_instance": null,
+  "access_inferred": true,
+  "notes": [
+    "Only the points that apply to the unit's factory configuration show up; the doc lists every possible point.",
+    "The chiller tables have no read/write column: AI/BI/MI are read-only, and AV/BV/MV are the BAS command and setpoint objects, marked writable here per Trane's naming convention.",
+    "Units are listed as a quantity (Temperature, Pressure, Percent...); the actual engineering unit follows the controller's display-unit setting.",
+    "Binary inputs named 'Diagnostic: ...' are individual alarm flags (0/false = normal, 1/true = in alarm).",
+    "The Symbio 800 integration guide (BAS-SVP083) covers BACnet IP and BACnet MS/TP; the rotary address sets the MS/TP MAC and a default Device ID of 1-127, and a software Device ID can be set instead.",
+    "The same document also maps every object to a Modbus register; only the BACnet side is listed here."
+  ],
+  "source": {
+    "title": "Symbio 800 Integration Points List BACnet - Ascend Models ACS and ACX",
+    "doc_number": "BAS-PTS011A-EN",
+    "revision_date": "11/15/2024",
+    "url": "https://elibrary.tranetechnologies.com/public/commercial-hvac/Literature/Points%20List/BAS-PTS011A-EN_11152024.pdf"
+  },
+  "integration": {
+    "summary": "Put the chiller on the network (BACnet MS/TP or IP), then write the auto/stop command, chilled water setpoint, demand limit and mode. Read back running state, leaving water temperature and capacity. Check the local-setpoint flag to confirm the BAS setpoints are actually in use. Most remaining objects are read-only status and per-alarm diagnostic flags.",
+    "minimum_points": [
+      {
+        "ref": "BV 10107",
+        "name": "BAS Chiller Auto Stop Command",
+        "why": "BMS auto/stop (enable) command"
+      },
+      {
+        "ref": "AV 10100",
+        "name": "Chilled Water Setpoint",
+        "why": "Chilled water setpoint from the BMS"
+      },
+      {
+        "ref": "AV 10101",
+        "name": "Demand Limit Setpoint",
+        "why": "Capacity (demand) limit from the BMS"
+      },
+      {
+        "ref": "MV 10100",
+        "name": "Chiller Mode Command BAS",
+        "why": "Cool/heat/ice/free-cooling mode command"
+      },
+      {
+        "ref": "BI 10110",
+        "name": "Chiller Running State",
+        "why": "Chiller on/off status"
+      },
+      {
+        "ref": "BI 10104",
+        "name": "Local Setpoint Control",
+        "why": "Shows if local setpoints override BAS setpoints"
+      },
+      {
+        "ref": "MI 10102",
+        "name": "Chiller Setpoint Source",
+        "why": "Which setpoint source is active (BAS/External/Front Panel)"
+      },
+      {
+        "ref": "AI 10101",
+        "name": "Evaporator Leaving Water Temperature",
+        "why": "Leaving chilled water temperature"
+      },
+      {
+        "ref": "AI 10116",
+        "name": "Actual Running Capacity",
+        "why": "Actual running capacity in percent"
+      }
+    ],
+    "enable": "BV 10107 BAS Chiller Auto Stop Command (0 = Stop, 1 = Auto) is the BMS auto/stop; with it at Auto the chiller runs when its own run conditions are met. BI 10130 External Auto Stop reports the hardwired external auto/stop input. The documents don't say how the two combine or how to hand setpoint control to the BAS; BI 10104 Local Setpoint Control shows when the chiller is using local setpoints instead of BAS setpoints, and MI 10102 Chiller Setpoint Source shows BAS, External or Front Panel.",
+    "heartbeat": null,
+    "remote_sensors": null,
+    "setup": [
+      "With no protocol specified at order, the controller ships as BACnet MS/TP at 76,800 bps with the rotary address at 000, and MS/TP is disabled at 000. Set a rotary address of 001-127 to bring it online.",
+      "The rotary address sets the MS/TP MAC and the Device ID and takes effect without a power cycle. A software Device ID (1-4194302) can be set in the web UI, Tracer SC+ or Tracer TU.",
+      "The web UI is reached only over USB at http://198.80.18.1/; the Ethernet ports do not serve it.",
+      "BACnet IP uses Ethernet port 1 (or the optional USB Wi-Fi adapter); the default UDP port is 47808. Enable BBMD only if this is the only BACnet IP device on the subnet, then fill in the BDT.",
+      "MS/TP wiring lands on the P1 link; P2 and P3 are for factory devices only, and Ethernet port 2 is only for the touch-screen display."
+    ],
+    "gotchas": [
+      "Communicated units (I-P or SI) are fixed at the factory; changing them in the field needs a Trane representative. Web UI display units do not change the BACnet values.",
+      "Points that don't apply to the unit's configuration are absent, and a technician can 'recycle' (remove) factory points from the interface, so a missing object may have been recycled.",
+      "The chiller lists have no read/write column; writability of the AV/BV/MV objects is inferred from Trane's naming convention.",
+      "Diagnostic BIs are one object per alarm condition and only exist for the options fitted."
+    ]
+  },
+  "points": [
+    {
+      "type": "AI",
+      "instance": 10100,
+      "name": "Active Cool/Heat Setpoint Temperature",
+      "description": "",
+      "units": "Temperature",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AI",
+      "instance": 10101,
+      "name": "Evaporator Leaving Water Temperature",
+      "description": "",
+      "units": "Temperature",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AI",
+      "instance": 10102,
+      "name": "Evaporator Entering Water Temperature",
+      "description": "",
+      "units": "Temperature",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AI",
+      "instance": 10103,
+      "name": "Active Demand Limit Setpoint",
+      "description": "",
+      "units": "Percentage",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AI",
+      "instance": 10104,
+      "name": "Unit Power Consumption",
+      "description": "",
+      "units": "Power, Electrical",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AI",
+      "instance": 10105,
+      "name": "Outdoor Air Temperature",
+      "description": "",
+      "units": "Temperature",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AI",
+      "instance": 10106,
+      "name": "Evaporator Refrigerant Pressure Circuit 1",
+      "description": "",
+      "units": "Pressure, Fluidic",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AI",
+      "instance": 10107,
+      "name": "Condenser Refrigerant Pressure Circuit 1",
+      "description": "",
+      "units": "Pressure, Fluidic",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AI",
+      "instance": 10108,
+      "name": "Differential Refrigerant Pressure Circuit 1",
+      "description": "",
+      "units": "Pressure, Fluidic",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AI",
+      "instance": 10109,
+      "name": "Evaporator Saturated Rfgt Temp Circuit 1",
+      "description": "",
+      "units": "Temperature",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AI",
+      "instance": 10110,
+      "name": "Condenser Saturated Rfgt Temp Circuit 1",
+      "description": "",
+      "units": "Temperature",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AI",
+      "instance": 10111,
+      "name": "Evaporator Refrigerant Pressure Circuit 2",
+      "description": "",
+      "units": "Pressure, Fluidic",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AI",
+      "instance": 10112,
+      "name": "Condenser Refrigerant Pressure Circuit 2",
+      "description": "",
+      "units": "Pressure, Fluidic",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AI",
+      "instance": 10113,
+      "name": "Differential Refrigerant Pressure Circuit 2",
+      "description": "",
+      "units": "Pressure, Fluidic",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AI",
+      "instance": 10114,
+      "name": "Evaporator Saturated Rfgt Temp Circuit 2",
+      "description": "",
+      "units": "Temperature",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AI",
+      "instance": 10115,
+      "name": "Condenser Saturated Rfgt Temp Circuit 2",
+      "description": "",
+      "units": "Temperature",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AI",
+      "instance": 10116,
+      "name": "Actual Running Capacity",
+      "description": "",
+      "units": "Percentage",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AI",
+      "instance": 10117,
+      "name": "Active Heat Recovery Setpoint",
+      "description": "",
+      "units": "Temperature",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AI",
+      "instance": 10118,
+      "name": "Active Hot Water Setpoint",
+      "description": "",
+      "units": "Temperature",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AI",
+      "instance": 10119,
+      "name": "Air Flow Circuit 1",
+      "description": "",
+      "units": "Percentage",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AI",
+      "instance": 10120,
+      "name": "Air Flow Circuit 2",
+      "description": "",
+      "units": "Percentage",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AI",
+      "instance": 10121,
+      "name": "Starts Cprsr1A",
+      "description": "",
+      "units": "",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AI",
+      "instance": 10122,
+      "name": "Running Time Cprsr1A",
+      "description": "",
+      "units": "",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AI",
+      "instance": 10123,
+      "name": "Starts Cprsr2A",
+      "description": "",
+      "units": "",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AI",
+      "instance": 10124,
+      "name": "Running Time Cprsr2A",
+      "description": "",
+      "units": "",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AI",
+      "instance": 10125,
+      "name": "Heat Recovery Entering Water Temp",
+      "description": "",
+      "units": "Temperature",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AI",
+      "instance": 10126,
+      "name": "Heat Recovery Leaving Water Temp",
+      "description": "",
+      "units": "Temperature",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AI",
+      "instance": 10127,
+      "name": "Chiller Design Capacity",
+      "description": "",
+      "units": "Power, Cooling",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AI",
+      "instance": 10128,
+      "name": "Starts Cprsr1B",
+      "description": "",
+      "units": "",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AI",
+      "instance": 10129,
+      "name": "Running Time Cprsr1B",
+      "description": "",
+      "units": "",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AI",
+      "instance": 10130,
+      "name": "Starts Cprsr2B",
+      "description": "",
+      "units": "",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AI",
+      "instance": 10131,
+      "name": "Running Time Cprsr2B",
+      "description": "",
+      "units": "",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AI",
+      "instance": 10132,
+      "name": "Number Of Circuits",
+      "description": "",
+      "units": "",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AI",
+      "instance": 10133,
+      "name": "Number of Compressors for Circuit 1",
+      "description": "",
+      "units": "",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AI",
+      "instance": 10134,
+      "name": "Number of Compressors for Circuit 2",
+      "description": "",
+      "units": "",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AI",
+      "instance": 10135,
+      "name": "Free Cooling Capacity",
+      "description": "",
+      "units": "Percentage",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AI",
+      "instance": 10136,
+      "name": "Free Cooling Entering Water Temperature",
+      "description": "",
+      "units": "Temperature",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AI",
+      "instance": 10137,
+      "name": "Free Cooling Entering Glycol Temperature",
+      "description": "",
+      "units": "Temperature",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AI",
+      "instance": 10138,
+      "name": "Free Cooling Leaving Glycol Temperature",
+      "description": "",
+      "units": "Temperature",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AI",
+      "instance": 10139,
+      "name": "Energy Consumption NonReset",
+      "description": "",
+      "units": "Power, Electrical",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AI",
+      "instance": 10140,
+      "name": "Energy Consumption Resettable",
+      "description": "",
+      "units": "Power, Electrical",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AI",
+      "instance": 10141,
+      "name": "Starts Cprsr1C",
+      "description": "",
+      "units": "",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AI",
+      "instance": 10142,
+      "name": "Running Time Cprsr1C",
+      "description": "",
+      "units": "",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AI",
+      "instance": 10143,
+      "name": "Starts Cprsr2C",
+      "description": "",
+      "units": "",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AI",
+      "instance": 10144,
+      "name": "Running Time Cprsr2C",
+      "description": "",
+      "units": "",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AI",
+      "instance": 10145,
+      "name": "Estimated Discharge Temperature Circuit 1",
+      "description": "",
+      "units": "Temperature",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AI",
+      "instance": 10146,
+      "name": "Estimated Discharge Temperature Circuit 2",
+      "description": "",
+      "units": "Temperature",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AI",
+      "instance": 10147,
+      "name": "Compressor Discharge Temperature Circuit 1",
+      "description": "",
+      "units": "Temperature",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AI",
+      "instance": 10148,
+      "name": "Compressor Discharge Temperature Circuit 2",
+      "description": "",
+      "units": "Temperature",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AI",
+      "instance": 10149,
+      "name": "Free Cooling Glycol Pressure",
+      "description": "",
+      "units": "Pressure, Fluidic",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AI",
+      "instance": 10150,
+      "name": "Last Logged Diagnostic",
+      "description": "",
+      "units": "",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AI",
+      "instance": 10151,
+      "name": "Unit Load Command",
+      "description": "",
+      "units": "Percentage",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AI",
+      "instance": 10152,
+      "name": "Average Line Current",
+      "description": "",
+      "units": "Current",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AI",
+      "instance": 10153,
+      "name": "Average Line Voltage",
+      "description": "",
+      "units": "Voltage",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AI",
+      "instance": 10154,
+      "name": "Current L1",
+      "description": "",
+      "units": "Current",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AI",
+      "instance": 10155,
+      "name": "Current L2",
+      "description": "",
+      "units": "Current",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AI",
+      "instance": 10156,
+      "name": "Current L3",
+      "description": "",
+      "units": "Current",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AI",
+      "instance": 10157,
+      "name": "Voltage L1-L2",
+      "description": "",
+      "units": "Voltage",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AI",
+      "instance": 10158,
+      "name": "Voltage L2-L3",
+      "description": "",
+      "units": "Voltage",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AI",
+      "instance": 10159,
+      "name": "Voltage L1-L3",
+      "description": "",
+      "units": "Voltage",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AI",
+      "instance": 10160,
+      "name": "Total Real Power",
+      "description": "",
+      "units": "Power, Electrical",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AI",
+      "instance": 10161,
+      "name": "Line Frequency",
+      "description": "",
+      "units": "",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AI",
+      "instance": 10162,
+      "name": "Power Factor",
+      "description": "",
+      "units": "",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AI",
+      "instance": 10163,
+      "name": "Heat Recovery Valve Position",
+      "description": "",
+      "units": "Percentage",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AI",
+      "instance": 10164,
+      "name": "Evaporator Refrigerant Absolute Pressure Circuit 1",
+      "description": "",
+      "units": "Pressure, Fluidic",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AI",
+      "instance": 10165,
+      "name": "Condenser Refrigerant Absolute Pressure Circuit 1",
+      "description": "",
+      "units": "Pressure, Fluidic",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AI",
+      "instance": 10166,
+      "name": "Evaporator Refrigerant Absolute Pressure Circuit 2",
+      "description": "",
+      "units": "Pressure, Fluidic",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AI",
+      "instance": 10167,
+      "name": "Condenser Refrigerant Absolute Pressure Circuit 2",
+      "description": "",
+      "units": "Pressure, Fluidic",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AI",
+      "instance": 10168,
+      "name": "Free Cooling Glycol Absolute Pressure",
+      "description": "",
+      "units": "Pressure, Fluidic",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AI",
+      "instance": 10169,
+      "name": "Supplemental Heater Status",
+      "description": "",
+      "units": "Percentage",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AI",
+      "instance": 10170,
+      "name": "Evaporator Approach Temperature Circuit 1 (Cooling Mode Only)",
+      "description": "",
+      "units": "Temperature",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AI",
+      "instance": 10171,
+      "name": "Evaporator Approach Temperature Circuit 2 (Cooling Mode Only)",
+      "description": "",
+      "units": "Temperature",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AI",
+      "instance": 10172,
+      "name": "Condenser Approach Temperature Circuit 1 (Heating Mode Only)",
+      "description": "",
+      "units": "Temperature",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AI",
+      "instance": 10173,
+      "name": "Condenser Approach Temperature Circuit 2 (Heating Mode Only)",
+      "description": "",
+      "units": "Temperature",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AI",
+      "instance": 10174,
+      "name": "Active Chilled Water Setpoint",
+      "description": "",
+      "units": "Temperature",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AI",
+      "instance": 10175,
+      "name": "Chilled Water Setpoint Status",
+      "description": "",
+      "units": "Temperature",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AI",
+      "instance": 10176,
+      "name": "Hot Water Setpoint Status",
+      "description": "",
+      "units": "Temperature",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AI",
+      "instance": 10177,
+      "name": "Demand Limit Setpoint Status",
+      "description": "",
+      "units": "Percentage",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AI",
+      "instance": 10178,
+      "name": "Active Demand Limit Setpoint",
+      "description": "",
+      "units": "Percentage",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 10100,
+      "name": "Chilled Water Setpoint",
+      "description": "",
+      "units": "Temperature",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 10101,
+      "name": "Demand Limit Setpoint",
+      "description": "",
+      "units": "Percentage",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 10102,
+      "name": "BAS Hot Water Setpoint",
+      "description": "",
+      "units": "Temperature",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 10103,
+      "name": "BAS Heat Recovery Setpoint",
+      "description": "",
+      "units": "Temperature",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 10104,
+      "name": "Evaporator Water Pump Speed Setpoint",
+      "description": "",
+      "units": "Percentage",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "BI",
+      "instance": 10100,
+      "name": "Limit Mode Relay Status",
+      "description": "",
+      "units": "",
+      "access": "R",
+      "states": "0 = Auto, 1 = On"
+    },
+    {
+      "type": "BI",
+      "instance": 10101,
+      "name": "Emergency Stop",
+      "description": "",
+      "units": "",
+      "access": "R",
+      "states": "0 = Auto, 1 = Emergency Stop - Manual Reset Required"
+    },
+    {
+      "type": "BI",
+      "instance": 10102,
+      "name": "Manual Override Exists",
+      "description": "",
+      "units": "",
+      "access": "R",
+      "states": "0 = Off, 1 = On"
+    },
+    {
+      "type": "BI",
+      "instance": 10103,
+      "name": "Run Enable",
+      "description": "",
+      "units": "",
+      "access": "R",
+      "states": "0 = Run Not Enabled, 1 = Run Enabled"
+    },
+    {
+      "type": "BI",
+      "instance": 10104,
+      "name": "Local Setpoint Control",
+      "description": "",
+      "units": "",
+      "access": "R",
+      "states": "0 = Remote control, 1 = Local control"
+    },
+    {
+      "type": "BI",
+      "instance": 10105,
+      "name": "Maximum Capacity Relay",
+      "description": "",
+      "units": "",
+      "access": "R",
+      "states": "0 = Off, 1 = On"
+    },
+    {
+      "type": "BI",
+      "instance": 10106,
+      "name": "Running Status Cprsr1A",
+      "description": "",
+      "units": "",
+      "access": "R",
+      "states": "0 = Off, 1 = Running"
+    },
+    {
+      "type": "BI",
+      "instance": 10107,
+      "name": "Running Status Cprsr2A",
+      "description": "",
+      "units": "",
+      "access": "R",
+      "states": "0 = Off, 1 = Running"
+    },
+    {
+      "type": "BI",
+      "instance": 10108,
+      "name": "Running Status Cprsr1B",
+      "description": "",
+      "units": "",
+      "access": "R",
+      "states": "0 = Off, 1 = Running"
+    },
+    {
+      "type": "BI",
+      "instance": 10109,
+      "name": "Running Status Cprsr2B",
+      "description": "",
+      "units": "",
+      "access": "R",
+      "states": "0 = Off, 1 = Running"
+    },
+    {
+      "type": "BI",
+      "instance": 10110,
+      "name": "Chiller Running State",
+      "description": "",
+      "units": "",
+      "access": "R",
+      "states": "0 = Off, 1 = On"
+    },
+    {
+      "type": "BI",
+      "instance": 10111,
+      "name": "Running Status Cprsr1C",
+      "description": "",
+      "units": "",
+      "access": "R",
+      "states": "0 = Off, 1 = Running"
+    },
+    {
+      "type": "BI",
+      "instance": 10112,
+      "name": "Running Status Cprsr2C",
+      "description": "",
+      "units": "",
+      "access": "R",
+      "states": "0 = Off, 1 = Running"
+    },
+    {
+      "type": "BI",
+      "instance": 10113,
+      "name": "Free Cooling Active",
+      "description": "",
+      "units": "",
+      "access": "R",
+      "states": "0 = Inactive, 1 = Active"
+    },
+    {
+      "type": "BI",
+      "instance": 10114,
+      "name": "Heat Recovery Active",
+      "description": "",
+      "units": "",
+      "access": "R",
+      "states": "0 = Inactive, 1 = Active"
+    },
+    {
+      "type": "BI",
+      "instance": 10115,
+      "name": "Front Panel Auto/Stop",
+      "description": "",
+      "units": "",
+      "access": "R",
+      "states": "0 = Stop, 1 = Auto"
+    },
+    {
+      "type": "BI",
+      "instance": 10116,
+      "name": "Circuit Manual Reset Indicator (CMR) Circuit 1",
+      "description": "",
+      "units": "",
+      "access": "R",
+      "states": "0 = Normal, 1 = In Alarm"
+    },
+    {
+      "type": "BI",
+      "instance": 10117,
+      "name": "Circuit Manual Reset Indicator (CMR) Circuit 2",
+      "description": "",
+      "units": "",
+      "access": "R",
+      "states": "0 = Normal, 1 = In Alarm"
+    },
+    {
+      "type": "BI",
+      "instance": 10118,
+      "name": "Circuit Auto Reset Indicator (CAR) Circuit 1",
+      "description": "",
+      "units": "",
+      "access": "R",
+      "states": "0 = Normal, 1 = In Alarm"
+    },
+    {
+      "type": "BI",
+      "instance": 10119,
+      "name": "Circuit Auto Reset Indicator (CAR) Circuit 2",
+      "description": "",
+      "units": "",
+      "access": "R",
+      "states": "0 = Normal, 1 = In Alarm"
+    },
+    {
+      "type": "BI",
+      "instance": 10120,
+      "name": "Evaporator Water Pump Command",
+      "description": "",
+      "units": "",
+      "access": "R",
+      "states": "0 = Normal, 1 = In Alarm"
+    },
+    {
+      "type": "BI",
+      "instance": 10121,
+      "name": "Evaporator Water Flow Status",
+      "description": "",
+      "units": "",
+      "access": "R",
+      "states": "0 = Normal, 1 = In Alarm"
+    },
+    {
+      "type": "BI",
+      "instance": 10122,
+      "name": "Diagnostic Present: Information",
+      "description": "",
+      "units": "",
+      "access": "R",
+      "states": "0 = Normal, 1 = In Alarm"
+    },
+    {
+      "type": "BI",
+      "instance": 10123,
+      "name": "Diagnostic Present: Advisory",
+      "description": "",
+      "units": "",
+      "access": "R",
+      "states": "0 = Normal, 1 = In Alarm"
+    },
+    {
+      "type": "BI",
+      "instance": 10124,
+      "name": "Diagnostic Present: Critical",
+      "description": "",
+      "units": "",
+      "access": "R",
+      "states": "0 = Normal, 1 = In Alarm"
+    },
+    {
+      "type": "BI",
+      "instance": 10125,
+      "name": "Diagnostic Present: Service Required",
+      "description": "",
+      "units": "",
+      "access": "R",
+      "states": "0 = Normal, 1 = In Alarm"
+    },
+    {
+      "type": "BI",
+      "instance": 10126,
+      "name": "Diagnostic Present",
+      "description": "",
+      "units": "",
+      "access": "R",
+      "states": "0 = Normal, 1 = In Alarm"
+    },
+    {
+      "type": "BI",
+      "instance": 10127,
+      "name": "Diagnostic Shutdown Present",
+      "description": "",
+      "units": "",
+      "access": "R",
+      "states": "0 = Normal, 1 = In Alarm"
+    },
+    {
+      "type": "BI",
+      "instance": 10128,
+      "name": "Diagnostic: Manual Reset Required",
+      "description": "",
+      "units": "",
+      "access": "R",
+      "states": "0 = Normal, 1 = In Alarm"
+    },
+    {
+      "type": "BI",
+      "instance": 10129,
+      "name": "Diagnostic: Local Manual Reset Required",
+      "description": "",
+      "units": "",
+      "access": "R",
+      "states": "0 = Normal, 1 = In Alarm"
+    },
+    {
+      "type": "BI",
+      "instance": 10130,
+      "name": "External Auto Stop",
+      "description": "",
+      "units": "",
+      "access": "R",
+      "states": "0 = Stop, 1 = Auto"
+    },
+    {
+      "type": "BI",
+      "instance": 10131,
+      "name": "Noise Reduction Request Active",
+      "description": "",
+      "units": "",
+      "access": "R",
+      "states": "0 = Off, 1 = On"
+    },
+    {
+      "type": "BI",
+      "instance": 10132,
+      "name": "Heat Recovery Request Active",
+      "description": "",
+      "units": "",
+      "access": "R",
+      "states": "0 = Off, 1 = On"
+    },
+    {
+      "type": "BI",
+      "instance": 10133,
+      "name": "Evaporator Water Pump Status",
+      "description": "",
+      "units": "",
+      "access": "R",
+      "states": "0 = Off, 1 = On"
+    },
+    {
+      "type": "BI",
+      "instance": 10134,
+      "name": "Circuit 1 Defrost Delay Status",
+      "description": "",
+      "units": "",
+      "access": "R",
+      "states": "0 = Off, 1 = On"
+    },
+    {
+      "type": "BI",
+      "instance": 10135,
+      "name": "Circuit 2 Defrost Delay Status",
+      "description": "",
+      "units": "",
+      "access": "R",
+      "states": "0 = Off, 1 = On"
+    },
+    {
+      "type": "BI",
+      "instance": 10136,
+      "name": "In Defrost",
+      "description": "",
+      "units": "",
+      "access": "R",
+      "states": "0 = Not in Defrost, 1 = Defrost"
+    },
+    {
+      "type": "BI",
+      "instance": 10137,
+      "name": "Circuit 1 Defrost Status",
+      "description": "",
+      "units": "",
+      "access": "R",
+      "states": "0 = Inactive, 1 = Active"
+    },
+    {
+      "type": "BI",
+      "instance": 10138,
+      "name": "Circuit 2 Defrost Status",
+      "description": "",
+      "units": "",
+      "access": "R",
+      "states": "0 = Inactive, 1 = Active"
+    },
+    {
+      "type": "BI",
+      "instance": 10139,
+      "name": "Circuit 1 Running Status",
+      "description": "",
+      "units": "",
+      "access": "R",
+      "states": "0 = Off, 1 = On"
+    },
+    {
+      "type": "BI",
+      "instance": 10140,
+      "name": "Circuit 2 Running Status",
+      "description": "",
+      "units": "",
+      "access": "R",
+      "states": "0 = Off, 1 = On"
+    },
+    {
+      "type": "BI",
+      "instance": 10141,
+      "name": "Low Ambient Lockout Status",
+      "description": "",
+      "units": "",
+      "access": "R",
+      "states": "0 = No Lockout, 1 = Lockout Present"
+    },
+    {
+      "type": "BI",
+      "instance": 10142,
+      "name": "Circuit 1 Lockout Front Panel",
+      "description": "",
+      "units": "",
+      "access": "R",
+      "states": "0 = Normal, 1 = Locked Out"
+    },
+    {
+      "type": "BI",
+      "instance": 10143,
+      "name": "Circuit 2 Lockout Front Panel",
+      "description": "",
+      "units": "",
+      "access": "R",
+      "states": "0 = Normal, 1 = Locked Out"
+    },
+    {
+      "type": "BI",
+      "instance": 10144,
+      "name": "Circuit 1 Lockout External",
+      "description": "",
+      "units": "",
+      "access": "R",
+      "states": "0 = Normal, 1 = Locked Out"
+    },
+    {
+      "type": "BI",
+      "instance": 10145,
+      "name": "Circuit 2 Lockout External",
+      "description": "",
+      "units": "",
+      "access": "R",
+      "states": "0 = Normal, 1 = Locked Out"
+    },
+    {
+      "type": "BI",
+      "instance": 10146,
+      "name": "Circuit 1 Lockout Active",
+      "description": "",
+      "units": "",
+      "access": "R",
+      "states": "0 = Normal, 1 = Locked Out"
+    },
+    {
+      "type": "BI",
+      "instance": 10147,
+      "name": "Circuit 2 Lockout Active",
+      "description": "",
+      "units": "",
+      "access": "R",
+      "states": "0 = Normal, 1 = Locked Out"
+    },
+    {
+      "type": "BI",
+      "instance": 11000,
+      "name": "Comm Loss: Percent Capacity Output",
+      "description": "",
+      "units": "",
+      "access": "R",
+      "states": "0 = Normal, 1 = In Alarm"
+    },
+    {
+      "type": "BI",
+      "instance": 11001,
+      "name": "Comm Loss: Supplemental Heater Relay 1",
+      "description": "",
+      "units": "",
+      "access": "R",
+      "states": "0 = Normal, 1 = In Alarm"
+    },
+    {
+      "type": "BI",
+      "instance": 11002,
+      "name": "Comm Loss: Supplemental Heater Relay 2",
+      "description": "",
+      "units": "",
+      "access": "R",
+      "states": "0 = Normal, 1 = In Alarm"
+    },
+    {
+      "type": "BI",
+      "instance": 11003,
+      "name": "Comm Loss: Supplemental Heater Relay 3",
+      "description": "",
+      "units": "",
+      "access": "R",
+      "states": "0 = Normal, 1 = In Alarm"
+    },
+    {
+      "type": "BI",
+      "instance": 11004,
+      "name": "Comm Loss: Supplemental Heater Relay 4",
+      "description": "",
+      "units": "",
+      "access": "R",
+      "states": "0 = Normal, 1 = In Alarm"
+    },
+    {
+      "type": "BI",
+      "instance": 11005,
+      "name": "Comm Loss: Energy Meter",
+      "description": "",
+      "units": "",
+      "access": "R",
+      "states": "0 = Normal, 1 = In Alarm"
+    },
+    {
+      "type": "BI",
+      "instance": 11006,
+      "name": "Comm Loss: Outdoor Air Temperature",
+      "description": "",
+      "units": "",
+      "access": "R",
+      "states": "0 = Normal, 1 = In Alarm"
+    },
+    {
+      "type": "BI",
+      "instance": 11007,
+      "name": "Comm Loss: Phase Protection Fault Input",
+      "description": "",
+      "units": "",
+      "access": "R",
+      "states": "0 = Normal, 1 = In Alarm"
+    },
+    {
+      "type": "BI",
+      "instance": 11008,
+      "name": "Diagnostic: Energy Meter Write Command Failure",
+      "description": "",
+      "units": "",
+      "access": "R",
+      "states": "0 = Normal, 1 = In Alarm"
+    },
+    {
+      "type": "BI",
+      "instance": 11009,
+      "name": "Diagnostic: Outdoor Air Temperature Sensor",
+      "description": "",
+      "units": "",
+      "access": "R",
+      "states": "0 = Normal, 1 = In Alarm"
+    },
+    {
+      "type": "BI",
+      "instance": 11010,
+      "name": "Diagnostic: Phase Protection Fault",
+      "description": "",
+      "units": "",
+      "access": "R",
+      "states": "0 = Normal, 1 = In Alarm"
+    },
+    {
+      "type": "BI",
+      "instance": 11011,
+      "name": "Diagnostic: Software Error 1003: Call Trane Service",
+      "description": "",
+      "units": "",
+      "access": "R",
+      "states": "0 = Normal, 1 = In Alarm"
+    },
+    {
+      "type": "BI",
+      "instance": 11012,
+      "name": "Diagnostic: Pumpdown Terminated By Time - Circuit 2",
+      "description": "",
+      "units": "",
+      "access": "R",
+      "states": "0 = Normal, 1 = In Alarm"
+    },
+    {
+      "type": "BI",
+      "instance": 11013,
+      "name": "Diagnostic: Pumpdown Terminated By Time - Circuit 1",
+      "description": "",
+      "units": "",
+      "access": "R",
+      "states": "0 = Normal, 1 = In Alarm"
+    },
+    {
+      "type": "BI",
+      "instance": 11014,
+      "name": "Comm Loss: Discharge Pressure Transducer - Circuit 2",
+      "description": "",
+      "units": "",
+      "access": "R",
+      "states": "0 = Normal, 1 = In Alarm"
+    },
+    {
+      "type": "BI",
+      "instance": 11015,
+      "name": "Comm Loss: Discharge Pressure Transducer - Circuit 1",
+      "description": "",
+      "units": "",
+      "access": "R",
+      "states": "0 = Normal, 1 = In Alarm"
+    },
+    {
+      "type": "BI",
+      "instance": 11016,
+      "name": "Comm Loss: Discharge Temperature Sensor - Circuit 2",
+      "description": "",
+      "units": "",
+      "access": "R",
+      "states": "0 = Normal, 1 = In Alarm"
+    },
+    {
+      "type": "BI",
+      "instance": 11017,
+      "name": "Comm Loss: Discharge Temperature Sensor - Circuit 1",
+      "description": "",
+      "units": "",
+      "access": "R",
+      "states": "0 = Normal, 1 = In Alarm"
+    },
+    {
+      "type": "BI",
+      "instance": 11018,
+      "name": "Comm Loss: External Circuit 2 Lockout",
+      "description": "",
+      "units": "",
+      "access": "R",
+      "states": "0 = Normal, 1 = In Alarm"
+    },
+    {
+      "type": "BI",
+      "instance": 11019,
+      "name": "Comm Loss: External Circuit 1 Lockout",
+      "description": "",
+      "units": "",
+      "access": "R",
+      "states": "0 = Normal, 1 = In Alarm"
+    },
+    {
+      "type": "BI",
+      "instance": 11020,
+      "name": "Comm Loss: Reversing Valve - Circuit 1",
+      "description": "",
+      "units": "",
+      "access": "R",
+      "states": "0 = Normal, 1 = In Alarm"
+    },
+    {
+      "type": "BI",
+      "instance": 11021,
+      "name": "Comm Loss: Reversing Valve - Circuit 2",
+      "description": "",
+      "units": "",
+      "access": "R",
+      "states": "0 = Normal, 1 = In Alarm"
+    },
+    {
+      "type": "BI",
+      "instance": 11022,
+      "name": "Comm Loss: Suction Pressure Transducer - Circuit 2",
+      "description": "",
+      "units": "",
+      "access": "R",
+      "states": "0 = Normal, 1 = In Alarm"
+    },
+    {
+      "type": "BI",
+      "instance": 11023,
+      "name": "Comm Loss: Suction Pressure Transducer - Circuit 1",
+      "description": "",
+      "units": "",
+      "access": "R",
+      "states": "0 = Normal, 1 = In Alarm"
+    },
+    {
+      "type": "BI",
+      "instance": 11024,
+      "name": "Comm Loss: Suction Temperature - Circuit 2",
+      "description": "",
+      "units": "",
+      "access": "R",
+      "states": "0 = Normal, 1 = In Alarm"
+    },
+    {
+      "type": "BI",
+      "instance": 11025,
+      "name": "Comm Loss: Suction Temperature - Circuit 1",
+      "description": "",
+      "units": "",
+      "access": "R",
+      "states": "0 = Normal, 1 = In Alarm"
+    },
+    {
+      "type": "BI",
+      "instance": 11026,
+      "name": "Diagnostic: Discharge Pressure Transducer - Circuit 2",
+      "description": "",
+      "units": "",
+      "access": "R",
+      "states": "0 = Normal, 1 = In Alarm"
+    },
+    {
+      "type": "BI",
+      "instance": 11027,
+      "name": "Diagnostic: Discharge Pressure Transducer - Circuit 1",
+      "description": "",
+      "units": "",
+      "access": "R",
+      "states": "0 = Normal, 1 = In Alarm"
+    },
+    {
+      "type": "BI",
+      "instance": 11028,
+      "name": "Diagnostic: Discharge Temperature Sensor - Circuit 1",
+      "description": "",
+      "units": "",
+      "access": "R",
+      "states": "0 = Normal, 1 = In Alarm"
+    },
+    {
+      "type": "BI",
+      "instance": 11029,
+      "name": "Diagnostic: Discharge Temperature Sensor - Circuit 2",
+      "description": "",
+      "units": "",
+      "access": "R",
+      "states": "0 = Normal, 1 = In Alarm"
+    },
+    {
+      "type": "BI",
+      "instance": 11030,
+      "name": "Diagnostic: Suction Pressure Transducer - Circuit 2",
+      "description": "",
+      "units": "",
+      "access": "R",
+      "states": "0 = Normal, 1 = In Alarm"
+    },
+    {
+      "type": "BI",
+      "instance": 11031,
+      "name": "Diagnostic: Suction Pressure Transducer - Circuit 1",
+      "description": "",
+      "units": "",
+      "access": "R",
+      "states": "0 = Normal, 1 = In Alarm"
+    },
+    {
+      "type": "BI",
+      "instance": 11032,
+      "name": "Diagnostic: Suction Temperature Sensor - Circuit 2",
+      "description": "",
+      "units": "",
+      "access": "R",
+      "states": "0 = Normal, 1 = In Alarm"
+    },
+    {
+      "type": "BI",
+      "instance": 11033,
+      "name": "Diagnostic: Suction Temperature Sensor - Circuit 1",
+      "description": "",
+      "units": "",
+      "access": "R",
+      "states": "0 = Normal, 1 = In Alarm"
+    },
+    {
+      "type": "BI",
+      "instance": 11034,
+      "name": "Comm Loss: Sump Heater - Circuit 1",
+      "description": "",
+      "units": "",
+      "access": "R",
+      "states": "0 = Normal, 1 = In Alarm"
+    },
+    {
+      "type": "BI",
+      "instance": 11035,
+      "name": "Comm Loss: Sump Heater - Circuit 2",
+      "description": "",
+      "units": "",
+      "access": "R",
+      "states": "0 = Normal, 1 = In Alarm"
+    },
+    {
+      "type": "BI",
+      "instance": 11036,
+      "name": "Diagnostic: High Compressor Pressure Differential - Circuit 2",
+      "description": "",
+      "units": "",
+      "access": "R",
+      "states": "0 = Normal, 1 = In Alarm"
+    },
+    {
+      "type": "BI",
+      "instance": 11037,
+      "name": "Diagnostic: High Compressor Pressure Differential - Circuit 1",
+      "description": "",
+      "units": "",
+      "access": "R",
+      "states": "0 = Normal, 1 = In Alarm"
+    },
+    {
+      "type": "BI",
+      "instance": 11038,
+      "name": "Diagnostic: High Discharge Refrigerant Pressure - Circuit 2",
+      "description": "",
+      "units": "",
+      "access": "R",
+      "states": "0 = Normal, 1 = In Alarm"
+    },
+    {
+      "type": "BI",
+      "instance": 11039,
+      "name": "Diagnostic: High Discharge Refrigerant Pressure - Circuit 1",
+      "description": "",
+      "units": "",
+      "access": "R",
+      "states": "0 = Normal, 1 = In Alarm"
+    },
+    {
+      "type": "BI",
+      "instance": 11040,
+      "name": "Diagnostic: High Discharge Temperature - Circuit 2",
+      "description": "",
+      "units": "",
+      "access": "R",
+      "states": "0 = Normal, 1 = In Alarm"
+    },
+    {
+      "type": "BI",
+      "instance": 11041,
+      "name": "Diagnostic: High Discharge Temperature - Circuit 1",
+      "description": "",
+      "units": "",
+      "access": "R",
+      "states": "0 = Normal, 1 = In Alarm"
+    },
+    {
+      "type": "BI",
+      "instance": 11042,
+      "name": "Diagnostic: High Discharge Temperature Lockout - Circuit 2",
+      "description": "",
+      "units": "",
+      "access": "R",
+      "states": "0 = Normal, 1 = In Alarm"
+    },
+    {
+      "type": "BI",
+      "instance": 11043,
+      "name": "Diagnostic: High Discharge Temperature Lockout - Circuit 1",
+      "description": "",
+      "units": "",
+      "access": "R",
+      "states": "0 = Normal, 1 = In Alarm"
+    },
+    {
+      "type": "BI",
+      "instance": 11044,
+      "name": "Diagnostic: Loss of Charge - Circuit 2",
+      "description": "",
+      "units": "",
+      "access": "R",
+      "states": "0 = Normal, 1 = In Alarm"
+    },
+    {
+      "type": "BI",
+      "instance": 11045,
+      "name": "Diagnostic: Loss of Charge - Circuit 1",
+      "description": "",
+      "units": "",
+      "access": "R",
+      "states": "0 = Normal, 1 = In Alarm"
+    },
+    {
+      "type": "BI",
+      "instance": 11046,
+      "name": "Diagnostic: Low Discharge Saturated Temperature - Circuit 2",
+      "description": "",
+      "units": "",
+      "access": "R",
+      "states": "0 = Normal, 1 = In Alarm"
+    },
+    {
+      "type": "BI",
+      "instance": 11047,
+      "name": "Diagnostic: Low Discharge Saturated Temperature - Circuit 1",
+      "description": "",
+      "units": "",
+      "access": "R",
+      "states": "0 = Normal, 1 = In Alarm"
+    },
+    {
+      "type": "BI",
+      "instance": 11048,
+      "name": "Diagnostic: Low Refrigerant Pressure Ratio - Circuit 1",
+      "description": "",
+      "units": "",
+      "access": "R",
+      "states": "0 = Normal, 1 = In Alarm"
+    },
+    {
+      "type": "BI",
+      "instance": 11049,
+      "name": "Diagnostic: Low Refrigerant Pressure Ratio - Circuit 2",
+      "description": "",
+      "units": "",
+      "access": "R",
+      "states": "0 = Normal, 1 = In Alarm"
+    },
+    {
+      "type": "BI",
+      "instance": 11050,
+      "name": "Diagnostic: Low Refrigerant Temperature - Circuit 2",
+      "description": "",
+      "units": "",
+      "access": "R",
+      "states": "0 = Normal, 1 = In Alarm"
+    },
+    {
+      "type": "BI",
+      "instance": 11051,
+      "name": "Diagnostic: Low Refrigerant Temperature - Circuit 1",
+      "description": "",
+      "units": "",
+      "access": "R",
+      "states": "0 = Normal, 1 = In Alarm"
+    },
+    {
+      "type": "BI",
+      "instance": 11052,
+      "name": "Diagnostic: Low Suction Refrigerant Pressure - Circuit 2",
+      "description": "",
+      "units": "",
+      "access": "R",
+      "states": "0 = Normal, 1 = In Alarm"
+    },
+    {
+      "type": "BI",
+      "instance": 11053,
+      "name": "Diagnostic: Low Suction Refrigerant Pressure - Circuit 1",
+      "description": "",
+      "units": "",
+      "access": "R",
+      "states": "0 = Normal, 1 = In Alarm"
+    },
+    {
+      "type": "BI",
+      "instance": 11054,
+      "name": "Diagnostic: Low Suction Superheat - Circuit 2",
+      "description": "",
+      "units": "",
+      "access": "R",
+      "states": "0 = Normal, 1 = In Alarm"
+    },
+    {
+      "type": "BI",
+      "instance": 11055,
+      "name": "Diagnostic: Low Suction Superheat - Circuit 1",
+      "description": "",
+      "units": "",
+      "access": "R",
+      "states": "0 = Normal, 1 = In Alarm"
+    },
+    {
+      "type": "BI",
+      "instance": 11056,
+      "name": "Diagnostic: Suction Temperature Too High - Circuit 2",
+      "description": "",
+      "units": "",
+      "access": "R",
+      "states": "0 = Normal, 1 = In Alarm"
+    },
+    {
+      "type": "BI",
+      "instance": 11057,
+      "name": "Diagnostic: Suction Temperature Too High - Circuit 1",
+      "description": "",
+      "units": "",
+      "access": "R",
+      "states": "0 = Normal, 1 = In Alarm"
+    },
+    {
+      "type": "BI",
+      "instance": 11058,
+      "name": "Diagnostic: Very Low Suction Pressure - Circuit 1",
+      "description": "",
+      "units": "",
+      "access": "R",
+      "states": "0 = Normal, 1 = In Alarm"
+    },
+    {
+      "type": "BI",
+      "instance": 11059,
+      "name": "Diagnostic: Very Low Suction Pressure - Circuit 2",
+      "description": "",
+      "units": "",
+      "access": "R",
+      "states": "0 = Normal, 1 = In Alarm"
+    },
+    {
+      "type": "BI",
+      "instance": 11060,
+      "name": "Comm Loss: Compressor 1C Fault Input",
+      "description": "",
+      "units": "",
+      "access": "R",
+      "states": "0 = Normal, 1 = In Alarm"
+    },
+    {
+      "type": "BI",
+      "instance": 11061,
+      "name": "Comm Loss: Compressor 1B Fault Input",
+      "description": "",
+      "units": "",
+      "access": "R",
+      "states": "0 = Normal, 1 = In Alarm"
+    },
+    {
+      "type": "BI",
+      "instance": 11062,
+      "name": "Comm Loss: Compressor 1A Fault Input",
+      "description": "",
+      "units": "",
+      "access": "R",
+      "states": "0 = Normal, 1 = In Alarm"
+    },
+    {
+      "type": "BI",
+      "instance": 11063,
+      "name": "Diagnostic: Compressor 1A Fault",
+      "description": "",
+      "units": "",
+      "access": "R",
+      "states": "0 = Normal, 1 = In Alarm"
+    },
+    {
+      "type": "BI",
+      "instance": 11064,
+      "name": "Diagnostic: Compressor 1B Fault",
+      "description": "",
+      "units": "",
+      "access": "R",
+      "states": "0 = Normal, 1 = In Alarm"
+    },
+    {
+      "type": "BI",
+      "instance": 11065,
+      "name": "Diagnostic: Compressor 1C Fault",
+      "description": "",
+      "units": "",
+      "access": "R",
+      "states": "0 = Normal, 1 = In Alarm"
+    },
+    {
+      "type": "BI",
+      "instance": 11066,
+      "name": "Diagnostic: Compressor 1C Fault Lockout",
+      "description": "",
+      "units": "",
+      "access": "R",
+      "states": "0 = Normal, 1 = In Alarm"
+    },
+    {
+      "type": "BI",
+      "instance": 11067,
+      "name": "Diagnostic: Compressor 1B Fault Lockout",
+      "description": "",
+      "units": "",
+      "access": "R",
+      "states": "0 = Normal, 1 = In Alarm"
+    },
+    {
+      "type": "BI",
+      "instance": 11068,
+      "name": "Diagnostic: Compressor 1A Fault Lockout",
+      "description": "",
+      "units": "",
+      "access": "R",
+      "states": "0 = Normal, 1 = In Alarm"
+    },
+    {
+      "type": "BI",
+      "instance": 11069,
+      "name": "Diagnostic: Starts/Hours Modified 1A",
+      "description": "",
+      "units": "",
+      "access": "R",
+      "states": "0 = Normal, 1 = In Alarm"
+    },
+    {
+      "type": "BI",
+      "instance": 11070,
+      "name": "Diagnostic: Starts/Hours Modified 1B",
+      "description": "",
+      "units": "",
+      "access": "R",
+      "states": "0 = Normal, 1 = In Alarm"
+    },
+    {
+      "type": "BI",
+      "instance": 11071,
+      "name": "Diagnostic: Starts/Hours Modified 1C",
+      "description": "",
+      "units": "",
+      "access": "R",
+      "states": "0 = Normal, 1 = In Alarm"
+    },
+    {
+      "type": "BI",
+      "instance": 11072,
+      "name": "Comm Loss: Compressor 2C Fault Input",
+      "description": "",
+      "units": "",
+      "access": "R",
+      "states": "0 = Normal, 1 = In Alarm"
+    },
+    {
+      "type": "BI",
+      "instance": 11073,
+      "name": "Comm Loss: Compressor 2B Fault Input",
+      "description": "",
+      "units": "",
+      "access": "R",
+      "states": "0 = Normal, 1 = In Alarm"
+    },
+    {
+      "type": "BI",
+      "instance": 11074,
+      "name": "Comm Loss: Compressor 2A Fault Input",
+      "description": "",
+      "units": "",
+      "access": "R",
+      "states": "0 = Normal, 1 = In Alarm"
+    },
+    {
+      "type": "BI",
+      "instance": 11075,
+      "name": "Diagnostic: Compressor 2A Fault",
+      "description": "",
+      "units": "",
+      "access": "R",
+      "states": "0 = Normal, 1 = In Alarm"
+    },
+    {
+      "type": "BI",
+      "instance": 11076,
+      "name": "Diagnostic: Compressor 2B Fault",
+      "description": "",
+      "units": "",
+      "access": "R",
+      "states": "0 = Normal, 1 = In Alarm"
+    },
+    {
+      "type": "BI",
+      "instance": 11077,
+      "name": "Diagnostic: Compressor 2C Fault",
+      "description": "",
+      "units": "",
+      "access": "R",
+      "states": "0 = Normal, 1 = In Alarm"
+    },
+    {
+      "type": "BI",
+      "instance": 11078,
+      "name": "Diagnostic: Compressor 2C Fault Lockout",
+      "description": "",
+      "units": "",
+      "access": "R",
+      "states": "0 = Normal, 1 = In Alarm"
+    },
+    {
+      "type": "BI",
+      "instance": 11079,
+      "name": "Diagnostic: Compressor 2B Fault Lockout",
+      "description": "",
+      "units": "",
+      "access": "R",
+      "states": "0 = Normal, 1 = In Alarm"
+    },
+    {
+      "type": "BI",
+      "instance": 11080,
+      "name": "Diagnostic: Compressor 2A Fault Lockout",
+      "description": "",
+      "units": "",
+      "access": "R",
+      "states": "0 = Normal, 1 = In Alarm"
+    },
+    {
+      "type": "BI",
+      "instance": 11081,
+      "name": "Diagnostic: Starts/Hours Modified 2B",
+      "description": "",
+      "units": "",
+      "access": "R",
+      "states": "0 = Normal, 1 = In Alarm"
+    },
+    {
+      "type": "BI",
+      "instance": 11082,
+      "name": "Diagnostic: Starts/Hours Modified 2C",
+      "description": "",
+      "units": "",
+      "access": "R",
+      "states": "0 = Normal, 1 = In Alarm"
+    },
+    {
+      "type": "BI",
+      "instance": 11083,
+      "name": "Diagnostic: Starts/Hours Modified 2A",
+      "description": "",
+      "units": "",
+      "access": "R",
+      "states": "0 = Normal, 1 = In Alarm"
+    },
+    {
+      "type": "BI",
+      "instance": 11084,
+      "name": "Comm Loss: High Pressure Cutout Switch - Circuit 2",
+      "description": "",
+      "units": "",
+      "access": "R",
+      "states": "0 = Normal, 1 = In Alarm"
+    },
+    {
+      "type": "BI",
+      "instance": 11085,
+      "name": "Comm Loss: High Pressure Cutout Switch - Circuit 1",
+      "description": "",
+      "units": "",
+      "access": "R",
+      "states": "0 = Normal, 1 = In Alarm"
+    },
+    {
+      "type": "BI",
+      "instance": 11086,
+      "name": "Diagnostic: High Pressure Cutout - Circuit 2",
+      "description": "",
+      "units": "",
+      "access": "R",
+      "states": "0 = Normal, 1 = In Alarm"
+    },
+    {
+      "type": "BI",
+      "instance": 11087,
+      "name": "Diagnostic: High Pressure Cutout - Circuit 1",
+      "description": "",
+      "units": "",
+      "access": "R",
+      "states": "0 = Normal, 1 = In Alarm"
+    },
+    {
+      "type": "BI",
+      "instance": 11088,
+      "name": "Comm Loss: Shared V Coil Isolating Valve - Circuit 1",
+      "description": "",
+      "units": "",
+      "access": "R",
+      "states": "0 = Normal, 1 = In Alarm"
+    },
+    {
+      "type": "BI",
+      "instance": 11089,
+      "name": "Comm Loss: Shared V Coil Isolating Valve - Circuit 2",
+      "description": "",
+      "units": "",
+      "access": "R",
+      "states": "0 = Normal, 1 = In Alarm"
+    },
+    {
+      "type": "BI",
+      "instance": 11090,
+      "name": "Comm Loss: Dynamic Receiver Fill Valve - Circuit 1",
+      "description": "",
+      "units": "",
+      "access": "R",
+      "states": "0 = Normal, 1 = In Alarm"
+    },
+    {
+      "type": "BI",
+      "instance": 11091,
+      "name": "Comm Loss: Dynamic Receiver Fill Valve - Circuit 2",
+      "description": "",
+      "units": "",
+      "access": "R",
+      "states": "0 = Normal, 1 = In Alarm"
+    },
+    {
+      "type": "BI",
+      "instance": 11092,
+      "name": "Comm Loss: Hot Gas Bypass Valve - Circuit 1",
+      "description": "",
+      "units": "",
+      "access": "R",
+      "states": "0 = Normal, 1 = In Alarm"
+    },
+    {
+      "type": "BI",
+      "instance": 11093,
+      "name": "Comm Loss: Hot Gas Bypass Valve - Circuit 2",
+      "description": "",
+      "units": "",
+      "access": "R",
+      "states": "0 = Normal, 1 = In Alarm"
+    },
+    {
+      "type": "BI",
+      "instance": 11094,
+      "name": "Comm Loss: Liquid Line Pressure - Circuit 1",
+      "description": "",
+      "units": "",
+      "access": "R",
+      "states": "0 = Normal, 1 = In Alarm"
+    },
+    {
+      "type": "BI",
+      "instance": 11095,
+      "name": "Comm Loss: Liquid Line Pressure - Circuit 2",
+      "description": "",
+      "units": "",
+      "access": "R",
+      "states": "0 = Normal, 1 = In Alarm"
+    },
+    {
+      "type": "BI",
+      "instance": 11096,
+      "name": "Comm Loss: Liquid Line Temperature - Circuit 1",
+      "description": "",
+      "units": "",
+      "access": "R",
+      "states": "0 = Normal, 1 = In Alarm"
+    },
+    {
+      "type": "BI",
+      "instance": 11097,
+      "name": "Comm Loss: Liquid Line Temperature - Circuit 2",
+      "description": "",
+      "units": "",
+      "access": "R",
+      "states": "0 = Normal, 1 = In Alarm"
+    },
+    {
+      "type": "BI",
+      "instance": 11098,
+      "name": "Diagnostic: Liquid Line Pressure Transducer - Circuit 1",
+      "description": "",
+      "units": "",
+      "access": "R",
+      "states": "0 = Normal, 1 = In Alarm"
+    },
+    {
+      "type": "BI",
+      "instance": 11099,
+      "name": "Diagnostic: Liquid Line Pressure Transducer - Circuit 2",
+      "description": "",
+      "units": "",
+      "access": "R",
+      "states": "0 = Normal, 1 = In Alarm"
+    },
+    {
+      "type": "BI",
+      "instance": 11100,
+      "name": "Diagnostic: Liquid Line Temperature Sensor - Circuit 1",
+      "description": "",
+      "units": "",
+      "access": "R",
+      "states": "0 = Normal, 1 = In Alarm"
+    },
+    {
+      "type": "BI",
+      "instance": 11101,
+      "name": "Diagnostic: Liquid Line Temperature Sensor - Circuit 2",
+      "description": "",
+      "units": "",
+      "access": "R",
+      "states": "0 = Normal, 1 = In Alarm"
+    },
+    {
+      "type": "BI",
+      "instance": 11102,
+      "name": "Comm Loss:Evaporator Antifreeze Heater",
+      "description": "",
+      "units": "",
+      "access": "R",
+      "states": "0 = Normal, 1 = In Alarm"
+    },
+    {
+      "type": "BI",
+      "instance": 11103,
+      "name": "Comm Loss:Heat Recovery Antifreeze Heater",
+      "description": "",
+      "units": "",
+      "access": "R",
+      "states": "0 = Normal, 1 = In Alarm"
+    },
+    {
+      "type": "BI",
+      "instance": 11104,
+      "name": "Diagnostic: Evaporator Water Flow Lost",
+      "description": "",
+      "units": "",
+      "access": "R",
+      "states": "0 = Normal, 1 = In Alarm"
+    },
+    {
+      "type": "BI",
+      "instance": 11105,
+      "name": "Diagnostic: Evaporator Water Flow Lost Lockout",
+      "description": "",
+      "units": "",
+      "access": "R",
+      "states": "0 = Normal, 1 = In Alarm"
+    },
+    {
+      "type": "BI",
+      "instance": 11106,
+      "name": "Diagnostic: Evaporator Water Flow Overdue",
+      "description": "",
+      "units": "",
+      "access": "R",
+      "states": "0 = Normal, 1 = In Alarm"
+    },
+    {
+      "type": "BI",
+      "instance": 11107,
+      "name": "Diagnostic: High Evaporator Water Temperature",
+      "description": "",
+      "units": "",
+      "access": "R",
+      "states": "0 = Normal, 1 = In Alarm"
+    },
+    {
+      "type": "BI",
+      "instance": 11108,
+      "name": "Diagnostic: High Suction Rfgt Pressure",
+      "description": "",
+      "units": "",
+      "access": "R",
+      "states": "0 = Normal, 1 = In Alarm"
+    },
+    {
+      "type": "BI",
+      "instance": 11109,
+      "name": "Diagnostic: Inverted Evaporator Water Temperature",
+      "description": "",
+      "units": "",
+      "access": "R",
+      "states": "0 = Normal, 1 = In Alarm"
+    },
+    {
+      "type": "BI",
+      "instance": 11110,
+      "name": "Diagnostic: Inverted Water Temp (Heating)",
+      "description": "",
+      "units": "",
+      "access": "R",
+      "states": "0 = Normal, 1 = In Alarm"
+    },
+    {
+      "type": "BI",
+      "instance": 11111,
+      "name": "Diagnostic: Low Evaporator Water Temp (Unit On)",
+      "description": "",
+      "units": "",
+      "access": "R",
+      "states": "0 = Normal, 1 = In Alarm"
+    },
+    {
+      "type": "BI",
+      "instance": 11112,
+      "name": "Diagnostic: Low Evaporator Water Temp (Unit Off)",
+      "description": "",
+      "units": "",
+      "access": "R",
+      "states": "0 = Normal, 1 = In Alarm"
+    },
+    {
+      "type": "BI",
+      "instance": 11113,
+      "name": "Comm Loss: Evap Entering Water Temp",
+      "description": "",
+      "units": "",
+      "access": "R",
+      "states": "0 = Normal, 1 = In Alarm"
+    },
+    {
+      "type": "BI",
+      "instance": 11114,
+      "name": "Comm Loss: Evap Leaving Water Temp",
+      "description": "",
+      "units": "",
+      "access": "R",
+      "states": "0 = Normal, 1 = In Alarm"
+    },
+    {
+      "type": "BI",
+      "instance": 11115,
+      "name": "Comm Loss: Evaporator Water Flow Switch",
+      "description": "",
+      "units": "",
+      "access": "R",
+      "states": "0 = Normal, 1 = In Alarm"
+    },
+    {
+      "type": "BI",
+      "instance": 11116,
+      "name": "Diagnostic: Evaporator Entering Water Temp Sensor",
+      "description": "",
+      "units": "",
+      "access": "R",
+      "states": "0 = Normal, 1 = In Alarm"
+    },
+    {
+      "type": "BI",
+      "instance": 11117,
+      "name": "Diagnostic: Evaporator Leaving Water Temp Sensor",
+      "description": "",
+      "units": "",
+      "access": "R",
+      "states": "0 = Normal, 1 = In Alarm"
+    },
+    {
+      "type": "BI",
+      "instance": 11118,
+      "name": "Comm Loss: Cooling EXV - Circuit 1",
+      "description": "",
+      "units": "",
+      "access": "R",
+      "states": "0 = Normal, 1 = In Alarm"
+    },
+    {
+      "type": "BI",
+      "instance": 11119,
+      "name": "Comm Loss: Cooling EXV - Circuit 2",
+      "description": "",
+      "units": "",
+      "access": "R",
+      "states": "0 = Normal, 1 = In Alarm"
+    },
+    {
+      "type": "BI",
+      "instance": 11120,
+      "name": "Comm Loss: Electronic Expansion Valve - Circuit 2",
+      "description": "",
+      "units": "",
+      "access": "R",
+      "states": "0 = Normal, 1 = In Alarm"
+    },
+    {
+      "type": "BI",
+      "instance": 11121,
+      "name": "Comm Loss: Electronic Expansion Valve - Circuit 1",
+      "description": "",
+      "units": "",
+      "access": "R",
+      "states": "0 = Normal, 1 = In Alarm"
+    },
+    {
+      "type": "BI",
+      "instance": 11122,
+      "name": "Comm Loss: Heating EXV - Circuit 1",
+      "description": "",
+      "units": "",
+      "access": "R",
+      "states": "0 = Normal, 1 = In Alarm"
+    },
+    {
+      "type": "BI",
+      "instance": 11123,
+      "name": "Comm Loss: Heating EXV - Circuit 2",
+      "description": "",
+      "units": "",
+      "access": "R",
+      "states": "0 = Normal, 1 = In Alarm"
+    },
+    {
+      "type": "BI",
+      "instance": 11124,
+      "name": "Comm Loss: Auxiliary Setpoint Command",
+      "description": "",
+      "units": "",
+      "access": "R",
+      "states": "0 = Normal, 1 = In Alarm"
+    },
+    {
+      "type": "BI",
+      "instance": 11125,
+      "name": "Comm Loss: Emergency Stop Feedback Input",
+      "description": "",
+      "units": "",
+      "access": "R",
+      "states": "0 = Normal, 1 = In Alarm"
+    },
+    {
+      "type": "BI",
+      "instance": 11126,
+      "name": "Comm Loss: Ext Chilled/Hot Water Setpoint",
+      "description": "",
+      "units": "",
+      "access": "R",
+      "states": "0 = Normal, 1 = In Alarm"
+    },
+    {
+      "type": "BI",
+      "instance": 11127,
+      "name": "Comm Loss: Ext Noise Reduction Request",
+      "description": "",
+      "units": "",
+      "access": "R",
+      "states": "0 = Normal, 1 = In Alarm"
+    },
+    {
+      "type": "BI",
+      "instance": 11128,
+      "name": "Comm Loss: External Auto/Stop",
+      "description": "",
+      "units": "",
+      "access": "R",
+      "states": "0 = Normal, 1 = In Alarm"
+    },
+    {
+      "type": "BI",
+      "instance": 11129,
+      "name": "Comm Loss: Ext Demand Limit Setpoint",
+      "description": "",
+      "units": "",
+      "access": "R",
+      "states": "0 = Normal, 1 = In Alarm"
+    },
+    {
+      "type": "BI",
+      "instance": 11130,
+      "name": "Comm Loss: External Hot Water Command",
+      "description": "",
+      "units": "",
+      "access": "R",
+      "states": "0 = Normal, 1 = In Alarm"
+    },
+    {
+      "type": "BI",
+      "instance": 11131,
+      "name": "Comm Loss: Programmable Relay Board 1",
+      "description": "",
+      "units": "",
+      "access": "R",
+      "states": "0 = Normal, 1 = In Alarm"
+    },
+    {
+      "type": "BI",
+      "instance": 11132,
+      "name": "Comm Loss: Programmable Relay Board 2",
+      "description": "",
+      "units": "",
+      "access": "R",
+      "states": "0 = Normal, 1 = In Alarm"
+    },
+    {
+      "type": "BI",
+      "instance": 11133,
+      "name": "Diagnostic: Emergency Stop Feedback Input",
+      "description": "",
+      "units": "",
+      "access": "R",
+      "states": "0 = Normal, 1 = In Alarm"
+    },
+    {
+      "type": "BI",
+      "instance": 11134,
+      "name": "Diagnostic: External Chilled/Hot Water Setpoint",
+      "description": "",
+      "units": "",
+      "access": "R",
+      "states": "0 = Normal, 1 = In Alarm"
+    },
+    {
+      "type": "BI",
+      "instance": 11135,
+      "name": "Diagnostic: External Demand Limit Setpoint",
+      "description": "",
+      "units": "",
+      "access": "R",
+      "states": "0 = Normal, 1 = In Alarm"
+    },
+    {
+      "type": "BI",
+      "instance": 11136,
+      "name": "Comm Loss: Condenser Fan Enable - Circuit 2",
+      "description": "",
+      "units": "",
+      "access": "R",
+      "states": "0 = Normal, 1 = In Alarm"
+    },
+    {
+      "type": "BI",
+      "instance": 11137,
+      "name": "Comm Loss: Condenser Fan Enable - Circuit 1",
+      "description": "",
+      "units": "",
+      "access": "R",
+      "states": "0 = Normal, 1 = In Alarm"
+    },
+    {
+      "type": "BI",
+      "instance": 11138,
+      "name": "Comm Loss: Cond Fan Enbl Shared Ckt 1&2",
+      "description": "",
+      "units": "",
+      "access": "R",
+      "states": "0 = Normal, 1 = In Alarm"
+    },
+    {
+      "type": "BI",
+      "instance": 11139,
+      "name": "Comm Loss: Condenser Fan Fault - Circuit 1",
+      "description": "",
+      "units": "",
+      "access": "R",
+      "states": "0 = Normal, 1 = In Alarm"
+    },
+    {
+      "type": "BI",
+      "instance": 11140,
+      "name": "Comm Loss: Condenser Fan Fault - Circuit 2",
+      "description": "",
+      "units": "",
+      "access": "R",
+      "states": "0 = Normal, 1 = In Alarm"
+    },
+    {
+      "type": "BI",
+      "instance": 11141,
+      "name": "Comm Loss: Fan Board 1 Relay 1 - Circuit 1",
+      "description": "",
+      "units": "",
+      "access": "R",
+      "states": "0 = Normal, 1 = In Alarm"
+    },
+    {
+      "type": "BI",
+      "instance": 11142,
+      "name": "Comm Loss: Fan Board 1 Relay 1 - Circuit 2",
+      "description": "",
+      "units": "",
+      "access": "R",
+      "states": "0 = Normal, 1 = In Alarm"
+    },
+    {
+      "type": "BI",
+      "instance": 11143,
+      "name": "Comm Loss: Fan Board 1 Relay 2 - Circuit 1",
+      "description": "",
+      "units": "",
+      "access": "R",
+      "states": "0 = Normal, 1 = In Alarm"
+    },
+    {
+      "type": "BI",
+      "instance": 11144,
+      "name": "Comm Loss: Fan Board 1 Relay 2 - Circuit 2",
+      "description": "",
+      "units": "",
+      "access": "R",
+      "states": "0 = Normal, 1 = In Alarm"
+    },
+    {
+      "type": "BI",
+      "instance": 11145,
+      "name": "Comm Loss: Fan Board 1 Relay 3 - Circuit 1",
+      "description": "",
+      "units": "",
+      "access": "R",
+      "states": "0 = Normal, 1 = In Alarm"
+    },
+    {
+      "type": "BI",
+      "instance": 11146,
+      "name": "Comm Loss: Fan Board 1 Relay 3 - Circuit 2",
+      "description": "",
+      "units": "",
+      "access": "R",
+      "states": "0 = Normal, 1 = In Alarm"
+    },
+    {
+      "type": "BI",
+      "instance": 11147,
+      "name": "Comm Loss: Fan Board 1 Relay 4 - Circuit 1",
+      "description": "",
+      "units": "",
+      "access": "R",
+      "states": "0 = Normal, 1 = In Alarm"
+    },
+    {
+      "type": "BI",
+      "instance": 11148,
+      "name": "Comm Loss: Fan Board 1 Relay 4 - Circuit 2",
+      "description": "",
+      "units": "",
+      "access": "R",
+      "states": "0 = Normal, 1 = In Alarm"
+    },
+    {
+      "type": "BI",
+      "instance": 11149,
+      "name": "Comm Loss: Fan Board 2 Relay 1 - Circuit 1",
+      "description": "",
+      "units": "",
+      "access": "R",
+      "states": "0 = Normal, 1 = In Alarm"
+    },
+    {
+      "type": "BI",
+      "instance": 11150,
+      "name": "Comm Loss: Fan Board 2 Relay 1 - Circuit 2",
+      "description": "",
+      "units": "",
+      "access": "R",
+      "states": "0 = Normal, 1 = In Alarm"
+    },
+    {
+      "type": "BI",
+      "instance": 11151,
+      "name": "Comm Loss: Fan Board 2 Relay 2 - Circuit 1",
+      "description": "",
+      "units": "",
+      "access": "R",
+      "states": "0 = Normal, 1 = In Alarm"
+    },
+    {
+      "type": "BI",
+      "instance": 11152,
+      "name": "Comm Loss: Fan Board 2 Relay 2 - Circuit 2",
+      "description": "",
+      "units": "",
+      "access": "R",
+      "states": "0 = Normal, 1 = In Alarm"
+    },
+    {
+      "type": "BI",
+      "instance": 11153,
+      "name": "Comm Loss: Fan Board 2 Relay 3 - Circuit 2",
+      "description": "",
+      "units": "",
+      "access": "R",
+      "states": "0 = Normal, 1 = In Alarm"
+    },
+    {
+      "type": "BI",
+      "instance": 11154,
+      "name": "Comm Loss: Fan Board 2 Relay 3 - Circuit 1",
+      "description": "",
+      "units": "",
+      "access": "R",
+      "states": "0 = Normal, 1 = In Alarm"
+    },
+    {
+      "type": "BI",
+      "instance": 11155,
+      "name": "Comm Loss: Fan Board 2 Relay 4 - Circuit 2",
+      "description": "",
+      "units": "",
+      "access": "R",
+      "states": "0 = Normal, 1 = In Alarm"
+    },
+    {
+      "type": "BI",
+      "instance": 11156,
+      "name": "Comm Loss: Fan Board 2 Relay 4 - Circuit 1",
+      "description": "",
+      "units": "",
+      "access": "R",
+      "states": "0 = Normal, 1 = In Alarm"
+    },
+    {
+      "type": "BI",
+      "instance": 11157,
+      "name": "Comm Loss: Fan Inverter Speed Command - Circuit 2",
+      "description": "",
+      "units": "",
+      "access": "R",
+      "states": "0 = Normal, 1 = In Alarm"
+    },
+    {
+      "type": "BI",
+      "instance": 11158,
+      "name": "Comm Loss: Fan Inverter Speed Command - Circuit 1",
+      "description": "",
+      "units": "",
+      "access": "R",
+      "states": "0 = Normal, 1 = In Alarm"
+    },
+    {
+      "type": "BI",
+      "instance": 11159,
+      "name": "Comm Loss: Fan Inv Spd Cmd, Shrd Circuit 1&2",
+      "description": "",
+      "units": "",
+      "access": "R",
+      "states": "0 = Normal, 1 = In Alarm"
+    },
+    {
+      "type": "BI",
+      "instance": 11160,
+      "name": "Comm Loss: Fan Speed Select Board Relay 1 - Circuit 1",
+      "description": "",
+      "units": "",
+      "access": "R",
+      "states": "0 = Normal, 1 = In Alarm"
+    },
+    {
+      "type": "BI",
+      "instance": 11161,
+      "name": "Comm Loss: Fan Speed Select Board Relay 2 - Circuit 1",
+      "description": "",
+      "units": "",
+      "access": "R",
+      "states": "0 = Normal, 1 = In Alarm"
+    },
+    {
+      "type": "BI",
+      "instance": 11162,
+      "name": "Comm Loss: Fan Speed Select Board Relay 3 - Circuit 2",
+      "description": "",
+      "units": "",
+      "access": "R",
+      "states": "0 = Normal, 1 = In Alarm"
+    },
+    {
+      "type": "BI",
+      "instance": 11163,
+      "name": "Comm Loss: Fan Speed Select Board Relay 4 - Circuit 2",
+      "description": "",
+      "units": "",
+      "access": "R",
+      "states": "0 = Normal, 1 = In Alarm"
+    },
+    {
+      "type": "BI",
+      "instance": 11164,
+      "name": "Diagnostic: Condenser Fan Fault - Circuit 1",
+      "description": "",
+      "units": "",
+      "access": "R",
+      "states": "0 = Normal, 1 = In Alarm"
+    },
+    {
+      "type": "BI",
+      "instance": 11165,
+      "name": "Diagnostic: Condenser Fan Fault - Circuit 2",
+      "description": "",
+      "units": "",
+      "access": "R",
+      "states": "0 = Normal, 1 = In Alarm"
+    },
+    {
+      "type": "BI",
+      "instance": 11166,
+      "name": "Comm Loss: FC Entering Glycol Temp",
+      "description": "",
+      "units": "",
+      "access": "R",
+      "states": "0 = Normal, 1 = In Alarm"
+    },
+    {
+      "type": "BI",
+      "instance": 11167,
+      "name": "Comm Loss: FC Entering Water Temp",
+      "description": "",
+      "units": "",
+      "access": "R",
+      "states": "0 = Normal, 1 = In Alarm"
+    },
+    {
+      "type": "BI",
+      "instance": 11168,
+      "name": "Comm Loss: FC Leaving Glycol Temp",
+      "description": "",
+      "units": "",
+      "access": "R",
+      "states": "0 = Normal, 1 = In Alarm"
+    },
+    {
+      "type": "BI",
+      "instance": 11169,
+      "name": "Comm Loss: Free Cooling Glycol Flow Switch",
+      "description": "",
+      "units": "",
+      "access": "R",
+      "states": "0 = Normal, 1 = In Alarm"
+    },
+    {
+      "type": "BI",
+      "instance": 11170,
+      "name": "Comm Loss: Free Cooling Glycol Pressure",
+      "description": "",
+      "units": "",
+      "access": "R",
+      "states": "0 = Normal, 1 = In Alarm"
+    },
+    {
+      "type": "BI",
+      "instance": 11171,
+      "name": "Comm Loss: Free Cooling Glycol Pump Fault",
+      "description": "",
+      "units": "",
+      "access": "R",
+      "states": "0 = Normal, 1 = In Alarm"
+    },
+    {
+      "type": "BI",
+      "instance": 11172,
+      "name": "Comm Loss: Free Cooling Pump",
+      "description": "",
+      "units": "",
+      "access": "R",
+      "states": "0 = Normal, 1 = In Alarm"
+    },
+    {
+      "type": "BI",
+      "instance": 11173,
+      "name": "Comm Loss: Free Cooling Valve",
+      "description": "",
+      "units": "",
+      "access": "R",
+      "states": "0 = Normal, 1 = In Alarm"
+    },
+    {
+      "type": "BI",
+      "instance": 11174,
+      "name": "Diagnostic: Free Cooling Entering Glycol Temperature",
+      "description": "",
+      "units": "",
+      "access": "R",
+      "states": "0 = Normal, 1 = In Alarm"
+    },
+    {
+      "type": "BI",
+      "instance": 11175,
+      "name": "Diagnostic: Free Cooling Entering Water Temperature",
+      "description": "",
+      "units": "",
+      "access": "R",
+      "states": "0 = Normal, 1 = In Alarm"
+    },
+    {
+      "type": "BI",
+      "instance": 11176,
+      "name": "Diagnostic: Free Cooling Glycol Flow Lost",
+      "description": "",
+      "units": "",
+      "access": "R",
+      "states": "0 = Normal, 1 = In Alarm"
+    },
+    {
+      "type": "BI",
+      "instance": 11177,
+      "name": "Diagnostic: Free Cooling Glycol Flow Overdue",
+      "description": "",
+      "units": "",
+      "access": "R",
+      "states": "0 = Normal, 1 = In Alarm"
+    },
+    {
+      "type": "BI",
+      "instance": 11178,
+      "name": "Diagnostic: Free Cooling Glycol Pressure",
+      "description": "",
+      "units": "",
+      "access": "R",
+      "states": "0 = Normal, 1 = In Alarm"
+    },
+    {
+      "type": "BI",
+      "instance": 11179,
+      "name": "Diagnostic: Free Cooling Glycol Temperature Equalization Overdue",
+      "description": "",
+      "units": "",
+      "access": "R",
+      "states": "0 = Normal, 1 = In Alarm"
+    },
+    {
+      "type": "BI",
+      "instance": 11180,
+      "name": "Diagnostic: Free Cooling Leaving Glycol Temperature",
+      "description": "",
+      "units": "",
+      "access": "R",
+      "states": "0 = Normal, 1 = In Alarm"
+    },
+    {
+      "type": "BI",
+      "instance": 11181,
+      "name": "Diagnostic: Free Cooling Glycol Pump Fault",
+      "description": "",
+      "units": "",
+      "access": "R",
+      "states": "0 = Normal, 1 = In Alarm"
+    },
+    {
+      "type": "BI",
+      "instance": 11182,
+      "name": "Diagnostic: Low Glycol Pressure Free Cooling",
+      "description": "",
+      "units": "",
+      "access": "R",
+      "states": "0 = Normal, 1 = In Alarm"
+    },
+    {
+      "type": "BI",
+      "instance": 11183,
+      "name": "Diagnostic: Low Glycol Temp Free Cooling",
+      "description": "",
+      "units": "",
+      "access": "R",
+      "states": "0 = Normal, 1 = In Alarm"
+    },
+    {
+      "type": "BI",
+      "instance": 11184,
+      "name": "Comm Loss: External Heat Recovery Command",
+      "description": "",
+      "units": "",
+      "access": "R",
+      "states": "0 = Normal, 1 = In Alarm"
+    },
+    {
+      "type": "BI",
+      "instance": 11185,
+      "name": "Comm Loss: External Heat Recovery Setpoint",
+      "description": "",
+      "units": "",
+      "access": "R",
+      "states": "0 = Normal, 1 = In Alarm"
+    },
+    {
+      "type": "BI",
+      "instance": 11186,
+      "name": "Comm Loss: Heat Rec Rfgt Bypass Valve Circuit 1",
+      "description": "",
+      "units": "",
+      "access": "R",
+      "states": "0 = Normal, 1 = In Alarm"
+    },
+    {
+      "type": "BI",
+      "instance": 11187,
+      "name": "Comm Loss: Heat Rec Rfgt Bypass Valve Circuit 2",
+      "description": "",
+      "units": "",
+      "access": "R",
+      "states": "0 = Normal, 1 = In Alarm"
+    },
+    {
+      "type": "BI",
+      "instance": 11188,
+      "name": "Comm Loss: HR Entering Water Temperature",
+      "description": "",
+      "units": "",
+      "access": "R",
+      "states": "0 = Normal, 1 = In Alarm"
+    },
+    {
+      "type": "BI",
+      "instance": 11189,
+      "name": "Comm Loss: HR Leaving Water Temperature",
+      "description": "",
+      "units": "",
+      "access": "R",
+      "states": "0 = Normal, 1 = In Alarm"
+    },
+    {
+      "type": "BI",
+      "instance": 11190,
+      "name": "Comm Loss: Heat Recovery Three Way Valve",
+      "description": "",
+      "units": "",
+      "access": "R",
+      "states": "0 = Normal, 1 = In Alarm"
+    },
+    {
+      "type": "BI",
+      "instance": 11191,
+      "name": "Diagnostic: External Heat Recovery Setpoint",
+      "description": "",
+      "units": "",
+      "access": "R",
+      "states": "0 = Normal, 1 = In Alarm"
+    },
+    {
+      "type": "BI",
+      "instance": 11192,
+      "name": "Diagnostic: Heat Recovery Entering Water Temp Sensor",
+      "description": "",
+      "units": "",
+      "access": "R",
+      "states": "0 = Normal, 1 = In Alarm"
+    },
+    {
+      "type": "BI",
+      "instance": 11193,
+      "name": "Diagnostic: Heat Recovery Leaving Water Temp Sensor",
+      "description": "",
+      "units": "",
+      "access": "R",
+      "states": "0 = Normal, 1 = In Alarm"
+    },
+    {
+      "type": "BI",
+      "instance": 11194,
+      "name": "Diagnostic: No Heat Recovery",
+      "description": "",
+      "units": "",
+      "access": "R",
+      "states": "0 = Normal, 1 = In Alarm"
+    },
+    {
+      "type": "BI",
+      "instance": 11195,
+      "name": "Comm Loss: External Ice Building Command",
+      "description": "",
+      "units": "",
+      "access": "R",
+      "states": "0 = Normal, 1 = In Alarm"
+    },
+    {
+      "type": "BI",
+      "instance": 11196,
+      "name": "Diagnostic: Restart Inhibit Invoked - 1A",
+      "description": "",
+      "units": "",
+      "access": "R",
+      "states": "0 = Normal, 1 = In Alarm"
+    },
+    {
+      "type": "BI",
+      "instance": 11197,
+      "name": "Diagnostic: Restart Inhibit Invoked - 1B",
+      "description": "",
+      "units": "",
+      "access": "R",
+      "states": "0 = Normal, 1 = In Alarm"
+    },
+    {
+      "type": "BI",
+      "instance": 11198,
+      "name": "Diagnostic: Restart Inhibit Invoked - 1C",
+      "description": "",
+      "units": "",
+      "access": "R",
+      "states": "0 = Normal, 1 = In Alarm"
+    },
+    {
+      "type": "BI",
+      "instance": 11199,
+      "name": "Diagnostic: Restart Inhibit Invoked - 2A",
+      "description": "",
+      "units": "",
+      "access": "R",
+      "states": "0 = Normal, 1 = In Alarm"
+    },
+    {
+      "type": "BI",
+      "instance": 11200,
+      "name": "Diagnostic: Restart Inhibit Invoked - 2B",
+      "description": "",
+      "units": "",
+      "access": "R",
+      "states": "0 = Normal, 1 = In Alarm"
+    },
+    {
+      "type": "BI",
+      "instance": 11201,
+      "name": "Diagnostic: Restart Inhibit Invoked - 2C",
+      "description": "",
+      "units": "",
+      "access": "R",
+      "states": "0 = Normal, 1 = In Alarm"
+    },
+    {
+      "type": "BI",
+      "instance": 11202,
+      "name": "Comm Loss: Energy Meter Pulse Input",
+      "description": "",
+      "units": "",
+      "access": "R",
+      "states": "0 = Normal, 1 = In Alarm"
+    },
+    {
+      "type": "BI",
+      "instance": 11203,
+      "name": "Comm Loss: Run Command Compressor 1A",
+      "description": "",
+      "units": "",
+      "access": "R",
+      "states": "0 = Normal, 1 = In Alarm"
+    },
+    {
+      "type": "BI",
+      "instance": 11204,
+      "name": "Comm Loss: Run Command Compressor 1B",
+      "description": "",
+      "units": "",
+      "access": "R",
+      "states": "0 = Normal, 1 = In Alarm"
+    },
+    {
+      "type": "BI",
+      "instance": 11205,
+      "name": "Comm Loss: Run Command Compressor 1C",
+      "description": "",
+      "units": "",
+      "access": "R",
+      "states": "0 = Normal, 1 = In Alarm"
+    },
+    {
+      "type": "BI",
+      "instance": 11206,
+      "name": "Comm Loss: Run Command Compressor 2A",
+      "description": "",
+      "units": "",
+      "access": "R",
+      "states": "0 = Normal, 1 = In Alarm"
+    },
+    {
+      "type": "BI",
+      "instance": 11207,
+      "name": "Comm Loss: Run Command Compressor 2B",
+      "description": "",
+      "units": "",
+      "access": "R",
+      "states": "0 = Normal, 1 = In Alarm"
+    },
+    {
+      "type": "BI",
+      "instance": 11208,
+      "name": "Comm Loss: Run Command Compressor 2C",
+      "description": "",
+      "units": "",
+      "access": "R",
+      "states": "0 = Normal, 1 = In Alarm"
+    },
+    {
+      "type": "BI",
+      "instance": 11209,
+      "name": "Diagnostic: MP: Invalid Configuration",
+      "description": "",
+      "units": "",
+      "access": "R",
+      "states": "0 = Normal, 1 = In Alarm"
+    },
+    {
+      "type": "BI",
+      "instance": 11210,
+      "name": "Diagnostic: MP: Reset Has Occurred",
+      "description": "",
+      "units": "",
+      "access": "R",
+      "states": "0 = Normal, 1 = In Alarm"
+    },
+    {
+      "type": "BI",
+      "instance": 11211,
+      "name": "Comm Loss: Evap Pump Inv1 Fault Input",
+      "description": "",
+      "units": "",
+      "access": "R",
+      "states": "0 = Normal, 1 = In Alarm"
+    },
+    {
+      "type": "BI",
+      "instance": 11212,
+      "name": "Comm Loss: Evap Pump Inv1 Freq Feedback",
+      "description": "",
+      "units": "",
+      "access": "R",
+      "states": "0 = Normal, 1 = In Alarm"
+    },
+    {
+      "type": "BI",
+      "instance": 11213,
+      "name": "Comm Loss: Evap Pump Inv1 Run Command",
+      "description": "",
+      "units": "",
+      "access": "R",
+      "states": "0 = Normal, 1 = In Alarm"
+    },
+    {
+      "type": "BI",
+      "instance": 11214,
+      "name": "Comm Loss: Evaporator Pump 2 Fault Input",
+      "description": "",
+      "units": "",
+      "access": "R",
+      "states": "0 = Normal, 1 = In Alarm"
+    },
+    {
+      "type": "BI",
+      "instance": 11215,
+      "name": "Comm Loss: Evaporator Water Pump 1 Relay",
+      "description": "",
+      "units": "",
+      "access": "R",
+      "states": "0 = Normal, 1 = In Alarm"
+    },
+    {
+      "type": "BI",
+      "instance": 11216,
+      "name": "Comm Loss: Evaporator Water Pump 2 Relay",
+      "description": "",
+      "units": "",
+      "access": "R",
+      "states": "0 = Normal, 1 = In Alarm"
+    },
+    {
+      "type": "BI",
+      "instance": 11217,
+      "name": "Comm Loss: Evaporator Pump 1 Fault Input",
+      "description": "",
+      "units": "",
+      "access": "R",
+      "states": "0 = Normal, 1 = In Alarm"
+    },
+    {
+      "type": "BI",
+      "instance": 11218,
+      "name": "Diagnostic: Evap Pump 1 Starts Run time Written",
+      "description": "",
+      "units": "",
+      "access": "R",
+      "states": "0 = Normal, 1 = In Alarm"
+    },
+    {
+      "type": "BI",
+      "instance": 11219,
+      "name": "Diagnostic: Evap Pump 2 Starts Run time Written",
+      "description": "",
+      "units": "",
+      "access": "R",
+      "states": "0 = Normal, 1 = In Alarm"
+    },
+    {
+      "type": "BI",
+      "instance": 11220,
+      "name": "Diagnostic: Evaporator Pump 1 Fault",
+      "description": "",
+      "units": "",
+      "access": "R",
+      "states": "0 = Normal, 1 = In Alarm"
+    },
+    {
+      "type": "BI",
+      "instance": 11221,
+      "name": "Diagnostic: Evaporator Pump 2 Fault",
+      "description": "",
+      "units": "",
+      "access": "R",
+      "states": "0 = Normal, 1 = In Alarm"
+    },
+    {
+      "type": "BI",
+      "instance": 11222,
+      "name": "Diagnostic: Evaporator Water Flow Lost - Pump1",
+      "description": "",
+      "units": "",
+      "access": "R",
+      "states": "0 = Normal, 1 = In Alarm"
+    },
+    {
+      "type": "BI",
+      "instance": 11223,
+      "name": "Diagnostic: Evaporator Water Flow Lost - Pump2",
+      "description": "",
+      "units": "",
+      "access": "R",
+      "states": "0 = Normal, 1 = In Alarm"
+    },
+    {
+      "type": "BI",
+      "instance": 11224,
+      "name": "Diagnostic: Evaporator Water Flow Overdue - Pump1",
+      "description": "",
+      "units": "",
+      "access": "R",
+      "states": "0 = Normal, 1 = In Alarm"
+    },
+    {
+      "type": "BI",
+      "instance": 11225,
+      "name": "Diagnostic: Evaporator Water Flow Overdue - Pump2",
+      "description": "",
+      "units": "",
+      "access": "R",
+      "states": "0 = Normal, 1 = In Alarm"
+    },
+    {
+      "type": "BI",
+      "instance": 11226,
+      "name": "Comm Loss: SLHX Entering Refrigerant Temp - Circuit 1",
+      "description": "",
+      "units": "",
+      "access": "R",
+      "states": "0 = Normal, 1 = In Alarm"
+    },
+    {
+      "type": "BI",
+      "instance": 11227,
+      "name": "Comm Loss: SLHX Entering Refrigerant Temp - Circuit 2",
+      "description": "",
+      "units": "",
+      "access": "R",
+      "states": "0 = Normal, 1 = In Alarm"
+    },
+    {
+      "type": "BI",
+      "instance": 11228,
+      "name": "Comm Loss: SLHX Valve - Circuit 1",
+      "description": "",
+      "units": "",
+      "access": "R",
+      "states": "0 = Normal, 1 = In Alarm"
+    },
+    {
+      "type": "BI",
+      "instance": 11229,
+      "name": "Comm Loss: SLHX Valve - Circuit 2",
+      "description": "",
+      "units": "",
+      "access": "R",
+      "states": "0 = Normal, 1 = In Alarm"
+    },
+    {
+      "type": "BI",
+      "instance": 11230,
+      "name": "Diagnostic: SLHX Entering Temp Sensor - Circuit 1",
+      "description": "",
+      "units": "",
+      "access": "R",
+      "states": "0 = Normal, 1 = In Alarm"
+    },
+    {
+      "type": "BI",
+      "instance": 11231,
+      "name": "Diagnostic: SLHX Entering Temp Sensor - Circuit 2",
+      "description": "",
+      "units": "",
+      "access": "R",
+      "states": "0 = Normal, 1 = In Alarm"
+    },
+    {
+      "type": "BI",
+      "instance": 11232,
+      "name": "Diagnostic: Chiller Service Recommended",
+      "description": "",
+      "units": "",
+      "access": "R",
+      "states": "0 = Normal, 1 = In Alarm"
+    },
+    {
+      "type": "BI",
+      "instance": 11233,
+      "name": "Diagnostic: Evap Water Pump 1 Svc Recommended",
+      "description": "",
+      "units": "",
+      "access": "R",
+      "states": "0 = Normal, 1 = In Alarm"
+    },
+    {
+      "type": "BI",
+      "instance": 11234,
+      "name": "Diagnostic: Evap Water Pump 2 Svc Recommended",
+      "description": "",
+      "units": "",
+      "access": "R",
+      "states": "0 = Normal, 1 = In Alarm"
+    },
+    {
+      "type": "BI",
+      "instance": 11235,
+      "name": "Diagnostic: Mfr Maintenance Recommended - 1A",
+      "description": "",
+      "units": "",
+      "access": "R",
+      "states": "0 = Normal, 1 = In Alarm"
+    },
+    {
+      "type": "BI",
+      "instance": 11236,
+      "name": "Diagnostic: Mfr Maintenance Recommended - 1B",
+      "description": "",
+      "units": "",
+      "access": "R",
+      "states": "0 = Normal, 1 = In Alarm"
+    },
+    {
+      "type": "BI",
+      "instance": 11237,
+      "name": "Diagnostic: Mfr Maintenance Recommended - 1C",
+      "description": "",
+      "units": "",
+      "access": "R",
+      "states": "0 = Normal, 1 = In Alarm"
+    },
+    {
+      "type": "BI",
+      "instance": 11238,
+      "name": "Diagnostic: Mfr Maintenance Recommended - 2A",
+      "description": "",
+      "units": "",
+      "access": "R",
+      "states": "0 = Normal, 1 = In Alarm"
+    },
+    {
+      "type": "BI",
+      "instance": 11239,
+      "name": "Diagnostic: Mfr Maintenance Recommended - 2B",
+      "description": "",
+      "units": "",
+      "access": "R",
+      "states": "0 = Normal, 1 = In Alarm"
+    },
+    {
+      "type": "BI",
+      "instance": 11240,
+      "name": "Diagnostic: Mfr Maintenance Recommended - 2C",
+      "description": "",
+      "units": "",
+      "access": "R",
+      "states": "0 = Normal, 1 = In Alarm"
+    },
+    {
+      "type": "BI",
+      "instance": 11241,
+      "name": "Diagnostic: Evaporator Water Flow Too Low",
+      "description": "",
+      "units": "",
+      "access": "R",
+      "states": "0 = Normal, 1 = In Alarm"
+    },
+    {
+      "type": "BI",
+      "instance": 11242,
+      "name": "Comm Loss: Evap Water Pump Inverter Speed",
+      "description": "",
+      "units": "",
+      "access": "R",
+      "states": "0 = Normal, 1 = In Alarm"
+    },
+    {
+      "type": "BI",
+      "instance": 11243,
+      "name": "Energy Meter Write Value Failure",
+      "description": "",
+      "units": "",
+      "access": "R",
+      "states": "0 = Normal, 1 = In Alarm"
+    },
+    {
+      "type": "BV",
+      "instance": 10100,
+      "name": "Reset Diagnostic",
+      "description": "",
+      "units": "",
+      "access": "W",
+      "states": "0 = Normal, 1 = Reset"
+    },
+    {
+      "type": "BV",
+      "instance": 10101,
+      "name": "BAS Noise Reduction Request",
+      "description": "",
+      "units": "",
+      "access": "W",
+      "states": "0 = Normal, 1 = Reduce Noise"
+    },
+    {
+      "type": "BV",
+      "instance": 10102,
+      "name": "BAS Heat Recovery Command",
+      "description": "",
+      "units": "",
+      "access": "W",
+      "states": "0 = Off, 1 = On"
+    },
+    {
+      "type": "BV",
+      "instance": 10103,
+      "name": "Energy Consumption Reset",
+      "description": "",
+      "units": "",
+      "access": "W",
+      "states": "0 = Accumulating, 1 = Reset"
+    },
+    {
+      "type": "BV",
+      "instance": 10104,
+      "name": "BAS Circuit 1 Lockout",
+      "description": "",
+      "units": "",
+      "access": "W",
+      "states": "0 = Normal, 1 = Locked Out"
+    },
+    {
+      "type": "BV",
+      "instance": 10105,
+      "name": "BAS Circuit 2 Lockout",
+      "description": "",
+      "units": "",
+      "access": "W",
+      "states": "0 = Normal, 1 = Locked Out"
+    },
+    {
+      "type": "BV",
+      "instance": 10106,
+      "name": "BAS Free Cooling Auto Stop Command",
+      "description": "",
+      "units": "",
+      "access": "W",
+      "states": "0 = Stop, 1 = Auto"
+    },
+    {
+      "type": "BV",
+      "instance": 10107,
+      "name": "BAS Chiller Auto Stop Command",
+      "description": "",
+      "units": "",
+      "access": "W",
+      "states": "0 = Stop, 1 = Auto"
+    },
+    {
+      "type": "BV",
+      "instance": 10108,
+      "name": "Evaporator Water Pump Request BAS",
+      "description": "",
+      "units": "",
+      "access": "W",
+      "states": "0 = Auto, 1 = On"
+    },
+    {
+      "type": "BV",
+      "instance": 10109,
+      "name": "Defrost Delay Request BAS",
+      "description": "",
+      "units": "",
+      "access": "W",
+      "states": "0 = Off, 1 = On"
+    },
+    {
+      "type": "MI",
+      "instance": 10100,
+      "name": "Running Mode",
+      "description": "",
+      "units": "",
+      "access": "R",
+      "states": "1 = Chiller Off, 2 = Chiller In Start Mode, 3 = Chiller In Run Mode, 4 = Chiller In Pre-Shutdown Mode, 5 = Chiller In Service Mode"
+    },
+    {
+      "type": "MI",
+      "instance": 10101,
+      "name": "Operating Mode",
+      "description": "",
+      "units": "",
+      "access": "R",
+      "states": "1 = Cool, 2 = Heat, 3 = Ice Making, 4 = Free Cooling"
+    },
+    {
+      "type": "MI",
+      "instance": 10102,
+      "name": "Chiller Setpoint Source",
+      "description": "",
+      "units": "",
+      "access": "R",
+      "states": "1 = BAS, 2 = External, 3 = Front Panel"
+    },
+    {
+      "type": "MI",
+      "instance": 10103,
+      "name": "Refrigerant Type",
+      "description": "",
+      "units": "",
+      "access": "R",
+      "states": "1 = R-11, 2 = R-12, 3= R-22, 4= R-123, 5 = R-134a, 6 = R-407C, 7 = R-410A, 8 = R-113, 9 = R-114, 10 = R-500, 11 = R-502, 12 = R-404A, 13 = R-513A, 14 = R-1233zd(E), 15 = R-514A, 16 = R-1234z(E), 17 = R-454B, 18 = R-515B"
+    },
+    {
+      "type": "MI",
+      "instance": 10104,
+      "name": "Cooling Type",
+      "description": "",
+      "units": "",
+      "access": "R",
+      "states": "1 = Water Cooled, 2 = Air Cooled"
+    },
+    {
+      "type": "MI",
+      "instance": 10105,
+      "name": "Manufacture Location",
+      "description": "",
+      "units": "",
+      "access": "R",
+      "states": "1 = Field Applied, 2= La Crosse, 3 = Pueblo, 4 = Charmes, 5 = Rushville, 6 = Macon, 7 = Waco, 8 = Lexington, 9 = Forsyth, 10 = Clarksville, 11 = Ft. Smith, 12 = Penang, 13 = Colchester, 14 = Curitiba, 15 = Taicang, 16 = Taiwan, 17 = Epinal, 18 = Golbey"
+    },
+    {
+      "type": "MI",
+      "instance": 10107,
+      "name": "Front Panel Chiller Mode Command",
+      "description": "",
+      "units": "",
+      "access": "R",
+      "states": "1 = Cool, 2 = Heat, 3 = Ice Making, 4 = Free Cooling"
+    },
+    {
+      "type": "MI",
+      "instance": 10108,
+      "name": "Model Information [GEN2]",
+      "description": "",
+      "units": "",
+      "access": "R",
+      "states": "1 = CVHF, 2 = CVGF, 3= CVHS, 4= RTAE, 5 = RTAF, 6 = RTHA, 7 = RTHB, 8 = RTHC, 9 = RTHD, 10 = RTW, 11 = CTVD, 12 = CVR, 13 = CVHH, 14 = CDHH, 15 = VMAX, 16 = GVAF, 17 = RTWF, 18 = RTHF, 19 = RTAC, 20 = CVHM, 21 = RTAG, 22 = CGAF, 23 = RTXG, 24 = GVWF, 25 = HDWA, 26 = CMAC, 27 = IPAK, 28 = CXAF, 29 = ACSA, 30 = RTSF, 31 = HSWA, 32 = ACRA, 33 = RTEG, 34 = ACXA, 35 = CMAF, 36 = ACRB (375 to 550 tons), 37 = ACRB (150 to 300 tons)"
+    },
+    {
+      "type": "MI",
+      "instance": 10109,
+      "name": "Circuit 1 Status",
+      "description": "",
+      "units": "",
+      "access": "R",
+      "states": "1 = Available, 2 = Heat Recovery, 3 = Cooling, 4 = Heating, 5 = Defrost, 6 = Not Available"
+    },
+    {
+      "type": "MI",
+      "instance": 10110,
+      "name": "Circuit 2 Status",
+      "description": "",
+      "units": "",
+      "access": "R",
+      "states": "1 = Available, 2 = Heat Recovery, 3 = Cooling, 4 = Heating, 5 = Defrost, 6 = Not Available"
+    },
+    {
+      "type": "MV",
+      "instance": 10100,
+      "name": "Chiller Mode Command BAS",
+      "description": "BAS Chiller Mode Command",
+      "units": "",
+      "access": "W",
+      "states": "1 = Cool, 2 = Heat, 3 = Ice Making, 4 = Free Cooling"
+    }
+  ]
+}

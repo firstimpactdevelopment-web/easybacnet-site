@@ -1,0 +1,383 @@
+{
+  "manufacturer": "Intesis",
+  "manufacturer_slug": "intesis",
+  "model": "INBACMHI001R000 (Mitsubishi Heavy Industries gateway)",
+  "model_slug": "inbacmhi001r000",
+  "aliases": [
+    "Mitsubishi Heavy BACnet gateway",
+    "MHI BACnet",
+    "Mitsubishi Heavy Industries BACnet points list",
+    "MH-RC-BAC-1",
+    "MHI KX6 KXR6 VRF BACnet",
+    "IN485MHI001R000"
+  ],
+  "equipment_type": "Air conditioner BACnet gateway (1 indoor unit)",
+  "applies_to": "Mitsubishi Heavy Industries RAC, FD, KX6 and KXR6 (VRF) series indoor units, via the X-Y remote-controller bus.",
+  "summary": "A one-unit Intesis interface connected to the X-Y bus between an MHI indoor unit and its wired remote controller, serving the unit as a BACnet MS/TP or BACnet IP device with 30 fixed objects. Some objects (room temperature from BACnet, outdoor temperature) only work when the gateway is set as master of the X-Y bus.",
+  "bacnet_transport": [
+    "BACnet IP",
+    "BACnet MS/TP"
+  ],
+  "firmware": null,
+  "default_device_instance": 246000,
+  "access_inferred": false,
+  "notes": [
+    "OutdoorTemp_status (AI 8) and RoomTemperature_command (AO 1) only work with the gateway set as X-Y bus master (DIP switch).",
+    "CenterRemote (MI 9) reports which controller has priority.",
+    "Units shown as °C follow the °C/°F DIP switch.",
+    "ErrorCodeM state texts are the MHI error codes listed in the manual."
+  ],
+  "source": {
+    "title": "Intesis BACnet - RAC, FD, KX6 and KXR6 (VRF) series User Manual (INBACMHI001R000)",
+    "doc_number": "MH-RC-BAC-1 (legacy code)",
+    "revision_date": "09/2024 v1.7",
+    "url": "https://www.hms-networks.com/docs/default-source/products/intesis/manuals-and-guides---manuals/user-manual-inbacmhi001r000.pdf"
+  },
+  "integration": {
+    "summary": "Connect the gateway to the indoor unit (X-Y remote-controller bus, no polarity), set the BACnet network on its DIP switches, then write the _command objects (on/off, mode, setpoint, fan) and read back the matching _status objects. One gateway serves one indoor unit (or one remote-controller group), so give each gateway its own MAC address and device instance.",
+    "minimum_points": [
+      {
+        "ref": "BO 0",
+        "name": "OnOff_command",
+        "why": "Start/stop the indoor unit"
+      },
+      {
+        "ref": "BI 0",
+        "name": "OnOff_status",
+        "why": "Confirm the unit is running"
+      },
+      {
+        "ref": "MO 0",
+        "name": "Mode_command",
+        "why": "Heat/cool/fan/dry/auto selection"
+      },
+      {
+        "ref": "AO 0",
+        "name": "SetPoint_command",
+        "why": "Temperature setpoint from the BMS"
+      },
+      {
+        "ref": "AI 0",
+        "name": "SetPoint_status",
+        "why": "Setpoint the unit is really using"
+      },
+      {
+        "ref": "AI 1",
+        "name": "RoomTemperature_status",
+        "why": "Room/return temperature for trending"
+      },
+      {
+        "ref": "AO 1",
+        "name": "RoomTemperature_command",
+        "why": "Feed a BMS room sensor (virtual temperature)"
+      },
+      {
+        "ref": "MO 1",
+        "name": "FanSpeed_command",
+        "why": "Fan speed selection"
+      },
+      {
+        "ref": "BI 1",
+        "name": "ErrorActive",
+        "why": "Unit alarm"
+      },
+      {
+        "ref": "AI 2",
+        "name": "ErrorCode",
+        "why": "Which fault is active"
+      }
+    ],
+    "enable": "No enable point or BMS/local switch is documented; the gateway accepts BACnet commands as soon as it is communicating with the unit. A wired remote controller can still be used in parallel; BV 2 LockRemoteControl locks it.",
+    "heartbeat": null,
+    "remote_sensors": "AO 1 RoomTemperature_command sets the room temperature the MHI unit uses, but only when the gateway is configured as master of the X-Y bus; as slave the write has no effect.",
+    "setup": [
+      "BACnet MS/TP or BACnet IP is chosen with a DIP switch (MS/TP is the default); switch changes need a power cycle.",
+      "BACnet IP: factory static IP 192.168.100.246; change it (or select DHCP) with the Intesis configuration tool.",
+      "MS/TP MAC address 0-127 is set on DIP switches; baud rate is DIP-selectable (9600-115200) with autobaud as the default, which matches the baud rate of another MS/TP device running a fixed rate.",
+      "Default device instance 246000. In automatic mode the instance is a base (246000, changeable in the configuration tool) + the SW2 MAC address; it can also be set manually or by writing Object_Identifier.",
+      "A DIP switch selects slave (default) or master on the X-Y bus; master is needed for AO 1 and AI 8."
+    ],
+    "gotchas": [
+      "Every function has a separate _command (AO/BO/MO, commandable) and _status (AI/BI/MI) object; write the command, read the status.",
+      "Temperatures follow the Celsius/Fahrenheit DIP switch; the BACnet Units property changes with it.",
+      "The Occupancy MV and its four AVs drive built-in logic that sets mode, setpoint and on/off; leave Occupancy at 3 (Disabled) unless you use it, and any manual on/off, mode or setpoint change cancels it.",
+      "If an MHI wired remote is on the same bus, set master/slave roles so the two do not conflict."
+    ]
+  },
+  "points": [
+    {
+      "type": "BI",
+      "instance": 0,
+      "name": "OnOff_status",
+      "description": "Unit on/off status",
+      "units": "",
+      "access": "R",
+      "states": "0=Off, 1=On"
+    },
+    {
+      "type": "BO",
+      "instance": 0,
+      "name": "OnOff_command",
+      "description": "Start/stop command for the indoor unit",
+      "units": "",
+      "access": "C",
+      "states": "0=Off, 1=On"
+    },
+    {
+      "type": "MI",
+      "instance": 0,
+      "name": "Mode_status",
+      "description": "Operating mode currently active",
+      "units": "",
+      "access": "R",
+      "states": "1=Heat, 2=Cool, 3=Fan, 4=Dry, 5=Auto, 6=AutoCool, 7=AutoHeat"
+    },
+    {
+      "type": "MO",
+      "instance": 0,
+      "name": "Mode_command",
+      "description": "Operating mode command",
+      "units": "",
+      "access": "C",
+      "states": "1=Heat, 2=Cool, 3=Fan, 4=Dry, 5=Auto"
+    },
+    {
+      "type": "AI",
+      "instance": 0,
+      "name": "SetPoint_status",
+      "description": "Setpoint the indoor unit is actually using",
+      "units": "°C",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AO",
+      "instance": 0,
+      "name": "SetPoint_command",
+      "description": "Temperature setpoint command from the BMS",
+      "units": "°C",
+      "access": "C",
+      "states": ""
+    },
+    {
+      "type": "MI",
+      "instance": 1,
+      "name": "FanSpeed_status",
+      "description": "Current fan speed",
+      "units": "",
+      "access": "R",
+      "states": "1=Auto, 2=Fan Speed 1, 3=Fan Speed 2, 4=Fan Speed 3, 5=Fan Speed 4"
+    },
+    {
+      "type": "MO",
+      "instance": 1,
+      "name": "FanSpeed_command",
+      "description": "Fan speed command",
+      "units": "",
+      "access": "C",
+      "states": "1=Auto, 2=Fan Speed 1, 3=Fan Speed 2, 4=Fan Speed 3, 5=Fan Speed 4"
+    },
+    {
+      "type": "MI",
+      "instance": 2,
+      "name": "AirDirectionUD_status",
+      "description": "Vertical (up/down) vane position",
+      "units": "",
+      "access": "R",
+      "states": "1=Pos-1, 2=Pos-2, 3=Pos-3, 4=Pos-4, 5=Swing"
+    },
+    {
+      "type": "MO",
+      "instance": 2,
+      "name": "AirDirectionUD_command",
+      "description": "Vertical (up/down) vane command",
+      "units": "",
+      "access": "C",
+      "states": "1=Pos-1, 2=Pos-2, 3=Pos-3, 4=Pos-4, 5=Swing"
+    },
+    {
+      "type": "AI",
+      "instance": 1,
+      "name": "RoomTemperature_status",
+      "description": "Room temperature used by the indoor unit",
+      "units": "°C",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AO",
+      "instance": 1,
+      "name": "RoomTemperature_command",
+      "description": "Room temperature written by the BMS (external sensor)",
+      "units": "°C",
+      "access": "C",
+      "states": ""
+    },
+    {
+      "type": "AI",
+      "instance": 2,
+      "name": "ErrorCode",
+      "description": "Active error code as a number",
+      "units": "",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "MI",
+      "instance": 4,
+      "name": "ErrorCodeM",
+      "description": "Active error code as a multistate value",
+      "units": "",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "BI",
+      "instance": 1,
+      "name": "ErrorActive",
+      "description": "An error is active on the indoor unit",
+      "units": "",
+      "access": "R",
+      "states": "0=No Error, 1=Error"
+    },
+    {
+      "type": "AI",
+      "instance": 4,
+      "name": "ErrorAddress",
+      "description": "Address of the indoor unit reporting the error",
+      "units": "",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "BO",
+      "instance": 5,
+      "name": "ErrorReset",
+      "description": "Resets the error indication",
+      "units": "",
+      "access": "C",
+      "states": "0=Normal, 1=Reset"
+    },
+    {
+      "type": "AV",
+      "instance": 0,
+      "name": "OnTimeCounter",
+      "description": "Accumulated run time of the unit",
+      "units": "h",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "BI",
+      "instance": 6,
+      "name": "FilterSign",
+      "description": "Filter-clean indication",
+      "units": "",
+      "access": "R",
+      "states": "0=Disabled, 1=Enabled"
+    },
+    {
+      "type": "BO",
+      "instance": 4,
+      "name": "FilterReset",
+      "description": "Resets the filter sign",
+      "units": "",
+      "access": "C",
+      "states": "0=Normal, 1=Reset"
+    },
+    {
+      "type": "MV",
+      "instance": 0,
+      "name": "Occupancy",
+      "description": "Occupancy input for the built-in occupancy logic",
+      "units": "",
+      "access": "W",
+      "states": "1=Occupied, 2=Unoccupied, 3=Disabled"
+    },
+    {
+      "type": "AV",
+      "instance": 1,
+      "name": "OccupiedCoolSetPoint",
+      "description": "Cooling setpoint used while occupied",
+      "units": "°C",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 2,
+      "name": "OccupiedHeatSetPoint",
+      "description": "Heating setpoint used while occupied",
+      "units": "°C",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 3,
+      "name": "UnoccupiedCoolSetPoint",
+      "description": "Cooling setpoint used while unoccupied",
+      "units": "°C",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 4,
+      "name": "UnoccupiedHeatSetPoint",
+      "description": "Heating setpoint used while unoccupied",
+      "units": "°C",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "BV",
+      "instance": 0,
+      "name": "OccupancyContinuousCheck",
+      "description": "Re-run occupancy logic on every temperature change",
+      "units": "",
+      "access": "W",
+      "states": "0=Disabled, 1=Enabled"
+    },
+    {
+      "type": "BV",
+      "instance": 1,
+      "name": "UnoccupiedDeadbandAction",
+      "description": "Off or stay on when unoccupied inside the deadband",
+      "units": "",
+      "access": "W",
+      "states": "0=Off, 1=CurrentMode"
+    },
+    {
+      "type": "BV",
+      "instance": 2,
+      "name": "LockRemoteControl",
+      "description": "Locks or unlocks the wired remote controller",
+      "units": "",
+      "access": "W",
+      "states": "0=Unlocked, 1=Locked"
+    },
+    {
+      "type": "AI",
+      "instance": 8,
+      "name": "OutdoorTemp_status",
+      "description": "Outdoor air temperature from the outdoor unit",
+      "units": "",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "MI",
+      "instance": 9,
+      "name": "CenterRemote",
+      "description": "Central / remote control status",
+      "units": "",
+      "access": "R",
+      "states": "1=Center I, 2=Remote I, 3=Center/Remote I, 4=Center II, 5=Remote II, 6=Center/Remote II"
+    }
+  ],
+  "covers_brands": [
+    "Mitsubishi Heavy Industries"
+  ],
+  "short_model": "Mitsubishi Heavy Gateway INBACMHI001R000"
+}

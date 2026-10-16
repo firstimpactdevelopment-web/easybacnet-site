@@ -1,0 +1,756 @@
+{
+  "manufacturer": "Neptronic",
+  "manufacturer_slug": "neptronic",
+  "model": "TFxB Series Thermostat Controller",
+  "model_slug": "tfxb-thermostat",
+  "aliases": [
+    "TFCB24F3XYZ1",
+    "TFCB24F3XY2",
+    "TFHB24F3XYZ1",
+    "TFHB24F3XYZ2",
+    "TFCB24P3-OE1",
+    "TFHB24P3-OE1",
+    "TFHB24P3-OE2",
+    "TFxB24"
+  ],
+  "equipment_type": "Fan coil / zone thermostat controller",
+  "applies_to": "Neptronic TFxB24 communicating thermostats for 2-pipe and 4-pipe fan coils and zone heating/cooling, including the humidity (TFHB) and OE variants.",
+  "summary": "The TFxB24 is a wall thermostat-controller that speaks BACnet MS/TP as a fixed table of AI/AV/BI/BV/MSV objects plus the Device object. Each object is only present on some of the seven model variants (the PDF marks applicability per model), and several multistate objects change their state list depending on how BV.5 (2-pipe/4-pipe) and other settings are configured. It does not issue BACnet event notifications; alarms show only as value changes.",
+  "bacnet_transport": [
+    "BACnet MS/TP"
+  ],
+  "firmware": "Firmware 1.17 / application 1.20 (as printed)",
+  "default_device_instance": "153000 + MAC address",
+  "access_inferred": false,
+  "notes": [
+    "Object availability differs by model (TFCB/TFHB, F3 vs P3-OE); the source marks each object per model.",
+    "Multistate state lists depend on configuration (e.g. BV.5 2-pipe/4-pipe, BV.4 fan auto enable); read State_Text from the device.",
+    "The Object_List cannot be read in one request; the controller requires reading it one element at a time.",
+    "Temperatures follow BV.1 Temper.Unit (Celsius or Fahrenheit)."
+  ],
+  "source": {
+    "title": "TFxB Series Thermostat Controller BACnet Communication Module User Guide",
+    "doc_number": "TFxB24-Bacnet-121026-EUA",
+    "revision_date": "2012-10-26",
+    "url": "https://www.neptronic.com/controls/PDF/TFxB24-CMUG.pdf"
+  },
+  "integration": {
+    "summary": "Map the space temperature, setpoint and demands, then command occupancy through MSV.13 and the user mode through MSV.3. There is no BMS temperature-feed object; to substitute a value the integrator can only use Out_of_Service, which times out. Setpoints and configuration live in writable AVs.",
+    "minimum_points": [
+      {
+        "ref": "AV 1",
+        "name": "ControlTemper.",
+        "why": "Temperature the thermostat is controlling to"
+      },
+      {
+        "ref": "AV 7",
+        "name": "Temper.SetPointOcc.",
+        "why": "Occupied setpoint (writable)"
+      },
+      {
+        "ref": "MV 13",
+        "name": "OccupancyMode",
+        "why": "BMS occupancy command: local, occupied or unoccupied"
+      },
+      {
+        "ref": "MV 14",
+        "name": "OccupancyStatus",
+        "why": "Actual occupancy state including override"
+      },
+      {
+        "ref": "MV 3",
+        "name": "UserControlMode",
+        "why": "Auto/heat/cool/off mode"
+      },
+      {
+        "ref": "AV 2",
+        "name": "HeatingDemand",
+        "why": "Heating output demand %"
+      },
+      {
+        "ref": "AV 3",
+        "name": "CoolingDemand",
+        "why": "Cooling output demand %"
+      },
+      {
+        "ref": "AV 4",
+        "name": "FanDemand",
+        "why": "Fan demand %"
+      }
+    ],
+    "enable": "Occupancy is forced from the BMS with MSV.13 OccupancyMode (Occ.Locally lets the thermostat decide; the other two states force occupied or unoccupied). Mode is set with MSV.3; BV.3 decides whether Off is offered.",
+    "heartbeat": null,
+    "remote_sensors": "No dedicated network-temperature object is listed. Values can be overridden by setting Out_of_Service on an input object and writing Present_Value, but the controller returns the object to normal after the Out-of-Service timeout (default 15 minutes).",
+    "setup": [
+      "BACnet MS/TP, full master; MAC defaults to 1 (000-254, 128-254 are non-token slaves), set from the thermostat menu (password 637).",
+      "Device instance auto-configures to 153000 + MAC address; can be changed from the menu or by writing Object_Identifier.",
+      "Baud rate auto-detects (auto detection needs firmware 1.17+), or write Device proprietary property 1001 (9600-76800).",
+      "Max_Master defaults to 127; set it to the highest MAC on the trunk."
+    ],
+    "gotchas": [
+      "Object names in the source carry footnote numbers (e.g. ControlMode13); the real names are shown here without them.",
+      "Out_of_Service on read-only objects is writable for testing, but it reverts automatically after 15 minutes (Device proprietary property 1002, 0-120 min, 0 = never).",
+      "AV.1-AV.4, AV.28, AV.36, AV.41, AV.42, BV.7 and MSV.14 are read-only; all other AV/BV/MSV present values are writable.",
+      "MSV.4 ControlMode restricts what MSV.3 UserControlMode can be set to."
+    ]
+  },
+  "points": [
+    {
+      "type": "AI",
+      "instance": 1,
+      "name": "Intern.Temper.",
+      "description": "Range 0-50°C or 32-122°F",
+      "units": "°F/°C",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AI",
+      "instance": 2,
+      "name": "Extern.Temper.",
+      "description": "Range 0-50°C or 32-122°F",
+      "units": "°F/°C",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AI",
+      "instance": 3,
+      "name": "ChangeOverTemper.",
+      "description": "Range 0-50°C or 32-122°F",
+      "units": "°F/°C",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AI",
+      "instance": 4,
+      "name": "Intern.Humidity",
+      "description": "Range 5-95%RH",
+      "units": "%RH",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AI",
+      "instance": 9,
+      "name": "Extern.Humidity",
+      "description": "Range 5-95%RH",
+      "units": "%RH",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 1,
+      "name": "ControlTemper.",
+      "description": "Range 0-50°C or 32-122°F",
+      "units": "°F/°C",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 2,
+      "name": "HeatingDemand",
+      "description": "Range 0-100%",
+      "units": "%",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 3,
+      "name": "CoolingDemand",
+      "description": "Range 0-100%",
+      "units": "%",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 4,
+      "name": "FanDemand",
+      "description": "Range 0-100%",
+      "units": "%",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 5,
+      "name": "Intern.Temper.Offset",
+      "description": "Range ± 5.0°C",
+      "units": "°F/°C",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 6,
+      "name": "Extern.Temper.Offset",
+      "description": "Range ± 5.0°C",
+      "units": "°F/°C",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 7,
+      "name": "Temper.SetPointOcc.",
+      "description": "Range AV.8 to AV.9",
+      "units": "°F/°C",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 8,
+      "name": "Min.SetPointOcc.",
+      "description": "Range 0 to AV.9",
+      "units": "°F/°C",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 9,
+      "name": "Max.SetPointOcc.",
+      "description": "Range AV.8 to 40°C or 104°F",
+      "units": "°F/°C",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 10,
+      "name": "Temper.SetPointCoolNoOcc.",
+      "description": "Range AV.11 to 40°C or 104°F",
+      "units": "°F/°C",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 11,
+      "name": "Temper.SetPointHeatNoOcc.",
+      "description": "Range 10.0°C or 50°F to AV.10",
+      "units": "°F/°C",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 12,
+      "name": "CoolingProp.Band",
+      "description": "Range 0.5-5°Cor 1-10°F",
+      "units": "°F/°C",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 13,
+      "name": "HeatingProp.Band",
+      "description": "Range 0.5-5°C or 1-10°F",
+      "units": "°F/°C",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 14,
+      "name": "CoolingDeadBand",
+      "description": "Range 0.3-5°C or 0.6-10°F",
+      "units": "°F/°C",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 15,
+      "name": "HeatingDeadBand",
+      "description": "Range 0.3-5°C or 0.6-10°F",
+      "units": "°F/°C",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 16,
+      "name": "FanTimeOutDelay",
+      "description": "Range 0-15 minutes",
+      "units": "min",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 17,
+      "name": "Heat/CoolVoltageMin.2pipes",
+      "description": "Range 0 Volt to AV.20",
+      "units": "V",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 18,
+      "name": "CoolingVoltageMin.4pipes",
+      "description": "Range 0 Volt to AV.21",
+      "units": "V",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 19,
+      "name": "HeatingVoltageMin.4pipes",
+      "description": "On TFHB24P3-OE1/OE2 this is Heating4PipesOrHumid.Volt.Min.",
+      "units": "V",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 20,
+      "name": "Heat/CoolVoltageMax.2pipes",
+      "description": "Range AV.17 to 10.0 Volt",
+      "units": "V",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 21,
+      "name": "CoolingVoltageMax.4pipes",
+      "description": "Range AV.18 to 10.0 Volt",
+      "units": "V",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 22,
+      "name": "HeatingVoltageMax.4pipes",
+      "description": "On TFHB24P3-OE1/OE2 this is Heating4PipesOrHumid.Volt.Max.",
+      "units": "V",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 23,
+      "name": "ChangeOverSetPoint",
+      "description": "Range 10-40°C or 50-104°F",
+      "units": "°F/°C",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 25,
+      "name": "FanDampingFactor",
+      "description": "Range 0-10 seconds",
+      "units": "s",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 26,
+      "name": "Int.TimeFactor",
+      "description": "Range 0-250 seconds",
+      "units": "s",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 27,
+      "name": "CoolingAntiCycleDelay",
+      "description": "Range 0-15 minutes",
+      "units": "min",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 28,
+      "name": "Loc.Heat.Demand",
+      "description": "Range 0-100%",
+      "units": "%",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 29,
+      "name": "Loc.Heat.Prop.Band",
+      "description": "Range 0.5-5°C or 1-10°F",
+      "units": "°F/°C",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 30,
+      "name": "Loc.Heat.DeadBand",
+      "description": "Range 0.3-5°C or 0.6-10°F",
+      "units": "°F/°C",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 31,
+      "name": "FloatingMotorTiming",
+      "description": "Range 15-250 seconds, resolution 5 seconds",
+      "units": "s",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 32,
+      "name": "Loc.Heat.VoltageMin.",
+      "description": "Range 0 Volt to AV.33",
+      "units": "V",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 33,
+      "name": "Loc.Heat.VoltageMax.",
+      "description": "Range AV.32 to 10.0 Volt",
+      "units": "V",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 34,
+      "name": "FanVoltageMin.",
+      "description": "Range 0 Volt to AV.35",
+      "units": "V",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 35,
+      "name": "FanVoltageMax.",
+      "description": "Range AV.34 to 10.0 Volt",
+      "units": "V",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 36,
+      "name": "Dehumid.Demand",
+      "description": "Range 0-100%",
+      "units": "%",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 37,
+      "name": "HumiditySetPoint",
+      "description": "Range 10.0-65.0%RH",
+      "units": "%RH",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 38,
+      "name": "Intern.HumidityOffset",
+      "description": "Range ± 5.0%RH",
+      "units": "%RH",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 39,
+      "name": "NoOcc.OverrideDelay",
+      "description": "Range 0-180 minutes",
+      "units": "min",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 40,
+      "name": "HumidityControlRamp",
+      "description": "Range 3.0-10.0%RH",
+      "units": "%RH",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 41,
+      "name": "Humidif.Demand",
+      "description": "Range 0-100%",
+      "units": "%",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 42,
+      "name": "CoolingDemand2",
+      "description": "Range 0-100%",
+      "units": "%",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 43,
+      "name": "CoolingProp.Band2",
+      "description": "Range 0.5-5°C or 1-10°F",
+      "units": "°F/°C",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 44,
+      "name": "CoolingDeadBand2",
+      "description": "Range 0.3-5°C or 0.6-10°F",
+      "units": "°F/°C",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 45,
+      "name": "Extern.HumidityOffset",
+      "description": "Range ± 5.0%RH",
+      "units": "%RH",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "BI",
+      "instance": 1,
+      "name": "DigitalInput",
+      "description": "",
+      "units": "",
+      "access": "R",
+      "states": "0= Open 1= Close"
+    },
+    {
+      "type": "BV",
+      "instance": 1,
+      "name": "Temper.Unit",
+      "description": "",
+      "units": "",
+      "access": "W",
+      "states": "0= Celsius 1= Fahrenheit"
+    },
+    {
+      "type": "BV",
+      "instance": 2,
+      "name": "Temper.SetPointLock",
+      "description": "",
+      "units": "",
+      "access": "W",
+      "states": "0= Disable 1= Enable"
+    },
+    {
+      "type": "BV",
+      "instance": 3,
+      "name": "UserControlOffMode",
+      "description": "",
+      "units": "",
+      "access": "W",
+      "states": "0= Enable 1= Disable"
+    },
+    {
+      "type": "BV",
+      "instance": 4,
+      "name": "UserFanAutoMode",
+      "description": "",
+      "units": "",
+      "access": "W",
+      "states": "0= Enable 1= Disable"
+    },
+    {
+      "type": "BV",
+      "instance": 5,
+      "name": "ControlType",
+      "description": "",
+      "units": "",
+      "access": "W",
+      "states": "0= 2Pipes 1= 4Pipes"
+    },
+    {
+      "type": "BV",
+      "instance": 6,
+      "name": "ControlTemper.Source",
+      "description": "",
+      "units": "",
+      "access": "W",
+      "states": "0= Intern.Sensor 1= Extern.Sensor10"
+    },
+    {
+      "type": "BV",
+      "instance": 7,
+      "name": "ChangeOverMode",
+      "description": "",
+      "units": "",
+      "access": "R",
+      "states": "0= Cooling 1= Heating"
+    },
+    {
+      "type": "BV",
+      "instance": 9,
+      "name": "CoolingRamp2",
+      "description": "",
+      "units": "",
+      "access": "W",
+      "states": "0= Off 1= On"
+    },
+    {
+      "type": "BV",
+      "instance": 10,
+      "name": "Humidification",
+      "description": "",
+      "units": "",
+      "access": "W",
+      "states": "0= Off 1= On"
+    },
+    {
+      "type": "BV",
+      "instance": 16,
+      "name": "AntiFreezeProtection",
+      "description": "",
+      "units": "",
+      "access": "W",
+      "states": "0= Off 1= On"
+    },
+    {
+      "type": "MV",
+      "instance": 1,
+      "name": "UniversalInputFunction",
+      "description": "",
+      "units": "",
+      "access": "W",
+      "states": "1= Off 2= Extern.Sensor | States of TFCB24F3XY2 product, States available if BV.5 is set to “2Pipe” 1= ChangeOverSensor 2= Ch.Ov.ContactNorm.Cool 3= Ch.Ov.ContactNorm.Heat | States available if BV.5 is set to “4Pipe” 1= Off 2= Extern.Sensor"
+    },
+    {
+      "type": "MV",
+      "instance": 2,
+      "name": "UserFanSpeed",
+      "description": "",
+      "units": "",
+      "access": "W",
+      "states": "States available if BV.4 is set to “Enable” 1= Auto 2= Speed1_Low 3= Speed2_Medium (available if MSV.8 is set to “Analog” or “3Speeds” or “2Speeds”) 4= Speed3_High (available if MSV.8 is set to “Analog” or “3Speeds”) | States available if BV.4is set to “Disable” 1= Speed1_Low 2= Speed2_Medium (available if MSV.8 is set to “Analog” or “3Speeds” or “2Speeds”) 3= Speed3_High (available if MSV.8 is set to “Analog” or “3Speeds”)"
+    },
+    {
+      "type": "MV",
+      "instance": 3,
+      "name": "UserControlMode",
+      "description": "",
+      "units": "",
+      "access": "W",
+      "states": "States of all except TFxB24-OEy States available if MSV.4 is set to “Auto” 1= Auto 2= Heating 3= Cooling 4= Off (only if BV.3 is set to “Enable”) | States available if MSV.4 is set to “Cooling” 1= Cooling 2= Off (only if BV.3 is set to “Enable”) | States available if MSV.4 is set to “Heating” 1= Heating 2= Off (only if BV.3 is set to “Enable”) | States available if MSV.4 is set to “HeatingOrCooling” 1= Heating 2= Cooling 3= Off (only if BV.3 is set to “Enable”) | States of TFxB24-OEy products, States available if MSV.4 is set to “Auto” 1= Auto 2= Heating 3= Cooling 4= Fan 5= Off (only if BV.3 is set to “Enable”) | States available if MSV.4 is set to “Cooling” 1= Cooling 2= Fan 3= Off (only if BV.3 is set to “Enable”) | States available if MSV.4 is set to “Heating” 1= Heating 2= Fan 3= Off (only if BV.3 is set to “Enable”) | States available if MSV.4 is set to “HeatingOrCooling” 1= Heating 2= Cooling 3= Fan 4= Off (only if BV.3 is set to “Enable”)"
+    },
+    {
+      "type": "MV",
+      "instance": 4,
+      "name": "ControlMode",
+      "description": "",
+      "units": "",
+      "access": "W",
+      "states": "1= Auto 2= Heating 3= Cooling 4= HeatingOrCooling"
+    },
+    {
+      "type": "MV",
+      "instance": 5,
+      "name": "Heat/CoolOutputSignal2pipes",
+      "description": "",
+      "units": "",
+      "access": "W",
+      "states": "1= Analog 2= On_Off 3= Floating (except for TFCB24F3XY2)"
+    },
+    {
+      "type": "MV",
+      "instance": 6,
+      "name": "HeatingOutputSignal4pipes",
+      "description": "",
+      "units": "",
+      "access": "W",
+      "states": "1= Analog 2= On_Off 3= Pulsing"
+    },
+    {
+      "type": "MV",
+      "instance": 7,
+      "name": "CoolingOutputSignal4pipes",
+      "description": "",
+      "units": "",
+      "access": "W",
+      "states": "1= Analog 2= On_Off"
+    },
+    {
+      "type": "MV",
+      "instance": 8,
+      "name": "FanOutputSignal",
+      "description": "",
+      "units": "",
+      "access": "W",
+      "states": "1= Analog 2= 1Speed 3= 2Speeds 4= 3Speeds | State for TFCB24F3XY2 product, 1= 1Speed 2= 2Speeds 3= 3Speeds"
+    },
+    {
+      "type": "MV",
+      "instance": 10,
+      "name": "Loc.Heat.OutputSignal",
+      "description": "",
+      "units": "",
+      "access": "W",
+      "states": "1= Off 2= On_Off 3= Pulsing 4= Analog 5= On_Off_w_Fan 6= Pulsing_w_Fan 7= Analog_w_Fan"
+    },
+    {
+      "type": "MV",
+      "instance": 11,
+      "name": "DigitalInputMode",
+      "description": "",
+      "units": "",
+      "access": "W",
+      "states": "1= OccNorm.Open 2= OccNorm.Close"
+    },
+    {
+      "type": "MV",
+      "instance": 12,
+      "name": "UniversalInput2Function",
+      "description": "",
+      "units": "",
+      "access": "W",
+      "states": "States available if BV.5 is set to 2Pipe: 1= ChangeOverSensor 2= Ch.Ov.ContactNorm.Cool 3= Ch.Ov.ContactNorm.Heat | States available if BV.5 is set to 4Pipe except for OE1 version. 1=Off | States available if BV.5 is set to “4 Pipe” in OE1 version 1= Off 2= Extern.Sensor"
+    },
+    {
+      "type": "MV",
+      "instance": 13,
+      "name": "OccupancyMode",
+      "description": "",
+      "units": "",
+      "access": "W",
+      "states": "1= Occ.Locally 2= Occupancy 3= NoOccupancy"
+    },
+    {
+      "type": "MV",
+      "instance": 14,
+      "name": "OccupancyStatus",
+      "description": "",
+      "units": "",
+      "access": "R",
+      "states": "1= NoOccupancy 2= Occupancy 3= Override"
+    }
+  ]
+}

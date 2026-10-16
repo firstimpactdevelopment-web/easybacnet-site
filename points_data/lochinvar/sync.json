@@ -1,0 +1,651 @@
+{
+  "manufacturer": "Lochinvar",
+  "manufacturer_slug": "lochinvar",
+  "model": "SYNC",
+  "model_slug": "sync",
+  "aliases": [
+    "SYNC 1.0",
+    "SYNC 1.3",
+    "SYNC 1.5",
+    "SYNC-MODB"
+  ],
+  "equipment_type": "Dual-heat-exchanger condensing boiler controller",
+  "applies_to": "SYNC 1.0, 1.3 and 1.5 condensing boilers (two heat exchangers, reported as unit 1 and unit 2).",
+  "summary": "The SYNC boiler has two heat exchangers in one cabinet, so its BACnet MS/TP map repeats the flame, switch, temperature and status points for unit 1 and unit 2. Access is through Lochinvar's Modbus/BACnet communication board.",
+  "bacnet_transport": [
+    "BACnet MS/TP"
+  ],
+  "firmware": null,
+  "default_device_instance": "630000 + MAC address (base is model dependent and can be changed)",
+  "notes": [
+    "BACnet needs the optional Lochinvar Modbus/BACnet communication board; address and baud rate are set on its dip switches.",
+    "The BACnet board is an MS/TP master only, so MAC addresses 0-127 are usable.",
+    "AV 0 (Configuration) is a bitmask: set a bit to 1 to make the appliance use the BAS-written value instead of its own input.",
+    "BAS-supplied temperatures must be rewritten every few seconds and other commands at least every 4 minutes, or the unit reverts to local control.",
+    "Temperatures are in °C on the bus."
+  ],
+  "integration": {
+    "summary": "Pick the BMS control mode at the boiler, then write AV 0 Configuration so the unit knows which values the BAS will supply. After that the BAS sends an enable, a rate command (AV 2), or both, and keeps rewriting them. Status, temperatures and the status, blocking and lockout codes can be read without taking control.",
+    "minimum_points": [
+      {
+        "ref": "AV 0",
+        "name": "Configuration",
+        "why": "Tells the unit which inputs come from the BAS; resend before commands"
+      },
+      {
+        "ref": "BV 0",
+        "name": "Boiler Enable",
+        "why": "Enable / call for heat from the BAS"
+      },
+      {
+        "ref": "AV 2",
+        "name": "0-10 Volt Input / Rate Command / Setpoint Command",
+        "why": "Rate command: firing % or setpoint, per BMS Type"
+      },
+      {
+        "ref": "AI 8",
+        "name": "Outlet Temperature 1",
+        "why": "Outlet temperature, heat exchanger 1"
+      },
+      {
+        "ref": "AI 17",
+        "name": "Outlet Temperature 2",
+        "why": "Outlet temperature, heat exchanger 2"
+      },
+      {
+        "ref": "AI 13",
+        "name": "Unit 1 Status Code",
+        "why": "Unit 1 status code"
+      },
+      {
+        "ref": "AI 22",
+        "name": "Unit 2 Status Code",
+        "why": "Unit 2 status code"
+      },
+      {
+        "ref": "AV 5",
+        "name": "Outdoor Temperature",
+        "why": "Outdoor temperature from the BAS, if used"
+      }
+    ],
+    "enable": "Set Demand Configuration 4, 5 or 6 under Main > Setup > Service/Setup > Demand Config. 4: local setpoints plus BV 0 enable. 5: enable plus AV 2 rate command. 6: AV 2 modulation % alone. Set the matching AV 0 bits first. AV 2 means firing % or temperature setpoint depending on the BMS Type setting (Power or Setpoint); as a setpoint it is scaled like a 0-10 V signal between the BMS temperatures at low and high input.",
+    "heartbeat": "If BAS-written temperatures or commands stop arriving, the unit reverts to its own readings and controls. The timeout is set under Main > Setup > BMS > Modbus / BACnet Timeout; the manual gives 5-120 s with a 10 s default in one place and 0-120 s in another. Every write resets it, and Lochinvar recommends the shortest value. Commands without temperatures must be refreshed at least every 4 minutes.",
+    "remote_sensors": "Set the AV 0 bits for the values the BAS will supply, then write them to the analog values: AV 3 tank setpoint, AV 4 tank temperature, AV 5 outdoor temperature, AV 6 system supply temperature. Values are in °C. Temperatures must be rewritten every few seconds or the unit returns to its own sensors.",
+    "setup": [
+      "MAC address from dip switches 1-8 (master only, so 0-127); baud from switches 9-10: 9600, 19200, 38400 or 76800.",
+      "Device instance = base 630000 + MAC address; the base can be changed."
+    ],
+    "gotchas": [
+      "The manual says to resend the AV 0 configuration bits before each command.",
+      "In a cascade only the Leader needs the BACnet board for control; it then reports cascade totals only, so fit a board to every unit to see each one.",
+      "Without BMS mode active the board is monitor-only: the read-only points can be polled while the unit runs on its own controls.",
+      "Status, temperature and code points come in pairs for heat exchanger 1 and 2."
+    ]
+  },
+  "source": {
+    "title": "Modbus and BACnet Communication Instructions (SYNC 1.0 - 1.3 - 1.5)",
+    "doc_number": "SYNC-MODB_100161723_2000017706",
+    "revision_date": "Rev L, 05/17",
+    "url": "https://assets.lochinvar.com/damroot/Original/10014/594260SYNC-MODB_100161723_2000017706__REV%20L_BACNET.pdf"
+  },
+  "points": [
+    {
+      "type": "BV",
+      "instance": 0,
+      "name": "Boiler Enable",
+      "description": "BAS enable command for the appliance",
+      "units": "",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "BV",
+      "instance": 4,
+      "name": "Tank Thermostat",
+      "description": "Tank / DHW thermostat call",
+      "units": "",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "BI",
+      "instance": 0,
+      "name": "Manual Reset High Limit 1",
+      "description": "Safety / proving switch status",
+      "units": "",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "BI",
+      "instance": 1,
+      "name": "Flow Switch 1",
+      "description": "Safety / proving switch status",
+      "units": "",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "BI",
+      "instance": 2,
+      "name": "Gas Pressure Switch 1",
+      "description": "Safety / proving switch status",
+      "units": "",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "BI",
+      "instance": 3,
+      "name": "Louver Proving Switch 1",
+      "description": "Safety / proving switch status",
+      "units": "",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "BI",
+      "instance": 4,
+      "name": "Flap Valve 1",
+      "description": "Safety / proving switch status",
+      "units": "",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "BI",
+      "instance": 5,
+      "name": "Blocked Drain Switch 1",
+      "description": "Safety / proving switch status",
+      "units": "",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "BI",
+      "instance": 6,
+      "name": "Auto Reset High Limit 1",
+      "description": "Safety / proving switch status",
+      "units": "",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "BI",
+      "instance": 7,
+      "name": "Flame 1",
+      "description": "Flame status",
+      "units": "",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "BI",
+      "instance": 8,
+      "name": "Enable",
+      "description": "Enable input status",
+      "units": "",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "BI",
+      "instance": 9,
+      "name": "Tank Thermostat",
+      "description": "Tank / DHW thermostat call",
+      "units": "",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "BI",
+      "instance": 16,
+      "name": "Manual Reset High Limit 2",
+      "description": "Safety / proving switch status",
+      "units": "",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "BI",
+      "instance": 17,
+      "name": "Flow Switch 2",
+      "description": "Safety / proving switch status",
+      "units": "",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "BI",
+      "instance": 18,
+      "name": "Gas Pressure Switch 2",
+      "description": "Safety / proving switch status",
+      "units": "",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "BI",
+      "instance": 19,
+      "name": "Louver Proving Switch 2",
+      "description": "Safety / proving switch status",
+      "units": "",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "BI",
+      "instance": 20,
+      "name": "Flap Valve 2",
+      "description": "Safety / proving switch status",
+      "units": "",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "BI",
+      "instance": 21,
+      "name": "Blocked Drain Switch 2",
+      "description": "Safety / proving switch status",
+      "units": "",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "BI",
+      "instance": 22,
+      "name": "Flame 2",
+      "description": "Flame status",
+      "units": "",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "BI",
+      "instance": 32,
+      "name": "Run-time Contacts 1",
+      "description": "Output or relay status",
+      "units": "",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "BI",
+      "instance": 33,
+      "name": "Alarm Contacts 1",
+      "description": "Output or relay status",
+      "units": "",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "BI",
+      "instance": 34,
+      "name": "Boiler Pump 1",
+      "description": "Output or relay status",
+      "units": "",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "BI",
+      "instance": 35,
+      "name": "DHW Pump 1",
+      "description": "Output or relay status",
+      "units": "",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "BI",
+      "instance": 37,
+      "name": "Gas Valve 1",
+      "description": "Output or relay status",
+      "units": "",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "BI",
+      "instance": 38,
+      "name": "System Pump",
+      "description": "Output or relay status",
+      "units": "",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "BI",
+      "instance": 40,
+      "name": "Run-time Contacts 2",
+      "description": "Output or relay status",
+      "units": "",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "BI",
+      "instance": 41,
+      "name": "Alarm Contacts 2",
+      "description": "Output or relay status",
+      "units": "",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "BI",
+      "instance": 42,
+      "name": "Boiler Pump 2",
+      "description": "Output or relay status",
+      "units": "",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "BI",
+      "instance": 43,
+      "name": "DHW Pump 2",
+      "description": "Output or relay status",
+      "units": "",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "BI",
+      "instance": 45,
+      "name": "Gas Valve 2",
+      "description": "Output or relay status",
+      "units": "",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "BI",
+      "instance": 48,
+      "name": "Fan 1 Power",
+      "description": "Output or relay status",
+      "units": "",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "BI",
+      "instance": 49,
+      "name": "Fan 2 Power",
+      "description": "Output or relay status",
+      "units": "",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AI",
+      "instance": 0,
+      "name": "Binary Inputs 0 - 15",
+      "description": "Packed word of binary inputs 0-15",
+      "units": "",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AI",
+      "instance": 1,
+      "name": "Binary Inputs 16 - 31",
+      "description": "Packed word of binary inputs 16-31",
+      "units": "",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AI",
+      "instance": 2,
+      "name": "Binary Inputs 32 - 47",
+      "description": "Packed word of binary inputs 32-47",
+      "units": "",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AI",
+      "instance": 3,
+      "name": "System / Cascade Setpoint",
+      "description": "Setpoint value",
+      "units": "°C",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AI",
+      "instance": 5,
+      "name": "Cascade Total Power",
+      "description": "Total cascade firing capacity",
+      "units": "%",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AI",
+      "instance": 6,
+      "name": "Cascade Current Power",
+      "description": "Current cascade firing rate",
+      "units": "%",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AI",
+      "instance": 7,
+      "name": "Outlet Setpoint 1",
+      "description": "Setpoint value",
+      "units": "°C",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AI",
+      "instance": 8,
+      "name": "Outlet Temperature 1",
+      "description": "Temperature reading",
+      "units": "°C",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AI",
+      "instance": 9,
+      "name": "Inlet Temperature 1",
+      "description": "Temperature reading",
+      "units": "°C",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AI",
+      "instance": 10,
+      "name": "Flue Temperature 1",
+      "description": "Temperature reading",
+      "units": "°C",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AI",
+      "instance": 11,
+      "name": "Firing Rate 1",
+      "description": "Burner firing rate",
+      "units": "%",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AI",
+      "instance": 13,
+      "name": "Unit 1 Status Code",
+      "description": "Current operating status code",
+      "units": "",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AI",
+      "instance": 14,
+      "name": "Unit 1 Blocking Code",
+      "description": "Active blocking (soft lockout) code",
+      "units": "",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AI",
+      "instance": 15,
+      "name": "Unit 1 Lockout Code",
+      "description": "Active lockout code",
+      "units": "",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AI",
+      "instance": 16,
+      "name": "Outlet Setpoint 2",
+      "description": "Setpoint value",
+      "units": "°C",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AI",
+      "instance": 17,
+      "name": "Outlet Temperature 2",
+      "description": "Temperature reading",
+      "units": "°C",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AI",
+      "instance": 18,
+      "name": "Inlet Temperature 2",
+      "description": "Temperature reading",
+      "units": "°C",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AI",
+      "instance": 19,
+      "name": "Flue Temperature 2",
+      "description": "Temperature reading",
+      "units": "°C",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AI",
+      "instance": 20,
+      "name": "Firing Rate 2",
+      "description": "Burner firing rate",
+      "units": "%",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AI",
+      "instance": 22,
+      "name": "Unit 2 Status Code",
+      "description": "Current operating status code",
+      "units": "",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AI",
+      "instance": 23,
+      "name": "Unit 2 Blocking Code",
+      "description": "Active blocking (soft lockout) code",
+      "units": "",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AI",
+      "instance": 24,
+      "name": "Unit 2 Lockout Code",
+      "description": "Active lockout code",
+      "units": "",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AI",
+      "instance": 25,
+      "name": "Binary Inputs 48 - 63",
+      "description": "Packed word of binary inputs 48-63",
+      "units": "",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 0,
+      "name": "Configuration",
+      "description": "Bitmask selecting which values the BAS supplies",
+      "units": "",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 1,
+      "name": "Binary Values",
+      "description": "Packed word of the binary value commands",
+      "units": "",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 2,
+      "name": "0-10 Volt Input / Rate Command / Setpoint Command",
+      "description": "BAS rate or setpoint command (0-100%)",
+      "units": "%",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 3,
+      "name": "Tank Setpoint",
+      "description": "Setpoint value",
+      "units": "°C",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 4,
+      "name": "Tank Temperature",
+      "description": "Temperature reading",
+      "units": "°C",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 5,
+      "name": "Outdoor Temperature",
+      "description": "Temperature reading",
+      "units": "°C",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 6,
+      "name": "System Supply Temperature",
+      "description": "Temperature reading",
+      "units": "°C",
+      "access": "W",
+      "states": ""
+    }
+  ]
+}

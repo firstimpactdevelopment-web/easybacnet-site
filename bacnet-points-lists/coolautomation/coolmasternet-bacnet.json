@@ -1,0 +1,258 @@
+{
+ "manufacturer": "CoolAutomation",
+ "manufacturer_slug": "coolautomation",
+ "model": "CoolMasterNet BACnet (indoor unit objects)",
+ "model_slug": "coolmasternet-bacnet",
+ "aliases": [
+  "CoolMasterNet",
+  "CooLinkNet",
+  "CooLinkHub",
+  "CooLinkBridge",
+  "CoolAutomation BACnet",
+  "LG VRF BACnet gateway",
+  "Daikin VRV BACnet gateway",
+  "Mitsubishi Electric BACnet gateway",
+  "Samsung BACnet gateway",
+  "Gree GMV BACnet gateway"
+ ],
+ "equipment_type": "Multi-brand VRF / split AC BACnet gateway",
+ "applies_to": "Indoor units of VRF and split systems connected to a CoolMasterNet or CooLink gateway (Daikin, Mitsubishi Electric, LG, Samsung, Gree and other supported brands).",
+ "summary": "CoolMasterNet and the CooLink family connect to the AC manufacturer's indoor-unit bus and serve every indoor unit as the same 16 BACnet objects, over BACnet MS/TP and/or BACnet IP. Instance numbers are built from the unit's virtual address (VA): instance = VA x 256 + object index. Configuration is done with text commands on the gateway's ASCII interface.",
+ "bacnet_transport": [
+  "BACnet IP",
+  "BACnet MS/TP"
+ ],
+ "firmware": null,
+ "default_device_instance": 64,
+ "access_inferred": false,
+ "notes": [
+  "Points shown for virtual address VA 1 (instances 256-258); add 256 for each further VA.",
+  "The object identifier's instance field is VA in bits 21-8 and object index in bits 7-0.",
+  "Access follows the guide's object-type table: BV, AV, MV and PIV read/write; BI, AI and CSV read-only.",
+  "Object names are not printed in the guide; the object descriptions are used as names.",
+  "Fan speed, mode and louver states that a given unit does not support are simply not used.",
+  "Operation Mode state 8 is not printed in the guide."
+ ],
+ "source": {
+  "title": "BACnet Integration Guidelines - CoolMasterNet, CooLinkNet, CooLinkHub, CooLinkBridge",
+  "doc_number": null,
+  "revision_date": "Rev 0.5, 2019-04-29",
+  "url": "https://coolautomation.com/Lib/doc/CoolMasterNet/manual/CoolMasterNet-BACnet-guidelines.pdf"
+ },
+ "integration": {
+  "summary": "Enable BACnet MS/TP on line L3 and/or BACnet IP, run 'va auto' so each indoor unit gets a virtual address, then map each unit's block of objects at VA x 256. Command BV ON/OFF, MV Operation Mode, AV Set Temperature and MV Fan Speed, and read AI Room Temperature and BI HVAC Failure Indication.",
+  "minimum_points": [
+   {
+    "ref": "BV 256",
+    "name": "ON/OFF",
+    "why": "Start/stop the indoor unit"
+   },
+   {
+    "ref": "MV 257",
+    "name": "Operation Mode",
+    "why": "Mode selection"
+   },
+   {
+    "ref": "AV 256",
+    "name": "Set Temperature",
+    "why": "Setpoint"
+   },
+   {
+    "ref": "MV 256",
+    "name": "Fan Speed",
+    "why": "Fan speed"
+   },
+   {
+    "ref": "AI 256",
+    "name": "Room Temperature",
+    "why": "Room temperature"
+   },
+   {
+    "ref": "BI 256",
+    "name": "HVAC Failure Indication",
+    "why": "Unit alarm (code in Active_Text)"
+   },
+   {
+    "ref": "BV 261",
+    "name": "Global Lock (prohibit)",
+    "why": "Lock out the wired remote if the BMS is in charge"
+   }
+  ],
+  "enable": "BACnet must be enabled on the gateway ('line type L3 BAC' for MS/TP, 'bacnet IP enable' for IP); no BMS enable object is documented.",
+  "heartbeat": null,
+  "remote_sensors": null,
+  "setup": [
+   "BACnet MS/TP: activate on line L3 with 'line type L3 BAC' (L4-L7 also possible on CoolMasterNet); default frame 9600 8N1, change with 'line baud L3 <rate>_8N1'; MAC (TS) default 0x40 = 64, change with 'line myid L3 <hex>'. Reboot after each change.",
+   "BACnet IP: enable with 'bacnet IP enable'; UDP port 47808 by default ('bacnet port <n>'). The server starts only once Ethernet is up with an IP address.",
+   "Default device instance 64 (0x40); change with 'bacnet instance <n>'.",
+   "Allocate virtual addresses with 'va auto' (one VA per detected indoor unit) or 'va + L1.102 0004'; list them with 'va'.",
+   "One MS/TP and one BACnet IP connection can run at the same time."
+  ],
+  "gotchas": [
+   "Running 'va auto' again deletes and re-allocates all VAs, which renumbers every object; only run it once all indoor units are connected.",
+   "Every configuration command needs a reboot to take effect.",
+   "Additional MS/TP connections are not supported even if more RS-485 lines exist.",
+   "The guide's MS/TP example output shows TS 64 and device instance 64 by default; set unique values for each gateway."
+  ]
+ },
+ "points": [
+  {
+   "type": "AI",
+   "instance": 256,
+   "name": "Room Temperature",
+   "description": "Room temperature reported by the indoor unit",
+   "units": "°C",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 256,
+   "name": "Set Temperature",
+   "description": "Indoor unit setpoint",
+   "units": "°C",
+   "access": "W",
+   "states": ""
+  },
+  {
+   "type": "BI",
+   "instance": 256,
+   "name": "HVAC Failure Indication",
+   "description": "Unit failure; Active_Text carries the failure code",
+   "units": "",
+   "access": "R",
+   "states": "0=No Failure, 1=Failure"
+  },
+  {
+   "type": "BI",
+   "instance": 257,
+   "name": "Demand State (Therm_ON)",
+   "description": "Thermostat demand (thermo-on)",
+   "units": "",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "BI",
+   "instance": 258,
+   "name": "External Terminals Status",
+   "description": "State of the unit external terminals input",
+   "units": "",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "BV",
+   "instance": 256,
+   "name": "ON/OFF",
+   "description": "Start/stop the indoor unit",
+   "units": "",
+   "access": "W",
+   "states": "0=Off, 1=On"
+  },
+  {
+   "type": "BV",
+   "instance": 257,
+   "name": "Filter Sign",
+   "description": "Filter-clean indication",
+   "units": "",
+   "access": "W",
+   "states": ""
+  },
+  {
+   "type": "BV",
+   "instance": 258,
+   "name": "Lock (prohibit) ON/OFF change from WRC",
+   "description": "Block on/off changes from the wired remote",
+   "units": "",
+   "access": "W",
+   "states": ""
+  },
+  {
+   "type": "BV",
+   "instance": 259,
+   "name": "Lock (prohibit) Operation Mode change from WRC",
+   "description": "Block mode changes from the wired remote",
+   "units": "",
+   "access": "W",
+   "states": ""
+  },
+  {
+   "type": "BV",
+   "instance": 260,
+   "name": "Lock (prohibit) Set Temperature change from WRC",
+   "description": "Block setpoint changes from the wired remote",
+   "units": "",
+   "access": "W",
+   "states": ""
+  },
+  {
+   "type": "BV",
+   "instance": 261,
+   "name": "Global Lock (prohibit)",
+   "description": "Block all wired-remote operation",
+   "units": "",
+   "access": "W",
+   "states": ""
+  },
+  {
+   "type": "MV",
+   "instance": 256,
+   "name": "Fan Speed",
+   "description": "Fan speed",
+   "units": "",
+   "access": "W",
+   "states": "1=Low, 2=Medium, 3=High, 4=Auto, 5=Top, 6=Very Low, 7=Super High, 8=HRV Super High, 9=HRV Low FreshUp, 10=HRV High FreshUP"
+  },
+  {
+   "type": "MV",
+   "instance": 257,
+   "name": "Operation Mode",
+   "description": "Operating mode",
+   "units": "",
+   "access": "W",
+   "states": "1=Cool, 2=Heat, 3=Auto, 4=Dry, 5=HAUX, 6=Fan, 7=Heat+HAUX, 9=HRV Auto, 10=HRV Bypass, 11=HRV Heat Exchange, 12=HRV Normal"
+  },
+  {
+   "type": "MV",
+   "instance": 258,
+   "name": "Louver",
+   "description": "Louver position",
+   "units": "",
+   "access": "W",
+   "states": "1=Vertical, 2=30 deg, 3=45 deg, 4=60 deg, 5=Horizontal, 6=Auto (Swing), 7=Off, 8=No Louver Control"
+  },
+  {
+   "type": "PIV",
+   "instance": 256,
+   "name": "Set Temperature low limit",
+   "description": "Lowest setpoint allowed",
+   "units": "°C",
+   "access": "W",
+   "states": ""
+  },
+  {
+   "type": "PIV",
+   "instance": 257,
+   "name": "Set Temperature high limit",
+   "description": "Highest setpoint allowed",
+   "units": "°C",
+   "access": "W",
+   "states": ""
+  }
+ ],
+ "covers_brands": [
+  "LG",
+  "Daikin",
+  "Mitsubishi Electric",
+  "Samsung",
+  "Gree",
+  "Toshiba",
+  "Hitachi",
+  "Panasonic",
+  "Fujitsu"
+ ],
+ "short_model": "CoolMasterNet BACnet, Indoor Units",
+ "page": "https://easybacnet.com/bacnet-points-lists/coolautomation/coolmasternet-bacnet",
+ "note": "Re-typed from the manufacturer's public documentation (see source). Point availability varies by firmware and options; verify against the live device."
+}

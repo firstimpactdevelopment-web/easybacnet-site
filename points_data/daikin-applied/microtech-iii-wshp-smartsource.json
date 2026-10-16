@@ -1,0 +1,803 @@
+{
+  "manufacturer": "Daikin Applied",
+  "manufacturer_slug": "daikin-applied",
+  "model": "MicroTech III WSHP Controller - SmartSource / Enfinity Large Two Compressor",
+  "model_slug": "microtech-iii-wshp-smartsource",
+  "aliases": [
+    "SmartSource",
+    "GSH",
+    "GSV",
+    "GTH",
+    "GTV",
+    "GCV",
+    "GCH",
+    "Enfinity Large",
+    "CCH",
+    "CCW",
+    "LVC",
+    "LVW",
+    "ED 15103"
+  ],
+  "equipment_type": "Water source heat pump controller",
+  "applies_to": "SmartSource single and two-stage (GSH/GSV, GTH/GTV, GCV/GCH) and Enfinity Large two-compressor (CCH/CCW, LVC/LVW) heat pumps.",
+  "summary": "SmartSource and Enfinity Large two-compressor heat pumps use a MicroTech III controller (with I/O expansion) that joins BACnet MS/TP through the BACnet communication module. Compared with the single-stage list it adds interstage timers, hydronic and low-EWT setpoints, extra heating stages, fan speed and runtime totalizers, humidistat and fan status inputs. A few objects carry different names on SmartSource and Enfinity Large units.",
+  "bacnet_transport": [
+    "BACnet MS/TP"
+  ],
+  "firmware": null,
+  "default_device_instance": "3101000 + MS/TP MAC address (e.g. 3101007)",
+  "notes": [
+    "BACnet MS/TP only.",
+    "Where SmartSource and Enfinity Large use different object names, the SmartSource name is listed and the other is given in the description.",
+    "Configuration (cp...) objects are stored in non-volatile memory with a limited write life; avoid frequent writes.",
+    "Runtime and starts totalizers stop at their maximum count until the BAS writes a reset value.",
+    "AV 411 is named MacAddress or MacAddressSwitch depending on the physical address switch setting."
+  ],
+  "source": {
+    "title": "MicroTech III Water Source Heat Pump Unit Controller Protocol Information",
+    "doc_number": "ED 15103-9",
+    "revision_date": "2021-08",
+    "url": "https://tahoeweb.daikinapplied.com/api/general/DownloadDocumentByName/media/MicroTech%20III%20WSHP%20Unit%20Controller%20Protocol%20Information%20Daikin%20ED%2015103.pdf"
+  },
+  "integration": {
+    "summary": "Join the heat pump to the MS/TP trunk with a unique MAC and instance, then command occupancy and application mode and supply the space temperature or setpoint from the BMS if needed. Use Receive Heartbeat if overrides must fall back when the BMS goes quiet.",
+    "minimum_points": [
+      {
+        "ref": "MV 7",
+        "name": "OccManCmd",
+        "why": "Occupancy override from the BMS"
+      },
+      {
+        "ref": "MV 10",
+        "name": "ApplicMode",
+        "why": "Application mode (Auto/Heat/Cool/Off/Fan Only/Dehumid)"
+      },
+      {
+        "ref": "AV 18",
+        "name": "NetworkSpaceTemp",
+        "why": "Network space temperature"
+      },
+      {
+        "ref": "AV 19",
+        "name": "Setpoint",
+        "why": "Network reference setpoint"
+      },
+      {
+        "ref": "AV 22",
+        "name": "EffectSpaceTemp",
+        "why": "Space temperature used for control"
+      },
+      {
+        "ref": "MV 4",
+        "name": "McQWSHPStatus",
+        "why": "Unit operating status"
+      },
+      {
+        "ref": "AI 2",
+        "name": "LWT",
+        "why": "Leaving water temperature"
+      },
+      {
+        "ref": "MV 2",
+        "name": "CurrentAlarm",
+        "why": "Highest-priority active alarm"
+      },
+      {
+        "ref": "BV 1",
+        "name": "ClearAlarm",
+        "why": "Clear the current alarm"
+      }
+    ],
+    "enable": "No local/remote switch is described. Network override objects take effect when written: Application Mode Input (MV 10) selects Auto/Heat/Cool/Off/Fan Only/Dehumid, Occupancy Override Input (MV 7) and Occupancy Scheduler Input (MV 8) set occupancy, and Compressor Enable Input (MV 1) permits compressor operation. Overrides revert to their default (Null) values after a controller reboot.",
+    "heartbeat": "Receive Heartbeat (AV 20, cpRcvHrtBt, 0-6553.4 s, default 0 = disabled) is the maximum time a supported override may go without being rewritten before it reverts to its default. Each supported point has its own timer: AV 18, AV 35, MV 1, MV 8, MV 9, MV 10, MV 11 and MV 12. Send Heartbeat is not supported by the BACnet module; use COV instead.",
+    "remote_sensors": "Write the space temperature to Space Temperature Input (AV 18); Effective Space Temperature (AV 22) uses the local AI 1 sensor unless AV 18 holds a valid value. Temperature Setpoint Input (AV 19) sets the reference setpoint for Occupied/Standby, but local setpoint adjust must first be disabled with MV 14. Temperature Setpoint Offset Input (AV 35) shifts the occupied/standby setpoints. Occupancy Sensor Input (MV 9) accepts a network occupancy sensor. Humidistat Remote Input (MV 16) and Fan ON/Auto Remote Input (MV 3) override the local humidistat and fan switch.",
+    "setup": [
+      "Default device instance is 3101000 plus the MS/TP MAC address (example 3101007); System Minimum Instance (AV 412) sets the base.",
+      "MS/TP baud rate (9600, 19200, 38400 or 76800) must be set in the BACnet module's serial configuration menu (DB-9 port, 19200 8-N-1).",
+      "MS/TP MAC address comes from address switch S3; it can only be set from the BAS or menu when S3 is at 255.",
+      "Set MaxMasters to the highest MS/TP master address on the segment to cut token traffic."
+    ],
+    "gotchas": [
+      "Configuration (cp...) objects are stored in non-volatile memory with a limited write life; do not write them cyclically.",
+      "Network overrides revert to default on controller reboot, so the BMS must restore them.",
+      "ReinitializeDevice password is McQuay (or MicroTech on newer software); a cold reset restores module defaults.",
+      "Runtime and starts totalizers stop at their maximum count until the BMS writes a reset value."
+    ]
+  },
+  "points": [
+    {
+      "type": "AI",
+      "instance": 1,
+      "name": "LocalSpaceTemp",
+      "description": "Local Space Temperature Output",
+      "units": "°F",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AI",
+      "instance": 2,
+      "name": "LWT",
+      "description": "Leaving Water Temperature",
+      "units": "°F",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AI",
+      "instance": 3,
+      "name": "EWT",
+      "description": "Entering Water Temperature",
+      "units": "°F",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AI",
+      "instance": 4,
+      "name": "DischAirTemp",
+      "description": "Discharge Air Temperature",
+      "units": "°F",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AI",
+      "instance": 5,
+      "name": "LocalSetpt",
+      "description": "Local Setpoint Adjust Output",
+      "units": "°F",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AI",
+      "instance": 6,
+      "name": "CompSuctionTemp",
+      "description": "Compressor #1 Suction Temperature (Enfinity Large: Comp1SuctionTemp)",
+      "units": "°F",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AI",
+      "instance": 7,
+      "name": "CompDischTemp",
+      "description": "Compressor #2 Suction Temperature (Enfinity Large: Comp2SuctionTemp)",
+      "units": "°F",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AI",
+      "instance": 8,
+      "name": "Brownout",
+      "description": "Brownout Voltage Reading",
+      "units": "counts",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 1,
+      "name": "cpOccupied_Cool_Setpt",
+      "description": "Occupied Cooling Setpoint",
+      "units": "°F",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 2,
+      "name": "cpStandby_Cool_Setpt",
+      "description": "Standby Cool Setpoint",
+      "units": "°F",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 3,
+      "name": "cpUnoccupied_Cool_Setpt",
+      "description": "Unoccupied Cool Setpoint",
+      "units": "°F",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 4,
+      "name": "cpOccupied_Heat_Setpt",
+      "description": "Occupied Heat Setpoint",
+      "units": "°F",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 5,
+      "name": "cpStandby_Heat_Setpt",
+      "description": "Standby Heat Setpoint",
+      "units": "°F",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 6,
+      "name": "cpUnoccupied_Heat_Setpt",
+      "description": "Unoccupied Heat Setpoint",
+      "units": "°F",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 7,
+      "name": "cpBypassTime",
+      "description": "Local Bypass Time Setpoint",
+      "units": "min",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 8,
+      "name": "cpIntStgOffTmr",
+      "description": "Interstage OFF Timer",
+      "units": "s",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 9,
+      "name": "cpBrownoutRef",
+      "description": "Brownout Reference Setpoint",
+      "units": "",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 10,
+      "name": "cpOccDiff",
+      "description": "Occupied Setpoint Differential",
+      "units": "°F",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 11,
+      "name": "cpLowTempProtGL",
+      "description": "Compressor Low Suction Temp Protection Setpoint - Glycol",
+      "units": "°F",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 12,
+      "name": "cpLowTempProt",
+      "description": "Compressor Low Suction Temp Protection Setpoint - Water",
+      "units": "°F",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 13,
+      "name": "cpLowTmpProtDif",
+      "description": "Compressor Low Suction Temp Protection Differential",
+      "units": "°F",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 14,
+      "name": "cpIntStgOnTmr",
+      "description": "Interstage ON Timer",
+      "units": "s",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 15,
+      "name": "cpMinCompOffTmr",
+      "description": "Compressor Minimum OFF Timer",
+      "units": "s",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 16,
+      "name": "cpMinCompOnTmr",
+      "description": "Compressor Minimum ON Timer",
+      "units": "s",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 17,
+      "name": "cpUnoccDiff",
+      "description": "Unoccupied Setpoint Differential",
+      "units": "°F",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 18,
+      "name": "NetworkSpaceTemp",
+      "description": "Space Temperature Input",
+      "units": "°F",
+      "access": "C",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 19,
+      "name": "Setpoint",
+      "description": "Temperature Setpoint Input",
+      "units": "°F",
+      "access": "C",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 20,
+      "name": "cpRcvHrtBt",
+      "description": "Receive Heartbeat",
+      "units": "s",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 21,
+      "name": "cpSndHrtBt",
+      "description": "Send Heartbeat",
+      "units": "s",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 22,
+      "name": "EffectSpaceTemp",
+      "description": "Effective Space Temperature Output",
+      "units": "°F",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 23,
+      "name": "EffectSetpt",
+      "description": "Effective Setpoint Output",
+      "units": "°F",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 24,
+      "name": "SetptShift",
+      "description": "Setpoint Shift Output",
+      "units": "°F",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 25,
+      "name": "cpSptAdjMax",
+      "description": "Long Range Setpoint Adjust Maximum",
+      "units": "°F",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 26,
+      "name": "cpSptAdjMin",
+      "description": "Long Range Setpoint Adjust Minimum",
+      "units": "°F",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 27,
+      "name": "cpHydroClgOnSpt",
+      "description": "Hydronic Cooling ON Setpoint",
+      "units": "°F",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 28,
+      "name": "cpHydronicDiff",
+      "description": "Hydronic Setpoint Differential",
+      "units": "°F",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 29,
+      "name": "cpLowLwtDiff",
+      "description": "Low Leaving Water Temp Differential",
+      "units": "°F",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 30,
+      "name": "cpLowEwtSptGly",
+      "description": "Low EWT Setpoint for Glycol",
+      "units": "°F",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 31,
+      "name": "cpLowEwtSptWtr",
+      "description": "Low EWT Setpoint for Water",
+      "units": "°F",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 32,
+      "name": "cpHydroHtgOnSpt",
+      "description": "Hydronic Heating ON Setpoint",
+      "units": "°F",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 33,
+      "name": "cpStg2SptDiff",
+      "description": "Second Stage Setpoint Differential",
+      "units": "°F",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 34,
+      "name": "cpLowPresAlmDly",
+      "description": "Compressor Low Pressure Alarm Delay",
+      "units": "s",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 35,
+      "name": "SetptOffset",
+      "description": "Temperature Setpoint Offset Input",
+      "units": "°F",
+      "access": "C",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 36,
+      "name": "cpStg3SptDiff",
+      "description": "Third Stage Heating Setpoint Differential",
+      "units": "°F",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 37,
+      "name": "cpStg4SptDiff",
+      "description": "Fourth Stage Heating Setpoint Differential",
+      "units": "°F",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 38,
+      "name": "FanSpeedCmd",
+      "description": "Fan Speed Output",
+      "units": "%",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 39,
+      "name": "FanRunHours",
+      "description": "Fan Runtime Totalizer",
+      "units": "h",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 40,
+      "name": "CompRunHours",
+      "description": "Compressor #1 Runtime Totalizer (Enfinity Large: Comp1RunHours)",
+      "units": "h",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 41,
+      "name": "CompStarts",
+      "description": "Compressor #1 Starts Totalizer (Enfinity Large: Comp1Starts)",
+      "units": "",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 42,
+      "name": "CompHiCapRunHours",
+      "description": "Compressor #2 Runtime Totalizer (Enfinity Large: Comp2RunHours)",
+      "units": "h",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 43,
+      "name": "CompHiCapStarts",
+      "description": "Compressor #2 Starts Totalizer (Enfinity Large: Comp2Starts)",
+      "units": "",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 411,
+      "name": "MacAddress",
+      "description": "MAC address; named MacAddressSwitch when address switch is set",
+      "units": "",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 412,
+      "name": "SystemMinInstance",
+      "description": "System Minimum Instance",
+      "units": "",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "BI",
+      "instance": 1,
+      "name": "BinaryIn",
+      "description": "Binary Input Status",
+      "units": "",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "BV",
+      "instance": 1,
+      "name": "ClearAlarm",
+      "description": "Clear Alarm",
+      "units": "",
+      "access": "W",
+      "states": "0=Normal, 1=Clear Alarm"
+    },
+    {
+      "type": "BV",
+      "instance": 2,
+      "name": "BinaryOut",
+      "description": "Binary Output Status",
+      "units": "",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "MI",
+      "instance": 1,
+      "name": "CondOverFlow",
+      "description": "Condensate Overflow Status",
+      "units": "",
+      "access": "R",
+      "states": "1=Dry, 2=Wet, 3=Null (no sensor present)"
+    },
+    {
+      "type": "MI",
+      "instance": 2,
+      "name": "FanOnAuto",
+      "description": "Fan ON/Auto Switch Status (Room Sensor)",
+      "units": "",
+      "access": "R",
+      "states": "1=On, 2=Auto, 3=Null (no switch present)"
+    },
+    {
+      "type": "MI",
+      "instance": 3,
+      "name": "HeatCoolAuto",
+      "description": "System Mode Switch (Heat/Cool/Auto) Status",
+      "units": "",
+      "access": "R",
+      "states": "1=Off, 2=Heat, 3=Cool, 4=Auto, 5=Null (no switch present)"
+    },
+    {
+      "type": "MI",
+      "instance": 4,
+      "name": "Humidistat",
+      "description": "Humidistat Sensor Status",
+      "units": "",
+      "access": "R",
+      "states": "1=Not Humid (Inactive 24VAC Input), 2=Is Humid (Active 24VAC Input), 3=Null"
+    },
+    {
+      "type": "MI",
+      "instance": 5,
+      "name": "FanRunStatus",
+      "description": "Fan Running Output",
+      "units": "",
+      "access": "R",
+      "states": "1=Fan is off, 2=Fan is running"
+    },
+    {
+      "type": "MV",
+      "instance": 1,
+      "name": "ComprEnable",
+      "description": "Compressor Enable Input",
+      "units": "",
+      "access": "C",
+      "states": "1=Disabled, 2=Enabled, 3=Null (compressors are enabled)"
+    },
+    {
+      "type": "MV",
+      "instance": 2,
+      "name": "CurrentAlarm",
+      "description": "Current Alarm",
+      "units": "",
+      "access": "R",
+      "states": "SmartSource: 1=No Alarms, 2=IO Exp Communication Fail, 3=Invalid Configuration, 4=Low Voltage Brownout, 5=Comp High Pressure, 6=Comp Low Pressure, 7=Comp Suction Temp Snsr Fail, 8=Comp Low Suction Temp, 9=Freeze Fault Detect, 10=Room Temp Sensor Fail, 11=Enter Water Temp Snsr Fail, 12=Leaving Water Temp Snsr Fail, 13=Condensate Overflow, 14=Low Entering Water Temp, 15=Serial EEPROM Corrupted, 16=Wtrside Econ Low Temp Cutout | Enfinity Large: 1=No Alarms, 2=IO Exp Communication Fail, 3=Invalid Configuration, 4=Low Voltage Brownout, 5=Comp #1 High Pressure, 6=Comp #2 High Pressure, 7=Comp #1 Low Pressure, 8=Comp #2 Low Pressure, 9=Comp #1 Suctn Temp Snsr Fail, 10=Comp #2 Suctn Temp Snsr Fail, 11=Comp #1 Low Suction Temp, 12=Comp #2 Low Suction Temp, 13=Freeze Fault Detect, 14=Room Temp Sensor Fail, 15=Entering Water Temp Sensor Fail, 16=Leaving Water Temp Snsr Fail, 17=Condensate Overflow, 18=Low Entering Water Temp, 19=Serial EEPROM Corrupted, 20=Wtrside Econ Low Temp Cutout"
+    },
+    {
+      "type": "MV",
+      "instance": 3,
+      "name": "RemoteFanOnAuto",
+      "description": "Fan ON/Auto Remote Input",
+      "units": "",
+      "access": "C",
+      "states": "1=Fan Auto, 2=Fan On (forces fan on), 3=Null (no override)"
+    },
+    {
+      "type": "MV",
+      "instance": 4,
+      "name": "McQWSHPStatus",
+      "description": "McQuay WSHP Status",
+      "units": "",
+      "access": "R",
+      "states": "1=Off Alarm, 2=Off, 3=Start, 4=Fan Only (fan is allowed to operate), 5=Prepare to Heat, 6=Heating, 7=Prepare to Cool, 8=Cooling, 9=Prepare to Dehumidify, 10=Dehumidification"
+    },
+    {
+      "type": "MV",
+      "instance": 5,
+      "name": "PreviousAlarm",
+      "description": "Previous Alarm",
+      "units": "",
+      "access": "R",
+      "states": "SmartSource: 1=No Alarms, 2=IO Exp Communication Fail, 3=Invalid Configuration, 4=Low Voltage Brownout, 5=Comp High Pressure, 6=Comp Low Pressure, 7=Comp Suction Temp Snsr Fail, 8=Comp Low Suction Temp, 9=Freeze Fault Detect, 10=Room Temp Sensor Fail, 11=Enter Water Temp Snsr Fail, 12=Leaving Water Temp Snsr Fail, 13=Condensate Overflow, 14=Low Entering Water Temp, 15=Serial EEPROM Corrupted, 16=Wtrside Econ Low Temp Cutout | Enfinity Large: 1=No Alarms, 2=IO Exp Communication Fail, 3=Invalid Configuration, 4=Low Voltage Brownout, 5=Comp #1 High Pressure, 6=Comp #2 High Pressure, 7=Comp #1 Low Pressure, 8=Comp #2 Low Pressure, 9=Comp #1 Suctn Temp Snsr Fail, 10=Comp #2 Suctn Temp Snsr Fail, 11=Comp #1 Low Suction Temp, 12=Comp #2 Low Suction Temp, 13=Freeze Fault Detect, 14=Room Temp Sensor Fail, 15=Entering Water Temp Sensor Fail, 16=Leaving Water Temp Snsr Fail, 17=Condensate Overflow, 18=Low Entering Water Temp, 19=Serial EEPROM Corrupted, 20=Wtrside Econ Low Temp Cutout"
+    },
+    {
+      "type": "MV",
+      "instance": 6,
+      "name": "EffectOccup",
+      "description": "Effective Occupancy Output",
+      "units": "",
+      "access": "R",
+      "states": "1=Occupied, 2=Unoccupied, 3=Bypass, 4=Standby, 5=Null"
+    },
+    {
+      "type": "MV",
+      "instance": 7,
+      "name": "OccManCmd",
+      "description": "Occupancy Override Input",
+      "units": "",
+      "access": "C",
+      "states": "1=Occupied, 2=Unoccupied, 3=Bypass, 4=Standby, 5=Null"
+    },
+    {
+      "type": "MV",
+      "instance": 8,
+      "name": "OccSchedule",
+      "description": "Occupancy Scheduler Input",
+      "units": "",
+      "access": "C",
+      "states": "1=Occupied, 2=Unoccupied, 3=Standby, 4=Null"
+    },
+    {
+      "type": "MV",
+      "instance": 9,
+      "name": "OccSensor",
+      "description": "Occupancy Sensor Input",
+      "units": "",
+      "access": "C",
+      "states": "1=Occupied, 2=Unoccupied, 3=Null"
+    },
+    {
+      "type": "MV",
+      "instance": 10,
+      "name": "ApplicMode",
+      "description": "Application Mode Input",
+      "units": "",
+      "access": "C",
+      "states": "1=Auto, 2=Heat, 3=Cool, 4=Off, 5=Fan Only, 6=Dehumid, 7=Null"
+    },
+    {
+      "type": "MV",
+      "instance": 11,
+      "name": "AuxHeatEnable",
+      "description": "Auxiliary Heat Enable Input",
+      "units": "",
+      "access": "C",
+      "states": "1=Disabled, 2=Enabled, 3=Null"
+    },
+    {
+      "type": "MV",
+      "instance": 12,
+      "name": "EnergyHoldOff",
+      "description": "Energy Hold Off Input",
+      "units": "",
+      "access": "C",
+      "states": "1=Normal, 2=Energy Hold Off, 3=Null"
+    },
+    {
+      "type": "MV",
+      "instance": 13,
+      "name": "PumpRequest",
+      "description": "Pump Request Output",
+      "units": "",
+      "access": "R",
+      "states": "1=No Request for Flow, 2=Request for Flow, 3=Null"
+    },
+    {
+      "type": "MV",
+      "instance": 14,
+      "name": "cpLocSpEnable",
+      "description": "Room Sensor Setpoint Adjust Enable/Disable",
+      "units": "",
+      "access": "W",
+      "states": "1=Disabled, 2=Enabled"
+    },
+    {
+      "type": "MV",
+      "instance": 15,
+      "name": "Units",
+      "description": "Units (English/Metric)",
+      "units": "",
+      "access": "W",
+      "states": "1=English (E), 2=Metric (M)"
+    },
+    {
+      "type": "MV",
+      "instance": 16,
+      "name": "RemoteHumidistat",
+      "description": "Humidistat Remote Input",
+      "units": "",
+      "access": "C",
+      "states": "1=No Dehumid Request, 2=Request Dehumidification, 3=Null"
+    }
+  ],
+  "short_model": "MicroTech III WSHP SmartSource"
+}

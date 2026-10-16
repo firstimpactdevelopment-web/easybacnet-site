@@ -1,0 +1,525 @@
+{
+ "manufacturer": "Intesis",
+ "manufacturer_slug": "intesis",
+ "model": "INBACPAN001R100 (Panasonic ECOi/PACi gateway)",
+ "model_slug": "inbacpan001r100",
+ "aliases": [
+  "Panasonic BACnet gateway",
+  "Panasonic VRF BACnet",
+  "Panasonic ECOi BACnet",
+  "Panasonic PACi BACnet",
+  "Panasonic BACnet points list",
+  "PA-RC2-BAC-1L"
+ ],
+ "equipment_type": "Air conditioner BACnet gateway (1 indoor unit)",
+ "applies_to": "Panasonic ECOi (VRF) and PACi indoor units, via the R1/R2 remote-controller bus.",
+ "summary": "A one-unit Intesis BACnet MS/TP interface on the R1/R2 remote-controller bus of a Panasonic ECOi or PACi indoor unit. Besides the usual on/off, mode, setpoint, fan and louvre objects it exposes outdoor demand-limit control, mode-restriction status and separate remote-controller lock objects for each function (46 objects).",
+ "bacnet_transport": [
+  "BACnet MS/TP"
+ ],
+ "firmware": null,
+ "default_device_instance": 246000,
+ "access_inferred": false,
+ "notes": [
+  "Object names OutdooorDemandRate... are spelled with three o's in the member table; most object-detail pages print 'OutdoorDemandRate...'; check the names on site.",
+  "AirDirectionUD_command state 2 is printed as Swing while the status object shows 2=Up; check on site.",
+  "Units shown as °C follow the °C/°F DIP switch.",
+  "ErrorCodeM state texts are the Panasonic error codes listed in the manual."
+ ],
+ "source": {
+  "title": "Intesis BACnet MSTP - Panasonic AC User Manual (INBACPAN001R100)",
+  "doc_number": "PA-RC2-BAC-1L (legacy code)",
+  "revision_date": "09/2024 v1.3",
+  "url": "https://www.hms-networks.com/docs/default-source/products/intesis/manuals-and-guides---manuals/user-manual-inbacpan001r100.pdf"
+ },
+ "integration": {
+  "summary": "Connect the gateway to the indoor unit (R1/R2 remote-controller bus), set the BACnet network on its DIP switches, then write the _command objects (on/off, mode, setpoint, fan) and read back the matching _status objects. One gateway serves one indoor unit (or one remote-controller group), so give each gateway its own MAC address and device instance.",
+  "minimum_points": [
+   {
+    "ref": "BO 0",
+    "name": "OnOff_command",
+    "why": "Start/stop the indoor unit"
+   },
+   {
+    "ref": "BI 0",
+    "name": "OnOff_status",
+    "why": "Confirm the unit is running"
+   },
+   {
+    "ref": "MO 0",
+    "name": "Mode_command",
+    "why": "Heat/cool/fan/dry/auto selection"
+   },
+   {
+    "ref": "AO 0",
+    "name": "SetPoint_command",
+    "why": "Temperature setpoint from the BMS"
+   },
+   {
+    "ref": "AI 0",
+    "name": "SetPoint_status",
+    "why": "Setpoint the unit is really using"
+   },
+   {
+    "ref": "AI 1",
+    "name": "RoomTemperature_status",
+    "why": "Room/return temperature for trending"
+   },
+   {
+    "ref": "AO 1",
+    "name": "RoomTemperature_command",
+    "why": "Feed a BMS room sensor (virtual temperature)"
+   },
+   {
+    "ref": "MO 1",
+    "name": "FanSpeed_command",
+    "why": "Fan speed selection"
+   },
+   {
+    "ref": "BI 1",
+    "name": "ErrorActive",
+    "why": "Unit alarm"
+   },
+   {
+    "ref": "AI 2",
+    "name": "ErrorCode",
+    "why": "Which fault is active"
+   }
+  ],
+  "enable": "No enable point or BMS/local switch is documented; the gateway accepts BACnet commands as soon as it is communicating with the unit. A wired remote controller can still be used in parallel; the LockRemoteControl..._command objects (BO 6-11) lock it per function.",
+  "heartbeat": null,
+  "remote_sensors": "Write the BMS room temperature to AO 1 RoomTemperature_command and keep using AO 0 SetPoint_command for the user setpoint. The gateway then runs its Virtual Temperature function: it offsets the setpoint it sends to the unit by the difference between the BMS temperature and the unit's own return temperature, so AI 0 SetPoint_status can differ from what you wrote. Until a first value is written, AO 1 shows Reliability = UNRELIABLE_OTHER and the function stays off.",
+  "setup": [
+   "BACnet MS/TP only; the EIA-485 port has DIP switches for the 120-ohm terminator and bus biasing.",
+   "MS/TP MAC address 0-127 is set on DIP switches; baud rate is DIP-selectable (9600-115200) with autobaud as the default, which matches the baud rate of another MS/TP device running a fixed rate.",
+   "Default device instance 246000. In automatic mode the instance is 246000 + the MAC address; writing Object_Identifier from BACnet switches to manual mode until a factory reset."
+  ],
+  "gotchas": [
+   "Every function has a separate _command (AO/BO/MO, commandable) and _status (AI/BI/MI) object; write the command, read the status.",
+   "Temperatures follow the Celsius/Fahrenheit DIP switch; the BACnet Units property changes with it.",
+   "The Occupancy MV and its four AVs drive built-in logic that sets mode, setpoint and on/off; leave Occupancy at 3 (Disabled) unless you use it, and any manual on/off, mode or setpoint change cancels it."
+  ]
+ },
+ "points": [
+  {
+   "type": "BI",
+   "instance": 0,
+   "name": "OnOff_status",
+   "description": "Unit on/off status",
+   "units": "",
+   "access": "R",
+   "states": "0=Off, 1=On"
+  },
+  {
+   "type": "BO",
+   "instance": 0,
+   "name": "OnOff_command",
+   "description": "Start/stop command for the indoor unit",
+   "units": "",
+   "access": "C",
+   "states": "0=Off, 1=On"
+  },
+  {
+   "type": "MI",
+   "instance": 0,
+   "name": "Mode_status",
+   "description": "Operating mode currently active",
+   "units": "",
+   "access": "R",
+   "states": "1=Heat, 2=Cool, 3=Fan, 4=Dry, 5=Auto, 6=AutoHeat, 7=AutoCool"
+  },
+  {
+   "type": "MO",
+   "instance": 0,
+   "name": "Mode_command",
+   "description": "Operating mode command",
+   "units": "",
+   "access": "C",
+   "states": "1=Heat, 2=Cool, 3=Fan, 4=Dry, 5=Auto"
+  },
+  {
+   "type": "AI",
+   "instance": 0,
+   "name": "SetPoint_status",
+   "description": "Setpoint the indoor unit is actually using",
+   "units": "°C",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "AO",
+   "instance": 0,
+   "name": "SetPoint_command",
+   "description": "Temperature setpoint command from the BMS",
+   "units": "°C",
+   "access": "C",
+   "states": ""
+  },
+  {
+   "type": "MI",
+   "instance": 1,
+   "name": "FanSpeed_status",
+   "description": "Current fan speed",
+   "units": "",
+   "access": "R",
+   "states": "1=Auto, 2=Fan Speed 1, 3=Fan Speed 2, 4=Fan Speed 3, 5=Fan Speed 4, 6=Fan Speed 5"
+  },
+  {
+   "type": "MO",
+   "instance": 1,
+   "name": "FanSpeed_command",
+   "description": "Fan speed command",
+   "units": "",
+   "access": "C",
+   "states": "1=Auto, 2=Fan Speed 1, 3=Fan Speed 2, 4=Fan Speed 3, 5=Fan Speed 4, 6=Fan Speed 5"
+  },
+  {
+   "type": "MI",
+   "instance": 2,
+   "name": "AirDirectionUD_status",
+   "description": "Vertical (up/down) vane position",
+   "units": "",
+   "access": "R",
+   "states": "1=Stop, 2=Up, 3=Mid-1, 4=Mid-2, 5=Mid-3, 6=Down, 7=Swing"
+  },
+  {
+   "type": "MO",
+   "instance": 2,
+   "name": "AirDirectionUD_command",
+   "description": "Vertical (up/down) vane command",
+   "units": "",
+   "access": "C",
+   "states": "1=Stop, 2=Swing, 3=Mid-1, 4=Mid-2, 5=Mid-3, 6=Down, 7=Swing"
+  },
+  {
+   "type": "AI",
+   "instance": 1,
+   "name": "RoomTemperature_status",
+   "description": "Room temperature used by the indoor unit",
+   "units": "°C",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "AO",
+   "instance": 1,
+   "name": "RoomTemperature_command",
+   "description": "Room temperature written by the BMS (external sensor)",
+   "units": "°C",
+   "access": "C",
+   "states": ""
+  },
+  {
+   "type": "AI",
+   "instance": 2,
+   "name": "ErrorCode",
+   "description": "Active error code as a number",
+   "units": "",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "MI",
+   "instance": 4,
+   "name": "ErrorCodeM",
+   "description": "Active error code as a multistate value",
+   "units": "",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "BI",
+   "instance": 1,
+   "name": "ErrorActive",
+   "description": "An error is active on the indoor unit",
+   "units": "",
+   "access": "R",
+   "states": "0=No, 1=Error"
+  },
+  {
+   "type": "AI",
+   "instance": 4,
+   "name": "ErrorAddress",
+   "description": "Address of the indoor unit reporting the error",
+   "units": "",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 0,
+   "name": "OnTimeCounter",
+   "description": "Accumulated run time of the unit",
+   "units": "h",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "BI",
+   "instance": 6,
+   "name": "FilterSign",
+   "description": "Filter-clean indication",
+   "units": "",
+   "access": "R",
+   "states": "0=No, 1=Yes"
+  },
+  {
+   "type": "BO",
+   "instance": 4,
+   "name": "FilterReset",
+   "description": "Resets the filter sign",
+   "units": "",
+   "access": "C",
+   "states": "0=Normal, 1=Reset"
+  },
+  {
+   "type": "MV",
+   "instance": 0,
+   "name": "Occupancy",
+   "description": "Occupancy input for the built-in occupancy logic",
+   "units": "",
+   "access": "W",
+   "states": "1=Occupied, 2=Unoccupied, 3=Disabled"
+  },
+  {
+   "type": "AV",
+   "instance": 1,
+   "name": "OccupiedCoolSetPoint",
+   "description": "Cooling setpoint used while occupied",
+   "units": "°C",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 2,
+   "name": "OccupiedHeatSetPoint",
+   "description": "Heating setpoint used while occupied",
+   "units": "°C",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 3,
+   "name": "UnoccupiedCoolSetPoint",
+   "description": "Cooling setpoint used while unoccupied",
+   "units": "°C",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 4,
+   "name": "UnoccupiedHeatSetPoint",
+   "description": "Heating setpoint used while unoccupied",
+   "units": "°C",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "BV",
+   "instance": 0,
+   "name": "OccupancyContinuousCheck",
+   "description": "Re-run occupancy logic on every temperature change",
+   "units": "",
+   "access": "W",
+   "states": "0=Disabled, 1=Enabled"
+  },
+  {
+   "type": "BV",
+   "instance": 1,
+   "name": "UnoccupiedDeadbandAction",
+   "description": "Off or stay on when unoccupied inside the deadband",
+   "units": "",
+   "access": "W",
+   "states": "0=Off, 1=CurrentMode"
+  },
+  {
+   "type": "MI",
+   "instance": 7,
+   "name": "RuntimeModeRestriction",
+   "description": "Operating mode restriction in force",
+   "units": "",
+   "access": "R",
+   "states": "1=None, 2=Auto, 3=Heat, 4=Heat, Auto, 5=Cool, Dry, 6=Cool, Dry, Auto, 7=Cool, Dry, Heat, Auto"
+  },
+  {
+   "type": "MI",
+   "instance": 10,
+   "name": "OutdooorDemandRate_status",
+   "description": "Outdoor unit demand limit status",
+   "units": "",
+   "access": "R",
+   "states": "1=Thermo Off, 2=In range, 3=No Limit"
+  },
+  {
+   "type": "MO",
+   "instance": 7,
+   "name": "OutdooorDemandRate_command",
+   "description": "Outdoor unit demand limit command",
+   "units": "",
+   "access": "C",
+   "states": "1=Thermo Off, 2=No Limit"
+  },
+  {
+   "type": "AI",
+   "instance": 12,
+   "name": "OutdooorDemandRateValue_status",
+   "description": "Outdoor unit demand limit value",
+   "units": "%",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "AO",
+   "instance": 2,
+   "name": "OutdooorDemandRateValue_command",
+   "description": "Outdoor unit demand limit value command",
+   "units": "%",
+   "access": "C",
+   "states": ""
+  },
+  {
+   "type": "BI",
+   "instance": 8,
+   "name": "LockRemoteControlAll_status",
+   "description": "Remote controller lock of all functions (status)",
+   "units": "",
+   "access": "R",
+   "states": "0=Unlocked, 1=Locked"
+  },
+  {
+   "type": "BO",
+   "instance": 6,
+   "name": "LockRemoteControlAll_command",
+   "description": "Remote controller lock of all functions (command)",
+   "units": "",
+   "access": "C",
+   "states": "0=Unlocked, 1=Locked"
+  },
+  {
+   "type": "BI",
+   "instance": 9,
+   "name": "LockRemoteControlOnOff_status",
+   "description": "Remote controller lock of on/off (status)",
+   "units": "",
+   "access": "R",
+   "states": "0=Unlocked, 1=Locked"
+  },
+  {
+   "type": "BO",
+   "instance": 7,
+   "name": "LockRemoteControlOnOff_command",
+   "description": "Remote controller lock of on/off (command)",
+   "units": "",
+   "access": "C",
+   "states": "0=Unlocked, 1=Locked"
+  },
+  {
+   "type": "BI",
+   "instance": 10,
+   "name": "LockRemoteControlMode_status",
+   "description": "Remote controller lock of mode (status)",
+   "units": "",
+   "access": "R",
+   "states": "0=Unlocked, 1=Locked"
+  },
+  {
+   "type": "BO",
+   "instance": 8,
+   "name": "LockRemoteControlMode_command",
+   "description": "Remote controller lock of mode (command)",
+   "units": "",
+   "access": "C",
+   "states": "0=Unlocked, 1=Locked"
+  },
+  {
+   "type": "BI",
+   "instance": 11,
+   "name": "LockRemoteControlSetPoint_status",
+   "description": "Remote controller lock of setpoint (status)",
+   "units": "",
+   "access": "R",
+   "states": "0=Unlocked, 1=Locked"
+  },
+  {
+   "type": "BO",
+   "instance": 9,
+   "name": "LockRemoteControlSetPoint_command",
+   "description": "Remote controller lock of setpoint (command)",
+   "units": "",
+   "access": "C",
+   "states": "0=Unlocked, 1=Locked"
+  },
+  {
+   "type": "BI",
+   "instance": 12,
+   "name": "LockRemoteControlFanSpeed_status",
+   "description": "Remote controller lock of fan speed (status)",
+   "units": "",
+   "access": "R",
+   "states": "0=Unlocked, 1=Locked"
+  },
+  {
+   "type": "BO",
+   "instance": 10,
+   "name": "LockRemoteControlFanSpeed_command",
+   "description": "Remote controller lock of fan speed (command)",
+   "units": "",
+   "access": "C",
+   "states": "0=Unlocked, 1=Locked"
+  },
+  {
+   "type": "BI",
+   "instance": 13,
+   "name": "LockRemoteControlVanesUD_status",
+   "description": "Remote controller lock of up/down vanes (status)",
+   "units": "",
+   "access": "R",
+   "states": "0=Unlocked, 1=Locked"
+  },
+  {
+   "type": "BO",
+   "instance": 11,
+   "name": "LockRemoteControlVanesUD_command",
+   "description": "Remote controller lock of up/down vanes (command)",
+   "units": "",
+   "access": "C",
+   "states": "0=Unlocked, 1=Locked"
+  },
+  {
+   "type": "AI",
+   "instance": 9,
+   "name": "DIP_SW_S1_status",
+   "description": "DIP switch SW1 position (decimal), read at boot",
+   "units": "",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "AI",
+   "instance": 10,
+   "name": "DIP_SW_S2_status",
+   "description": "DIP switch SW2 position (decimal), read at boot",
+   "units": "",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "AI",
+   "instance": 11,
+   "name": "SerialNumber",
+   "description": "Gateway serial number",
+   "units": "",
+   "access": "R",
+   "states": ""
+  }
+ ],
+ "covers_brands": [
+  "Panasonic"
+ ],
+ "short_model": "Panasonic Gateway INBACPAN001R100",
+ "page": "https://easybacnet.com/bacnet-points-lists/intesis/inbacpan001r100",
+ "note": "Re-typed from the manufacturer's public documentation (see source). Point availability varies by firmware and options; verify against the live device."
+}

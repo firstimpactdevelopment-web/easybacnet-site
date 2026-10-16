@@ -1,0 +1,475 @@
+{
+ "manufacturer": "Daikin",
+ "manufacturer_slug": "daikin",
+ "model": "intelligent Touch Manager (iTM) BACnet Server Gateway DCM014A51 - Indoor Unit and System Objects",
+ "model_slug": "itm-bacnet-server-gateway-indoor",
+ "aliases": [
+  "DCM014A51",
+  "iTM BACnet",
+  "intelligent Touch Manager",
+  "DCM601A71",
+  "DCM601B71",
+  "iTM BACnet Server Gateway"
+ ],
+ "equipment_type": "VRV BACnet gateway (iTM option)",
+ "applies_to": "VRV and ductless indoor unit groups managed by a Daikin intelligent Touch Manager with the DCM014A51 BACnet server option.",
+ "summary": "The DCM014A51 software option turns a Daikin intelligent Touch Manager into a BACnet IP server. The iTM acts as a BACnet virtual router: each indoor unit becomes its own virtual BACnet device carrying the same 37-object list, and a separate system control device holds schedule, auto-changeover, timed-override and forced-off objects. Objects can be enabled or disabled per unit during commissioning, so a site may expose fewer points than listed.",
+ "bacnet_transport": [
+  "BACnet IP"
+ ],
+ "firmware": null,
+ "default_device_instance": null,
+ "notes": [
+  "Each indoor unit is a separate virtual BACnet device behind the iTM's virtual router; instances 1-37 repeat on every indoor unit device.",
+  "The last four points (BO 1, BO 2, MV 3, BO 4) live on the iTM system control device, not on indoor unit devices.",
+  "Temperature units follow the iTM regional setting (Celsius or Fahrenheit).",
+  "Commands that the indoor unit rejects are reverted by the iTM after about 10 minutes.",
+  "Only the remote-controller group's designated unit (#0) should receive commands in a multi-unit group.",
+  "Freeze Protection (BI 37) is only available on certain indoor unit models."
+ ],
+ "source": {
+  "title": "intelligent Touch Manager (iTM) BACnet Server Gateway DCM014A51 Design Guide",
+  "doc_number": "DG_DCM014A51_02-19",
+  "revision_date": "2019-02",
+  "url": "https://daikincomfort.com/docs/default-source/itm-bacnet-server-gateway-option/eg-itm_bacnetgatewayguide_v2-0.pdf"
+ },
+ "integration": {
+  "summary": "Enable the DCM014A51 option on the iTM, assign each indoor unit a unique device ID and a BACnet network number for the virtual network, then use Occupancy Mode and the setpoint objects per indoor unit device. System-wide schedule, auto-changeover and forced-off objects sit on the separate system control device.",
+  "minimum_points": [
+   {
+    "ref": "MO 1",
+    "name": "Occupancy Mode",
+    "why": "Occ/Unocc/Standby; sends on/off to the indoor unit"
+   },
+   {
+    "ref": "BI 2",
+    "name": "Unit On_Off Status",
+    "why": "Actual on/off status"
+   },
+   {
+    "ref": "MV 4",
+    "name": "Operation Mode",
+    "why": "Cool/Heat/Fan/Dry"
+   },
+   {
+    "ref": "AV 6",
+    "name": "Occ Cooling Setpoint",
+    "why": "Occupied cooling setpoint"
+   },
+   {
+    "ref": "AV 7",
+    "name": "Occ Heating Setpoint",
+    "why": "Occupied heating setpoint"
+   },
+   {
+    "ref": "AI 5",
+    "name": "Room Temperature",
+    "why": "Room temperature"
+   },
+   {
+    "ref": "MV 16",
+    "name": "Fan Speed",
+    "why": "Fan speed command"
+   },
+   {
+    "ref": "BI 3",
+    "name": "Alarm Status",
+    "why": "Alarm; error code in the Description property"
+   },
+   {
+    "ref": "BI 26",
+    "name": "Communication Status",
+    "why": "Communication alarm for the unit"
+   }
+  ],
+  "enable": "Writing Occupancy Mode (MO 1) is the start/stop: Occ sends On, Unocc sends Off, Standby sends On with energy saving (setpoint offset by 3.6 F / 2 C). The iTM sends the command even if the unit is already in that state, and Occupancy Mode is set to 1 (Unocc) at iTM start-up. The 'Enable iTM Schedule Operation' object on the system control device turns the iTM's own schedule on or off.",
+  "heartbeat": "No BMS heartbeat is described. If a written value is not accepted by the indoor unit, the iTM reverts the BACnet present value to the previous value after a 10-minute timer.",
+  "remote_sensors": null,
+  "setup": [
+   "Recommended device IDs: 530000 for the system control device and 53PGGG for indoor units (P = port 1-8, GGG = DIII-Net group address, e.g. 531100).",
+   "Virtual BACnet network number must be unique; default is 100.",
+   "A virtual device's MAC address is the hex form of its device instance.",
+   "Can be configured as a BACnet foreign device with a BBMD IP address and port when the BMS is on another subnet."
+  ],
+  "gotchas": [
+   "In a multi-unit remote-controller group, only command the designated unit (#0); other units decide whether to follow.",
+   "Commands from cool to heat (or back) are refused unless the unit is the changeover master.",
+   "Objects can be disabled per unit during commissioning, so some points may be missing on site.",
+   "Setpoint values are rounded to the object's significant digits; temperature units follow the iTM locale."
+  ]
+ },
+ "points": [
+  {
+   "type": "MO",
+   "instance": 1,
+   "name": "Occupancy Mode",
+   "description": "Occupancy mode",
+   "units": "",
+   "access": "C",
+   "states": "1=Unocc, 2=Occ, 3=Standby"
+  },
+  {
+   "type": "BI",
+   "instance": 2,
+   "name": "Unit On_Off Status",
+   "description": "Indoor unit on/off status",
+   "units": "",
+   "access": "R",
+   "states": "Inactive=Off, Active=On"
+  },
+  {
+   "type": "BI",
+   "instance": 3,
+   "name": "Alarm Status",
+   "description": "Alarm status; error code in Description property",
+   "units": "",
+   "access": "R",
+   "states": "Inactive=Normal, Active=Alarm"
+  },
+  {
+   "type": "MV",
+   "instance": 4,
+   "name": "Operation Mode",
+   "description": "Operation mode",
+   "units": "",
+   "access": "C",
+   "states": "1=Cool, 2=Heat, 3=Fan, 4=Dry"
+  },
+  {
+   "type": "AI",
+   "instance": 5,
+   "name": "Room Temperature",
+   "description": "Room temperature",
+   "units": "°F/°C",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 6,
+   "name": "Occ Cooling Setpoint",
+   "description": "Occupied cooling setpoint",
+   "units": "°F/°C",
+   "access": "W",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 7,
+   "name": "Occ Heating Setpoint",
+   "description": "Occupied heating setpoint",
+   "units": "°F/°C",
+   "access": "W",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 8,
+   "name": "Unocc Cooling Setpoint",
+   "description": "Unoccupied (setback) cooling setpoint",
+   "units": "°F/°C",
+   "access": "W",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 9,
+   "name": "Unocc Heating Setpoint",
+   "description": "Unoccupied (setback) heating setpoint",
+   "units": "°F/°C",
+   "access": "W",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 10,
+   "name": "Max Cooling Setpoint",
+   "description": "Cooling setpoint upper limit",
+   "units": "°F/°C",
+   "access": "W",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 11,
+   "name": "Min Cooling Setpoint",
+   "description": "Cooling setpoint lower limit",
+   "units": "°F/°C",
+   "access": "W",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 12,
+   "name": "Max Heating Setpoint",
+   "description": "Heating setpoint upper limit",
+   "units": "°F/°C",
+   "access": "W",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 13,
+   "name": "Min Heating Setpoint",
+   "description": "Heating setpoint lower limit",
+   "units": "°F/°C",
+   "access": "W",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 14,
+   "name": "Min Setpoint Differential (Cooling & Heating)",
+   "description": "Minimum cool/heat setpoint differential",
+   "units": "°F/°C",
+   "access": "W",
+   "states": ""
+  },
+  {
+   "type": "BV",
+   "instance": 15,
+   "name": "Cooling & Heating Setpoint Tracking Mode",
+   "description": "Cooling and heating setpoint tracking mode",
+   "units": "",
+   "access": "C",
+   "states": "Inactive=Disable, Active=Enable"
+  },
+  {
+   "type": "MV",
+   "instance": 16,
+   "name": "Fan Speed",
+   "description": "Fan speed",
+   "units": "",
+   "access": "C",
+   "states": "1=Low, 2=Reserved, 3=Medium, 4=Reserved, 5=High, 6=Reserved, 7=Reserved, 8=Auto"
+  },
+  {
+   "type": "MV",
+   "instance": 17,
+   "name": "Airflow Direction",
+   "description": "Airflow direction (louver position)",
+   "units": "",
+   "access": "C",
+   "states": "1=P0, 2=P1, 3=P2, 4=P3, 5=P4, 6=Reserved, 7=Reserved, 8=P7"
+  },
+  {
+   "type": "BV",
+   "instance": 18,
+   "name": "Timed Override Operation",
+   "description": "Timed override operation",
+   "units": "",
+   "access": "C",
+   "states": "Inactive=Disable, Active=Enable"
+  },
+  {
+   "type": "MI",
+   "instance": 19,
+   "name": "Current Unit Operation",
+   "description": "Current unit operation",
+   "units": "",
+   "access": "R",
+   "states": "1=Off, 2=Normal, 3=Override, 4=Setback"
+  },
+  {
+   "type": "MV",
+   "instance": 20,
+   "name": "Remote Controller Prohibit (On_Off)",
+   "description": "Remote controller on/off permit/prohibit",
+   "units": "",
+   "access": "C",
+   "states": "1=Permit, 2=Prohibit, 3=Stop Only"
+  },
+  {
+   "type": "BV",
+   "instance": 21,
+   "name": "Remote Controller Prohibit (Operation Mode)",
+   "description": "Remote controller mode permit/prohibit",
+   "units": "",
+   "access": "C",
+   "states": "Inactive=Permit, Active=Prohibit"
+  },
+  {
+   "type": "BV",
+   "instance": 22,
+   "name": "Remote Controller Prohibit (Setpoint)",
+   "description": "Remote controller setpoint permit/prohibit",
+   "units": "",
+   "access": "C",
+   "states": "Inactive=Permit, Active=Prohibit"
+  },
+  {
+   "type": "BI",
+   "instance": 23,
+   "name": "Filter Sign Status",
+   "description": "Filter sign status",
+   "units": "",
+   "access": "R",
+   "states": "Inactive=Normal, Active=Alarm"
+  },
+  {
+   "type": "BV",
+   "instance": 24,
+   "name": "Filter Sign Reset",
+   "description": "Filter sign reset",
+   "units": "",
+   "access": "C",
+   "states": "Inactive=Reset, Active=Alarm"
+  },
+  {
+   "type": "BI",
+   "instance": 25,
+   "name": "Indoor Fan Status",
+   "description": "Indoor fan status",
+   "units": "",
+   "access": "R",
+   "states": "Inactive=Off, Active=On"
+  },
+  {
+   "type": "BI",
+   "instance": 26,
+   "name": "Communication Status",
+   "description": "Communication status",
+   "units": "",
+   "access": "R",
+   "states": "Inactive=Normal, Active=Alarm"
+  },
+  {
+   "type": "BI",
+   "instance": 27,
+   "name": "Thermo-on Status",
+   "description": "Thermo-on status",
+   "units": "",
+   "access": "R",
+   "states": "Inactive=Off, Active=On"
+  },
+  {
+   "type": "MI",
+   "instance": 28,
+   "name": "Compressor Status",
+   "description": "Compressor status",
+   "units": "",
+   "access": "R",
+   "states": "1=Off, 2=On, 3=Defrost/Hot Start"
+  },
+  {
+   "type": "BI",
+   "instance": 29,
+   "name": "Aux Heater Status",
+   "description": "Auxiliary heater status",
+   "units": "",
+   "access": "R",
+   "states": "Inactive=Off, Active=On"
+  },
+  {
+   "type": "BV",
+   "instance": 30,
+   "name": "Forced Thermo-off",
+   "description": "Forced thermo-off",
+   "units": "",
+   "access": "C",
+   "states": "Inactive=Disable, Active=Enable"
+  },
+  {
+   "type": "BI",
+   "instance": 31,
+   "name": "Indoor Unit Changeover Option",
+   "description": "Changeover option available on this unit",
+   "units": "",
+   "access": "R",
+   "states": "Inactive=Not Available, Active=Available"
+  },
+  {
+   "type": "AI",
+   "instance": 32,
+   "name": "Return Air Temperature",
+   "description": "Return air temperature",
+   "units": "°F/°C",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "AI",
+   "instance": 33,
+   "name": "Discharge Air Temperature",
+   "description": "Discharge air temperature",
+   "units": "°F/°C",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "AI",
+   "instance": 34,
+   "name": "Liquid Pipe Temperature",
+   "description": "Liquid pipe temperature",
+   "units": "°F/°C",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "AI",
+   "instance": 35,
+   "name": "Gas Pipe Temperature",
+   "description": "Gas pipe temperature",
+   "units": "°F/°C",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "AI",
+   "instance": 36,
+   "name": "EV Position",
+   "description": "Electronic expansion valve position",
+   "units": "",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "BI",
+   "instance": 37,
+   "name": "Freeze Protection",
+   "description": "Freeze protection (select FXEQ/FXFQ/FXTQ/FXUQ/FXSQ/CXTQ models)",
+   "units": "",
+   "access": "R",
+   "states": "Inactive=Off, Active=On"
+  },
+  {
+   "type": "BO",
+   "instance": 1,
+   "name": "Enable iTM Schedule Operation",
+   "description": "System control device: enable iTM schedule",
+   "units": "",
+   "access": "C",
+   "states": "Inactive=Disable, Active=Enable"
+  },
+  {
+   "type": "BO",
+   "instance": 2,
+   "name": "Enable iTM Auto-Changeover Operation",
+   "description": "System control device: enable auto-changeover",
+   "units": "",
+   "access": "C",
+   "states": "Inactive=Disable, Active=Enable"
+  },
+  {
+   "type": "MV",
+   "instance": 3,
+   "name": "Timed Override Minutes",
+   "description": "System control device: timed override duration",
+   "units": "min",
+   "access": "C",
+   "states": "1=30, 2=60, 3=90, 4=120, 5=150, 6=180"
+  },
+  {
+   "type": "BO",
+   "instance": 4,
+   "name": "System Forced Off",
+   "description": "System control device: forced shutdown of all groups",
+   "units": "",
+   "access": "C",
+   "states": "Inactive=Inactive, Active=Active"
+  }
+ ],
+ "short_model": "iTM BACnet Gateway, Indoor Units",
+ "page": "https://easybacnet.com/bacnet-points-lists/daikin/itm-bacnet-server-gateway-indoor",
+ "note": "Re-typed from the manufacturer's public documentation (see source). Point availability varies by firmware and options; verify against the live device."
+}

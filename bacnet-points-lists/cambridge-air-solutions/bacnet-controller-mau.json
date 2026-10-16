@@ -1,0 +1,802 @@
+{
+ "manufacturer": "Cambridge Air Solutions",
+ "manufacturer_slug": "cambridge-air-solutions",
+ "model": "BACnet Controller - MAU",
+ "model_slug": "bacnet-controller-mau",
+ "aliases": [
+  "Cambridge MAU controller",
+  "Cambridge BACnet Controller",
+  "Cambridge heater BACnet",
+  "MAU Technical Manual 4.0.3.0012"
+ ],
+ "equipment_type": "Make-up air heater controller",
+ "applies_to": "Cambridge Air Solutions direct-fired make-up air and space heating units fitted with the optional BACnet Controller.",
+ "summary": "Cambridge's BACnet Controller is a BTL-listed, programmable MS/TP controller mounted in the heater that runs the fan and burner and gives a BAS access to its points. The object list is mostly multistate values (statuses, commands, HOA, modes, alarms) and analog values (temperatures, setpoints, delays, runtimes), with four binary values for runtime/cycle-count resets. Operating mode (unit heat, make-up air, make-up air with reset, summer vent, off) is selected with the Normal and Override Mode MVs.",
+ "bacnet_transport": [
+  "BACnet MS/TP"
+ ],
+ "firmware": "4.0.3.0012",
+ "default_device_instance": null,
+ "access_inferred": false,
+ "notes": [
+  "Optional points (mode switch, filter status/pressure, supply fan output and speed) exist only on units with those options.",
+  "Rows from the input/output tables point to the same MV/AV objects as the value tables; hardware terminal numbers are kept in the description.",
+  "The input/output tables show binary states as 0/1 while the MV table shows the same objects as 1/2; both are kept as printed.",
+  "MV-50052/50053/50054 share one mode state list in the source (merged cell).",
+  "Temperatures in °F by default (MV-3006 selects IP/SI); filter pressure in in. w.c."
+ ],
+ "source": {
+  "title": "Operating Instructions - BACnet Controller - MAU (BACnet Controller MAU Technical Manual)",
+  "doc_number": "Version 4.0.3.0012",
+  "revision_date": "2022-11-30",
+  "url": "https://www.cambridge-eng.com/Portals/0/Operating%20Instructions%20v4_0_3_0012.pdf"
+ },
+ "integration": {
+  "summary": "Enable the unit with MV-3011 Unit Enable Mode, choose the operating mode with MV-50052 Normal Mode (MV-50053 Override Mode for the alternate mode) and command occupancy with MV-3021 Occupancy Override or the controller's own schedule. Adjust the zone and discharge setpoints, read MV-3001 Unit Status, the burner/fan status MVs and the fault MVs, and reset faults with MV-50058. The controller runs stand-alone on its defaults (unit heater mode, 160°F discharge, 65°F zone) if the network is lost, provided a zone sensor is connected.",
+  "minimum_points": [
+   {
+    "ref": "MV 3011",
+    "name": "Unit Enable Mode",
+    "why": "Shutdown / enable"
+   },
+   {
+    "ref": "MV 3021",
+    "name": "Occupancy Override",
+    "why": "Occupied / unoccupied / standby from the BAS"
+   },
+   {
+    "ref": "MV 50052",
+    "name": "Normal Mode",
+    "why": "Unit heat, make-up air, summer vent or off"
+   },
+   {
+    "ref": "MV 3001",
+    "name": "Unit Status",
+    "why": "Heating / satisfied / cooling / sensor unreliable"
+   },
+   {
+    "ref": "AV 3011",
+    "name": "Effective Discharge Air Temperature",
+    "why": "Discharge air temperature"
+   },
+   {
+    "ref": "AV 3037",
+    "name": "Discharge Air Set Point – Makeup Air Mode",
+    "why": "Discharge setpoint in make-up air mode"
+   },
+   {
+    "ref": "AV 3017",
+    "name": "Occupied Zone Heating Set Point",
+    "why": "Zone heating setpoint"
+   },
+   {
+    "ref": "MV 3018",
+    "name": "Burner Status",
+    "why": "Burner proven on"
+   },
+   {
+    "ref": "MV 50056",
+    "name": "Burner Fault",
+    "why": "Burner alarm"
+   },
+   {
+    "ref": "MV 50058",
+    "name": "Reset Unit Fault",
+    "why": "Network fault reset"
+   }
+  ],
+  "enable": "MV-3011 Unit Enable Mode (1=Shutdown, 2=Enable). Fan and burner Hand/Off/Auto overrides are MV-50050 Supply Fan HOA and MV-11 Burner HOA; leave them in Auto (3) for normal control.",
+  "heartbeat": null,
+  "remote_sensors": "Network values can replace the wired sensors: AV-3038 Network Override Outdoor Air Temperature and AV-3045 Network Override Zone Temperature. MV-50064 ZN-T Remote Setpoint Enable selects no remote setpoint, hardware only, network only, or network with hardware backup. The manual gives no timeout for these.",
+  "setup": [
+   "MS/TP only, up to 76.8 kbaud; MAC address 4-127 (default 4), set from the local display (Controller > Network) or a MAP gateway (AV-3003).",
+   "Baud rate defaults to Auto (follows the bus supervisor); the manual suggests 38400 when used with a Smart Building Hub.",
+   "Device Object ID (AV-3004) must be unique; BACnet Encoding Type must match the rest of the network.",
+   "Disconnect from the bus while changing network settings and cycle power afterwards.",
+   "An EOL terminator is needed when the controller is at either end of the MS/TP trunk."
+  ],
+  "gotchas": [
+   "The heating lockout (AV-3010) stops the burner whenever outdoor temperature is above it, even with a heating call.",
+   "In summer vent mode with SF Bypass = No, the fan will not run if outdoor temperature is above zone temperature.",
+   "Continuous Fan Operation in Occupied (MV-50065) decides whether the fan keeps running when the zone is satisfied in the reset & on/off mode.",
+   "Some faults also need a reset from the local display (Commissioning > Overrides > Unit Reset) or MV-50058."
+  ]
+ },
+ "points": [
+  {
+   "type": "AV",
+   "instance": 3032,
+   "name": "Supply Fan Output (optional)",
+   "description": "Hardware point AO:2",
+   "units": "%",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 3039,
+   "name": "Filter pressure (optional)",
+   "description": "Hardware point AI:5",
+   "units": "in. w.c.",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "MV",
+   "instance": 50051,
+   "name": "Filter status (optional)",
+   "description": "Hardware point BI:7",
+   "units": "",
+   "access": "R",
+   "states": "0=Normal, 1=Alarm"
+  },
+  {
+   "type": "MV",
+   "instance": 50055,
+   "name": "Mode Switch (optional)",
+   "description": "Hardware point BI:4",
+   "units": "",
+   "access": "R",
+   "states": "0=Normal, 1=Override"
+  },
+  {
+   "type": "BV",
+   "instance": 0,
+   "name": "Burner Runtime Reset",
+   "description": "",
+   "units": "",
+   "access": "W",
+   "states": "0=Off, 1=Reset"
+  },
+  {
+   "type": "BV",
+   "instance": 1,
+   "name": "Burner Cycle Count Reset",
+   "description": "",
+   "units": "",
+   "access": "W",
+   "states": "0=Off, 1=Reset"
+  },
+  {
+   "type": "BV",
+   "instance": 2,
+   "name": "Supply Fan Runtime Reset",
+   "description": "",
+   "units": "",
+   "access": "W",
+   "states": "0=Off, 1=Reset"
+  },
+  {
+   "type": "BV",
+   "instance": 3,
+   "name": "Supply Fan Cycle Count Reset",
+   "description": "",
+   "units": "",
+   "access": "W",
+   "states": "0=Off, 1=Reset"
+  },
+  {
+   "type": "MV",
+   "instance": 11,
+   "name": "Burner HOA",
+   "description": "",
+   "units": "",
+   "access": "W",
+   "states": "1=Hand, 2=Off, 3=Auto"
+  },
+  {
+   "type": "MV",
+   "instance": 1577,
+   "name": "Burner Modulation Mode",
+   "description": "",
+   "units": "",
+   "access": "W",
+   "states": "1=Auto, 2=Manual"
+  },
+  {
+   "type": "MV",
+   "instance": 3001,
+   "name": "Unit Status",
+   "description": "",
+   "units": "",
+   "access": "R",
+   "states": "1=Heating, 2=Satisfied, 3=Cooling, 4=Temperature Unreliable"
+  },
+  {
+   "type": "MV",
+   "instance": 3006,
+   "name": "Units",
+   "description": "",
+   "units": "",
+   "access": "W",
+   "states": "1=IP, 2=SI"
+  },
+  {
+   "type": "MV",
+   "instance": 3007,
+   "name": "FCB Baud Rate",
+   "description": "",
+   "units": "",
+   "access": "W",
+   "states": "1=Auto, 2=1200, 3=9600, 4=19200, 5=38400, 6=76800"
+  },
+  {
+   "type": "MV",
+   "instance": 3008,
+   "name": "Operating Baud Rate",
+   "description": "Baud rate in use (see FCB Baud Rate states)",
+   "units": "",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "MV",
+   "instance": 3009,
+   "name": "PID Tuning Reset",
+   "description": "",
+   "units": "",
+   "access": "W",
+   "states": "1=Off, 2=Reset"
+  },
+  {
+   "type": "MV",
+   "instance": 3010,
+   "name": "Occupancy Schedule",
+   "description": "Occupancy schedule reference",
+   "units": "",
+   "access": "W",
+   "states": ""
+  },
+  {
+   "type": "MV",
+   "instance": 3011,
+   "name": "Unit Enable Mode",
+   "description": "",
+   "units": "",
+   "access": "W",
+   "states": "1=Shutdown, 2=Enable"
+  },
+  {
+   "type": "MV",
+   "instance": 3012,
+   "name": "Effective Occupancy",
+   "description": "",
+   "units": "",
+   "access": "R",
+   "states": "Occupied / Unoccupied"
+  },
+  {
+   "type": "MV",
+   "instance": 3016,
+   "name": "Supply Fan Status",
+   "description": "Hardware point BI:2",
+   "units": "",
+   "access": "R",
+   "states": "1=Off, 2=On"
+  },
+  {
+   "type": "MV",
+   "instance": 3017,
+   "name": "Unit Reset Fault",
+   "description": "Hardware point BI:3",
+   "units": "",
+   "access": "R",
+   "states": "1=Normal, 2=Alarm"
+  },
+  {
+   "type": "MV",
+   "instance": 3018,
+   "name": "Burner Status",
+   "description": "Hardware point BI:1",
+   "units": "",
+   "access": "R",
+   "states": "1=Off, 2=On"
+  },
+  {
+   "type": "MV",
+   "instance": 3019,
+   "name": "Burner Command",
+   "description": "Hardware point BO:4",
+   "units": "",
+   "access": "R",
+   "states": "1=Off, 2=On"
+  },
+  {
+   "type": "MV",
+   "instance": 3020,
+   "name": "Supply Fan Command",
+   "description": "Hardware point BO:5",
+   "units": "",
+   "access": "R",
+   "states": "1=Off, 2=On"
+  },
+  {
+   "type": "MV",
+   "instance": 3021,
+   "name": "Occupancy Override",
+   "description": "",
+   "units": "",
+   "access": "W",
+   "states": "1=Occupied, 2=UnOccupied, 3=Bypass, 4=Standby, 5=Not Set"
+  },
+  {
+   "type": "MV",
+   "instance": 3022,
+   "name": "Emergency Heat Enabled",
+   "description": "",
+   "units": "",
+   "access": "R",
+   "states": "1=Inactive, 2=Active"
+  },
+  {
+   "type": "MV",
+   "instance": 50050,
+   "name": "Supply Fan HOA",
+   "description": "",
+   "units": "",
+   "access": "W",
+   "states": "1=Hand, 2=Off, 3=Auto"
+  },
+  {
+   "type": "MV",
+   "instance": 50052,
+   "name": "Normal Mode",
+   "description": "",
+   "units": "",
+   "access": "W",
+   "states": "1=Unit Heat, 2=Makeup Air, 3=Makeup Air w/Reset, 4=Makeup Air w/Reset & On-Off, 5=Summer Vent, 6=Off"
+  },
+  {
+   "type": "MV",
+   "instance": 50053,
+   "name": "Override Mode",
+   "description": "",
+   "units": "",
+   "access": "W",
+   "states": "1=Unit Heat, 2=Makeup Air, 3=Makeup Air w/Reset, 4=Makeup Air w/Reset & On-Off, 5=Summer Vent, 6=Off"
+  },
+  {
+   "type": "MV",
+   "instance": 50054,
+   "name": "Effective Mode",
+   "description": "",
+   "units": "",
+   "access": "R",
+   "states": "1=Unit Heat, 2=Makeup Air, 3=Makeup Air w/Reset, 4=Makeup Air w/Reset & On-Off, 5=Summer Vent, 6=Off"
+  },
+  {
+   "type": "MV",
+   "instance": 50056,
+   "name": "Burner Fault",
+   "description": "",
+   "units": "",
+   "access": "R",
+   "states": "1=Normal, 2=Alarm"
+  },
+  {
+   "type": "MV",
+   "instance": 50057,
+   "name": "Supply Fan Fault",
+   "description": "",
+   "units": "",
+   "access": "R",
+   "states": "1=Normal, 2=Alarm"
+  },
+  {
+   "type": "MV",
+   "instance": 50058,
+   "name": "Reset Unit Fault",
+   "description": "",
+   "units": "",
+   "access": "W",
+   "states": "1=Off, 2=Reset"
+  },
+  {
+   "type": "MV",
+   "instance": 50059,
+   "name": "Zone Temperature Sensor Failure",
+   "description": "",
+   "units": "",
+   "access": "R",
+   "states": "1=Normal, 2=Alarm"
+  },
+  {
+   "type": "MV",
+   "instance": 50060,
+   "name": "Supply Air Temperature Sensor Failure",
+   "description": "",
+   "units": "",
+   "access": "R",
+   "states": "1=Normal, 2=Alarm"
+  },
+  {
+   "type": "MV",
+   "instance": 50061,
+   "name": "Outdoor Air Temperature Sensor Failure",
+   "description": "",
+   "units": "",
+   "access": "R",
+   "states": "1=Normal, 2=Alarm"
+  },
+  {
+   "type": "MV",
+   "instance": 50062,
+   "name": "DAT Low Temperature Alarm",
+   "description": "",
+   "units": "",
+   "access": "R",
+   "states": "1=Normal, 2=Lockout"
+  },
+  {
+   "type": "MV",
+   "instance": 50063,
+   "name": "Heater Lockout Alarm",
+   "description": "",
+   "units": "",
+   "access": "R",
+   "states": "1=Normal, 2=Lockout"
+  },
+  {
+   "type": "MV",
+   "instance": 50064,
+   "name": "ZN-T Remote Setpoint Enable",
+   "description": "",
+   "units": "",
+   "access": "W",
+   "states": "1=No remote Setpoint, 2=Hardware Only, 3=Network Only, 4=Network with Hardware Backup"
+  },
+  {
+   "type": "MV",
+   "instance": 50065,
+   "name": "Continuous Fan Operation in Occupied",
+   "description": "",
+   "units": "",
+   "access": "W",
+   "states": "1=No, 2=Yes"
+  },
+  {
+   "type": "MV",
+   "instance": 50066,
+   "name": "SF Bypass",
+   "description": "",
+   "units": "",
+   "access": "W",
+   "states": "1=No, 2=Yes"
+  },
+  {
+   "type": "AV",
+   "instance": 130,
+   "name": "Zone Low Limit + Differential",
+   "description": "",
+   "units": "°F",
+   "access": "W",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 756,
+   "name": "Discharge Air Set Point – Unit Heat Mode",
+   "description": "",
+   "units": "°F",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 1382,
+   "name": "Burner Modulation Set Point",
+   "description": "",
+   "units": "%",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 3003,
+   "name": "Device Address",
+   "description": "",
+   "units": "",
+   "access": "W",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 3004,
+   "name": "Device Object ID",
+   "description": "",
+   "units": "",
+   "access": "W",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 3007,
+   "name": "Zone Low Limit Set Point",
+   "description": "",
+   "units": "°F",
+   "access": "W",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 3008,
+   "name": "Effective Cooling Set Point",
+   "description": "",
+   "units": "°F",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 3009,
+   "name": "Effective Heating Set Point",
+   "description": "",
+   "units": "°F",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 3010,
+   "name": "Heating Lockout Set Point",
+   "description": "",
+   "units": "°F",
+   "access": "W",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 3011,
+   "name": "Effective Discharge Air Temperature",
+   "description": "Hardware point AI:6",
+   "units": "°F",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 3012,
+   "name": "Discharge Air High Set Point",
+   "description": "",
+   "units": "°F",
+   "access": "W",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 3014,
+   "name": "Discharge Air Low Set Point",
+   "description": "",
+   "units": "°F",
+   "access": "W",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 3015,
+   "name": "Occupied Zone Cooling Set Point",
+   "description": "",
+   "units": "°F",
+   "access": "W",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 3016,
+   "name": "Unoccupied Zone Cooling Set Point",
+   "description": "",
+   "units": "°F",
+   "access": "W",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 3017,
+   "name": "Occupied Zone Heating Set Point",
+   "description": "",
+   "units": "°F",
+   "access": "W",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 3018,
+   "name": "Unoccupied Zone Heating Set Point",
+   "description": "",
+   "units": "°F",
+   "access": "W",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 3019,
+   "name": "Effective Outdoor Temperature",
+   "description": "Hardware point AI:8",
+   "units": "°F",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 3020,
+   "name": "Effective Zone Temperature",
+   "description": "Hardware point AI:9",
+   "units": "°F",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 3026,
+   "name": "Modulated Burner Control",
+   "description": "Hardware point AO:1",
+   "units": "%",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 3029,
+   "name": "Application Software Version",
+   "description": "",
+   "units": "",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 3030,
+   "name": "Effective Discharge Air Set Point",
+   "description": "",
+   "units": "°F",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 3031,
+   "name": "Supply Fan Speed (optional)",
+   "description": "",
+   "units": "%",
+   "access": "W",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 3033,
+   "name": "Burner Runtime",
+   "description": "",
+   "units": "hours",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 3034,
+   "name": "Burner Cycle Count",
+   "description": "",
+   "units": "",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 3035,
+   "name": "Supply Fan Runtime",
+   "description": "",
+   "units": "hours",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 3036,
+   "name": "Supply Fan Cycle Count",
+   "description": "",
+   "units": "",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 3037,
+   "name": "Discharge Air Set Point – Makeup Air Mode",
+   "description": "",
+   "units": "°F",
+   "access": "W",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 3038,
+   "name": "Network Override Outdoor Air Temperature",
+   "description": "",
+   "units": "°F",
+   "access": "W",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 3040,
+   "name": "Filter Pressure Offset",
+   "description": "",
+   "units": "in. w.c.",
+   "access": "W",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 3041,
+   "name": "Fan Fault Delay",
+   "description": "",
+   "units": "seconds",
+   "access": "W",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 3042,
+   "name": "Burner Fault Delay",
+   "description": "",
+   "units": "seconds",
+   "access": "W",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 3043,
+   "name": "Low Temperature Cutout Setpoint",
+   "description": "",
+   "units": "°F",
+   "access": "W",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 3044,
+   "name": "Low Temperature Cutout Delay",
+   "description": "",
+   "units": "seconds",
+   "access": "W",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 3045,
+   "name": "Network Override Zone Temperature",
+   "description": "",
+   "units": "°F",
+   "access": "W",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 3046,
+   "name": "Zone Differential",
+   "description": "",
+   "units": "°F",
+   "access": "W",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 7018,
+   "name": "AI1 Max Value",
+   "description": "",
+   "units": "in. w.c.",
+   "access": "W",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 7019,
+   "name": "AI1 Output Range High",
+   "description": "",
+   "units": "in. w.c.",
+   "access": "W",
+   "states": ""
+  }
+ ],
+ "page": "https://easybacnet.com/bacnet-points-lists/cambridge-air-solutions/bacnet-controller-mau",
+ "note": "Re-typed from the manufacturer's public documentation (see source). Point availability varies by firmware and options; verify against the live device."
+}

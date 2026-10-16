@@ -1,0 +1,622 @@
+{
+ "manufacturer": "Condair",
+ "manufacturer_slug": "condair",
+ "model": "Condair ME (BACnet gateway board)",
+ "model_slug": "me-gateway-board",
+ "aliases": [
+  "Virtual_BCU_ME",
+  "ME ProtoCessor gateway"
+ ],
+ "equipment_type": "Evaporative humidifier BACnet gateway",
+ "applies_to": "Condair ME evaporative humidifiers (Integrated Controller 5.9.x.x and 5.10.x.x) with the optional BACnet/LonWorks gateway board.",
+ "summary": "Condair ME units can reach BACnet IP or MS/TP through the optional ProtoCessor gateway board. The virtual device reports status, maintenance countdowns, per-stage capacity and pump demand, water and air temperature, faults, and offers writable humidity and temperature loops, wash-over/drain commands and demand inputs.",
+ "bacnet_transport": [
+  "BACnet IP",
+  "BACnet MS/TP"
+ ],
+ "firmware": "Integrated Controller 5.9.x.x / 5.10.x.x",
+ "default_device_instance": "410 (BACnet IP); 1001 (MS/TP)",
+ "access_inferred": false,
+ "notes": [
+  "These objects belong to the optional ProtoCessor (FieldServer) BACnet/LonWorks gateway board, not the BACnet on-board interface; object names and instances differ between the two.",
+  "Gateway defaults: IP 192.168.1.24 (boards shipped from February 2022; earlier boards 10.232.72.172), network number 101, MS/TP MAC 127 and MS/TP Node_ID 1001; settings are edited in the gateway's config.csv via its web GUI.",
+  "The gateway talks to the Integrated Controller over Modbus RTU, so the controller signal source is set to Modbus (not BACnet) and its own BACnet on-board function must be Off.",
+  "Capacity, pressure and temperature units follow the controller's Metric/Imperial setting."
+ ],
+ "source": {
+  "title": "Gateway Board for BACnet and LonWorks - Supplemental Installation and Operation Manual",
+  "doc_number": "2585293-L",
+  "revision_date": "2022-02",
+  "url": "https://www.condair.com/consense/bms-communication-ic-1.0/am_bms_interface_2585293_en_condairltd.pdf"
+ },
+ "integration": {
+  "summary": "Configure the ME controller for Modbus RTU with Signal Source = Modbus and System Mode (Humidifying or Cooling), set up the gateway's BACnet side, and write demand/RH to AO 1 and, for cooling, air temperature to AO 2. Check BI 19 for gateway-to-unit communication.",
+  "minimum_points": [
+   {
+    "ref": "AO 1",
+    "name": "AO_RemRHorDem",
+    "why": "Demand or measured RH from the BMS"
+   },
+   {
+    "ref": "AO 2",
+    "name": "AO_RemTemp",
+    "why": "Air temperature from the BMS (cooling)"
+   },
+   {
+    "ref": "MI 1",
+    "name": "MI_HumStatus",
+    "why": "Operating status"
+   },
+   {
+    "ref": "MI 2",
+    "name": "MI_ServStatus",
+    "why": "Maintenance/fault status"
+   },
+   {
+    "ref": "AI 1",
+    "name": "AI_ErrorCode",
+    "why": "Active error code"
+   },
+   {
+    "ref": "BI 19",
+    "name": "BI_Connection",
+    "why": "Gateway-to-humidifier node status"
+   },
+   {
+    "ref": "BV 1",
+    "name": "BV_Reset",
+    "why": "Remote reset"
+   }
+  ],
+  "enable": "Set Control Settings (password 0335) > Signal Source to Modbus, choose the Control Mode (Demand, RH P or RH PI), and set the controller's Modbus RTU parameters to match the gateway. On the ME also set System Mode to Humidifying or Cooling.",
+  "heartbeat": "Controller BMS Timeout (1-300 s, default 300 s): if the control signal is not updated within the timeout, warning W35 BMS Timeout is raised and humidification stops until a valid signal returns. The gateway only forwards the control value to the humidifier when it changes.",
+  "remote_sensors": "In Demand mode the BMS writes the required output (0-100 %) to the AO 1. In RH P or RH PI mode the BMS writes the measured humidity there and the controller's own setpoint, P-band and I-time AVs do the control. Do not connect a hard-wired demand or sensor signal while the BACnet signal is used. AO 2 carries the air temperature for cooling control.",
+  "setup": [
+   "Integrated Controller Communication submenu (password 0335): Modbus/RTU, address 10, even parity, 9600 baud, MSR first; disable the controller's own BACnet function.",
+   "Gateway factory settings: BACnet IP device instance DL 300, ME 410, RS 710 (EL 220); MS/TP 9600 baud, MAC 127, Node_ID 1001.",
+   "Gateway IP defaults to 192.168.1.24/24 for boards built from February 2022 (10.232.72.172/16 before); configure via the FS-GUI web page on port 80.",
+   "Device instance, network number (default 101) and MS/TP MAC are edited in the gateway's config.csv."
+  ],
+  "gotchas": [
+   "Because the gateway only passes the control value on when it changes, rewriting an identical value may not refresh the controller's BMS timeout; the manual does not describe a workaround.",
+   "Object names and instances differ from the BACnet on-board interface of the same humidifier; do not reuse an on-board mapping.",
+   "Capacity, pressure and temperature units follow the controller's Metric/Imperial setting."
+  ]
+ },
+ "points": [
+  {
+   "type": "DEV",
+   "instance": 410,
+   "name": "Virtual_BCU_ME",
+   "description": "Humidifier ME",
+   "units": "",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "MI",
+   "instance": 1,
+   "name": "MI_HumStatus",
+   "description": "Operating status",
+   "units": "",
+   "access": "R",
+   "states": "1=Initializing, 2=Diagnostic, 3=Stopped, 4=Humidifying, 5=Cooling, 6=Holding, 7=Draining, 8=Refreshing, 9=Filling, 10=Standby, 11=Diluting, 12=Drain Assisting, 13=Bleeding, 14=Ramping Up, 15=Switched Off, 16=Remote Off, 17=Purging, 18=Drain Check"
+  },
+  {
+   "type": "MI",
+   "instance": 2,
+   "name": "MI_ServStatus",
+   "description": "Maintenance and malfunctions status",
+   "units": "",
+   "access": "R",
+   "states": "1=Service Info, 2=Warning, 3=Service, 4=Refill Liquid, 5=Replace Pure- Flow Ag+, 6=Replace UV Bulb, 7=Matrix Wash Over, 8=Out of Comissioning, 9=Activation Code, 10=Fault"
+  },
+  {
+   "type": "AI",
+   "instance": 1,
+   "name": "AI_ErrorCode",
+   "description": "Error code",
+   "units": "",
+   "access": "R",
+   "states": "0=no Error"
+  },
+  {
+   "type": "AI",
+   "instance": 2,
+   "name": "AI_OperatHours",
+   "description": "Operating hours",
+   "units": "h",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "AI",
+   "instance": 3,
+   "name": "AI_NextSySvc",
+   "description": "Next service",
+   "units": "h",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "AI",
+   "instance": 4,
+   "name": "AI_NextUVSvc",
+   "description": "Next UV bulb exchange",
+   "units": "days",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "AI",
+   "instance": 5,
+   "name": "AI_NextAgSvc",
+   "description": "Next PureFlo Ag+ exchange",
+   "units": "days",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "AI",
+   "instance": 6,
+   "name": "AI_RHorDemand",
+   "description": "Actual humidity or demand",
+   "units": "%",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "AI",
+   "instance": 7,
+   "name": "AI_Temp",
+   "description": "Actual air temperature",
+   "units": "°C or °F",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "AI",
+   "instance": 8,
+   "name": "AI_UVCurrA",
+   "description": "UV current",
+   "units": "A",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "AI",
+   "instance": 9,
+   "name": "AI_Stage1Cap",
+   "description": "Water capacity stage 1",
+   "units": "kg/h or lb/h",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "AI",
+   "instance": 10,
+   "name": "AI_Stage2Cap",
+   "description": "Water capacity stage 2",
+   "units": "kg/h or lb/h",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "AI",
+   "instance": 11,
+   "name": "AI_Stage3Cap",
+   "description": "Water capacity stage 3",
+   "units": "kg/h or lb/h",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "AI",
+   "instance": 12,
+   "name": "AI_Stage4Cap",
+   "description": "Water capacity stage 4",
+   "units": "kg/h or lb/h",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "AI",
+   "instance": 13,
+   "name": "AI_Stage5Cap",
+   "description": "Water capacity stage 5",
+   "units": "kg/h or lb/h",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "AI",
+   "instance": 14,
+   "name": "AI_Stage6Cap",
+   "description": "Water capacity stage 6",
+   "units": "kg/h or lb/h",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "AI",
+   "instance": 15,
+   "name": "AI_Stage7Cap",
+   "description": "Water capacity stage 7",
+   "units": "kg/h or lb/h",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "AI",
+   "instance": 16,
+   "name": "AI_SpeedPump1",
+   "description": "Demand pump 1",
+   "units": "%",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "AI",
+   "instance": 17,
+   "name": "AI_SpeedPump2",
+   "description": "Demand pump 2",
+   "units": "%",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "AI",
+   "instance": 18,
+   "name": "AI_SpeedPump3",
+   "description": "Demand pump 3",
+   "units": "%",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "AI",
+   "instance": 19,
+   "name": "AI_SpeedPump4",
+   "description": "Demand pump 4",
+   "units": "%",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "AI",
+   "instance": 20,
+   "name": "AI_SpeedPump5",
+   "description": "Demand pump 5",
+   "units": "%",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "AI",
+   "instance": 21,
+   "name": "AI_SpeedPump6",
+   "description": "Demand pump 6",
+   "units": "%",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "AI",
+   "instance": 22,
+   "name": "AI_SpeedPump7",
+   "description": "Demand pump 7",
+   "units": "%",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "AI",
+   "instance": 23,
+   "name": "AI_ConductLp",
+   "description": "Conductivity",
+   "units": "µS/cm",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "AI",
+   "instance": 24,
+   "name": "AI_WtrTmp",
+   "description": "Actual water temperature",
+   "units": "°C or °F",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "AI",
+   "instance": 25,
+   "name": "AI_AirTmp",
+   "description": "Actual air temperature",
+   "units": "°C or °F",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "AI",
+   "instance": 26,
+   "name": "AI_NumStgAct",
+   "description": "Number of running stages",
+   "units": "",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "AI",
+   "instance": 27,
+   "name": "AI_Level",
+   "description": "Water level in tub",
+   "units": "",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 1,
+   "name": "AV_SetPointHum",
+   "description": "Humidity setpoint",
+   "units": "%",
+   "access": "W",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 2,
+   "name": "AV_PropBandH",
+   "description": "Proportional band humidity control",
+   "units": "%",
+   "access": "W",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 3,
+   "name": "AV_IntTimeH",
+   "description": "Integral time humidity control",
+   "units": "min",
+   "access": "W",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 4,
+   "name": "AV_SetPointTmp",
+   "description": "Temperature setpoint",
+   "units": "°C or °F",
+   "access": "W",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 5,
+   "name": "AV_PropBandT",
+   "description": "Proportional band temperature control",
+   "units": "°C or °F",
+   "access": "W",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 6,
+   "name": "AV_IntTimeT",
+   "description": "Integral time temperatur control",
+   "units": "min",
+   "access": "W",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 7,
+   "name": "AV_WashAct",
+   "description": "Matrix wash over / Tank draining",
+   "units": "",
+   "access": "W",
+   "states": "Read: 0=Off, 1=Initialisierung, 2=Process active, 3=Process completed, Write: 0=Stop active process, 1=Start matrix wash over, 2=Start tank draining"
+  },
+  {
+   "type": "AO",
+   "instance": 1,
+   "name": "AO_RemRHorDem",
+   "description": "Actual humidity or demand via BACnet",
+   "units": "%",
+   "access": "C",
+   "states": ""
+  },
+  {
+   "type": "AO",
+   "instance": 2,
+   "name": "AO_RemTemp",
+   "description": "Actual temperature via BACnet",
+   "units": "°C or °F",
+   "access": "C",
+   "states": ""
+  },
+  {
+   "type": "BI",
+   "instance": 1,
+   "name": "BI_ExtSChLSta",
+   "description": "Safety loop",
+   "units": "",
+   "access": "R",
+   "states": "0=Open, 1=Closed (ok)"
+  },
+  {
+   "type": "BI",
+   "instance": 2,
+   "name": "BI_DosLvl",
+   "description": "Dosing pump level",
+   "units": "",
+   "access": "R",
+   "states": "0=Empty, 1=Ok"
+  },
+  {
+   "type": "BI",
+   "instance": 3,
+   "name": "BI_Leak",
+   "description": "Leakage sensor",
+   "units": "",
+   "access": "R",
+   "states": "0=Leakage, 1=Ok"
+  },
+  {
+   "type": "BI",
+   "instance": 4,
+   "name": "BI_DrainValLp",
+   "description": "Drain valve",
+   "units": "",
+   "access": "R",
+   "states": "0=Open, 1=Closed"
+  },
+  {
+   "type": "BI",
+   "instance": 5,
+   "name": "BI_FillValLp",
+   "description": "Inlet valve",
+   "units": "",
+   "access": "R",
+   "states": "0=Closed, 1=Open"
+  },
+  {
+   "type": "BI",
+   "instance": 6,
+   "name": "BI_DrainPump",
+   "description": "Drain pump",
+   "units": "",
+   "access": "R",
+   "states": "0=Off, 1=On"
+  },
+  {
+   "type": "BI",
+   "instance": 7,
+   "name": "BI_Pump1Err",
+   "description": "Fault pump 1",
+   "units": "",
+   "access": "R",
+   "states": "0=Fault, 1=Ok"
+  },
+  {
+   "type": "BI",
+   "instance": 8,
+   "name": "BI_Pump2Err",
+   "description": "Fault pump 2",
+   "units": "",
+   "access": "R",
+   "states": "0=Fault, 1=Ok"
+  },
+  {
+   "type": "BI",
+   "instance": 9,
+   "name": "BI_Pump3Err",
+   "description": "Fault pump 3",
+   "units": "",
+   "access": "R",
+   "states": "0=Fault, 1=Ok"
+  },
+  {
+   "type": "BI",
+   "instance": 10,
+   "name": "BI_Pump4Err",
+   "description": "Fault pump 4",
+   "units": "",
+   "access": "R",
+   "states": "0=Fault, 1=Ok"
+  },
+  {
+   "type": "BI",
+   "instance": 11,
+   "name": "BI_Pump5Err",
+   "description": "Fault pump 5",
+   "units": "",
+   "access": "R",
+   "states": "0=Fault, 1=Ok"
+  },
+  {
+   "type": "BI",
+   "instance": 12,
+   "name": "BI_Pump6Err",
+   "description": "Fault pump 6",
+   "units": "",
+   "access": "R",
+   "states": "0=Fault, 1=Ok"
+  },
+  {
+   "type": "BI",
+   "instance": 13,
+   "name": "BI_Pump7Err",
+   "description": "Fault pump 7",
+   "units": "",
+   "access": "R",
+   "states": "0=Fault, 1=Ok"
+  },
+  {
+   "type": "BI",
+   "instance": 14,
+   "name": "BI_InletErr",
+   "description": "Fault water inlet",
+   "units": "",
+   "access": "R",
+   "states": "0=Fault, 1=Ok"
+  },
+  {
+   "type": "BI",
+   "instance": 15,
+   "name": "BI_TempErr",
+   "description": "Fault water temperature",
+   "units": "",
+   "access": "R",
+   "states": "0=Fault, 1=Ok"
+  },
+  {
+   "type": "BI",
+   "instance": 16,
+   "name": "BI_OutletErr",
+   "description": "Fault water outlet",
+   "units": "",
+   "access": "R",
+   "states": "0=Fault, 1=Ok"
+  },
+  {
+   "type": "BI",
+   "instance": 17,
+   "name": "BI_LevSenErr",
+   "description": "Fault level sensor",
+   "units": "",
+   "access": "R",
+   "states": "0=Fault, 1=Ok"
+  },
+  {
+   "type": "BI",
+   "instance": 18,
+   "name": "BI_CondErr",
+   "description": "Fault water conductivity",
+   "units": "",
+   "access": "R",
+   "states": "0=Fault, 1=Ok"
+  },
+  {
+   "type": "BI",
+   "instance": 19,
+   "name": "BI_Connection",
+   "description": "Node status",
+   "units": "",
+   "access": "R",
+   "states": "0=Node offline, 1=Node online"
+  },
+  {
+   "type": "BV",
+   "instance": 1,
+   "name": "BV_Reset",
+   "description": "Remote reset",
+   "units": "",
+   "access": "W",
+   "states": "0=Off, 1=On"
+  }
+ ],
+ "short_model": "ME (BACnet gateway board)",
+ "page": "https://easybacnet.com/bacnet-points-lists/condair/me-gateway-board",
+ "note": "Re-typed from the manufacturer's public documentation (see source). Point availability varies by firmware and options; verify against the live device."
+}

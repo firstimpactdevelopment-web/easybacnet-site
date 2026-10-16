@@ -1,0 +1,646 @@
+{
+  "manufacturer": "Condair",
+  "manufacturer_slug": "condair",
+  "model": "Condair ME",
+  "model_slug": "me",
+  "aliases": [
+    "Condair ME II",
+    "ME evaporative humidifier"
+  ],
+  "equipment_type": "Evaporative humidifier / cooler",
+  "applies_to": "Condair ME / ME II in-duct evaporative humidifiers and evaporative coolers.",
+  "summary": "The Condair ME is a multi-stage evaporative humidifier and adiabatic cooler. The Integrated Controller exposes BACnet IP and MS/TP on-board. Points include operating and error status, per-stage capacity and pump speeds, tank level, water quality, separate humidity and cooling PI loops, and writable humidity/demand and temperature inputs.",
+  "bacnet_transport": [
+    "BACnet IP",
+    "BACnet MS/TP"
+  ],
+  "firmware": null,
+  "default_device_instance": 1001,
+  "access_inferred": false,
+  "notes": [
+    "BACnet is built into the Integrated Controller (RJ45 for BACnet IP, RS485 for MS/TP master or slave); it ships with the BACnet protocol set to Off.",
+    "Factory Node ID (device instance) is 1001 and the MS/TP MAC is 127; BACnet IP uses UDP 47808 and supports registering with a BBMD.",
+    "To command the unit over BACnet set Controls > Signal Settings > Source to BACnet; the demand/humidity AO must then be rewritten within the Signal Timeout (default 300 s) or the unit stops with warning W35.",
+    "Points marked optional only report when that option is fitted; capacity, pressure and temperature units follow the controller's Metric/Imperial setting.",
+    "The temperature AO (15045) is only used when the ME runs in cooling/system mode."
+  ],
+  "source": {
+    "title": "BACnet on-board - Addendum manual for installation and operation (DL II, ME II, RS II, RO-E and Vita)",
+    "doc_number": "2603582-F",
+    "revision_date": "2026-07",
+    "url": "https://www.condair.co.uk/consense/bms-communication-ic-2.0/am_bms_interface_bacnet_on_board_2603582_en.pdf"
+  },
+  "integration": {
+    "summary": "Enable BACnet in the Integrated Controller, set the signal source to BACnet, and write humidity demand (or measured RH) to AO 15044 within the signal timeout. When the ME runs as an evaporative cooler in system mode, also write the temperature to AO 15045. Monitor status, error status and the error code.",
+    "minimum_points": [
+      {
+        "ref": "AO 15044",
+        "name": "RH or Demand",
+        "why": "Demand or measured RH from the BMS"
+      },
+      {
+        "ref": "AO 15045",
+        "name": "Temperature",
+        "why": "Air temperature from the BMS (cooling system mode)"
+      },
+      {
+        "ref": "MI 5050",
+        "name": "Device Status",
+        "why": "Operating status"
+      },
+      {
+        "ref": "MI 5051",
+        "name": "Error Status",
+        "why": "Maintenance/error status"
+      },
+      {
+        "ref": "AI 10020",
+        "name": "Error/Warning Code",
+        "why": "Active error or warning code"
+      },
+      {
+        "ref": "AV 15054",
+        "name": "Setpoint Humidifying",
+        "why": "Humidity setpoint for RH P/PI mode"
+      },
+      {
+        "ref": "AI 15112",
+        "name": "Actual Stages",
+        "why": "Number of stages running"
+      },
+      {
+        "ref": "AV 30002",
+        "name": "Error/Warning Reset",
+        "why": "Remote error/warning reset"
+      }
+    ],
+    "enable": "Set Menu > password 8808 > Controls > Signal Settings > Source to BACnet and pick the Control Mode (Demand, RH P or RH PI; On/Off also exists). With Source left at Analog the unit ignores BACnet control values.",
+    "heartbeat": "When the signal source is not Analog, the demand/humidity value written over BACnet must be refreshed within the Signal Timeout (1-300 s, default 300 s). If it is not, warning W35 Signal Timeout is raised and the unit stops until a new value arrives, so the BMS must keep rewriting the AO.",
+    "remote_sensors": "In Demand mode the BMS writes the required output (0-100 %) to the RH/Demand AO. In RH P or RH PI mode the BMS writes the measured humidity there and the controller's own setpoint, P-band and I-time AVs do the control. Do not connect a hard-wired demand or sensor signal while the BACnet signal is used. For cooling, AO 15045 carries the air temperature (relinquish default 20 °C) and is only active when the ME is operated in system mode.",
+    "setup": [
+      "BACnet settings are under Menu > password 8808 > Network > BACnet Settings; the BACnet Protocol parameter ships Off (options MS/TP Master, MS/TP Slave, BACnet/IP) and the controller restarts after changing it.",
+      "Node ID (device instance) defaults to 1001 (range 1-4194303); BACnet IP port defaults to 47808.",
+      "IP addressing defaults to DHCP; if no DHCP server answers the controller falls back to an APIPA 169.254.x.x address.",
+      "Foreign Device registration to a BBMD is Off by default; BBMD port 47808 and re-register time 10 are the factory values.",
+      "MS/TP: MAC defaults to 127 (0-127 master, 0-254 slave), baud 9600 (up to 115200); fit jumper JP6 only on the first and last device, remove JP8, and tie GND between all devices."
+    ],
+    "gotchas": [
+      "AO 15044 relinquishes to 0 % demand.",
+      "Draining and Matrix Wash Over AVs: write 1 to start, 0 to stop; a read of 100 means off.",
+      "Optional sensors (UV, conductivity, water/air temperature, tank levels) only report when fitted.",
+      "Temperature and capacity units follow the Metric/Imperial setting."
+    ]
+  },
+  "points": [
+    {
+      "type": "DEV",
+      "instance": 1001,
+      "name": "Condair Controller",
+      "description": "Humidifier",
+      "units": "",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "Other",
+      "instance": 1,
+      "name": "Network Port IPv4",
+      "description": "Network-Port for BACnet IPv4 Communication",
+      "units": "",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "MI",
+      "instance": 5050,
+      "name": "Device Status",
+      "description": "Actual device status",
+      "units": "",
+      "access": "R",
+      "states": "1=Initializing, 2=Diagnostic, 3=Stopped, 4=Humidifying, 5=Cooling, 6=Holding, 7=Draining, 8=Refreshing, 9=Filling, 10=Standby, 11=Diluting, 12=Assisted Draining, 13=Bleeding, 14=Softstart, 15=Switched Off, 16=Remote Off, 17=Purging, 18=Drain Check"
+    },
+    {
+      "type": "MI",
+      "instance": 5051,
+      "name": "Error Status",
+      "description": "Maintenance and error status",
+      "units": "",
+      "access": "R",
+      "states": "1=No Info, 2=Warning, 3=Maintenance, 4=WET Tank empty, 5=Replace PureFlo Cartridge, 6=Replace UV Lamp, 7=Matrix Wash Over, 8=Out of Commissioning, 9=Activation Code, 10=Error, 11=Disinfection Tank empty"
+    },
+    {
+      "type": "AI",
+      "instance": 15176,
+      "name": "Water Level Tank",
+      "description": "Water level tank",
+      "units": "",
+      "access": "R",
+      "states": "0=Level 0, 1=Level 1, 2=Level 2, 3=Level 3, 4=Level 4, 5=Level 5, 6=Level 6, 7=Level 7"
+    },
+    {
+      "type": "AI",
+      "instance": 10020,
+      "name": "Error/Warning Code",
+      "description": "Code of the latest pending error or warning",
+      "units": "",
+      "access": "R",
+      "states": "0=no Error"
+    },
+    {
+      "type": "AI",
+      "instance": 10044,
+      "name": "Operating Hours",
+      "description": "Total hours of operation since commissioning",
+      "units": "h",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AI",
+      "instance": 10060,
+      "name": "Next Maintenance",
+      "description": "Due date of next maintenance in operating hours",
+      "units": "h",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AI",
+      "instance": 15171,
+      "name": "Next UV Lamp Exchange",
+      "description": "Due date of next UV Lamp exchange in days (optional)",
+      "units": "days",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AI",
+      "instance": 15172,
+      "name": "Next PureFlo Exchange",
+      "description": "Due date of next Pure-Flo exchange in days (optional)",
+      "units": "days",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AI",
+      "instance": 15047,
+      "name": "Humidity Control",
+      "description": "Actual humidity or demand",
+      "units": "%",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AI",
+      "instance": 15048,
+      "name": "Temperature Control",
+      "description": "Actual air temperature",
+      "units": "°C or °F",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AI",
+      "instance": 15019,
+      "name": "UV Current",
+      "description": "Actual UV current (optional)",
+      "units": "A",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AI",
+      "instance": 15112,
+      "name": "Actual Stages",
+      "description": "Number of running stages",
+      "units": "",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AI",
+      "instance": 15086,
+      "name": "Capacity 1",
+      "description": "Water capacity stage 1",
+      "units": "kg/h or lb/h",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AI",
+      "instance": 15087,
+      "name": "Capacity 2",
+      "description": "Water capacity stage 2",
+      "units": "kg/h or lb/h",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AI",
+      "instance": 15088,
+      "name": "Capacity 3",
+      "description": "Water capacity stage 3",
+      "units": "kg/h or lb/h",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AI",
+      "instance": 15089,
+      "name": "Capacity 4",
+      "description": "Water capacity stage 4",
+      "units": "kg/h or lb/h",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AI",
+      "instance": 15090,
+      "name": "Capacity 5",
+      "description": "Water capacity stage 5",
+      "units": "kg/h or lb/h",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AI",
+      "instance": 15091,
+      "name": "Capacity 6",
+      "description": "Water capacity stage 6",
+      "units": "kg/h or lb/h",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AI",
+      "instance": 15092,
+      "name": "Capacity 7",
+      "description": "Water capacity stage 7",
+      "units": "kg/h or lb/h",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AI",
+      "instance": 15130,
+      "name": "Speed Pump 1",
+      "description": "Actual speed pump 1",
+      "units": "%",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AI",
+      "instance": 15131,
+      "name": "Speed Pump 2",
+      "description": "Actual speed pump 2",
+      "units": "%",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AI",
+      "instance": 15132,
+      "name": "Speed Pump 3",
+      "description": "Actual speed pump 3",
+      "units": "%",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AI",
+      "instance": 15133,
+      "name": "Speed Pump 4",
+      "description": "Actual speed pump 4",
+      "units": "%",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AI",
+      "instance": 15134,
+      "name": "Speed Pump 5",
+      "description": "Actual speed pump 5",
+      "units": "%",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AI",
+      "instance": 15135,
+      "name": "Speed Pump 6",
+      "description": "Actual speed pump 6",
+      "units": "%",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AI",
+      "instance": 15136,
+      "name": "Speed Pump 7",
+      "description": "Actual speed pump 7",
+      "units": "%",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AI",
+      "instance": 15077,
+      "name": "Water Conductivity",
+      "description": "Water conductivity tank (optional)",
+      "units": "µS/cm",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AI",
+      "instance": 15075,
+      "name": "Water Temperature",
+      "description": "Actual water temperature (optional)",
+      "units": "°C or °F",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AI",
+      "instance": 15049,
+      "name": "Incoming Air Temperature",
+      "description": "Incoming air temperature (optional)",
+      "units": "°C or °F",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 15054,
+      "name": "Setpoint Humidifying",
+      "description": "Setpoint humidity control",
+      "units": "%",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 15055,
+      "name": "P-Band Humidifying",
+      "description": "Proportional band humidity control",
+      "units": "%",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 15056,
+      "name": "I-Time Humidifying",
+      "description": "Integral time humidity control",
+      "units": "min",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 15057,
+      "name": "Setpoint Cooling",
+      "description": "Setpoint temperature control",
+      "units": "°C or °F",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 15058,
+      "name": "P-Band Cooling",
+      "description": "Proportional band temperature control",
+      "units": "°C or °F",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 15059,
+      "name": "I-Time Cooling",
+      "description": "Integral time temperature control",
+      "units": "min",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 30507,
+      "name": "Draining",
+      "description": "Remote draining",
+      "units": "%",
+      "access": "W",
+      "states": "Read: 100=Off, 0 - 99=Progress draining in %, Write: 0=Stop draining, 1=Start draining"
+    },
+    {
+      "type": "AV",
+      "instance": 30505,
+      "name": "Matrix Wash Over",
+      "description": "Remote matrix wash over",
+      "units": "%",
+      "access": "W",
+      "states": "Read: 100=Off, 0 - 99=Progress matrix wash over in %, Write: 0=Stop matrix wash over, 1=Start matrix wash over"
+    },
+    {
+      "type": "AV",
+      "instance": 30002,
+      "name": "Error/Warning Reset",
+      "description": "Remote Error/Warning Reset",
+      "units": "",
+      "access": "W",
+      "states": "0=Off, 1=On"
+    },
+    {
+      "type": "AO",
+      "instance": 15044,
+      "name": "RH or Demand",
+      "description": "Actual humidity or demand via BACnet",
+      "units": "%",
+      "access": "C",
+      "states": ""
+    },
+    {
+      "type": "AO",
+      "instance": 15045,
+      "name": "Temperature",
+      "description": "Actual temperature via BACnet",
+      "units": "°C or °F",
+      "access": "C",
+      "states": ""
+    },
+    {
+      "type": "BI",
+      "instance": 5002,
+      "name": "Safety Loop",
+      "description": "Safety loop",
+      "units": "",
+      "access": "R",
+      "states": "0=Open, 1=Closed (ok)"
+    },
+    {
+      "type": "BI",
+      "instance": 5034,
+      "name": "Drain Valve",
+      "description": "Drain valve",
+      "units": "",
+      "access": "R",
+      "states": "0=Open, 1=Closed"
+    },
+    {
+      "type": "BI",
+      "instance": 5033,
+      "name": "Inlet Valve",
+      "description": "Inlet valve",
+      "units": "",
+      "access": "R",
+      "states": "0=Closed, 1=Open"
+    },
+    {
+      "type": "BI",
+      "instance": 5091,
+      "name": "Drain Pump",
+      "description": "Drain pump",
+      "units": "",
+      "access": "R",
+      "states": "0=Off, 1=On"
+    },
+    {
+      "type": "BI",
+      "instance": 5111,
+      "name": "Pump 1 Error",
+      "description": "Fault pump 1",
+      "units": "",
+      "access": "R",
+      "states": "0=Fault, 1=Ok"
+    },
+    {
+      "type": "BI",
+      "instance": 5112,
+      "name": "Pump 2 Error",
+      "description": "Fault pump 2",
+      "units": "",
+      "access": "R",
+      "states": "0=Fault, 1=Ok"
+    },
+    {
+      "type": "BI",
+      "instance": 5113,
+      "name": "Pump 3 Error",
+      "description": "Fault pump 3",
+      "units": "",
+      "access": "R",
+      "states": "0=Fault, 1=Ok"
+    },
+    {
+      "type": "BI",
+      "instance": 5114,
+      "name": "Pump 4 Error",
+      "description": "Fault pump 4",
+      "units": "",
+      "access": "R",
+      "states": "0=Fault, 1=Ok"
+    },
+    {
+      "type": "BI",
+      "instance": 5115,
+      "name": "Pump 5 Error",
+      "description": "Fault pump 5",
+      "units": "",
+      "access": "R",
+      "states": "0=Fault, 1=Ok"
+    },
+    {
+      "type": "BI",
+      "instance": 5116,
+      "name": "Pump 6 Error",
+      "description": "Fault pump 6",
+      "units": "",
+      "access": "R",
+      "states": "0=Fault, 1=Ok"
+    },
+    {
+      "type": "BI",
+      "instance": 5117,
+      "name": "Pump 7 Error",
+      "description": "Fault pump 7",
+      "units": "",
+      "access": "R",
+      "states": "0=Fault, 1=Ok"
+    },
+    {
+      "type": "BI",
+      "instance": 5118,
+      "name": "Water Inlet Error",
+      "description": "Fault water inlet",
+      "units": "",
+      "access": "R",
+      "states": "0=Fault, 1=Ok"
+    },
+    {
+      "type": "BI",
+      "instance": 5119,
+      "name": "Water Outlet Error",
+      "description": "Fault water outlet",
+      "units": "",
+      "access": "R",
+      "states": "0=Fault, 1=Ok"
+    },
+    {
+      "type": "BI",
+      "instance": 5120,
+      "name": "Water Temperature Error",
+      "description": "Fault water temperature (optional)",
+      "units": "",
+      "access": "R",
+      "states": "0=Fault, 1=Ok"
+    },
+    {
+      "type": "BI",
+      "instance": 5122,
+      "name": "Level Sensor Error",
+      "description": "Fault level sensor",
+      "units": "",
+      "access": "R",
+      "states": "0=Fault, 1=Ok"
+    },
+    {
+      "type": "BI",
+      "instance": 5121,
+      "name": "Water Conductivity Error",
+      "description": "Fault water conductivity (optional)",
+      "units": "",
+      "access": "R",
+      "states": "0=Fault, 1=Ok"
+    },
+    {
+      "type": "BI",
+      "instance": 5009,
+      "name": "Leak Monitoring",
+      "description": "Leakage sensor (optional)",
+      "units": "",
+      "access": "R",
+      "states": "0=Leak, 1=Ok"
+    },
+    {
+      "type": "BI",
+      "instance": 5007,
+      "name": "WET Tank Level",
+      "description": "WET tank level (optional)",
+      "units": "",
+      "access": "R",
+      "states": "0=Empty, 1=Ok"
+    },
+    {
+      "type": "BI",
+      "instance": 5008,
+      "name": "Disinfection Tank Level",
+      "description": "Disinfection tank level (optional)",
+      "units": "",
+      "access": "R",
+      "states": "0=Empty, 1=Ok"
+    }
+  ],
+  "short_model": "ME (on-board BACnet)"
+}

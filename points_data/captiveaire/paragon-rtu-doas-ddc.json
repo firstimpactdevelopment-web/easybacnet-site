@@ -1,0 +1,2806 @@
+{
+  "manufacturer": "CaptiveAire",
+  "manufacturer_slug": "captiveaire",
+  "model": "Paragon RTU / DOAS DDC (Protocessor BACnet)",
+  "model_slug": "paragon-rtu-doas-ddc",
+  "aliases": [
+    "Paragon",
+    "CaptiveAire DOAS",
+    "CaptiveAire RTU",
+    "Protocessor",
+    "CN0861",
+    "RTU DDC Points"
+  ],
+  "equipment_type": "Rooftop unit / DOAS controller",
+  "applies_to": "CaptiveAire Paragon HVAC series packaged rooftop units and dedicated outdoor air systems with the factory DDC package.",
+  "summary": "CaptiveAire's Paragon rooftop units and DOAS are run by the unit's own controller board; BACnet comes from a factory-mounted Protocessor gateway in the control panel, set up at the factory for either BACnet IP (Ethernet) or BACnet MS/TP (RS-485). The 300 objects cover DDC commands, occupied/unoccupied setpoints, the on-board schedule, mode selections, sensor readings, compressor/ERV data and six active fault codes. The simplest BMS control is to enable scheduling once, set the on-board schedule to unoccupied (1440) and drive BV-5 DDCOccupiedOverride.",
+  "bacnet_transport": [
+    "BACnet IP",
+    "BACnet MS/TP"
+  ],
+  "firmware": null,
+  "default_device_instance": 50001,
+  "access_inferred": false,
+  "notes": [
+    "Protocessor defaults: device instance 50001, MS/TP MAC 51, 38400 baud, Max Master 127, IP 192.168.1.24; increment instance/MAC per unit.",
+    "For BMS occupancy control set BV-216 SchedulingEnabledFlag on once, set schedule AVs 46-87 to 1440 (no schedule), then write BV-5.",
+    "DDC heat/cool/blower commands (BV-1..3, AV-4) only act when the tempering mode AVs (217-220) are set to DDC (3).",
+    "Fault AIs 210-215 return codes from the guide's fault table; temperatures follow the unit's F/C setting. The guide lists no engineering units.",
+    "Access comes from the guide's Control/Monitor vs Monitor Only column; BI-294..296 are listed as Control/Monitor but are inputs, so shown read-only here.",
+    "Points depend on unit options (gas/electric heat, DX stages, ERV, economizer); unused ones read zero or are meaningless."
+  ],
+  "source": {
+    "title": "DDC Application Guide for Paragon HVAC Series (RTU DDC Points)",
+    "doc_number": null,
+    "revision_date": "2026-09",
+    "url": "https://www.captiveaire.com/CatalogContent/Fans/RTU_DOAS/doc/rtu-ddc-guide.pdf"
+  },
+  "integration": {
+    "summary": "Turn on scheduling once (BV-216), set every on-board schedule slot (AV-46..87) to 1440 so the unit is always unoccupied by its own clock, then command occupancy from the BMS with BV-5. Let the unit run on its own setpoints (intake/space/discharge, chosen by the Activate Based On and Tempering Mode AVs) and monitor UnitStatus, temperatures and the six fault-code AIs. Only use the raw DDC heat/cool/blower commands if the tempering modes are set to DDC.",
+    "minimum_points": [
+      {
+        "ref": "BV 5",
+        "name": "DDCOccupiedOverride",
+        "why": "Occupied/unoccupied command from the BMS"
+      },
+      {
+        "ref": "BV 216",
+        "name": "SchedulingEnabledFlag",
+        "why": "Must be on (once) for BV-5 to work"
+      },
+      {
+        "ref": "AI 139",
+        "name": "UnitStatus",
+        "why": "Idle / blower / heating / cooling state"
+      },
+      {
+        "ref": "AI 140",
+        "name": "CurrentOccupiedStatus",
+        "why": "Confirms the occupancy command took effect"
+      },
+      {
+        "ref": "AI 148",
+        "name": "DischargeTemp",
+        "why": "Discharge air temperature"
+      },
+      {
+        "ref": "AI 141",
+        "name": "AverageSpaceTemp",
+        "why": "Space temperature the unit is controlling to"
+      },
+      {
+        "ref": "AV 18",
+        "name": "SpaceCoolOccSP",
+        "why": "Occupied space cooling setpoint"
+      },
+      {
+        "ref": "AV 8",
+        "name": "SpaceHeatOccSP",
+        "why": "Occupied space heating setpoint"
+      },
+      {
+        "ref": "AI 210",
+        "name": "ActiveFault1",
+        "why": "First active fault code"
+      }
+    ],
+    "enable": "BMS occupancy control needs BV-216 SchedulingEnabledFlag on and all internal schedule AVs (46-87) at 1440; an occupied input always wins over unoccupied, so any non-1440 slot keeps the unit occupied regardless of BV-5. Direct heat/cool/blower commands (BV-1..3, AV-4) need the heat/cool tempering modes (AV-217..220) set to DDC (3).",
+    "heartbeat": null,
+    "remote_sensors": "A BMS space temperature can be written to AV-248 ExternalSpaceTempValue after enabling BV-247 ExternalSpaceTempEnable; space humidity likewise via BV-269 ExternalSpaceRhEnable and AV-270 ExternalSpaceRhValue. BV-280..283 act as virtual thermostat calls when Activate Based On is set to Stat (4).",
+    "setup": [
+      "Protocessor default device instance 50001, MS/TP MAC 51, 38400 baud, Max Master 127; the guide increments instance and MAC per unit number.",
+      "Protocessor default IP 192.168.1.24 /255.255.255.0; web configurator login admin/admin (or the password printed by the Ethernet port).",
+      "The gateway is factory set to either BACnet IP or MS/TP for the job; objects are only reachable on that port.",
+      "Each changed gateway parameter needs its own Submit and a system restart."
+    ],
+    "gotchas": [
+      "If any internal schedule slot is not 1440, BV-5 cannot turn the unit off during that slot.",
+      "The controller board reboots when some factory settings are changed.",
+      "Gas valve output reads 10 V both at high fire and when the unit is not heating.",
+      "Setpoints used depend on Activate Based On (AV-221/222) and Tempering Mode (AV-217..220); unused setpoints have no effect.",
+      "Blower speed AVs (88-91) must stay within the min/max speed limits in AV-228..235."
+    ]
+  },
+  "points": [
+    {
+      "type": "BV",
+      "instance": 1,
+      "name": "DDCHeatCommand",
+      "description": "Heating command. Requires heat tempering mode = DDC",
+      "units": "",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "BV",
+      "instance": 2,
+      "name": "DDCCoolCommand",
+      "description": "Cooling command. Requires heat tempering mode = DDC",
+      "units": "",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "BV",
+      "instance": 3,
+      "name": "DDCBlowerCommand",
+      "description": "Blower command. Requires both heat and cool tempering mode = DDC",
+      "units": "",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 4,
+      "name": "DDCModulation",
+      "description": "Heat modulation signal, 0-10V. 0V = low fire and 10V = high",
+      "units": "",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "BV",
+      "instance": 5,
+      "name": "DDCOccupiedOverride",
+      "description": "Occupied override command, requires SchedulingEnabled = ON (1)",
+      "units": "",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 6,
+      "name": "IntakeHeatOccSP",
+      "description": "Intake Heating Occupied Setpoint",
+      "units": "",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 7,
+      "name": "IntakeHeatUnoccSP",
+      "description": "Intake Heating Unoccupied Setpoint",
+      "units": "",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 8,
+      "name": "SpaceHeatOccSP",
+      "description": "Space Heating Occupied Setpoint",
+      "units": "",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 9,
+      "name": "SpaceHeatUnoccSP",
+      "description": "Space Heating Unoccupied Setpoint",
+      "units": "",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 10,
+      "name": "MinDischargeHeatOccSP",
+      "description": "Min Discharge Heating when occupied, relevant only if heat tempering mode =",
+      "units": "",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 11,
+      "name": "MinDischargeHeatUnoccSP",
+      "description": "Min Discharge Heating when unoccupied, relevant only if heat tempering mode =",
+      "units": "",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 12,
+      "name": "DischargeHeatOccSP",
+      "description": "Discharge heating setpoint when occupied, requires heat tempering mode = discharge",
+      "units": "",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 13,
+      "name": "DischargeHeatUnoccSP",
+      "description": "Discharge heating setpoint when unoccupied, requires heat tempering mode = discharge",
+      "units": "",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 14,
+      "name": "MaxDischargeHeatOccSP",
+      "description": "Max Discharge Heating when occupied, relevant only if heat tempering mode =",
+      "units": "",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 15,
+      "name": "MaxDischargeHeatUnoccSP",
+      "description": "Max Discharge Heating when unoccupied, relevant only if heat tempering mode =",
+      "units": "",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 16,
+      "name": "IntakeCoolOccSP",
+      "description": "Intake Cooling Occupied Setpoint",
+      "units": "",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 17,
+      "name": "IntakeCoolUnoccSP",
+      "description": "Intake Cooling Unoccupied Setpoint",
+      "units": "",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 18,
+      "name": "SpaceCoolOccSP",
+      "description": "Space Cooling Occupied Setpoint",
+      "units": "",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 19,
+      "name": "SpaceCoolUnoccSP",
+      "description": "Space Cooling Unoccupied Setpoint",
+      "units": "",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 20,
+      "name": "MinDischargeCoolOccSP",
+      "description": "Min Discharge Cooling setpoint when occupied, relevant only if cool tempering mode",
+      "units": "",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 21,
+      "name": "MinDischargeCoolUnoccSP",
+      "description": "Min Discharge Cooling setpoint when unoccupied, relevant only if cool tempering mode",
+      "units": "",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 22,
+      "name": "DischargeCoolOccSP",
+      "description": "Discharge Cooling setpoint when occupied, relevant only if cool tempering mode =",
+      "units": "",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 23,
+      "name": "DischargeCoolUnoccSP",
+      "description": "Discharge Cooling setpoint when unoccupied, relevant only if cool tempering mode =",
+      "units": "",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 24,
+      "name": "MaxDischargeCoolOccSP",
+      "description": "Max Discharge Cooling setpoint when occupied, relevant only if cool tempering mode",
+      "units": "",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 25,
+      "name": "MaxDischargeCoolUnoccSP",
+      "description": "Max Discharge Cooling setpoint when unoccupied, relevant only if cool tempering mode",
+      "units": "",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 26,
+      "name": "RoomOverrideOccSP",
+      "description": "Room Override Occupied Setpoint",
+      "units": "",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 27,
+      "name": "RoomOverrideUnoccSP",
+      "description": "Room Override Unoccupied Setpoint",
+      "units": "",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 28,
+      "name": "FirestatIntakeSP",
+      "description": "Firestat Intake Setpoint",
+      "units": "",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 29,
+      "name": "FirestatDischargeSP",
+      "description": "Firestat Discharge Setpoint",
+      "units": "",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 30,
+      "name": "FreezestatSP",
+      "description": "Freezestat Setpoint",
+      "units": "",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 31,
+      "name": "OverheatDischargeSP",
+      "description": "Overheat Discharge Setpoint",
+      "units": "",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 32,
+      "name": "CabinetHeatSP",
+      "description": "Cabinet Heat Setpoint",
+      "units": "",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 33,
+      "name": "FurnaceDrainHeatSP",
+      "description": "Furnace Drain Heat Setpoint",
+      "units": "",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 34,
+      "name": "IntakeRhOccSP",
+      "description": "Intake Relative Humidity Occupied Setpoint",
+      "units": "",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 35,
+      "name": "IntakeRhUnoccSP",
+      "description": "Intake Relative Humidity Unoccupied Setpoint",
+      "units": "",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 36,
+      "name": "SpaceRhOccSP",
+      "description": "Space Relative Humidity Occupied Setpoint",
+      "units": "",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 37,
+      "name": "SpaceRhUnoccSP",
+      "description": "Space Relative Humidity Unoccupied Setpoint",
+      "units": "",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 38,
+      "name": "DischargeRhOccSP",
+      "description": "Discharge Relative Humidity Occupied Setpoint",
+      "units": "",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 39,
+      "name": "DischargeRhUnoccSP",
+      "description": "Discharge Relative Humidity Unoccupied Setpoint",
+      "units": "",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 40,
+      "name": "IntakeDpOccSP",
+      "description": "Intake Dewpoint Occupied Setpoint",
+      "units": "",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 41,
+      "name": "IntakeDpUnoccSP",
+      "description": "Intake Dewpoint Unoccupied Setpoint",
+      "units": "",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 42,
+      "name": "SpaceDpOccSP",
+      "description": "Space Dewpoint Occupied Setpoint",
+      "units": "",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 43,
+      "name": "SpaceDpUnoccSP",
+      "description": "Space Dewpoint Unoccupied Setpoint",
+      "units": "",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 44,
+      "name": "DischargeDpOccSP",
+      "description": "Discharge Dewpoint Occupied Setpoint",
+      "units": "",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 45,
+      "name": "DischargeDpUnoccSP",
+      "description": "Discharge Dewpoint Unoccupied Setpoint",
+      "units": "",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 46,
+      "name": "ScheduleSundayAStart",
+      "description": "Daily schedule start/end time in minutes",
+      "units": "",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 47,
+      "name": "ScheduleSundayAEnd",
+      "description": "Daily schedule start/end time in minutes",
+      "units": "",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 48,
+      "name": "ScheduleSundayBStart",
+      "description": "Daily schedule start/end time in minutes",
+      "units": "",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 49,
+      "name": "ScheduleSundayBEnd",
+      "description": "Daily schedule start/end time in minutes",
+      "units": "",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 50,
+      "name": "ScheduleSundayCStart",
+      "description": "Daily schedule start/end time in minutes",
+      "units": "",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 51,
+      "name": "ScheduleSundayCEnd",
+      "description": "Daily schedule start/end time in minutes",
+      "units": "",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 52,
+      "name": "ScheduleMondayAStart",
+      "description": "Daily schedule start/end time in minutes",
+      "units": "",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 53,
+      "name": "ScheduleMondayAEnd",
+      "description": "Daily schedule start/end time in minutes",
+      "units": "",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 54,
+      "name": "ScheduleMondayBStart",
+      "description": "Daily schedule start/end time in minutes",
+      "units": "",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 55,
+      "name": "ScheduleMondayBEnd",
+      "description": "Daily schedule start/end time in minutes",
+      "units": "",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 56,
+      "name": "ScheduleMondayCStart",
+      "description": "Daily schedule start/end time in minutes",
+      "units": "",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 57,
+      "name": "ScheduleMondayCEnd",
+      "description": "Daily schedule start/end time in minutes",
+      "units": "",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 58,
+      "name": "ScheduleTuesdayAStart",
+      "description": "Daily schedule start/end time in minutes",
+      "units": "",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 59,
+      "name": "ScheduleTuesdayAEnd",
+      "description": "Daily schedule start/end time in minutes",
+      "units": "",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 60,
+      "name": "ScheduleTuesdayBStart",
+      "description": "Daily schedule start/end time in minutes",
+      "units": "",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 61,
+      "name": "ScheduleTuesdayBEnd",
+      "description": "Daily schedule start/end time in minutes",
+      "units": "",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 62,
+      "name": "ScheduleTuesdayCStart",
+      "description": "Daily schedule start/end time in minutes",
+      "units": "",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 63,
+      "name": "ScheduleTuesdayCEnd",
+      "description": "Daily schedule start/end time in minutes",
+      "units": "",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 64,
+      "name": "ScheduleWednesdayAStart",
+      "description": "Daily schedule start/end time in minutes",
+      "units": "",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 65,
+      "name": "ScheduleWednesdayAEnd",
+      "description": "Daily schedule start/end time in minutes",
+      "units": "",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 66,
+      "name": "ScheduleWednesdayBStart",
+      "description": "Daily schedule start/end time in minutes",
+      "units": "",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 67,
+      "name": "ScheduleWednesdayBEnd",
+      "description": "Daily schedule start/end time in minutes",
+      "units": "",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 68,
+      "name": "ScheduleWednesdayCStart",
+      "description": "Daily schedule start/end time in minutes",
+      "units": "",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 69,
+      "name": "ScheduleWednesdayCEnd",
+      "description": "Daily schedule start/end time in minutes",
+      "units": "",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 70,
+      "name": "ScheduleThursdayAStart",
+      "description": "Daily schedule start/end time in minutes",
+      "units": "",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 71,
+      "name": "ScheduleThursdayAEnd",
+      "description": "Daily schedule start/end time in minutes",
+      "units": "",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 72,
+      "name": "ScheduleThursdayBStart",
+      "description": "Daily schedule start/end time in minutes",
+      "units": "",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 73,
+      "name": "ScheduleThursdayBEnd",
+      "description": "Daily schedule start/end time in minutes",
+      "units": "",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 74,
+      "name": "ScheduleThursdayCStart",
+      "description": "Daily schedule start/end time in minutes",
+      "units": "",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 75,
+      "name": "ScheduleThursdayCEnd",
+      "description": "Daily schedule start/end time in minutes",
+      "units": "",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 76,
+      "name": "ScheduleFridayAStart",
+      "description": "Daily schedule start/end time in minutes",
+      "units": "",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 77,
+      "name": "ScheduleFridayAEnd",
+      "description": "Daily schedule start/end time in minutes",
+      "units": "",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 78,
+      "name": "ScheduleFridayBStart",
+      "description": "Daily schedule start/end time in minutes",
+      "units": "",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 79,
+      "name": "ScheduleFridayBEnd",
+      "description": "Daily schedule start/end time in minutes",
+      "units": "",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 80,
+      "name": "ScheduleFridayCStart",
+      "description": "Daily schedule start/end time in minutes",
+      "units": "",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 81,
+      "name": "ScheduleFridayCEnd",
+      "description": "Daily schedule start/end time in minutes",
+      "units": "",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 82,
+      "name": "ScheduleSaturdayAStart",
+      "description": "Daily schedule start/end time in minutes",
+      "units": "",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 83,
+      "name": "ScheduleSaturdayAEnd",
+      "description": "Daily schedule start/end time in minutes",
+      "units": "",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 84,
+      "name": "ScheduleSaturdayBStart",
+      "description": "Daily schedule start/end time in minutes",
+      "units": "",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 85,
+      "name": "ScheduleSaturdayBEnd",
+      "description": "Daily schedule start/end time in minutes",
+      "units": "",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 86,
+      "name": "ScheduleSaturdayCStart",
+      "description": "Daily schedule start/end time in minutes",
+      "units": "",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 87,
+      "name": "ScheduleSaturdayCEnd",
+      "description": "Daily schedule start/end time in minutes",
+      "units": "",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 88,
+      "name": "BlowerManualFreqOcc",
+      "description": "VFD frequency when occupied, requires blower control = VFD manual",
+      "units": "",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 89,
+      "name": "BlowerManualFreqUnocc",
+      "description": "VFD frequency when unoccupied, requires blower control = VFD manual",
+      "units": "",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 90,
+      "name": "BlowerManualPwmRateOcc",
+      "description": "ECM speed when occupied, requires blower control = ECM manual",
+      "units": "",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 91,
+      "name": "BlowerManualPwmRateUnocc",
+      "description": "ECM speed when unoccupied, requires blower control = ECM manual",
+      "units": "",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 92,
+      "name": "MixingBoxManualOAOcc",
+      "description": "Mixing Box Outdoor Air Percent during occupied times, requires mixing box mode",
+      "units": "",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 93,
+      "name": "MixingBoxManualOAUnocc",
+      "description": "Mixing Box Outdoor Air Percent during unoccupied times, requires mixing box mode",
+      "units": "",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 94,
+      "name": "EconomizerTempSPOcc",
+      "description": "Economizer Temperature Setpoint Occupied",
+      "units": "",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 95,
+      "name": "EconomizerTempSPUnocc",
+      "description": "Economizer Temperature Setpoint Unoccupied",
+      "units": "",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 96,
+      "name": "EconomizerTempBandOcc",
+      "description": "Economizer Temperature Band Setpoint Occupied",
+      "units": "",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 97,
+      "name": "EconomizerTempBandUnocc",
+      "description": "Economizer Temperature Band Setpoint Unoccupied",
+      "units": "",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 98,
+      "name": "EconomizerTotalBandOcc",
+      "description": "Economizer Temperature Total Band Setpoint Occupied",
+      "units": "",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 99,
+      "name": "EconomizerTotalBandUnocc",
+      "description": "Economizer Temperature Total Band Setpoint Unoccupied",
+      "units": "",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 100,
+      "name": "EconomizerRhSPOcc",
+      "description": "Economizer Relative Humidity Setpoint Occupied",
+      "units": "",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 101,
+      "name": "EconomizerRhSPUnocc",
+      "description": "Economizer Relative Humidity Setpoint Unoccupied",
+      "units": "",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 102,
+      "name": "MixingBoxManualVoltsOcc",
+      "description": "Mixing Box damper voltage during occupied times, requires mixing box mode =",
+      "units": "",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 103,
+      "name": "MixingBoxManualVoltsUnocc",
+      "description": "Mixing Box damper voltage during unoccupied times, requires mixing box mode =",
+      "units": "",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 104,
+      "name": "BlowerPsSpLowOcc",
+      "description": "Blower Low Static Pressure Setting Occupied",
+      "units": "",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 105,
+      "name": "BlowerPsSpLowUnocc",
+      "description": "Blower Low Static Pressure Setting Unoccupied",
+      "units": "",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 106,
+      "name": "BlowerPsSpHighOcc",
+      "description": "Blower High Static Pressure Setting Occupied",
+      "units": "",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 107,
+      "name": "BlowerPsSpHighUnocc",
+      "description": "Blower High Static Pressure Setting Unoccupied",
+      "units": "",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 108,
+      "name": "DryModeDischTempSPOcc",
+      "description": "Dry Mode Discharge Occupied Setpoint",
+      "units": "",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 109,
+      "name": "DryModeDischTempSPUnocc",
+      "description": "Dry Mode Discharge Unoccupied Setpoint",
+      "units": "",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 110,
+      "name": "OaResetLowTempSp",
+      "description": "Outdoor Air Reset Low Temperature Setpoint",
+      "units": "",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 111,
+      "name": "OaResetHighTempSp",
+      "description": "Outdoor Air Reset High Temperature Setpoint",
+      "units": "",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 112,
+      "name": "OaResetHeatDischTempSp",
+      "description": "Outdoor Air Reset Heat Discharge Temperature Setpoint",
+      "units": "",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 113,
+      "name": "OaResetCoolDischTempSp",
+      "description": "Outdoor Air Reset Cool Discharge Temperature Setpoint",
+      "units": "",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 114,
+      "name": "OaResetHeatSpaceTempSp",
+      "description": "Outdoor Air Reset Heat Space Temperature Setpoint",
+      "units": "",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 115,
+      "name": "OaResetCoolSpaceTempSp",
+      "description": "Outdoor Air Reset Cool Space Temperature Setpoint",
+      "units": "",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 116,
+      "name": "CO2SensorPpmMin",
+      "description": "CO2 PPM level at 0V",
+      "units": "",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 117,
+      "name": "CO2SensorPpmMax",
+      "description": "CO2 PPM level at 10V",
+      "units": "",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 118,
+      "name": "CO2ThresholdLimitOcc",
+      "description": "CO2 sensor threshold limit for the fan/damper to operate when occupied",
+      "units": "",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 119,
+      "name": "CO2ThresholdLimitUnocc",
+      "description": "CO2 sensor threshold limit for the fan/damper to operate when unoccupied",
+      "units": "",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 120,
+      "name": "DynamicSpDiff",
+      "description": "Dynamic Setpoint Differential",
+      "units": "",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 121,
+      "name": "DynamicSpOffset",
+      "description": "Dynamic Setpoint Differential Offset",
+      "units": "",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 122,
+      "name": "DynamicSpHeatOa",
+      "description": "Dynamic Setpoint Heat Outdoor Air",
+      "units": "",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 123,
+      "name": "DynamicSpCoolOa",
+      "description": "Dynamic Setpoint Cool Outdoor Air",
+      "units": "",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 124,
+      "name": "ErvWheelSpeed",
+      "description": "Energy Wheel Speed Setting",
+      "units": "",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 125,
+      "name": "ErvExhaustFanSpeedOcc",
+      "description": "Energy Wheel Exhaust Fan Speed Occupied",
+      "units": "",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 126,
+      "name": "ErvExhaustFanSpeedUnocc",
+      "description": "Energy Wheel Exhaust Fan Speed Unoccupied",
+      "units": "",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 127,
+      "name": "ErvExhaustLowPsSpOcc",
+      "description": "Energy Wheel Exhaust Low Pressure Setpoint Occupied",
+      "units": "",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 128,
+      "name": "ErvExhaustLowPsSpUnocc",
+      "description": "Energy Wheel Exhaust Low Pressure Setpoint Unoccupied",
+      "units": "",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 129,
+      "name": "ErvExhaustHighPsSpOcc",
+      "description": "Energy Wheel Exhaust High Pressure Setpoint Occupied",
+      "units": "",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 130,
+      "name": "ErvExhaustHighPsSpUnocc",
+      "description": "Energy Wheel Exhaust High Pressure Setpoint Unoccupied",
+      "units": "",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 131,
+      "name": "CO2OverrideHighLimitOcc",
+      "description": "CO2 high limit setting at which fan/damper will operate occupied",
+      "units": "",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 132,
+      "name": "CO2OverrideLowLimitOcc",
+      "description": "CO2 low limit setting at which fan/damper will operate occupied",
+      "units": "",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 133,
+      "name": "CO2OverrideHighLimitUnocc",
+      "description": "CO2 high limit setting at which fan/damper will operate unoccupied",
+      "units": "",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 134,
+      "name": "CO2OverrideLowLimitUnocc",
+      "description": "CO2 low limit setting at which fan/damper will operate unoccupied",
+      "units": "",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 135,
+      "name": "DryModeOASP",
+      "description": "Dry Mode Outdoor Air Setpoint",
+      "units": "",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 136,
+      "name": "DryModeCoolSP",
+      "description": "Dry Mode Cool Setpoint",
+      "units": "",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 137,
+      "name": "PoweredExhaustManVoltsOcc",
+      "description": "Powered Exhaust PWM Setpoint Occupied",
+      "units": "",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 138,
+      "name": "PoweredExhaustManVoltsUnocc",
+      "description": "Powered Exhaust PWM Setpoint Unoccupied",
+      "units": "",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "AI",
+      "instance": 139,
+      "name": "UnitStatus",
+      "description": "HVAC State (Idle = 0, Blower = 1, Heating = 2, Cooling",
+      "units": "",
+      "access": "R",
+      "states": "0=Idle, 1=Blower, 2=Heating, 3=Cooling"
+    },
+    {
+      "type": "AI",
+      "instance": 140,
+      "name": "CurrentOccupiedStatus",
+      "description": "Occupancy status, occupied = 1, unoccupied = 0",
+      "units": "",
+      "access": "R",
+      "states": "0=Unoccupied, 1=Occupied"
+    },
+    {
+      "type": "AI",
+      "instance": 141,
+      "name": "AverageSpaceTemp",
+      "description": "Average Space Temperature",
+      "units": "",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AI",
+      "instance": 142,
+      "name": "BlowerFrequency",
+      "description": "Blower VFD Frequency",
+      "units": "",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AI",
+      "instance": 143,
+      "name": "BlowerCurrent",
+      "description": "Blower VFD Current",
+      "units": "",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AI",
+      "instance": 144,
+      "name": "BlowerPower",
+      "description": "Blower VFD Power",
+      "units": "",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AI",
+      "instance": 145,
+      "name": "AverageRh",
+      "description": "Average space relative humidity",
+      "units": "",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AI",
+      "instance": 146,
+      "name": "OutdoorTemp",
+      "description": "Outdoor Temperature",
+      "units": "",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AI",
+      "instance": 147,
+      "name": "ReturnTemp",
+      "description": "Return Temperature",
+      "units": "",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AI",
+      "instance": 148,
+      "name": "DischargeTemp",
+      "description": "Discharge Temperature",
+      "units": "",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AI",
+      "instance": 149,
+      "name": "IntakeTemp",
+      "description": "Intake Temperature",
+      "units": "",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AI",
+      "instance": 150,
+      "name": "SpaceTemp",
+      "description": "Space Temperature (thermistor)",
+      "units": "",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AI",
+      "instance": 151,
+      "name": "Hmi1Temp",
+      "description": "Unit HMI temperature",
+      "units": "",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AI",
+      "instance": 152,
+      "name": "Hmi2Temp",
+      "description": "Remote HMI 1 Temperature",
+      "units": "",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AI",
+      "instance": 153,
+      "name": "Hmi3Temp",
+      "description": "Remote HMI 2 Temperature",
+      "units": "",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AI",
+      "instance": 154,
+      "name": "Hmi4Temp",
+      "description": "Remote HMI 3 Temperature",
+      "units": "",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AI",
+      "instance": 155,
+      "name": "Hmi5Temp",
+      "description": "Remote HMI 4 Temperature",
+      "units": "",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AI",
+      "instance": 156,
+      "name": "SuctionLineTemp",
+      "description": "Suction Line Temperature",
+      "units": "",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AI",
+      "instance": 157,
+      "name": "LiquidLineTemp",
+      "description": "Liquid Line Temperature",
+      "units": "",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AI",
+      "instance": 158,
+      "name": "EvapIndoorCoilTemp",
+      "description": "Evaporator Temperature",
+      "units": "",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AI",
+      "instance": 159,
+      "name": "CondOutdoorCoilTemp",
+      "description": "Condenser Temperature",
+      "units": "",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AI",
+      "instance": 160,
+      "name": "CompressorDischargeTemp",
+      "description": "Compressor Discharge Temperature",
+      "units": "",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AI",
+      "instance": 161,
+      "name": "IntakeRh",
+      "description": "Intake Sensor Relative Humidity",
+      "units": "",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AI",
+      "instance": 162,
+      "name": "SpaceRh",
+      "description": "Space Sensor Relative Humidity",
+      "units": "",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AI",
+      "instance": 163,
+      "name": "OutdoorRh",
+      "description": "Outdoor Sensor Relative Humidity",
+      "units": "",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AI",
+      "instance": 164,
+      "name": "DischargeRh",
+      "description": "Discharge Sensor Relative Humidity",
+      "units": "",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AI",
+      "instance": 165,
+      "name": "ReturnRh",
+      "description": "Return Sensor Relative Humidity",
+      "units": "",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AI",
+      "instance": 166,
+      "name": "SuctionLinePs",
+      "description": "Suction Line Pressure",
+      "units": "",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AI",
+      "instance": 167,
+      "name": "DischargeLinePs",
+      "description": "Discharge Line Pressure",
+      "units": "",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AI",
+      "instance": 168,
+      "name": "LiquidLinePs",
+      "description": "Liquid Line Pressure",
+      "units": "",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AI",
+      "instance": 169,
+      "name": "Hmi1Rh",
+      "description": "Unit HMI Relative Humidity",
+      "units": "",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AI",
+      "instance": 170,
+      "name": "Hmi2Rh",
+      "description": "Remote HMI 1 Relative Humidity",
+      "units": "",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AI",
+      "instance": 171,
+      "name": "Hmi3Rh",
+      "description": "Remote HMI 2 Relative Humidity",
+      "units": "",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AI",
+      "instance": 172,
+      "name": "Hmi4Rh",
+      "description": "Remote HMI 3 Relative Humidity",
+      "units": "",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AI",
+      "instance": 173,
+      "name": "Hmi5Rh",
+      "description": "Remote HMI 4 Relative Humidity",
+      "units": "",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AI",
+      "instance": 174,
+      "name": "SupplyPwmRate",
+      "description": "PWM Signal to Supply Fan",
+      "units": "",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AI",
+      "instance": 175,
+      "name": "ExhaustPwmRate",
+      "description": "PWM Signal to Exhaust Fan",
+      "units": "",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AI",
+      "instance": 176,
+      "name": "CondFan1PwmRate",
+      "description": "PWM Signal to set #1 of Condensing Fans",
+      "units": "",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AI",
+      "instance": 177,
+      "name": "CondFan2PwmRate",
+      "description": "PWM Signal to set #2 of Condensing Fans",
+      "units": "",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AI",
+      "instance": 178,
+      "name": "ModulatingGasValve1Output",
+      "description": "Controller output to the modulating gas valve #1. 0V = Low Fire",
+      "units": "",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AI",
+      "instance": 179,
+      "name": "ModulatingGasValve2Output",
+      "description": "Controller output to the modulating gas valve #2. 0V = Low Fire",
+      "units": "",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AI",
+      "instance": 180,
+      "name": "AdjustableDamperOutput",
+      "description": "Output Voltage to Damper",
+      "units": "",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AI",
+      "instance": 181,
+      "name": "ElectricHeaterOutput",
+      "description": "Output Voltage to Electric Heater",
+      "units": "",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "BI",
+      "instance": 182,
+      "name": "OilBoostActiveFlag",
+      "description": "",
+      "units": "",
+      "access": "R",
+      "states": "0=Oil Boost Not Active, 1=Oil Boost Active"
+    },
+    {
+      "type": "BI",
+      "instance": 183,
+      "name": "ReheatActiveFlag",
+      "description": "",
+      "units": "",
+      "access": "R",
+      "states": "0=Reheat Not Active, 1=Reheat Active"
+    },
+    {
+      "type": "BI",
+      "instance": 184,
+      "name": "DefrostActiveFlag",
+      "description": "",
+      "units": "",
+      "access": "R",
+      "states": "0=Defrost Not Active, 1=Defrost Active"
+    },
+    {
+      "type": "BI",
+      "instance": 185,
+      "name": "PumpdownOffActiveFlag",
+      "description": "",
+      "units": "",
+      "access": "R",
+      "states": "0=Pumpdown Off Not Active, 1=Pumpdown Off Active"
+    },
+    {
+      "type": "BI",
+      "instance": 186,
+      "name": "PumpdownOnActiveFlag",
+      "description": "",
+      "units": "",
+      "access": "R",
+      "states": "0=Pumpdown On Not Active, 1=Pumpdown On Active"
+    },
+    {
+      "type": "AI",
+      "instance": 187,
+      "name": "ReheatValvePosition",
+      "description": "Percentage of the Reheat Valve's Position",
+      "units": "",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AI",
+      "instance": 188,
+      "name": "EevValvePosition",
+      "description": "Percentage of the EEV Valve's Position",
+      "units": "",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AI",
+      "instance": 189,
+      "name": "IntakeDpActual",
+      "description": "Actual Intake Dew Point Reading",
+      "units": "",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AI",
+      "instance": 190,
+      "name": "SpaceDpActual",
+      "description": "Actual Space Dew Point Reading",
+      "units": "",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AI",
+      "instance": 191,
+      "name": "CompressorPower",
+      "description": "Compressor Power Reading",
+      "units": "",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AI",
+      "instance": 192,
+      "name": "CompressorFrequency",
+      "description": "Compressor Frequency Reading",
+      "units": "",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AI",
+      "instance": 193,
+      "name": "CompressorCurrent",
+      "description": "Compressor Current Reading",
+      "units": "",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AI",
+      "instance": 194,
+      "name": "ERVExhaustAirRh",
+      "description": "ERV Exhaust Air Relative Humidity",
+      "units": "",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AI",
+      "instance": 195,
+      "name": "ERVWheelSupplyPsInches",
+      "description": "ERV Wheel Supply Pressure Differential",
+      "units": "",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AI",
+      "instance": 196,
+      "name": "ERVWheelExhPsInches",
+      "description": "ERV Wheel Exhaust Pressure Differential",
+      "units": "",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AI",
+      "instance": 197,
+      "name": "ERVExhCtrlVolts",
+      "description": "0-10 Volt ERV Exhaust Speed Control",
+      "units": "",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AI",
+      "instance": 198,
+      "name": "ERVExhAirTemp",
+      "description": "ERV Exhaust Air Temperature",
+      "units": "",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AI",
+      "instance": 199,
+      "name": "ERVOutsideAirRh",
+      "description": "ERV Outside Air Relative Humidity",
+      "units": "",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AI",
+      "instance": 200,
+      "name": "ERVOutsideAirTemp",
+      "description": "ERV Outside Air Temperature",
+      "units": "",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AI",
+      "instance": 201,
+      "name": "ERVExhBlowerDutyCycle",
+      "description": "PWM Signal to Exhaust Fan ECM",
+      "units": "",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "BI",
+      "instance": 202,
+      "name": "ERVExhBlowerPwmEnable",
+      "description": "",
+      "units": "",
+      "access": "R",
+      "states": "0=Disable, 1=Enable"
+    },
+    {
+      "type": "AI",
+      "instance": 203,
+      "name": "ERVWheelDutyCycle",
+      "description": "PWM Signal to ERV Wheel ECM",
+      "units": "",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "BI",
+      "instance": 204,
+      "name": "ERVWheelPwmEnable",
+      "description": "",
+      "units": "",
+      "access": "R",
+      "states": "0=Disable, 1=Enable"
+    },
+    {
+      "type": "AI",
+      "instance": 205,
+      "name": "ERVState",
+      "description": "",
+      "units": "",
+      "access": "R",
+      "states": "0=Idle, 5=Defrost, 6=Clean, 7=Test, 8=Stop"
+    },
+    {
+      "type": "AI",
+      "instance": 206,
+      "name": "ERVAppliedWheelSpeed",
+      "description": "Desired Energy Wheel Fan Speed",
+      "units": "",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AI",
+      "instance": 207,
+      "name": "ERVAppliedExhFanSpeed",
+      "description": "Desired ERV Exhaust Fan Speed",
+      "units": "",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AI",
+      "instance": 208,
+      "name": "Subcool",
+      "description": "Subcool Readings",
+      "units": "",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AI",
+      "instance": 209,
+      "name": "Superheat",
+      "description": "Superheat Readings",
+      "units": "",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AI",
+      "instance": 210,
+      "name": "ActiveFault1",
+      "description": "Active Fault Code (see fault code table)",
+      "units": "",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AI",
+      "instance": 211,
+      "name": "ActiveFault2",
+      "description": "Active Fault Code (see fault code table)",
+      "units": "",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AI",
+      "instance": 212,
+      "name": "ActiveFault3",
+      "description": "Active Fault Code (see fault code table)",
+      "units": "",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AI",
+      "instance": 213,
+      "name": "ActiveFault4",
+      "description": "Active Fault Code (see fault code table)",
+      "units": "",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AI",
+      "instance": 214,
+      "name": "ActiveFault5",
+      "description": "Active Fault Code (see fault code table)",
+      "units": "",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AI",
+      "instance": 215,
+      "name": "ActiveFault6",
+      "description": "Active Fault Code (see fault code table)",
+      "units": "",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "BV",
+      "instance": 216,
+      "name": "SchedulingEnabledFlag",
+      "description": "Enable scheduling. Not an occupancy command. Refer to ID 5 “DDCOccupiedOverride” to",
+      "units": "",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 217,
+      "name": "HeatTemperModeOcc",
+      "description": "Heat tempering mode during occupied time",
+      "units": "",
+      "access": "W",
+      "states": "0=Discharge, 1=Space, 2=BAS, 3=DDC"
+    },
+    {
+      "type": "AV",
+      "instance": 218,
+      "name": "HeatTemperModeUnocc",
+      "description": "Heat tempering mode during unoccupied time",
+      "units": "",
+      "access": "W",
+      "states": "0=Discharge, 1=Space, 2=BAS, 3=DDC"
+    },
+    {
+      "type": "AV",
+      "instance": 219,
+      "name": "CoolTemperModeOcc",
+      "description": "Cool tempering mode during occupied time",
+      "units": "",
+      "access": "W",
+      "states": "0=Discharge, 1=Space, 2=BAS, 3=DDC"
+    },
+    {
+      "type": "AV",
+      "instance": 220,
+      "name": "CoolTemperModeUnocc",
+      "description": "Cool tempering mode during unoccupied time",
+      "units": "",
+      "access": "W",
+      "states": "0=Discharge, 1=Space, 2=BAS, 3=DDC"
+    },
+    {
+      "type": "AV",
+      "instance": 221,
+      "name": "ActivateOnOcc",
+      "description": "\"Activate based on\" during occupied time",
+      "units": "",
+      "access": "W",
+      "states": "0=Intake, 1=Space, 2=Both, 3=Either, 4=Stat"
+    },
+    {
+      "type": "AV",
+      "instance": 222,
+      "name": "ActivateOnUnocc",
+      "description": "\"Activate based on\" during unoccupied time",
+      "units": "",
+      "access": "W",
+      "states": "0=Intake, 1=Space, 2=Both, 3=Either, 4=Stat"
+    },
+    {
+      "type": "AV",
+      "instance": 223,
+      "name": "BlowerModeOcc",
+      "description": "Blower mode during occupied times",
+      "units": "",
+      "access": "W",
+      "states": "0=Auto, 1=Off, 2=On"
+    },
+    {
+      "type": "AV",
+      "instance": 224,
+      "name": "BlowerModeUnocc",
+      "description": "Blower mode during unoccupied times",
+      "units": "",
+      "access": "W",
+      "states": "0=Auto, 1=Off, 2=On"
+    },
+    {
+      "type": "AV",
+      "instance": 225,
+      "name": "MixingBoxMode",
+      "description": "Mixing Box mode selection",
+      "units": "",
+      "access": "W",
+      "states": "0=Off, 1=Manual, 2=Position, 3=OAPercent, 4=AnalogCtrl, 5=PS, 6=100% OA"
+    },
+    {
+      "type": "AV",
+      "instance": 226,
+      "name": "ReheatDPAdjOcc",
+      "description": "Reheat Dew Point adjust setpoint value when occupied",
+      "units": "",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 227,
+      "name": "ReheatDPAdjUnocc",
+      "description": "Reheat Dew Point adjust setpoint value when unoccupied",
+      "units": "",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 228,
+      "name": "BlowerVfdMinFreqOcc",
+      "description": "Min blower VFD Frequency when occupied",
+      "units": "",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 229,
+      "name": "BlowerVfdMinFreqUnocc",
+      "description": "Min blower VFD Frequency when unoccupied",
+      "units": "",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 230,
+      "name": "BlowerVfdMaxFreqOcc",
+      "description": "Max blower VFD Frequency when occupied",
+      "units": "",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 231,
+      "name": "BlowerVfdMaxFreqUnocc",
+      "description": "Max blower VFD Frequency when unoccupied",
+      "units": "",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 232,
+      "name": "BlowerPwmMinRateOcc",
+      "description": "Min blower ECM speed when occupied",
+      "units": "",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 233,
+      "name": "BlowerPwmMinRateUnocc",
+      "description": "Min blower ECM speed when unoccupied",
+      "units": "",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 234,
+      "name": "BlowerPwmMaxRateOcc",
+      "description": "Max blower ECM speed when occupied",
+      "units": "",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 235,
+      "name": "BlowerPwmMaxRateUnocc",
+      "description": "Max blower ECM speed when unoccupied",
+      "units": "",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 236,
+      "name": "MixingBoxMinOAPercentOcc",
+      "description": "Min occupied outdoor air percent when mixing box mode = outdoor air",
+      "units": "",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 237,
+      "name": "MixingBoxMinOAPercentUnocc",
+      "description": "Min unoccupied outdoor air percent when mixing box mode = outdoor air",
+      "units": "",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 238,
+      "name": "MixingBoxMaxOAPercentOcc",
+      "description": "Max occupied outdoor air percent when mixing box mode = outdoor air",
+      "units": "",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 239,
+      "name": "MixingBoxMaxOAPercentUnocc",
+      "description": "Max unoccupied outdoor air percent when mixing box mode = outdoor air",
+      "units": "",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 240,
+      "name": "MixingBoxMinVoltsOcc",
+      "description": "Max unoccupied mixing box voltage when mixing box mode = manual",
+      "units": "",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 241,
+      "name": "MixingBoxMinVoltsUnocc",
+      "description": "Min unoccupied mixing box voltage when mixing box mode = manual",
+      "units": "",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 242,
+      "name": "MixingBoxMaxVoltsOcc",
+      "description": "Max occupied mixing box voltage when mixing box mode = manual",
+      "units": "",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 243,
+      "name": "MixingBoxMaxVoltsUnocc",
+      "description": "Max unoccupied mixing box voltage when mixing box mode = manual",
+      "units": "",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "AI",
+      "instance": 244,
+      "name": "CFMReading",
+      "description": "Fan CFM Reading",
+      "units": "",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AI",
+      "instance": 245,
+      "name": "PressureSensor1",
+      "description": "Duct Static Pressure",
+      "units": "",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AI",
+      "instance": 246,
+      "name": "CO2Reading",
+      "description": "CO2 Reading in PPM",
+      "units": "",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "BV",
+      "instance": 247,
+      "name": "ExternalSpaceTempEnable",
+      "description": "",
+      "units": "",
+      "access": "W",
+      "states": "0=Disable, 1=Enable"
+    },
+    {
+      "type": "AV",
+      "instance": 248,
+      "name": "ExternalSpaceTempValue",
+      "description": "Virtual Space Temperature Value, 1 decimal",
+      "units": "",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "AI",
+      "instance": 249,
+      "name": "Stg2CompressorPower",
+      "description": "Stage 2 Compressor Power Reading",
+      "units": "",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AI",
+      "instance": 250,
+      "name": "Stg2CompressorFrequency",
+      "description": "Stage 2 Compressor Frequency Reading",
+      "units": "",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AI",
+      "instance": 251,
+      "name": "Stg2CompressorCurrent",
+      "description": "Stage 2 Compressor Current Reading",
+      "units": "",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AI",
+      "instance": 252,
+      "name": "Stg3CompressorPower",
+      "description": "Stage 3 Compressor Power Reading",
+      "units": "",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AI",
+      "instance": 253,
+      "name": "Stg3CompressorFrequency",
+      "description": "Stage 3 Compressor Frequency Reading",
+      "units": "",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AI",
+      "instance": 254,
+      "name": "Stg3CompressorCurrent",
+      "description": "Stage 3 Compressor Current Reading",
+      "units": "",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "BI",
+      "instance": 255,
+      "name": "Stg2OilBoostActiveFlag",
+      "description": "Stage 2",
+      "units": "",
+      "access": "R",
+      "states": "0=Oil Boost Not Active, 1=Oil Boost Active"
+    },
+    {
+      "type": "BI",
+      "instance": 256,
+      "name": "Stg2ReheatActiveFlag",
+      "description": "Stage 2",
+      "units": "",
+      "access": "R",
+      "states": "0=Reheat Not Active, 1=Reheat Active"
+    },
+    {
+      "type": "BI",
+      "instance": 257,
+      "name": "Stg2DefrostActiveFlag",
+      "description": "Stage 2",
+      "units": "",
+      "access": "R",
+      "states": "0=Defrost Not Active, 1=Defrost Active"
+    },
+    {
+      "type": "BI",
+      "instance": 258,
+      "name": "Stg2PumpdownOffActiveFlag",
+      "description": "Stage 2",
+      "units": "",
+      "access": "R",
+      "states": "0=Pumpdown Off Not Active, 1=Pumpdown Off Active"
+    },
+    {
+      "type": "BI",
+      "instance": 259,
+      "name": "Stg2PumpdownOnActiveFlag",
+      "description": "Stage 2",
+      "units": "",
+      "access": "R",
+      "states": "0=Pumpdown On Not Active, 1=Pumpdown On Active"
+    },
+    {
+      "type": "AI",
+      "instance": 260,
+      "name": "Stg2ReheatValvePosition",
+      "description": "Stage 2 Percentage of the Reheat Valve's Position",
+      "units": "",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AI",
+      "instance": 261,
+      "name": "Stg2EevValvePosition",
+      "description": "Stage 2 Percentage of the EEV Valve's Position",
+      "units": "",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "BI",
+      "instance": 262,
+      "name": "Stg3OilBoostActiveFlag",
+      "description": "Stage 3",
+      "units": "",
+      "access": "R",
+      "states": "0=Oil Boost Not Active, 1=Oil Boost Active"
+    },
+    {
+      "type": "AI",
+      "instance": 263,
+      "name": "Stg3ReheatActiveFlag",
+      "description": "Stage 3",
+      "units": "",
+      "access": "R",
+      "states": "0=Reheat Not Active, 1=Reheat Active"
+    },
+    {
+      "type": "AI",
+      "instance": 264,
+      "name": "Stg3DefrostActiveFlag",
+      "description": "Stage 3",
+      "units": "",
+      "access": "R",
+      "states": "0=Defrost Not Active, 1=Defrost Active"
+    },
+    {
+      "type": "AI",
+      "instance": 265,
+      "name": "Stg3PumpdownOffActiveFlag",
+      "description": "Stage 3",
+      "units": "",
+      "access": "R",
+      "states": "0=Pumpdown Off Not Active, 1=Pumpdown Off Active"
+    },
+    {
+      "type": "BI",
+      "instance": 266,
+      "name": "Stg3PumpdownOnActiveFlag",
+      "description": "Stage 3",
+      "units": "",
+      "access": "R",
+      "states": "0=Pumpdown On Not Active, 1=Pumpdown On Active"
+    },
+    {
+      "type": "AI",
+      "instance": 267,
+      "name": "Stg3ReheatValvePosition",
+      "description": "Stage 3 Percentage of the Reheat Valve's Position",
+      "units": "",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AI",
+      "instance": 268,
+      "name": "Stg3EevValvePosition",
+      "description": "Stage 3 Percentage of the EEV Valve's Position",
+      "units": "",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "BV",
+      "instance": 269,
+      "name": "ExternalSpaceRhEnable",
+      "description": "",
+      "units": "",
+      "access": "W",
+      "states": "0=Disable, 1=Enable"
+    },
+    {
+      "type": "AV",
+      "instance": 270,
+      "name": "ExternalSpaceRhValue",
+      "description": "Virtual Relative Humidity Value, 1 decimal",
+      "units": "",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "AI",
+      "instance": 271,
+      "name": "PressureSensor2",
+      "description": "Building Static Pressure",
+      "units": "",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 272,
+      "name": "StaticOaPsLowOcc",
+      "description": "Space Static Pressure Low Setpoint when occupied for Outdoor Air Damper control",
+      "units": "",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 273,
+      "name": "StaticOaPsLowUnocc",
+      "description": "Space Static Pressure Low Setpoint when unoccupied for Outdoor Air Damper control",
+      "units": "",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 274,
+      "name": "StaticOaPsHighOcc",
+      "description": "Space Static Pressure High Setpoint when occupied for Outdoor Air Damper control",
+      "units": "",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 275,
+      "name": "StaticOaPsHighUnocc",
+      "description": "Space Static Pressure High Setpoint when unoccupied for Outdoor Air Damper control",
+      "units": "",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 276,
+      "name": "StaticPePsLowOcc",
+      "description": "PS based Powered Exhaust control low set point when occupied",
+      "units": "",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 277,
+      "name": "StaticPePsLowUnocc",
+      "description": "PS based Powered Exhaust control low set point when unoccupied",
+      "units": "",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 278,
+      "name": "StaticPePsHighOcc",
+      "description": "PS based Powered Exhaust control high set point when occupied",
+      "units": "",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 279,
+      "name": "StaticPePsHighUnocc",
+      "description": "PS based Powered Exhaust control high set point when unoccupied",
+      "units": "",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "BV",
+      "instance": 280,
+      "name": "StatCtrlBlower",
+      "description": "Virtual 'call for blower' for Activate On Stat",
+      "units": "",
+      "access": "W",
+      "states": "0=Off, 1=On"
+    },
+    {
+      "type": "BV",
+      "instance": 281,
+      "name": "StatCtrlHeat",
+      "description": "Virtual 'call for heat' for Activate On Stat",
+      "units": "",
+      "access": "W",
+      "states": "0=Off, 1=On"
+    },
+    {
+      "type": "BV",
+      "instance": 282,
+      "name": "StatCtrlCool",
+      "description": "Virtual 'call for cool' for Activate On Stat",
+      "units": "",
+      "access": "W",
+      "states": "0=Off, 1=On"
+    },
+    {
+      "type": "BV",
+      "instance": 283,
+      "name": "StatCtrlDehumid",
+      "description": "Virtual \"call for dehumidification\" for Activate On Stat",
+      "units": "",
+      "access": "W",
+      "states": "0=Off, 1=ON"
+    },
+    {
+      "type": "AV",
+      "instance": 284,
+      "name": "CfmKFactor",
+      "description": "Set K factor for airflow calculations",
+      "units": "",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 285,
+      "name": "Hmi1TempOffset",
+      "description": "Manual temperature offset (degrees) for HMI 1",
+      "units": "",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 286,
+      "name": "Hmi2TempOffset",
+      "description": "Manual temperature offset (degrees) for HMI 2",
+      "units": "",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 287,
+      "name": "Hmi3TempOffset",
+      "description": "Manual temperature offset (degrees) for HMI 3",
+      "units": "",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 288,
+      "name": "Hmi4TempOffset",
+      "description": "Manual temperature offset (degrees) for HMI 4",
+      "units": "",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 289,
+      "name": "Hmi1RhOffset",
+      "description": "Manual relative humidity offset (percent) for HMI 1",
+      "units": "",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 290,
+      "name": "Hmi2RhOffset",
+      "description": "Manual relative humidity offset (percent) for HMI 2",
+      "units": "",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 291,
+      "name": "Hmi3RhOffset",
+      "description": "Manual relative humidity offset (percent) for HMI 3",
+      "units": "",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 292,
+      "name": "Hmi4RhOffset",
+      "description": "Manual relative humidity offset (percent) for HMI 4",
+      "units": "",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 293,
+      "name": "ReturnAsSpace",
+      "description": "Use Return temperature as Space temperature",
+      "units": "",
+      "access": "W",
+      "states": "0=Off, 1=ON"
+    },
+    {
+      "type": "BI",
+      "instance": 294,
+      "name": "FSC1GasON",
+      "description": "Main Gas Valve Status - Stage 1",
+      "units": "",
+      "access": "R",
+      "states": "0=OFF, 1=ON"
+    },
+    {
+      "type": "BI",
+      "instance": 295,
+      "name": "FSC2GasON",
+      "description": "Main Gas Valve Status - Stage 2",
+      "units": "",
+      "access": "R",
+      "states": "0=OFF, 1=ON"
+    },
+    {
+      "type": "BI",
+      "instance": 296,
+      "name": "EconomizerActive",
+      "description": "Economizer Status",
+      "units": "",
+      "access": "R",
+      "states": "0=Inactive, 1=Active"
+    },
+    {
+      "type": "AV",
+      "instance": 297,
+      "name": "EconomizerTargetSpOcc",
+      "description": "Target Economizer Setpoint, Occupied",
+      "units": "",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 298,
+      "name": "EconomizerTargetSpUnocc",
+      "description": "Target Economizer Setpoint, Unoccupied",
+      "units": "",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "AI",
+      "instance": 299,
+      "name": "OaCFMReading",
+      "description": "Calculated Outdoor Air CFM",
+      "units": "",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AI",
+      "instance": 300,
+      "name": "ErvExhaustFanCfmReading",
+      "description": "Calculated ERV Exhaust CFM",
+      "units": "",
+      "access": "R",
+      "states": ""
+    }
+  ]
+}

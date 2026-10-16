@@ -1,0 +1,1272 @@
+{
+  "manufacturer": "ABB",
+  "manufacturer_slug": "abb",
+  "model": "ACH580 HVAC drive (embedded BACnet MS/TP)",
+  "model_slug": "ach580",
+  "aliases": [
+    "ACH580",
+    "ACH580-01",
+    "ACH580-31",
+    "ACH580 E-Clipse",
+    "ACH580 HVAC control program",
+    "3AXD50000027537"
+  ],
+  "equipment_type": "Variable frequency drive (HVAC)",
+  "applies_to": "ABB ACH580 HVAC drives using the built-in EFB port with protocol set to BACnet MS/TP.",
+  "summary": "The ACH580 has BACnet MS/TP built into its EFB (RS-485) terminal, enabled with parameter 58.01. Its fixed object list covers relay and digital I/O status, run/stop and direction commands, speed references, energy meters, fault and warning history, two PID loops and ten user-mapped Data-IO values. BACnet IP needs a separate adapter (e.g. FBIP-21), which is not covered by this list.",
+  "bacnet_transport": [
+    "BACnet MS/TP"
+  ],
+  "firmware": "Firmware manual Rev J; device object reports firmware revision 14.01",
+  "default_device_instance": 4194303,
+  "notes": [
+    "Set the device instance with parameter 58.40 Device object ID; it must be unique on the network.",
+    "Commands (BV10-BV14, AV16/AV17) only take effect when the drive's start/reference sources are set to embedded fieldbus.",
+    "AV120-AV129 (Data-IO-1..10) carry whatever drive parameters are mapped in 58.101-58.110.",
+    "Gaps in the instance numbering are reserved by ABB and do not exist on the drive.",
+    "MSV1-MSV3 state lists print 'Output-Phase-Loss Motor-Stall' without a comma; split here into two states.",
+    "The manual lists BO4 with the name RO4-Command although it controls relay 5; kept as printed."
+  ],
+  "source": {
+    "title": "ACH580 HVAC control program Firmware manual",
+    "doc_number": "3AXD50000027537 Rev J",
+    "revision_date": "2026-02-23",
+    "url": "https://library.e.abb.com/public/c896544ee053430081a08ac378039428/EN_ACH580_FW_J_A5.pdf"
+  },
+  "integration": {
+    "summary": "Set 58.01 Protocol enable = BACnet MSTP, then 58.03 node address, 58.04 baud and 58.40 Device object ID, save with 96.07 and apply with 58.06 Refresh settings. Point 20.01 Ext1 commands at Embedded fieldbus and the Ext1 frequency or speed reference (28.11 or 22.11) at EFB ref1, then command BV10 and AV16. Configure 58.14-58.16 so the drive reacts to a lost BMS.",
+    "minimum_points": [
+      {
+        "ref": "BV 10",
+        "name": "RUN-STOP-Command",
+        "why": "Start/stop from the BMS"
+      },
+      {
+        "ref": "AV 16",
+        "name": "Input-Reference-1",
+        "why": "Speed reference in %"
+      },
+      {
+        "ref": "BV 14",
+        "name": "Fault-Reset-Command",
+        "why": "Reset a tripped drive"
+      },
+      {
+        "ref": "BV 0",
+        "name": "RUN-STOP-Monitor",
+        "why": "Running status"
+      },
+      {
+        "ref": "BV 2",
+        "name": "OK-FAULT-Monitor",
+        "why": "Fault status"
+      },
+      {
+        "ref": "BV 4",
+        "name": "HAND-AUTO-Monitor",
+        "why": "Shows if the panel has the drive in Hand"
+      },
+      {
+        "ref": "AV 1",
+        "name": "Output-Freq",
+        "why": "Output frequency"
+      },
+      {
+        "ref": "AV 4",
+        "name": "Output-Current",
+        "why": "Motor amps"
+      },
+      {
+        "ref": "AV 6",
+        "name": "Output-Power",
+        "why": "Drive power in kW"
+      },
+      {
+        "ref": "MV 1",
+        "name": "Active-Fault-1",
+        "why": "Which fault is active"
+      }
+    ],
+    "enable": "Set 20.01 Ext1 commands (and 20.07 Ext2) to Embedded fieldbus so BV10 starts and stops the drive; 20.21 Direction = Request lets BV11 set direction. For the reference set 28.11 Ext1 frequency ref1 = EFB ref1 (scalar mode, the default) or 22.11 Ext1 speed ref1 = EFB ref1 (vector) for AV16; ref2/AV17 uses 28.15 or 22.18. 19.11 = EFB MCW bit 11 lets BV13 choose Ext1/Ext2, and 20.40/20.41/20.42 = Embedded fieldbus hand run permissive and start interlocks to BV12, BV20 and BV21. BV18 Control-Override-Command takes control from the normal source, but panel HAND still has priority.",
+    "heartbeat": "BACnet has no built-in timeout, so the drive uses 58.14 Communication loss action (default No action; also Fault, Last speed, Speed ref safe via 22.41/28.41, Fault always, Warning), 58.15 Communication loss mode (default Cw/Ref1/Ref2, meaning only control word or reference writes reset the timer; or Any message) and 58.16 Communication loss time (0-6000 s, default 30 s). In the default mode the BMS must keep rewriting the command or reference. Loss gives fault 6681 or warning A7CE EFB comm loss; there is a 30 s boot-up delay, and changes need a reboot or 58.06 Refresh settings.",
+    "remote_sensors": "For the process PID set 40.08 Set 1 feedback 1 source = Feedback data storage and 40.16 Set 1 setpoint 1 source = Setpoint data storage, then write AV43 LOOP-Feedback and AV42 LOOP-Setpoint. AO0/AO1 drive the analog outputs when 13.12/13.22 = AO data storage, and BO0-BO5 drive the relays when their source is an RO/DIO control word bit.",
+    "setup": [
+      "58.01 Protocol enable = BACnet MSTP turns on the EFB port.",
+      "58.03 Node address is the MS/TP MAC; the manual lists 254 as the BACnet default, so set it to a valid address yourself.",
+      "58.04 sets the baud rate.",
+      "58.40 Device object ID sets the device instance (unique, 1-4194303); the device object's default instance is 4194303.",
+      "After changing group 58, save with 96.07 Parameter save manually and apply with 58.06 Communication control = Refresh settings.",
+      "58.07-58.13 are diagnostic counters (58.13 counts tokens received) for checking the MS/TP link."
+    ],
+    "gotchas": [
+      "Panel HAND mode beats BACnet control override (BV18).",
+      "BV39 Parameter-Save-Command writes permanent memory; use it once, not cyclically.",
+      "Last speed and Speed ref safe keep the motor running after a comm loss; make sure that is safe.",
+      "Fault reset through BV14 always goes through; no source parameter is needed.",
+      "AV120-AV129 Data-IO objects only carry data after parameters 58.101-58.110 are mapped."
+    ]
+  },
+  "points": [
+    {
+      "type": "BI",
+      "instance": 0,
+      "name": "RO1-Monitor",
+      "description": "Status of relay output 1",
+      "units": "",
+      "access": "R",
+      "states": "Active: On, Inactive: Off"
+    },
+    {
+      "type": "BI",
+      "instance": 1,
+      "name": "RO2-Monitor",
+      "description": "Status of relay output 2",
+      "units": "",
+      "access": "R",
+      "states": "Active: On, Inactive: Off"
+    },
+    {
+      "type": "BI",
+      "instance": 2,
+      "name": "RO3-Monitor",
+      "description": "Status of relay output 3",
+      "units": "",
+      "access": "R",
+      "states": "Active: On, Inactive: Off"
+    },
+    {
+      "type": "BI",
+      "instance": 3,
+      "name": "RO4-Monitor",
+      "description": "Status of relay output 4",
+      "units": "",
+      "access": "R",
+      "states": "Active: On, Inactive: Off"
+    },
+    {
+      "type": "BI",
+      "instance": 4,
+      "name": "RO5-Monitor",
+      "description": "Status of relay output 5",
+      "units": "",
+      "access": "R",
+      "states": "Active: On, Inactive: Off"
+    },
+    {
+      "type": "BI",
+      "instance": 5,
+      "name": "DO1-Monitor",
+      "description": "Status of digital output 1",
+      "units": "",
+      "access": "R",
+      "states": "Active: On, Inactive: Off"
+    },
+    {
+      "type": "BI",
+      "instance": 6,
+      "name": "DI1-Monitor",
+      "description": "Status of digital input 1",
+      "units": "",
+      "access": "R",
+      "states": "Active: On, Inactive: Off"
+    },
+    {
+      "type": "BI",
+      "instance": 7,
+      "name": "DI2-Monitor",
+      "description": "Status of digital input 2",
+      "units": "",
+      "access": "R",
+      "states": "Active: On, Inactive: Off"
+    },
+    {
+      "type": "BI",
+      "instance": 8,
+      "name": "DI3-Monitor",
+      "description": "Status of digital input 3",
+      "units": "",
+      "access": "R",
+      "states": "Active: On, Inactive: Off"
+    },
+    {
+      "type": "BI",
+      "instance": 9,
+      "name": "DI4-Monitor",
+      "description": "Status of digital input 4",
+      "units": "",
+      "access": "R",
+      "states": "Active: On, Inactive: Off"
+    },
+    {
+      "type": "BI",
+      "instance": 10,
+      "name": "DI5-Monitor",
+      "description": "Status of digital input 5",
+      "units": "",
+      "access": "R",
+      "states": "Active: On, Inactive: Off"
+    },
+    {
+      "type": "BI",
+      "instance": 11,
+      "name": "DI6-Monitor",
+      "description": "Status of digital input 6",
+      "units": "",
+      "access": "R",
+      "states": "Active: On, Inactive: Off"
+    },
+    {
+      "type": "BO",
+      "instance": 0,
+      "name": "RO1-Command",
+      "description": "Output state of relay 1",
+      "units": "",
+      "access": "C",
+      "states": "Active: On, Inactive: Off"
+    },
+    {
+      "type": "BO",
+      "instance": 1,
+      "name": "RO2-Command",
+      "description": "Output state of relay 2",
+      "units": "",
+      "access": "C",
+      "states": "Active: On, Inactive: Off"
+    },
+    {
+      "type": "BO",
+      "instance": 2,
+      "name": "RO3-Command",
+      "description": "Output state of relay 3",
+      "units": "",
+      "access": "C",
+      "states": "Active: On, Inactive: Off"
+    },
+    {
+      "type": "BO",
+      "instance": 3,
+      "name": "RO4-Command",
+      "description": "Output state of relay 4",
+      "units": "",
+      "access": "C",
+      "states": "Active: On, Inactive: Off"
+    },
+    {
+      "type": "BO",
+      "instance": 4,
+      "name": "RO4-Command",
+      "description": "Output state of relay 5",
+      "units": "",
+      "access": "C",
+      "states": "Active: On, Inactive: Off"
+    },
+    {
+      "type": "BO",
+      "instance": 5,
+      "name": "DO1-Command",
+      "description": "Output state of digital output 1",
+      "units": "",
+      "access": "C",
+      "states": "Active: On, Inactive: Off"
+    },
+    {
+      "type": "BV",
+      "instance": 0,
+      "name": "RUN-STOP-Monitor",
+      "description": "Drive’s run status",
+      "units": "",
+      "access": "R",
+      "states": "Active: Run, Inactive: Stop"
+    },
+    {
+      "type": "BV",
+      "instance": 1,
+      "name": "Direction-Monitor",
+      "description": "Rotational direction of the motor",
+      "units": "",
+      "access": "R",
+      "states": "Active: Reverse, Inactive: Forward"
+    },
+    {
+      "type": "BV",
+      "instance": 2,
+      "name": "OK-FAULT-Monitor",
+      "description": "Actual fault status of drive",
+      "units": "",
+      "access": "R",
+      "states": "Active: Fault, Inactive: OK"
+    },
+    {
+      "type": "BV",
+      "instance": 3,
+      "name": "EXT1-EXT2-Monitor",
+      "description": "Actual control source",
+      "units": "",
+      "access": "R",
+      "states": "Active: Ext2, Inactive: Ext1"
+    },
+    {
+      "type": "BV",
+      "instance": 4,
+      "name": "HAND-AUTO-Monitor",
+      "description": "Actual operating mode",
+      "units": "",
+      "access": "R",
+      "states": "Active: Hand, Inactive: Auto"
+    },
+    {
+      "type": "BV",
+      "instance": 5,
+      "name": "Warning-Monitor",
+      "description": "Actual warning status",
+      "units": "",
+      "access": "R",
+      "states": "Active: Warning, Inactive: OK"
+    },
+    {
+      "type": "BV",
+      "instance": 7,
+      "name": "Ready-Monitor",
+      "description": "Actual ready status",
+      "units": "",
+      "access": "R",
+      "states": "Active: Ready, Inactive: Not-Ready"
+    },
+    {
+      "type": "BV",
+      "instance": 8,
+      "name": "At-Setpoint-Monitor",
+      "description": "Actual at setpoint status",
+      "units": "",
+      "access": "R",
+      "states": "Active: Yes, Inactive: No"
+    },
+    {
+      "type": "BV",
+      "instance": 9,
+      "name": "Enabled-Monitor",
+      "description": "Actual run enabled status",
+      "units": "",
+      "access": "R",
+      "states": "Active: Enable, Inactive: Disable"
+    },
+    {
+      "type": "BV",
+      "instance": 10,
+      "name": "RUN-STOP-Command",
+      "description": "Command to start drive",
+      "units": "",
+      "access": "C",
+      "states": "Active: Run, Inactive: Stop"
+    },
+    {
+      "type": "BV",
+      "instance": 11,
+      "name": "Direction-Command",
+      "description": "Command to rotational direction",
+      "units": "",
+      "access": "C",
+      "states": "Active: Reverse, Inactive: Forward"
+    },
+    {
+      "type": "BV",
+      "instance": 12,
+      "name": "Run-Permissive-Command",
+      "description": "Command to run permissive command",
+      "units": "",
+      "access": "C",
+      "states": "Active: Enable, Inactive: Disable"
+    },
+    {
+      "type": "BV",
+      "instance": 13,
+      "name": "EXT1-EXT2-Command",
+      "description": "Selects external control location EXT1 or EXT2",
+      "units": "",
+      "access": "C",
+      "states": "Active: Ext2, Inactive: Ext1"
+    },
+    {
+      "type": "BV",
+      "instance": 14,
+      "name": "Fault-Reset-Command",
+      "description": "Commanded to fault reset",
+      "units": "",
+      "access": "W",
+      "states": "Active: Reset, Inactive: No"
+    },
+    {
+      "type": "BV",
+      "instance": 17,
+      "name": "Lock-Parameters",
+      "description": "Actual status of parameter lock",
+      "units": "",
+      "access": "R",
+      "states": "Active: Lock, Inactive: Unlock"
+    },
+    {
+      "type": "BV",
+      "instance": 18,
+      "name": "Control-Override-Command",
+      "description": "Puts the drive under BACnet control override; panel HAND still wins",
+      "units": "",
+      "access": "C",
+      "states": "Active: On, Inactive: Off"
+    },
+    {
+      "type": "BV",
+      "instance": 19,
+      "name": "Control-Override-Monitor",
+      "description": "Shows whether BACnet control override (BV18) is active",
+      "units": "",
+      "access": "R",
+      "states": "Active: On, Inactive: Off"
+    },
+    {
+      "type": "BV",
+      "instance": 20,
+      "name": "Start-Interlock-1-Command",
+      "description": "Command to start enable 1",
+      "units": "",
+      "access": "C",
+      "states": "Active: Enable, Inactive: Disable"
+    },
+    {
+      "type": "BV",
+      "instance": 21,
+      "name": "Start-Interlock-2-Command",
+      "description": "Command to start enable 2",
+      "units": "",
+      "access": "C",
+      "states": "Active: Enable, Inactive: Disable"
+    },
+    {
+      "type": "BV",
+      "instance": 24,
+      "name": "Started-Monitor",
+      "description": "Actual start status",
+      "units": "",
+      "access": "R",
+      "states": "Active: Started, Inactive: Not-Started"
+    },
+    {
+      "type": "BV",
+      "instance": 25,
+      "name": "Safe-Torque-Off-Monitor",
+      "description": "Actual status of Safe Torque Off",
+      "units": "",
+      "access": "R",
+      "states": "Active: Active, Inactive: OK"
+    },
+    {
+      "type": "BV",
+      "instance": 26,
+      "name": "Underload-Monitor",
+      "description": "On when load-curve signal is below the underload curve",
+      "units": "",
+      "access": "R",
+      "states": "Active: Underload, Inactive: OK"
+    },
+    {
+      "type": "BV",
+      "instance": 27,
+      "name": "Overload-Monitor",
+      "description": "On when load-curve signal is above the overload curve",
+      "units": "",
+      "access": "R",
+      "states": "Active: Overload, Inactive: OK"
+    },
+    {
+      "type": "BV",
+      "instance": 28,
+      "name": "Motor-Heating-Command",
+      "description": "Command to motor heating mode",
+      "units": "",
+      "access": "W",
+      "states": "Active: On, Inactive: Off"
+    },
+    {
+      "type": "BV",
+      "instance": 29,
+      "name": "Motor-Heating-Monitor",
+      "description": "Actual status of motor heating mode",
+      "units": "",
+      "access": "R",
+      "states": "Active: On, Inactive: Off"
+    },
+    {
+      "type": "BV",
+      "instance": 30,
+      "name": "User0-Monitor",
+      "description": "Actual status of “User bit0” in drive status word",
+      "units": "",
+      "access": "R",
+      "states": "Active: On, Inactive: Off"
+    },
+    {
+      "type": "BV",
+      "instance": 31,
+      "name": "User1-Monitor",
+      "description": "Actual status of “User bit1” in drive status word",
+      "units": "",
+      "access": "R",
+      "states": "Active: On, Inactive: Off"
+    },
+    {
+      "type": "BV",
+      "instance": 32,
+      "name": "User2-Monitor",
+      "description": "Actual status of “User bit2” in drive status word",
+      "units": "",
+      "access": "R",
+      "states": "Active: On, Inactive: Off"
+    },
+    {
+      "type": "BV",
+      "instance": 33,
+      "name": "User3-Monitor",
+      "description": "Actual status of “User bit3” in drive status word",
+      "units": "",
+      "access": "R",
+      "states": "Active: On, Inactive: Off"
+    },
+    {
+      "type": "BV",
+      "instance": 34,
+      "name": "User0-Command",
+      "description": "Commands “User bit0” in drive status word",
+      "units": "",
+      "access": "C",
+      "states": "Active: On, Inactive: Off"
+    },
+    {
+      "type": "BV",
+      "instance": 35,
+      "name": "User1-Command",
+      "description": "Commands “User bit1” in drive status word",
+      "units": "",
+      "access": "C",
+      "states": "Active: On, Inactive: Off"
+    },
+    {
+      "type": "BV",
+      "instance": 36,
+      "name": "User2-Command",
+      "description": "Commands “User bit2” in drive status word",
+      "units": "",
+      "access": "C",
+      "states": "Active: On, Inactive: Off"
+    },
+    {
+      "type": "BV",
+      "instance": 37,
+      "name": "User3-Command",
+      "description": "Commands “User bit3” in drive status word",
+      "units": "",
+      "access": "C",
+      "states": "Active: On, Inactive: Off"
+    },
+    {
+      "type": "BV",
+      "instance": 39,
+      "name": "Parameter-Save-Command",
+      "description": "Saves drive parameters and persistent BACnet properties",
+      "units": "",
+      "access": "W",
+      "states": "Active: Save, Inactive: No"
+    },
+    {
+      "type": "BV",
+      "instance": 40,
+      "name": "PID-Set-Select",
+      "description": "Selects process PID set 1 or set 2",
+      "units": "",
+      "access": "W",
+      "states": "Active: Set1, Inactive: Set2"
+    },
+    {
+      "type": "AI",
+      "instance": 0,
+      "name": "AI1-Monitor",
+      "description": "Input level of analog input 1",
+      "units": "%",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AI",
+      "instance": 1,
+      "name": "AI2-Monitor",
+      "description": "Input level of analog input 2",
+      "units": "%",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AO",
+      "instance": 0,
+      "name": "AO1-Command",
+      "description": "Drives analog output 1 (needs BACnet as AO source)",
+      "units": "%",
+      "access": "C",
+      "states": ""
+    },
+    {
+      "type": "AO",
+      "instance": 1,
+      "name": "AO2-Command",
+      "description": "Drives analog output 2 (needs BACnet as AO source)",
+      "units": "%",
+      "access": "C",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 0,
+      "name": "Output-RPM",
+      "description": "Motor speed",
+      "units": "rpm",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 1,
+      "name": "Output-Freq",
+      "description": "Output frequency",
+      "units": "Hz",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 2,
+      "name": "DC-Voltage",
+      "description": "DC bus voltage",
+      "units": "V",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 3,
+      "name": "Output-Voltage",
+      "description": "AC output voltage",
+      "units": "V",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 4,
+      "name": "Output-Current",
+      "description": "Output current of drive",
+      "units": "A",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 5,
+      "name": "Output-Torque",
+      "description": "Motor torque as % of nominal torque",
+      "units": "%",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 6,
+      "name": "Output-Power",
+      "description": "Output power in kW",
+      "units": "kW",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 7,
+      "name": "Operating-Temp-Range",
+      "description": "Heatsink temperature",
+      "units": "%",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 8,
+      "name": "Kilowatt-Hour-Meter-R",
+      "description": "Cumulative energy use, resettable",
+      "units": "kWh",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 9,
+      "name": "Kilowatt-Hour-Meter-NR",
+      "description": "Cumulative energy use, not resettable",
+      "units": "kWh",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 10,
+      "name": "Process-PID-Feedback",
+      "description": "Process PID feedback",
+      "units": "%",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 11,
+      "name": "Process-PID-Deviation",
+      "description": "Process PID deviation from setpoint",
+      "units": "%",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 12,
+      "name": "External-PID-Feedback",
+      "description": "External PID feedback",
+      "units": "%",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 13,
+      "name": "External-PID-Deviation",
+      "description": "External PID deviation from setpoint",
+      "units": "%",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 14,
+      "name": "Running-Hours",
+      "description": "Resettable run time; write 0 to reset",
+      "units": "h",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 15,
+      "name": "Motor-Temp-Degrees-C",
+      "description": "Motor temperature",
+      "units": "°C",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 16,
+      "name": "Input-Reference-1",
+      "description": "Speed setpoint 1",
+      "units": "%",
+      "access": "C",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 17,
+      "name": "Input-Reference-2",
+      "description": "Speed setpoint 2",
+      "units": "%",
+      "access": "C",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 18,
+      "name": "Active-Fault",
+      "description": "Displays most recent fault currently active",
+      "units": "",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 19,
+      "name": "Previous-Fault-1",
+      "description": "Most recent stored (inactive) fault",
+      "units": "",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 20,
+      "name": "Previous-Fault-2",
+      "description": "Second most recent stored (inactive) fault",
+      "units": "",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 21,
+      "name": "AO1-Monitor",
+      "description": "Output level of analog output 1",
+      "units": "%",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 22,
+      "name": "AO2-Monitor",
+      "description": "Output level of analog output 2",
+      "units": "%",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 23,
+      "name": "Accel-1-Seconds",
+      "description": "Ramp1 acceleration time",
+      "units": "s",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 24,
+      "name": "Decel-1-Seconds",
+      "description": "Ramp 1 deceleration time",
+      "units": "s",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 25,
+      "name": "Mbox-Param",
+      "description": "Parameter number used by the mailbox function",
+      "units": "",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 26,
+      "name": "Mbox-Data",
+      "description": "Mailbox data value (write to set, read to view)",
+      "units": "",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 27,
+      "name": "External-PID-Setpoint",
+      "description": "External PID controller setpoint",
+      "units": "%",
+      "access": "C",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 29,
+      "name": "Min-Speed",
+      "description": "Minimum allowed output frequency",
+      "units": "Hz",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 30,
+      "name": "Max-Speed",
+      "description": "Maximum allowed output frequency",
+      "units": "Hz",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 31,
+      "name": "Output-Speed",
+      "description": "Actual motor speed",
+      "units": "%",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 32,
+      "name": "Output-Current-Range",
+      "description": "Actual motor current",
+      "units": "%",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 33,
+      "name": "Max-Current",
+      "description": "Max motor current",
+      "units": "A",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 40,
+      "name": "LOOP-Feedback-Monitor",
+      "description": "Loop controller feedback after source selection and filtering",
+      "units": "%",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 41,
+      "name": "LOOP-Setpoint-Monitor",
+      "description": "Loop controller setpoint after limiting and ramping",
+      "units": "%",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 42,
+      "name": "LOOP-Setpoint",
+      "description": "Loop controller setpoint written by BACnet",
+      "units": "%",
+      "access": "C",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 43,
+      "name": "LOOP-Feedback",
+      "description": "Loop controller feedback value written by BACnet",
+      "units": "%",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 44,
+      "name": "LOOP-Output",
+      "description": "Loop controller output",
+      "units": "%",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 45,
+      "name": "LOOP-Gain",
+      "description": "Loop controller gain",
+      "units": "",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 46,
+      "name": "LOOP-Integration-Time",
+      "description": "Loop controller integration time",
+      "units": "s",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 49,
+      "name": "LOOP-Deviation-Monitor",
+      "description": "Loop controller deviation",
+      "units": "%",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 53,
+      "name": "LOOP-1-Gain",
+      "description": "Loop controller gain (set 2)",
+      "units": "",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 54,
+      "name": "LOOP-1-Integration-Time",
+      "description": "Loop controller integration time (set 2)",
+      "units": "s",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 55,
+      "name": "LOOP-2-Feedback-Monitor",
+      "description": "External loop controller feedback after filtering",
+      "units": "%",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 56,
+      "name": "LOOP-2-Setpoint-Monitor",
+      "description": "External loop controller setpoint after limiting and ramping",
+      "units": "%",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 59,
+      "name": "LOOP-2-Output",
+      "description": "External loop controller output",
+      "units": "%",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 60,
+      "name": "LOOP-2-Gain",
+      "description": "External loop controller gain",
+      "units": "",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 61,
+      "name": "LOOP-2-Integration-Time",
+      "description": "External loop controller integration time",
+      "units": "s",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 64,
+      "name": "LOOP-2-Deviation-Monitor",
+      "description": "External loop controller deviation",
+      "units": "%",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 120,
+      "name": "Data-IO-1",
+      "description": "Value of the drive parameter mapped in 58.101",
+      "units": "",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 121,
+      "name": "Data-IO-2",
+      "description": "Value of the drive parameter mapped in 58.102",
+      "units": "",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 122,
+      "name": "Data-IO-3",
+      "description": "Value of the drive parameter mapped in 58.103",
+      "units": "",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 123,
+      "name": "Data-IO-4",
+      "description": "Value of the drive parameter mapped in 58.104",
+      "units": "",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 124,
+      "name": "Data-IO-5",
+      "description": "Value of the drive parameter mapped in 58.105",
+      "units": "",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 125,
+      "name": "Data-IO-6",
+      "description": "Value of the drive parameter mapped in 58.106",
+      "units": "",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 126,
+      "name": "Data-IO-7",
+      "description": "Value of the drive parameter mapped in 58.107",
+      "units": "",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 127,
+      "name": "Data-IO-8",
+      "description": "Value of the drive parameter mapped in 58.108",
+      "units": "",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 128,
+      "name": "Data-IO-9",
+      "description": "Value of the drive parameter mapped in 58.109",
+      "units": "",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 129,
+      "name": "Data-IO-10",
+      "description": "Value of the drive parameter mapped in 58.110",
+      "units": "",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 130,
+      "name": "Kilowatt-Hour-This-Hour",
+      "description": "Current hour energy consumption",
+      "units": "kWh",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 131,
+      "name": "Kilowatt-Hour-Last-Hour",
+      "description": "Last hour energy consumption",
+      "units": "kWh",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 132,
+      "name": "Kilowatt-Hour-This-Day",
+      "description": "Current day energy consumption",
+      "units": "kWh",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 133,
+      "name": "Kilowatt-Hour-Last-Day",
+      "description": "Last day energy consumption",
+      "units": "kWh",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "MV",
+      "instance": 0,
+      "name": "HAND-AUTO-Reference",
+      "description": "Hand, Auto, Off or Override control state",
+      "units": "",
+      "access": "R",
+      "states": "1=Off, 2=Hand, 3=Auto, 4=Override"
+    },
+    {
+      "type": "MV",
+      "instance": 1,
+      "name": "Active-Fault-1",
+      "description": "Most recent active fault, as enumerated type",
+      "units": "",
+      "access": "R",
+      "states": "1=None, 2=Comm-Error, 3=Overcurrent, 4=Overtemperature, 5=Overspeed, 6=Overvoltage, 7=Undervoltage, 8=Short-Circuit, 9=Ground-Fault, 10=Motor-Overload, 11=Inverter-Overload, 12=Motor-Underload, 13=External-Fault, 14=Operator-Interface-Error, 15=Config-Error, 16=Feedback-Failure, 17=Output-Phase-Loss, 18=Motor-Stall, 19=Power-Unit-Error, 20=Input-Phase-Fault, 21=Internal-Failure, 22=STO-Active, 23=Other"
+    },
+    {
+      "type": "MV",
+      "instance": 2,
+      "name": "Active-Fault-2",
+      "description": "Second most recent active fault, as enumerated type",
+      "units": "",
+      "access": "R",
+      "states": "1=None, 2=Comm-Error, 3=Overcurrent, 4=Overtemperature, 5=Overspeed, 6=Overvoltage, 7=Undervoltage, 8=Short-Circuit, 9=Ground-Fault, 10=Motor-Overload, 11=Inverter-Overload, 12=Motor-Underload, 13=External-Fault, 14=Operator-Interface-Error, 15=Config-Error, 16=Feedback-Failure, 17=Output-Phase-Loss, 18=Motor-Stall, 19=Power-Unit-Error, 20=Input-Phase-Fault, 21=Internal-Failure, 22=STO-Active, 23=Other"
+    },
+    {
+      "type": "MV",
+      "instance": 3,
+      "name": "Active-Fault-3",
+      "description": "Third most recent active fault, as enumerated type",
+      "units": "",
+      "access": "R",
+      "states": "1=None, 2=Comm-Error, 3=Overcurrent, 4=Overtemperature, 5=Overspeed, 6=Overvoltage, 7=Undervoltage, 8=Short-Circuit, 9=Ground-Fault, 10=Motor-Overload, 11=Inverter-Overload, 12=Motor-Underload, 13=External-Fault, 14=Operator-Interface-Error, 15=Config-Error, 16=Feedback-Failure, 17=Output-Phase-Loss, 18=Motor-Stall, 19=Power-Unit-Error, 20=Input-Phase-Fault, 21=Internal-Failure, 22=STO-Active, 23=Other"
+    },
+    {
+      "type": "MV",
+      "instance": 4,
+      "name": "Active-Warning-1",
+      "description": "Most recent active warning, as enumerated type",
+      "units": "",
+      "access": "R",
+      "states": "1=None, 2=Comm-Error, 3=Current-Limit, 4=Overtemperature, 5=Start-Interlock-1, 6=Start-Interlock-2, 7=Start-Interlock-3, 8=Start-Interlock-4, 9=Run-Permissive, 10=Internal-Warning, 11=Start-Delay, 12=Other"
+    },
+    {
+      "type": "MV",
+      "instance": 5,
+      "name": "Active-Warning-2",
+      "description": "Second most recent active warning, as enumerated type",
+      "units": "",
+      "access": "R",
+      "states": "1=None, 2=Comm-Error, 3=Current-Limit, 4=Overtemperature, 5=Start-Interlock-1, 6=Start-Interlock-2, 7=Start-Interlock-3, 8=Start-Interlock-4, 9=Run-Permissive, 10=Internal-Warning, 11=Start-Delay, 12=Other"
+    },
+    {
+      "type": "MV",
+      "instance": 6,
+      "name": "Active-Warning-3",
+      "description": "Third most recent active warning, as enumerated type",
+      "units": "",
+      "access": "R",
+      "states": "1=None, 2=Comm-Error, 3=Current-Limit, 4=Overtemperature, 5=Start-Interlock-1, 6=Start-Interlock-2, 7=Start-Interlock-3, 8=Start-Interlock-4, 9=Run-Permissive, 10=Internal-Warning, 11=Start-Delay, 12=Other"
+    },
+    {
+      "type": "LO",
+      "instance": 0,
+      "name": "LOOP-Set1",
+      "description": "Loop object for process PID set 1",
+      "units": "",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "LO",
+      "instance": 1,
+      "name": "LOOP-Set2",
+      "description": "Loop object for process PID set 2",
+      "units": "",
+      "access": "R",
+      "states": ""
+    }
+  ]
+}

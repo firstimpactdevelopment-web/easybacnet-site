@@ -1,0 +1,408 @@
+{
+  "manufacturer": "Daikin",
+  "manufacturer_slug": "daikin",
+  "model": "DMS502B71 Interface for use in BACnet",
+  "model_slug": "dms502b71",
+  "aliases": [
+    "DMS502B71",
+    "DAM411B51",
+    "D-BACS",
+    "Daikin VRV BACnet interface",
+    "BACnet Interface",
+    "EDUS72-749"
+  ],
+  "equipment_type": "VRV BACnet gateway",
+  "applies_to": "Daikin VRV and ductless indoor units and ERV (VAM) units on up to four DIII-Net lines (256 groups).",
+  "summary": "The DMS502B71 BACnet Interface (with the optional DAM411B51 expansion for DIII-Net ports 3 and 4) is a BACnet IP server that maps every VRV indoor unit group to the same 35-member object template. Integrators read on/off, mode, fan speed, room temperature, alarm and malfunction code, and can write start/stop, mode, setpoint, fan speed, airflow direction and remote-controller permit/prohibit per group. Object names end in the three-digit indoor unit number and instance numbers are built from that unit number.",
+  "bacnet_transport": [
+    "BACnet IP"
+  ],
+  "firmware": "Ver. 6.20 or later",
+  "default_device_instance": null,
+  "notes": [
+    "Instances shown are for indoor unit 000. For unit number N, instance = N x 256 + member number, and XXX in the name is N (000-255).",
+    "DIII-Net port 1 covers units 000-063, port 2 064-127, ports 3 and 4 (DAM411B51 option) 128-255.",
+    "Member 15 is blank. Members 17 (centralized control) and 21 (forced system stop) exist only for units 000, 064, 128 and 192.",
+    "Accumulated gas and power need the optional power-proportional-distribution setup; ERV members apply to VAM units.",
+    "Setpoint, On/Off, mode, airflow direction and fan speed are saved to indoor-unit non-volatile memory; avoid frequent writes."
+  ],
+  "source": {
+    "title": "Design Guide - Interface for use in BACnet (DMS502B71 / DAM411B51)",
+    "doc_number": "EDUS72-749C",
+    "revision_date": null,
+    "url": "https://daikincomfort.com/docs/default-source/interface-for-use-bacnet-/eg-dms502b71bacnet-guide.pdf"
+  },
+  "integration": {
+    "summary": "Commission the interface with the Daikin test-operation/setup tool, then address each indoor unit group by its object suffix (000-255). Typical integration writes start/stop, mode, setpoint and fan speed per group and reads on/off status, room temperature, alarm and malfunction code.",
+    "minimum_points": [
+      {
+        "ref": "BO 1",
+        "name": "StartStopCommand_XXX",
+        "why": "Start/stop the indoor unit group"
+      },
+      {
+        "ref": "BI 2",
+        "name": "StartStopStatus_XXX",
+        "why": "Actual on/off status"
+      },
+      {
+        "ref": "MO 5",
+        "name": "AirConModeCommand_XXX",
+        "why": "Operation mode command"
+      },
+      {
+        "ref": "AV 10",
+        "name": "TempAdjust_XXX",
+        "why": "Setpoint"
+      },
+      {
+        "ref": "MO 7",
+        "name": "AirFlowRateCommand_XXX",
+        "why": "Fan speed command"
+      },
+      {
+        "ref": "AI 9",
+        "name": "RoomTemp_XXX",
+        "why": "Room temperature (reference value)"
+      },
+      {
+        "ref": "BI 3",
+        "name": "Alarm_XXX",
+        "why": "Indoor unit malfunction alarm"
+      },
+      {
+        "ref": "MI 4",
+        "name": "MalfunctionCode_XXX",
+        "why": "Daikin malfunction code"
+      },
+      {
+        "ref": "BI 20",
+        "name": "CommunicationStatus_XXX",
+        "why": "Communication error with the unit"
+      }
+    ],
+    "enable": "There is no separate enable: the BMS writes the command objects directly. Remote-controller lockouts are available per group (RemoteControlStart, RemoteControlAirConModeSet, RemoteControlTempAdjust = Prohibit), and CL_Rejection (only on 000/064/128/192) disables Daikin centralized controllers on that DIII-Net line. SystemForcedOff stops all units on a DIII-Net line and blocks remote-controller starts; clearing it does not restart the units, so the BMS (or another controller) must start them again.",
+    "heartbeat": null,
+    "remote_sensors": null,
+    "setup": [
+      "BACnet/IP port factory setting 47808 (settable 1-65535).",
+      "Can register as a BACnet foreign device when a BBMD is on another subnet.",
+      "After power-up the interface needs about one minute to discover indoor units; reads return UNKNOWN_OBJECT until then.",
+      "The interface can communicate with at most 100 BACnet networks."
+    ],
+    "gotchas": [
+      "Setpoint, On/Off, mode, airflow direction and fan speed are stored in indoor-unit non-volatile memory with a write-count limit; avoid cyclic writes.",
+      "Out-of-range setpoints are rounded to the unit's min/max, and F/C conversion can return a value slightly different from what was written; do not keep resending until they match.",
+      "Room temperature from the return air sensor can be skewed when the fan is off or during defrost; treat it as a reference only.",
+      "Daikin centralized controllers keep the ability to change on/off, mode and setpoint unless CL_Rejection is active."
+    ]
+  },
+  "points": [
+    {
+      "type": "BO",
+      "instance": 1,
+      "name": "StartStopCommand_XXX",
+      "description": "On/Off setting",
+      "units": "",
+      "access": "C",
+      "states": "Inactive=Off, Active=On"
+    },
+    {
+      "type": "BI",
+      "instance": 2,
+      "name": "StartStopStatus_XXX",
+      "description": "On/Off status",
+      "units": "",
+      "access": "R",
+      "states": "Inactive=Off, Active=On"
+    },
+    {
+      "type": "BI",
+      "instance": 3,
+      "name": "Alarm_XXX",
+      "description": "Alarm",
+      "units": "",
+      "access": "R",
+      "states": "Inactive=Normal, Active=Malfunction"
+    },
+    {
+      "type": "MI",
+      "instance": 4,
+      "name": "MalfunctionCode_XXX",
+      "description": "Malfunction code",
+      "units": "",
+      "access": "R",
+      "states": "1=Normal, other states=Daikin-specified malfunction code"
+    },
+    {
+      "type": "MO",
+      "instance": 5,
+      "name": "AirConModeCommand_XXX",
+      "description": "Operation mode setting",
+      "units": "",
+      "access": "C",
+      "states": "1=Cool, 2=Heat, 3=Fan, 4=Auto, 5=Dry"
+    },
+    {
+      "type": "MI",
+      "instance": 6,
+      "name": "AirConModeStatus_XXX",
+      "description": "Operation mode status",
+      "units": "",
+      "access": "R",
+      "states": "1=Cool, 2=Heat, 3=Fan, 4=not used, 5=Dry"
+    },
+    {
+      "type": "MO",
+      "instance": 7,
+      "name": "AirFlowRateCommand_XXX",
+      "description": "Fan speed setting",
+      "units": "",
+      "access": "C",
+      "states": "1=Low, 2=High, 3=Middle, 4=Auto"
+    },
+    {
+      "type": "MI",
+      "instance": 8,
+      "name": "AirFlowRateStatus_XXX",
+      "description": "Fan speed status",
+      "units": "",
+      "access": "R",
+      "states": "1=Low, 2=High, 3=Middle, 4=Auto"
+    },
+    {
+      "type": "AI",
+      "instance": 9,
+      "name": "RoomTemp_XXX",
+      "description": "Measured room temperature",
+      "units": "°C/°F",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 10,
+      "name": "TempAdjust_XXX",
+      "description": "Setpoint",
+      "units": "°C/°F",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "BI",
+      "instance": 11,
+      "name": "FilterSign_XXX",
+      "description": "Filter sign signal",
+      "units": "",
+      "access": "R",
+      "states": "Inactive=No, Active=Yes"
+    },
+    {
+      "type": "BV",
+      "instance": 12,
+      "name": "FilterSignReset_XXX",
+      "description": "Filter sign signal reset",
+      "units": "",
+      "access": "W",
+      "states": "Reset"
+    },
+    {
+      "type": "BV",
+      "instance": 13,
+      "name": "RemoteControlStart_XXX",
+      "description": "Remote controller permit/prohibit (On/Off)",
+      "units": "",
+      "access": "W",
+      "states": "Inactive=Permit, Active=Prohibit"
+    },
+    {
+      "type": "BV",
+      "instance": 14,
+      "name": "RemoteControlAirConModeSet_XXX",
+      "description": "Remote controller permit/prohibit (operation mode)",
+      "units": "",
+      "access": "W",
+      "states": "Inactive=Permit, Active=Prohibit"
+    },
+    {
+      "type": "BV",
+      "instance": 16,
+      "name": "RemoteControlTempAdjust_XXX",
+      "description": "Remote controller permit/prohibit (setpoint)",
+      "units": "",
+      "access": "W",
+      "states": "Inactive=Permit, Active=Prohibit"
+    },
+    {
+      "type": "BV",
+      "instance": 17,
+      "name": "CL_Rejection_XXX",
+      "description": "Centralized control (lower central control disable)",
+      "units": "",
+      "access": "W",
+      "states": "Inactive=Enabled, Active=Disabled"
+    },
+    {
+      "type": "ACC",
+      "instance": 18,
+      "name": "GasTotalPower_XXX",
+      "description": "Accumulated gas",
+      "units": "m3",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "ACC",
+      "instance": 19,
+      "name": "ElecTotalPower_XXX",
+      "description": "Accumulated power",
+      "units": "kWh",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "BI",
+      "instance": 20,
+      "name": "CommunicationStatus_XXX",
+      "description": "Communication status",
+      "units": "",
+      "access": "R",
+      "states": "Inactive=Normal, Active=Communication error"
+    },
+    {
+      "type": "BV",
+      "instance": 21,
+      "name": "SystemForcedOff_XXX",
+      "description": "Forced system stop",
+      "units": "",
+      "access": "W",
+      "states": "Inactive=Inactive, Active=Active"
+    },
+    {
+      "type": "AV",
+      "instance": 22,
+      "name": "AirDirectionCommand_XXX",
+      "description": "Airflow direction setting",
+      "units": "",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "AI",
+      "instance": 23,
+      "name": "AirDirectionStatus_XXX",
+      "description": "Airflow direction status",
+      "units": "",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "BO",
+      "instance": 24,
+      "name": "ForcedThermoOFFCommand_XXX",
+      "description": "Forced thermo-off setting",
+      "units": "",
+      "access": "C",
+      "states": "Inactive=Inactive, Active=Active"
+    },
+    {
+      "type": "BI",
+      "instance": 25,
+      "name": "ForcedThermoOFFStatus_XXX",
+      "description": "Forced thermo-off status",
+      "units": "",
+      "access": "R",
+      "states": "Inactive=Inactive, Active=Active"
+    },
+    {
+      "type": "BO",
+      "instance": 26,
+      "name": "EnergyEfficiencyCommand_XXX",
+      "description": "Energy saving setting",
+      "units": "",
+      "access": "C",
+      "states": "Inactive=Inactive, Active=Active"
+    },
+    {
+      "type": "BI",
+      "instance": 27,
+      "name": "EnergyEfficiencyStatus_XXX",
+      "description": "Energy saving status",
+      "units": "",
+      "access": "R",
+      "states": "Inactive=Inactive, Active=Active"
+    },
+    {
+      "type": "BI",
+      "instance": 28,
+      "name": "ThermoStatus_XXX",
+      "description": "Thermo-on status",
+      "units": "",
+      "access": "R",
+      "states": "Inactive=Off, Active=On"
+    },
+    {
+      "type": "BI",
+      "instance": 29,
+      "name": "CompressorStatus_XXX",
+      "description": "Compressor status",
+      "units": "",
+      "access": "R",
+      "states": "Inactive=Off, Active=On"
+    },
+    {
+      "type": "BI",
+      "instance": 30,
+      "name": "IndoorFanStatus_XXX",
+      "description": "Indoor fan status",
+      "units": "",
+      "access": "R",
+      "states": "Inactive=Off, Active=On"
+    },
+    {
+      "type": "BI",
+      "instance": 31,
+      "name": "HeaterStatus_XXX",
+      "description": "Heater status",
+      "units": "",
+      "access": "R",
+      "states": "Inactive=Off, Active=On"
+    },
+    {
+      "type": "MO",
+      "instance": 32,
+      "name": "VentilationModeCommand_XXX",
+      "description": "Ventilation mode setting (ERV)",
+      "units": "",
+      "access": "C",
+      "states": "1=Bypass, 2=ERV, 3=Auto"
+    },
+    {
+      "type": "MI",
+      "instance": 33,
+      "name": "VentilationModeStatus_XXX",
+      "description": "Ventilation mode status (ERV)",
+      "units": "",
+      "access": "R",
+      "states": "1=Bypass, 2=ERV, 3=Auto"
+    },
+    {
+      "type": "MO",
+      "instance": 34,
+      "name": "VentilationAmountCommand_XXX",
+      "description": "Ventilation amount setting (ERV)",
+      "units": "",
+      "access": "C",
+      "states": "1=Low, 2=High, 3=Auto, 4=Low (fresh up), 5=High (fresh up), 6=Auto (fresh up)"
+    },
+    {
+      "type": "MI",
+      "instance": 35,
+      "name": "VentilationAmountStatus_XXX",
+      "description": "Ventilation amount status (ERV)",
+      "units": "",
+      "access": "R",
+      "states": "1=Low, 2=High, 3=Auto, 4=Low (fresh up), 5=High (fresh up), 6=Auto (fresh up)"
+    }
+  ]
+}
