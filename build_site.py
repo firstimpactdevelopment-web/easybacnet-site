@@ -181,7 +181,7 @@ SCREENSHOTS = {
     "guides/bacnet-device-id-explained": [("devices.png","Each device with its Device ID")],
     "guides/who-is-i-am-explained": [("scan.png","A Who-Is scan and the devices that answered"),
         ("devices.png","Each I-Am becomes a row")],
-    "guides/what-is-bacnet": [("scan.png","A Who-Is scan finds every BACnet IP device"),
+    "guides/what-is-bacnet": [("scan.png","A scan finds every BACnet IP device"),
         ("devices.png","Each device that answered"),("points.png","One device’s points, named and typed")],
     "guides/bacnet-engineering-units-explained": [("points.png","Units shown next to every value")],
     "guides/duplicate-bacnet-device-id": [("devices.png","Each device with its Device ID")],
@@ -516,10 +516,8 @@ GUIDES.append(dict(
   into the front end won't be there.</p>
 
   <h2>3. Scan the network</h2>
-  <p>A discovery tool broadcasts a BACnet <em>Who-Is</em>, lists every device that
-  answers with an <em>I-Am</em>, then reads each device's object list. It finds the
-  undocumented controllers too.</p>
-{{fig:whois}}
+  <p>A scanning tool finds every BACnet IP device on the network you're connected to,
+  then reads each one's list of points. It finds the undocumented controllers too.</p>
   <p>You need:</p>
   <ul>
     <li>A connection on <strong>the same IP subnet</strong> as the controllers
@@ -533,7 +531,7 @@ GUIDES.append(dict(
 
   <p><a href="../index.html">Easy BACnet</a> does this from an Android phone. Plug a
   USB-C Ethernet adapter into the controls switch (or join the controls Wi-Fi if the
-  site has one), tap <strong>Scan for Devices</strong>, then <strong>Export BACnet IP
+  site has one), tap <strong>Scan for Devices</strong>, then <strong>Export
   Results</strong>. It reads every point on each device it found and builds an Excel
   spreadsheet (<code>.xlsx</code>) you can email from the phone.</p>
 
@@ -653,53 +651,66 @@ Technical contact: [name, email].</code></pre>
 GUIDES.append(dict(
     slug="guides/why-cant-i-find-my-bacnet-devices",
     title="Why can't I find my BACnet IP devices? | Easy BACnet",
-    question="Why can't I find my BACnet IP devices when I scan?",
-    description="The usual reasons a BACnet IP scan finds nothing: wrong subnet, blocked broadcasts, no BBMD, mobile data on, or the wrong UDP port. How to fix each.",
-    answer_html="""<p>Almost always because the <em>Who-Is</em> broadcast isn't
-    reaching the controllers, or their replies aren't reaching you. A broadcast only
-    covers your own IP subnet, so first rule out being on the office or guest network
-    instead of the controls network. After that: Wi-Fi that drops or blocks
-    broadcasts, devices on a non-standard UDP port, or an access list blocking 47808.
-    When a scan finds nothing at all, it's rarely the controllers.</p>""",
+    question="Why can't I find my BACnet IP devices?",
+    description="Why a BACnet IP scan finds nothing, in plain terms: usually the wrong network, or BACnet IP is turned off in the device. How to tell which and fix it.",
+    answer_html="""<p>Usually because your phone isn't on the same network as the
+    equipment. A scan can only see devices on the network you're connected to, and
+    building controls often have their own separate network, not the office or guest
+    Wi-Fi. So first make sure you're on the right one. If you are, check that BACnet
+    IP is actually turned on in the device, because some ship with it off. A quick ping
+    tells the two apart: if the device answers a ping but not a scan, BACnet IP is
+    probably off. If it doesn't answer at all, you're probably on the wrong
+    network.</p>""",
     body_html="""
   <h2>Check these in order</h2>
 {{fig:scanflow}}
-  <h3>1. Are you on the controls network?</h3>
-  <p>Broadcasts don't cross routers, so you have to be on the same subnet as the
-  controllers. When a scan finds nothing, Easy BACnet shows the phone's own IP
-  address and mask. Compare that with a controller's address (from its label,
-  display, the JACE/head-end, or the as-builts). With a 255.255.255.0 mask the first
-  three numbers must match: a phone on 10.20.30.250 can find a controller on
-  10.20.30.41 but not one on 192.168.1.41.</p>
-  <p>If they don't match, you're on the wrong network. Building Wi-Fi is the usual
-  culprit, because controls normally sit on their own VLAN that isn't on Wi-Fi at
-  all. The reliable way in is a USB-C Ethernet adapter into a port on the controls
-  switch, often the one in the JACE or supervisory panel. An address starting
-  <code>169.254</code> means no DHCP server answered, which is normal on controls
-  networks; you need a static address in the controls range. See
-  <a href="subnets.html">what is a subnet, and why doesn't the switch give me the
-  right one?</a></p>
-  <p>On Wi-Fi that shows <em>Connected, no internet</em>, turn mobile data off and scan
-  again so Android doesn't route around it.</p>
+  <h3>1. Are you on the right network?</h3>
+  <p>Your phone has to be on the same network as the equipment. Building controls
+  usually have their own network, separate from the office and guest Wi-Fi, so being
+  on the building's Wi-Fi isn't enough. Ask whoever runs the site which network the
+  controls are on. If there's no controls Wi-Fi, plug in: a USB-C Ethernet adapter
+  into a spare port on the controls switch (often inside the JACE or supervisory
+  panel) gets you there.</p>
+  <p>A quick check: Easy BACnet shows your phone's IP address on the scan screen.
+  Compare it with a controller's IP from its label, its display or the site drawings.
+  On most sites the first three numbers should match: a phone on 10.20.30.250 can find
+  a controller on 10.20.30.41, but not one on 192.168.1.41. An address starting
+  <code>169.254</code> means the network didn't hand you an address at all, which is
+  common on controls networks; you'll need a static address from the controls
+  contractor. See <a href="subnets.html">what is a subnet, and why doesn't the switch
+  give me the right one?</a></p>
 
-  <h3>2. Is the network blocking broadcasts?</h3>
-  <p>Wi-Fi often drops broadcast traffic, and corporate or guest Wi-Fi usually has
-  client isolation on, which stops you reaching other devices at all. Easy BACnet
-  re-sends Who-Is during the scan, and if nothing has answered after a few seconds it
-  contacts each address on the subnet directly. Devices found that way are reported
-  as having <em>only answered when contacted directly</em>: the network is blocking
-  broadcast replies, and most other BACnet tools on that connection will see
-  nothing. A wired connection on the controls switch fixes it.</p>
+  <h3>2. Is BACnet IP turned on in the device?</h3>
+  <p>Plenty of controllers ship with BACnet IP switched off, or set up for MS/TP
+  wiring only. In the device's setup (its web page, display or the manufacturer's
+  tool), check that BACnet IP is enabled, that it uses the standard port 47808, and
+  that it has a Device ID. If you don't have access to that, it's a job for the
+  controls contractor.</p>
 
-  <h3>3. Are the devices on a non-standard port?</h3>
-  <p>The standard is UDP 47808 (0xBAC0). Sites running a second BACnet network on
-  the same wire sometimes use 47809 or nearby. Easy BACnet also tries 47809, 47810
-  and 47817 during a scan. For anything else, use <strong>Add device by IP&hellip;</strong>
-  and type the port.</p>
+  <h3>3. Does the device answer a ping?</h3>
+  <p>Easy BACnet has a ping tool right on the "No devices found" screen: type the
+  controller's IP address and tap <strong>Ping</strong>.</p>
+  <ul>
+    <li><strong>It answers:</strong> the network is fine. The problem is the device
+    itself, so check step 2.</li>
+    <li><strong>No answer:</strong> you're probably on the wrong network (step 1), or
+    the device is switched off or unplugged. Some devices ignore ping, so also check
+    its power and the link light on its network port.</li>
+  </ul>
+  <p>More on this in <a href="is-my-bacnet-device-online-ping-test.html">is my BACnet
+  device online?</a></p>
 
-  <h3>4. Is an access list in the way?</h3>
-  <p>A router or firewall between VLANs can block UDP 47808 even when the addressing
-  is right. If the first three checks pass, this is a question for IT.</p>
+  <h3>4. Is it on a different subnet?</h3>
+  <p>If the ping worked but the device's address doesn't match your phone's (step 1),
+  a normal scan can't reach it. Use <strong>Add device by IP&hellip;</strong> to go
+  straight to it, or enter the site's BBMD if it has one (see below).</p>
+
+  <h3>Still nothing?</h3>
+  <p>Some Wi-Fi networks block the kind of traffic a scan uses, or have a firewall
+  between networks. If Easy BACnet says devices <em>only answered when contacted
+  directly</em>, that's what is happening, and a wired connection on the controls
+  switch fixes it. Otherwise, it's time to call IT or the controls contractor with
+  your phone's IP address.</p>
 
   <h2>If you find some devices but not others</h2>
   <ul>
@@ -717,7 +728,7 @@ GUIDES.append(dict(
   </ul>
 
   <h2>If a device shows no name or no points</h2>
-  <p>It answered discovery but its property reads are failing or slow. Give a large
+  <p>It answered the scan, but reading its details is failing or slow. Give a large
   controller a minute, then back out and open it again. A device behind a busy
   MS/TP router can take a while. If the scan marks it <em>needs commissioning</em>,
   it's reporting Device ID 4194303, which isn't a valid ID, and it needs setting up
@@ -727,8 +738,8 @@ GUIDES.append(dict(
   <p>Two options in the menu (three dots, top right):</p>
   <ul>
     <li><strong>Add device by IP&hellip;</strong> contacts one controller directly. It
-    crosses routers because it isn't a broadcast, so it works as long as the phone can
-    reach that address.</li>
+    goes straight to that address, so it works across routers as long as the phone can
+    reach it (a ping is a quick way to check).</li>
     <li><strong>BBMD for remote networks&hellip;</strong> registers the phone with the
     site's BBMD as a foreign device so scans reach the subnets it serves. Get the
     BBMD's address from whoever manages the controls network.</li>
@@ -755,11 +766,11 @@ GUIDES.append(dict(
     body_html="""
   <h2>What a subnet is</h2>
   <p>A subnet is a group of addresses that can reach each other directly, without a
-  router. You can tell them apart by the address and mask: <code>10.20.30.42</code>
-  with mask <code>255.255.255.0</code> is on the 10.20.30.x network. A device at
-  <code>192.168.1.55</code> is on a different one, and the two only talk through a
-  router. BACnet discovery uses broadcasts, and routers don't pass broadcasts, so
-  Who-Is stays on your own subnet unless a BBMD forwards it.</p>
+  router. On most sites you can tell by the IP address: <code>10.20.30.42</code> is on
+  the 10.20.30.x network, and a device at <code>192.168.1.55</code> is on a different
+  one. The two only talk through a router. A BACnet scan only covers your own subnet
+  (unless the site has a BBMD to pass it on), so being on the wrong one means it finds
+  nothing.</p>
 {{fig:subnets}}
 
   <h2>Why being plugged in isn't enough</h2>
@@ -786,9 +797,8 @@ GUIDES.append(dict(
   address here and see nothing.</p>
 
   <h2>How to tell which subnet you're on</h2>
-  <p>When a scan finds nothing, Easy BACnet shows the phone's address and mask, for
-  example <code>192.168.1.42 (mask 255.255.255.0)</code>. Compare that with the
-  controllers' range. If they're on <code>10.20.30.x</code> and you're on
+  <p>Easy BACnet shows the phone's IP address on the scan screen, for example
+  <code>192.168.1.42</code>. Compare that with the controllers' addresses. If they're on <code>10.20.30.x</code> and you're on
   <code>192.168.1.x</code> or <code>169.254.x.x</code>, that's why nothing was
   found.</p>
 
@@ -798,8 +808,8 @@ GUIDES.append(dict(
     enclosures have a small switch with a spare port. A USB-C Ethernet adapter on the
     phone gets you onto it.</li>
     <li><strong>Get an address.</strong> If the controls VLAN has DHCP you'll get one
-    automatically. If not, ask the controls contractor for a free static IP, mask and
-    gateway in that range (an address like 10.20.30.250 that nothing else uses). Not
+    automatically. If not, ask the controls contractor for a free static IP address in
+    that range (an address like 10.20.30.250 that nothing else uses). Not
     every Android phone lets you set a static IP on a USB Ethernet adapter, so check
     yours before you're on site; a laptop or small travel router set to the static
     address is a common workaround.</li>
@@ -807,19 +817,19 @@ GUIDES.append(dict(
     register with it from another subnet and discover through it.</li>
     <li><strong>Add a known device by IP.</strong> If a controller's address is
     reachable through a router, <strong>Add device by IP&hellip;</strong> in the menu
-    reaches it without a broadcast.</li>
+    goes straight to it.</li>
   </ul>
 
   <h2>What to tell IT or the controls contractor</h2>
-  <p>Three things usually settle it quickly: the address and mask Easy BACnet shows
-  for the phone, the subnet the controllers should be on (if you know it), and which
+  <p>Three things usually settle it quickly: the IP address Easy BACnet shows for the
+  phone, the subnet the controllers should be on (if you know it), and which
   switch and port you're plugged into. That tells them straight away whether you're
   on the wrong VLAN.</p>
 """,
     related=[
         ("guides/why-cant-i-find-my-bacnet-devices", "Why can't I find my BACnet IP devices?"),
         ("guides/who-to-call-it-hvac-or-controls", "Who do I call &mdash; IT, HVAC, or controls/BMS?"),
-        ("guides/cant-find-what-im-looking-for", "The app can&rsquo;t find what I&rsquo;m looking for"),
+        ("guides/cant-find-what-im-looking-for", "What do I do if I can&rsquo;t find my BACnet devices?"),
     ],
 ))
 
@@ -887,8 +897,9 @@ GUIDES.append(dict(
   <p>In <a href="../index.html">Easy BACnet</a> the point screen shows
   <strong>Commanded At</strong> (the active priority and its value) and
   <strong>Falls Back To</strong> (the relinquish default). With Write mode on,
-  <strong>Release to Auto</strong> writes NULL at the priority selected on that
-  screen, which defaults to 8. Menu &rarr; <strong>Session write log</strong> lists
+  <strong>Release to Auto</strong> writes NULL to a priority slot that is actually held:
+  it starts on the one you last wrote (or the one in control) and lets you pick if several
+  are held. The Easy BACnet Mode menu &rarr; <strong>Session write log</strong> lists
   every write and release since the app started, so you can check nothing was left
   behind.</p>
 """,
@@ -985,10 +996,8 @@ GUIDES.append(dict(
   internetwork, including controllers behind routers on RS-485 trunks. When a vendor
   asks for your BACnet information, this is the number they're after.</p>
 
-  <p>It's the instance part of the Device object's identifier (object type 8,
-  instance <em>N</em>). Discovery broadcasts a <em>Who-Is</em> and collects the
-  <em>I-Am</em> replies, and each I-Am carries the device's instance.</p>
-{{fig:whois}}
+  <p>Every device reports its Device ID when it answers a scan, which is why a scan
+  list shows it next to each device's name and IP address.</p>
 
   <h2>Why duplicates break things</h2>
   <p>The standard requires every Device ID on the internetwork to be unique. When two
@@ -1039,8 +1048,8 @@ GUIDES.append(dict(
 
 GUIDES.append(dict(
     slug="guides/how-to-use-easy-bacnet",
-    title="How to Get a BACnet IP Points List | Easy BACnet",
-    question="How do I get a BACnet IP points list off a building?",
+    title="How to Scan for Your BACnet Points List | Easy BACnet",
+    question="How do I scan for my BACnet points list?",
     description="Step by step: get on the controls network, scan for BACnet IP devices, check their points, and share the whole lot as an Excel report from your phone.",
     answer_html="""<p>Get the phone onto the same network as the building controls
     (usually a USB-C Ethernet adapter into the controls switch), open the app and tap
@@ -1089,21 +1098,22 @@ GUIDES.append(dict(
   <strong>Easy BACnet Mode</strong>.</p>
 
   <h2>Step 2 &mdash; Scan</h2>
-  <p>Tap <strong>Scan for Devices</strong>. The app broadcasts a BACnet
-  <em>Who-Is</em> on UDP 47808 and listens for I-Am replies, repeating the broadcast
-  for about 30 seconds because a single one is easily lost, especially over Wi-Fi. It
-  also tries the alternate ports 47809, 47810 and 47817. If nothing has answered
-  after a few seconds, it also asks each address on your subnet directly, which finds
-  devices on networks that filter broadcasts. A counter shows the seconds elapsed and
-  how many devices have answered; then it reads each device's name and model. Allow
-  up to a minute on a big site.</p>
+  <p>The scan screen shows the network your phone is on and its IP address, so you
+  can check you're on the right one before you start. If the phone isn't on Wi-Fi or
+  Ethernet at all, it tells you to connect first instead of scanning.</p>
+  <p>Tap <strong>Scan for Devices</strong>. The app calls out to every BACnet IP
+  device on your network and keeps asking, because a single call is easily missed,
+  especially over Wi-Fi. It finishes a few seconds after the last device answers, or
+  after about 30 seconds if nothing does. A counter shows the seconds elapsed
+  and how many devices have answered; then it reads each device's name and model.
+  Allow up to a minute on a big site.</p>
   <p>When it finishes you get a green banner &mdash; <em>Success! Found 6
   device(s)</em> &mdash; or a red one, <em>No devices found</em>. On success two
   buttons appear: <strong>View Results</strong> and <strong>Export Results</strong>.
-  If it comes back red, the screen shows your phone's own IP address and mask and a
-  checklist; see also
-  <a href="cant-find-what-im-looking-for.html">the app can't find what I'm
-  looking for</a>.</p>
+  If it comes back red, the screen shows the network that was scanned, a short
+  checklist and a ping tool to test a controller's IP address; see also
+  <a href="cant-find-what-im-looking-for.html">what do I do if I can't find my
+  BACnet devices?</a>.</p>
   <div class="callout">
   <p>The summary may warn about <strong>unconfigured devices</strong> or
   <strong>duplicate Device IDs</strong>. Unconfigured means the device answered with
@@ -1115,26 +1125,25 @@ GUIDES.append(dict(
   </div>
 
   <h3>Devices on another subnet</h3>
-  <p>A broadcast only reaches your own subnet. For anything further away, open
+  <p>A scan only reaches your own subnet. For anything further away, open
   the menu (three dots, top right):</p>
   <ul>
     <li><strong>Add device by IP&hellip;</strong> &mdash; type the controller's
     <em>IP address or host name</em> and <em>UDP port</em> (47808 is standard) and tap
-    <strong>Add</strong>. See add a device by
-    IP.</li>
+    <strong>Add</strong>.</li>
     <li><strong>BBMD for remote networks&hellip;</strong> &mdash; enter the site's BBMD
-    address once and every scan registers the phone with it as a foreign device, so
-    the Who-Is reaches the other subnets it serves.</li>
+    address once and every scan goes through it, so it reaches the other subnets the
+    BBMD serves.</li>
   </ul>
 
   <h2>Step 3 &mdash; Look at what it found (optional)</h2>
   <p>Tap <strong>View Results</strong>. Each device shows its name, Device ID
   and IP address, plus the model when the device reports one. Tap a device and the
-  app reads its object list. On a big controller this takes a while: the app reads
-  one property at a time with plain ReadProperty, because plenty of small controllers
-  and gateways don't handle ReadPropertyMultiple or segmented replies well. It loads
-  up to 2,000 objects automatically; past that, use the menu's <strong>Add object by
-  number</strong> (how).</p>
+  app reads its list of points. On a big controller this takes a while: the app reads
+  one item at a time, because plenty of small controllers and gateways struggle with
+  bigger requests. It loads
+  up to 2,000 objects automatically; past that, use <strong>Add object by
+  number</strong> in the device screen's menu (three dots).</p>
   <p>Tap a point to see its <strong>Present Value</strong>, <strong>Units</strong>,
   <strong>Status</strong> and <strong>Description</strong>, with a
   <strong>Refresh</strong> button for a fresh read. On commandable points you also
@@ -1268,9 +1277,9 @@ GUIDES.append(dict(
   <h2>Step 4 &mdash; Release it before you leave</h2>
   <p>Tap <strong>Release to Auto</strong> on the point. The confirmation shows which
   priority it will clear and what the point should fall back to; tap <strong>Release
-  it</strong> and the app writes NULL to that slot. The release uses the priority
-  selected on that point screen, which goes back to 8 when you reopen the point, so if
-  you wrote at another level, check the number in the confirmation before you tap. A
+  it</strong> and the app writes NULL to that slot. It only offers slots that are
+  actually held, starting on the one you wrote (or the one in control); if several are
+  held, pick the one to clear and check the number before you tap. A
   <strong>Release</strong> control on a
   <a href="how-to-build-a-custom-remote.html">custom remote</a> does the same at that
   control's priority. The point then follows the next priority down, or its
@@ -1283,8 +1292,8 @@ GUIDES.append(dict(
   </div>
 
   <h2>Checking what you did</h2>
-  <p>Menu &rarr; <strong>Session write log</strong> lists every write and release
-  this session, with the time, the point, old and new values, the priority, and
+  <p>The Easy BACnet Mode menu &rarr; <strong>Session write log</strong> lists every
+  write and release this session, with the time, the point, old and new values, the priority, and
   whether the controller accepted it. Go through it before you leave. Anything you
   wrote that has no matching release is still commanded.</p>
 
@@ -1302,7 +1311,7 @@ GUIDES.append(dict(
 """,
     related=[
         ("guides/bacnet-priority-and-stuck-overrides", "BACnet priority and stuck overrides"),
-        ("guides/how-to-use-easy-bacnet", "How do I get a BACnet IP points list?"),
+        ("guides/how-to-use-easy-bacnet", "How do I scan for my BACnet points list?"),
         ("guides/how-to-build-a-custom-remote", "How do I build a custom remote in Easy BACnet?"),
         ("guides/bacnet-object-types-explained", "BACnet object types explained"),
     ],
@@ -1342,8 +1351,6 @@ GUIDES.append(dict(
     The <strong>My Remotes</strong> screen lists your saved remotes. With none yet it offers
     <strong>Scan for Devices</strong> (no scan this session) or <strong>Choose a Device</strong>
     (pick from <em>Build a remote for which device?</em>).</li>
-    <li><strong>From the Easy BACnet Mode screen:</strong> the <strong>My Remotes (n)</strong>
-    button (shown once you have a remote), or <strong>My Remotes</strong> in the menu.</li>
   </ul>
   <p>A new remote opens empty: <em>No controls yet. Tap Edit, then Add Control.</em></p>
 
@@ -1436,6 +1443,12 @@ GUIDES.append(dict(
   A toggle or step won't act until the point has been read (<em>No value read yet &mdash;
   tap Refresh first</em>), so it never writes based on a guess. Every write and release appears
   in the <strong>Session write log</strong> in the Easy BACnet Mode menu.</p>
+  <p>After every write the remote reads the point back, and every control on that point
+  updates. If the device accepted the write but the value didn't move, the remote says so:
+  <em>Sent 1.5 at priority 10, but it still reads 2.50</em>. Something at a higher priority
+  (another operator, a schedule, the BMS) or the controller's own logic is holding the point.
+  See <a href="bacnet-priority-and-stuck-overrides.html">BACnet priority and stuck
+  overrides</a> for how to find out what.</p>
 
   <h2>Coming back to it</h2>
   <p>Saved remotes appear under <strong>My Remotes</strong>, one per device, showing the device
@@ -1459,7 +1472,8 @@ GUIDES.append(dict(
   holds no values from the building.</p>
 
   <h2>Free vs Easy BACnet Pro</h2>
-  <p>Scanning, reading, writing and exporting are free. On the free version you can keep
+  <p>Scanning, reading, writing and exporting are free (on the free version each export
+  asks to show a short ad first). On the free version you can keep
   <strong>one</strong> custom remote. Opening that saved remote asks <em>Watch a short
   ad?</em> &mdash; choose <strong>Watch ad</strong>, <strong>Remove ads</strong> or
   <strong>Cancel</strong>; no ad plays unless you choose it. If no ad can load (common in a
@@ -1476,7 +1490,7 @@ GUIDES.append(dict(
     related=[
         ("guides/how-to-build-a-control-panel", "How do I build a control panel for several devices?"),
         ("guides/how-to-write-to-a-bacnet-point", "How do I write to a BACnet point with Easy BACnet, and release it?"),
-        ("guides/how-to-use-easy-bacnet", "How do I get a BACnet IP points list?"),
+        ("guides/how-to-use-easy-bacnet", "How do I scan for my BACnet points list?"),
         ("guides/bacnet-priority-and-stuck-overrides", "BACnet priority and stuck overrides"),
     ],
 ))
@@ -1555,8 +1569,8 @@ GUIDES.append(dict(
   <p>A panel can drive up to <strong>32 devices</strong>, including the primary; past that you
   see <em>A control panel can drive up to 32 devices</em>. Adding the same Device ID twice is
   refused. To remove an extra device, tap it in the list: <em>Remove this device?</em> warns how
-  many of its controls will fall back to the primary device; check those controls
-  afterwards. The primary device cannot be removed.</p>
+  many of its controls will be disconnected; they command nothing until you use
+  <strong>Change device</strong> to point them at another device. The primary device cannot be removed.</p>
 
   <h2>Step 3 &mdash; Add controls</h2>
   <p>Tap <strong>Add Control</strong>. When the panel has more than one device you first choose
@@ -1624,8 +1638,9 @@ GUIDES.append(dict(
   <p>The free version keeps <strong>one</strong> control panel, driving its primary device only;
   trying to add a second device shows <em>Multiple devices is a Pro feature</em>, and a second
   panel shows <em>One panel on the free version</em>. Importing a multi-device panel on the free
-  version keeps the layout but points every control at the primary device. Opening a panel
-  doesn't need an ad. Easy BACnet Pro, the same $9.99-a-year subscription that removes ads and
+  version keeps the layout and the primary device's controls; controls for the other devices
+  are disconnected. Opening a saved panel on the free version asks to show one short ad, as a
+  remote does; if no ad loads, the panel just opens. Easy BACnet Pro, the same $9.99-a-year subscription that removes ads and
   lifts the remotes limit, allows unlimited panels with up to 32 devices each. If the
   subscription ends, your panels are kept, but the free limits apply again.</p>
 
@@ -1653,54 +1668,49 @@ GUIDES.append(dict(
 
 GUIDES.append(dict(
     slug="guides/cant-find-what-im-looking-for",
-    title="The app can't find what I'm looking for | Easy BACnet",
-    question="The app can't find what I'm looking for — what do I do?",
+    title="Can't find your BACnet devices? What to do | Easy BACnet",
+    question="What do I do if I can't find my BACnet devices?",
     description="A plain-English checklist for when a scan finds nothing, misses a device, shows a device with no points, or a point with no value.",
-    answer_html="""<p>Usually the phone is not on the same network as the controllers.
-    When a scan finds nothing, the app shows the phone's IP address and subnet mask.
-    If they don't put you in the same subnet as the controllers (with a 255.255.255.0
-    mask, the first three numbers must match), get onto the controls network, usually
-    with a USB-C Ethernet adapter into the controls switch, and scan again. If the
-    addresses do match, or the problem is a missing device, an empty point list or a
-    blank value, find the matching section below.</p>""",
+    answer_html="""<p>Work through the same four checks the app shows: are you on the right
+    network, is BACnet IP turned on in the device, can you ping it, and is it on another
+    subnet? Usually the phone is not on the same network as the controllers.
+    The app shows your phone's IP address; compare it with a controller's IP, and on
+    most sites the first three numbers should match. If they don't, get onto the
+    controls network (often a USB-C Ethernet adapter into the controls switch) and scan
+    again. If you're on the right network, or the problem is a missing device, an empty
+    point list or a blank value, find the matching section below.</p>""",
     body_html="""
   <h2>The scan finds nothing at all</h2>
   <p>You tapped <strong>Scan for Devices</strong> and got the red <em>No devices
-  found</em> banner. Work down this list, cheapest checks first.</p>
+  found</em> banner. The app shows the same four checks on that screen.</p>
   <ol>
-    <li><strong>Compare addresses.</strong> Under the banner the app lists the
-    phone's IP address and mask. Get a controller's address from the head-end's
-    device list, the as-built drawings or the controller's label. With a 255.255.255.0
-    mask the first three numbers must match (phone 192.168.10.20, controller
-    192.168.10.50). If they don't, nothing else matters until you are on the right
-    network.</li>
-    <li><strong>Get on the right network.</strong> Building controls are usually on
-    their own VLAN or a separate flat network, not the office or guest Wi-Fi. Ask IT
-    or the controls contractor which network and IP range the controllers use. The
-    reliable way in is a USB-C Ethernet adapter and a cable to the controls switch,
-    with a free static IP in that range (check with whoever owns it before you pick
-    one).</li>
-    <li><strong>Turn mobile data off</strong> if the status bar says <em>Connected,
-    no internet</em>, then scan again.</li>
-    <li><strong>Scan once more.</strong> Broadcasts get lost, particularly on Wi-Fi.
-    The app repeats the Who-Is during the scan and then asks each address on the
-    subnet directly, but a second run sometimes catches what the first missed. A
-    wired connection is far more reliable.</li>
-    <li><strong>Add the device by IP.</strong> If you know a controller's address,
-    menu &rarr; <strong>Add device by IP&hellip;</strong> contacts it directly without
-    a broadcast. If that works when a scan does not, the device is fine and the
-    broadcast isn't reaching it: it is on another subnet, or the Wi-Fi has client
-    isolation on. Ask for a port on the controls VLAN, or for the site's BBMD address
-    (menu &rarr; <strong>BBMD for remote networks&hellip;</strong>).</li>
-    <li><strong>Ping it.</strong> If even a directed add fails, ping the address from
-    a laptop or a ping app on the same network. No reply points at the network path; a
-    reply with no BACnet answer means the device is up but BACnet isn't getting through.
-    <a href="is-my-bacnet-device-online-ping-test.html">Is my BACnet device online?</a>
-    walks through what each result means.</li>
+    <li><strong>Are you on the right network?</strong> This phone has to be on the same
+    network as the controllers. Building controls usually have their own network, not
+    the office or guest Wi-Fi. Ask IT which one, or plug into the controls switch with a
+    USB-C Ethernet adapter. The app shows your phone's IP address; on most sites the
+    first three numbers should match a controller's (phone 192.168.10.20, controller
+    192.168.10.50).</li>
+    <li><strong>Is BACnet IP turned on in the device?</strong> Many controllers ship with
+    BACnet IP off, or set up for MS/TP only. In the device's setup (web page, display or
+    the manufacturer's tool), check that BACnet IP is enabled on port 47808 and that it
+    has a Device ID.</li>
+    <li><strong>Can you ping it?</strong> Type the device's IP address into the ping box
+    on the <em>No devices found</em> screen and tap <strong>Ping</strong>. If it answers,
+    the network is fine, so BACnet IP is probably off in the device (step 2). If it
+    doesn't, this phone probably isn't on the same network as the device (step 1), or the
+    device is off. If it answers but is on a different subnet, the app says so; go to
+    step 4. <a href="is-my-bacnet-device-online-ping-test.html">Is my BACnet device
+    online?</a> explains each result.</li>
+    <li><strong>Another subnet or a BBMD.</strong> For a controller on another subnet,
+    use <strong>Add device by IP&hellip;</strong> on that screen (or in the menu). If the
+    site has a BBMD, enter it once with <strong>BBMD for remote networks&hellip;</strong>
+    and every scan will use it.</li>
   </ol>
+  <p>If the phone isn't on Wi-Fi or Ethernet at all, the app doesn't scan; it tells you
+  to connect to Wi-Fi first and has a button straight to Wi-Fi settings.</p>
 {{fig:scanflow}}
-  <p>For the longer technical version, see
-  <a href="why-cant-i-find-my-bacnet-devices.html">why can't I find my BACnet
+  <p>For more background, see
+  <a href="why-cant-i-find-my-bacnet-devices.html">why can't I find my BACnet IP
   devices?</a></p>
 
   <h2>It finds some devices, but not the one I want</h2>
@@ -1733,9 +1743,8 @@ GUIDES.append(dict(
     <li><strong>Small devices have few objects.</strong> A thermostat or a meter
     gateway may expose only a handful. That is the device, not a fault.</li>
     <li><strong>A big controller shows only part of its list.</strong> The app
-    loads the first 2,000 objects and says so. Reach the rest with menu &rarr;
-    <strong>Add object by number</strong>
-    (how).</li>
+    loads the first 2,000 objects and says so. Reach the rest with the device
+    screen's menu &rarr; <strong>Add object by number</strong>.</li>
   </ul>
 
   <h2>I see a point but no value</h2>
@@ -1750,7 +1759,7 @@ GUIDES.append(dict(
 
   <h2>Who to call</h2>
   <p>In short: if you can't reach the equipment on the network, call
-  <strong>IT / network</strong> and have the phone's IP and mask ready. If you can
+  <strong>IT / network</strong> and have the phone's IP address ready. If you can
   reach it but the points, IDs or values are wrong, call the <strong>controls /
   BAS</strong> contractor and send them the exported spreadsheet. If the point
   reads correctly but the equipment isn't doing what it says, call the
@@ -1770,23 +1779,20 @@ GUIDES.append(dict(
     slug="guides/is-my-bacnet-device-online-ping-test",
     title="Is my BACnet device online? Ping test | Easy BACnet",
     question="How do I tell if a BACnet device is really online before blaming the app?",
-    description="A hands-on test that separates a network problem from a BACnet problem: find the device IP, try a directed read, then ping it, and what each result means.",
-    answer_html="""<p>Two tests settle it. First, in Easy BACnet, use <strong>Add device
-    by IP&hellip;</strong> with the controller's address: that contacts it directly, with
-    no broadcast involved. If it answers, the device is online and your scan is being
-    blocked somewhere. If it doesn't, <strong>ping</strong> the address from a laptop or
-    ping app on the same network. A failed ping means the network path is broken (wrong
-    subnet, no gateway, firewall, cable, wrong IP). A successful ping with no BACnet
-    answer means the device is up but BACnet isn't getting through: the wrong UDP port, a
-    firewall that allows ping but not UDP 47808, or BACnet/IP not set up on the
-    device.</p>""",
+    description="A hands-on test that separates a network problem from a BACnet problem: find the device IP, ping it, then add it by IP, and what each result means.",
+    answer_html="""<p><strong>Ping it.</strong> Easy BACnet has a ping tool on the
+    <em>No devices found</em> screen: type the controller's IP address and tap Ping. No
+    reply means the phone can't reach it at all: you're on the wrong network, the
+    address is wrong, or the device is off or unplugged. A reply means the network is
+    fine and the device is on, so if a scan still can't see it, BACnet IP is probably
+    turned off in the device, set to a different port, or the device is on another
+    subnet (try <strong>Add device by IP&hellip;</strong>).</p>""",
     body_html="""
   <h2>Why test this way</h2>
   <p>A scan can fail for plenty of reasons that have nothing to do with the device. A
-  directed BACnet read proves the device is alive and speaking BACnet. A ping only proves
-  that IP packets reach the address. Doing them in that order tells you whether you have
-  a broadcast problem, a network problem or a BACnet configuration problem, and so who to
-  call.</p>
+  ping proves the phone can reach the address at all. Adding the device by IP proves it
+  is speaking BACnet. Together they tell you whether you have a network problem or a
+  device-setup problem, and so who to call.</p>
 
   <h2>Step 1 &mdash; find the device's IP address</h2>
   <p>If the device has ever appeared in a scan, its IP is shown under its name. If
@@ -1794,28 +1800,28 @@ GUIDES.append(dict(
   controller's label, ask the controls contractor, or ask the network team to look it up
   in the switch's ARP or DHCP tables.</p>
 
-  <h2>Step 2 &mdash; add it by IP in the app</h2>
-  <p>In Easy BACnet Mode, menu (three dots) &rarr; <strong>Add device by IP&hellip;</strong>,
-  type the address and port (47808 unless the site uses another) and tap
-  <strong>Add</strong>. The app sends a directed Who-Is and a direct ReadProperty to that
-  address.</p>
-  <ul>
-    <li><strong>It answers.</strong> The device is online and speaking BACnet. Your
-    scan missed it because the broadcast isn't reaching it: it is on another subnet, the
-    Wi-Fi has client isolation on, or the network filters broadcasts. To scan a whole
-    remote subnet you need the site's BBMD; for this
-    one device, you are done.</li>
-    <li><strong>It does not answer</strong> (<em>No BACnet IP device answered
-    at&hellip;</em>). Go to step 3.</li>
-  </ul>
+  <h2>Step 2 &mdash; ping it</h2>
+  <p>After a scan that finds nothing, Easy BACnet's <em>No devices found</em> screen has a
+  <strong>Can you ping it?</strong> box. Type the address and tap <strong>Ping</strong>.
+  The app pings over the same Wi-Fi or Ethernet connection it scans on, and tells you
+  whether the device answered and whether it's on your subnet. A laptop on the same
+  network works too: open a command prompt and type <code>ping 10.20.30.41</code>. You
+  want replies, not &ldquo;request timed out&rdquo;.</p>
 {{fig:subnets}}
 
-  <h2>Step 3 &mdash; ping it</h2>
-  <p>Ping from something on the same network as the phone; a laptop plugged into the
-  controls switch is ideal. Open a command prompt and type <code>ping</code> and the
-  address, for example <code>ping 10.20.30.41</code>. A ping app on the phone does the
-  same job. You want replies, not &ldquo;request timed out&rdquo; or &ldquo;destination
-  host unreachable&rdquo;.</p>
+  <h2>Step 3 &mdash; add it by IP</h2>
+  <p>If the ping worked, in Easy BACnet Mode open the menu (three dots) &rarr;
+  <strong>Add device by IP&hellip;</strong>, type the address and port (47808 unless the
+  site uses another) and tap <strong>Add</strong>. The app contacts that address
+  directly.</p>
+  <ul>
+    <li><strong>It answers.</strong> The device is online and speaking BACnet. Your scan
+    missed it because it's on another subnet or the network is filtering scan traffic. To
+    scan a whole remote subnet you need the site's BBMD; for this one device, you are
+    done.</li>
+    <li><strong>It does not answer</strong> (<em>No BACnet IP device answered
+    at&hellip;</em>). See <em>The ping works, but Add by IP doesn't</em> below.</li>
+  </ul>
 
   <h3>The ping fails</h3>
   <p>The device can't be reached over IP, so no BACnet tool will see it until that is
@@ -1836,7 +1842,7 @@ GUIDES.append(dict(
   <p>This is usually an <strong>IT / network</strong> conversation, unless you can see
   the device itself is dead.</p>
 
-  <h3>The ping succeeds, but step 2 failed</h3>
+  <h3>The ping works, but Add by IP doesn't</h3>
   <p>The device is on the network but not answering BACnet at that address and port.
   Possible reasons:</p>
   <ul>
@@ -1864,13 +1870,13 @@ GUIDES.append(dict(
 
   <h2>What to tell whoever you call</h2>
   <p>One sentence with both results saves a lot of back-and-forth:
-  <em>&ldquo;10.20.30.41 pings from a laptop on the controls switch, but a directed
-  BACnet read on port 47808 gets no answer.&rdquo;</em> That rules out the cable, the
+  <em>&ldquo;10.20.30.41 answers a ping from the controls network, but doesn't answer
+  BACnet on port 47808.&rdquo;</em> That rules out the cable, the
   power and the network path, and points at the port, a firewall rule, or the
   device's BACnet settings.</p>
 """,
     related=[
-        ("guides/cant-find-what-im-looking-for", "The app can&rsquo;t find what I&rsquo;m looking for"),
+        ("guides/cant-find-what-im-looking-for", "What do I do if I can&rsquo;t find my BACnet devices?"),
         ("guides/why-cant-i-find-my-bacnet-devices", "Why can't I find my BACnet IP devices?"),
         ("guides/bacnet-device-shows-offline", "Why does my BACnet IP device show offline?"),
         ("guides/who-to-call-it-hvac-or-controls", "Who do I call &mdash; IT, HVAC, or controls/BMS?"),
@@ -2025,7 +2031,7 @@ GUIDES.append(dict(
   for masters), and the trunk has its own BACnet <strong>network number</strong>. A
   <strong>BACnet router</strong> (often built into the JACE or supervisory controller) joins
   the trunk to BACnet/IP. From the IP side each MS/TP device still has its own Device
-  Instance and answers Who-Is through the router. That is how Easy BACnet, which speaks BACnet
+  Instance and answers scans through the router. That is how Easy BACnet, which speaks BACnet
   IP only, lists and reads MS/TP controllers: through a router on the subnet your phone is
   on. It cannot connect to an RS-485 trunk directly.</p>
 
@@ -2066,8 +2072,8 @@ GUIDES.append(dict(
   <h2>When it is not 47808</h2>
   <p>Each UDP port on a subnet is a separate BACnet/IP network, and a router is needed to
   pass traffic between them. Some sites use this to split, for example, lighting onto 47809
-  or a third-party gateway onto 47810. A device on 47809 never answers a Who-Is sent to
-  47808, so you have to know the port. Easy BACnet always scans 47808 and also tries 47809,
+  or a third-party gateway onto 47810. A device on 47809 never answers a scan on 47808, so
+  you have to know the port. Easy BACnet always scans 47808 and also tries 47809,
   47810 and 47817; for any other port, use <strong>Add device by IP&hellip;</strong> and type
   the port in.</p>
 
@@ -2093,7 +2099,7 @@ GUIDES.append(dict(
     question="Is there a BACnet IP scanner app for Android?",
     description="Yes. How to discover, read and command BACnet/IP devices from an Android phone, what a phone can and cannot reach, and the subnet and MS/TP catches.",
     answer_html="""<p>Yes. <a href="../index.html">Easy BACnet</a> is an Android app that
-    broadcasts a BACnet <em>Who-Is</em>, lists the BACnet/IP devices that answer, reads their
+    scans the network for BACnet IP devices, lists every one that answers, reads their
     points, and can write to them at a priority you choose and release them afterwards.
     BACnet has discovery built in, so once the phone is on the same subnet as the controllers
     a scan usually finds them within a minute. Getting the phone onto that subnet is the part
@@ -2109,20 +2115,19 @@ GUIDES.append(dict(
   <h2>Getting on the network</h2>
   <p>Controls networks are rarely on the building Wi-Fi. The usual way in is a spare port on
   the controls switch, or the BAS VLAN at an IT closet, with the adapter set to a static IP
-  in the controls range (or DHCP, if that VLAN has it). Discovery is a broadcast and only
-  covers the phone's own subnet, so a phone on guest Wi-Fi or the office network finds
-  nothing. See <a href="why-cant-i-find-my-bacnet-devices.html">why can't I find
+  in the controls range (or DHCP, if that VLAN has it). A scan only covers the network
+  the phone is on, so a phone on guest Wi-Fi or the office network finds nothing. See <a href="why-cant-i-find-my-bacnet-devices.html">why can't I find
   my BACnet IP devices?</a> and <a href="subnets.html">what is a subnet, and why doesn't
   the switch give me the right one?</a></p>
 
   <h2>What a phone can and cannot reach</h2>
   <table>
     <tr><th>Situation</th><th>Works from the phone?</th></tr>
-    <tr><td>BACnet/IP devices on the same subnet as the phone</td><td>Yes &mdash; the normal case, found by <em>Who-Is</em></td></tr>
-    <tr><td>A specific device you can reach by IP but not by broadcast</td><td>Yes &mdash; add it directly by IP address</td></tr>
-    <tr><td>MS/TP devices on an RS-485 trunk behind a BACnet router</td><td>Yes, through the router; they answer the Who-Is via it. See <a href="bacnet-mstp-vs-bacnet-ip.html">MS/TP vs BACnet/IP</a></td></tr>
+    <tr><td>BACnet/IP devices on the same subnet as the phone</td><td>Yes &mdash; the normal case, found by a scan</td></tr>
+    <tr><td>A specific device you can reach by IP but a scan misses</td><td>Yes &mdash; add it directly by IP address</td></tr>
+    <tr><td>MS/TP devices on an RS-485 trunk behind a BACnet router</td><td>Yes, through the router. See <a href="bacnet-mstp-vs-bacnet-ip.html">MS/TP vs BACnet/IP</a></td></tr>
     <tr><td>Devices on another subnet, through the site's BBMD</td><td>Yes &mdash; enter the BBMD address and the app registers as a foreign device</td></tr>
-    <tr><td>Devices on another subnet, with no BBMD</td><td>Only one at a time, by IP &mdash; broadcasts don't cross a router</td></tr>
+    <tr><td>Devices on another subnet, with no BBMD</td><td>Only one at a time, by IP &mdash; a scan doesn't cross a router</td></tr>
     <tr><td>An RS-485 trunk wired straight to the phone</td><td>No &mdash; the app speaks BACnet IP only</td></tr>
   </table>
   <p>Menu &rarr; Add device by IP&hellip; and
@@ -2132,8 +2137,8 @@ GUIDES.append(dict(
   <p>Discovering and reading change nothing on the equipment. Writing is off every time the
   app starts and has to be turned on from the menu. Each write goes out at a priority you
   pick (8, Manual Operator, by default), the point is read back afterwards so you can see
-  which priority is in command, and <strong>Release to Auto</strong> writes NULL at your
-  priority to hand the point back. See
+  which priority is in command, and <strong>Release to Auto</strong> writes NULL to the
+  priority slot holding the point (you pick it if several are held) to hand it back. See
   <a href="bacnet-priority-and-stuck-overrides.html">BACnet priority and stuck
   overrides</a> and <a href="how-to-write-to-a-bacnet-point.html">how to write to a
   BACnet point</a>.</p>
@@ -2145,7 +2150,7 @@ GUIDES.append(dict(
   <a href="how-to-use-easy-bacnet.html">how to use Easy BACnet</a>.</p>
 """,
     related=[
-        ("guides/how-to-use-easy-bacnet", "How do I use Easy BACnet to scan and read?"),
+        ("guides/how-to-use-easy-bacnet", "How do I scan for my BACnet points list?"),
         ("guides/why-cant-i-find-my-bacnet-devices", "Why can't I find my BACnet IP devices?"),
         ("guides/subnets", "What is a subnet, and why doesn't the switch give me the right one?"),
         ("guides/how-to-write-to-a-bacnet-point", "How do I write to a BACnet point?"),
@@ -2181,13 +2186,12 @@ GUIDES.append(dict(
 
   <h2>Step 1 &mdash; Scan for devices</h2>
   <p>Open the app, tap the <strong>Easy BACnet Mode</strong> card, then <strong>Scan for
-  Devices</strong>. The app broadcasts a BACnet <em>Who-Is</em>, collects the I-Am replies,
-  then reads each device's name. It can take up to a minute. Broadcasts get lost, so the
-  app repeats the Who-Is through the scan instead of relying on one, and a counter shows
-  devices as they answer.</p>
+  Devices</strong>. The app finds every BACnet IP device on your network, then reads each
+  one's name. It can take up to a minute; it keeps asking through the scan in case a reply
+  gets lost, and a counter shows devices as they answer.</p>
   <figure class="shot">
     <img src="../img/scan.png" alt="Easy BACnet scanning a network and listing the BACnet IP devices that answered" loading="lazy">
-    <figcaption>A scan in progress &mdash; devices appear as they answer the Who-Is.</figcaption>
+    <figcaption>A scan in progress &mdash; devices appear as they answer.</figcaption>
   </figure>
 
   <h2>Step 2 &mdash; Open the device</h2>
@@ -2242,7 +2246,7 @@ GUIDES.append(dict(
   <a href="how-to-use-easy-bacnet.html">how to use Easy BACnet</a>.</p>
 """,
     related=[
-        ("guides/how-to-use-easy-bacnet", "How do I use Easy BACnet to scan and read?"),
+        ("guides/how-to-use-easy-bacnet", "How do I scan for my BACnet points list?"),
         ("guides/bacnet-scanner-app-android", "Is there a BACnet IP scanner app for Android?"),
         ("guides/bacnet-object-types-explained", "BACnet object types explained"),
         ("guides/how-to-write-to-a-bacnet-point", "How do I write to a BACnet point?"),
@@ -2253,11 +2257,11 @@ GUIDES.append(dict(
     slug="guides/bacnet-device-shows-offline",
     title="BACnet IP device shows offline? Causes & fixes | Easy BACnet",
     question="Why does my BACnet IP device show offline?",
-    description="A BACnet IP device showing offline is usually a network problem, not dead hardware: wrong subnet, dropped broadcasts, a firewall, or a duplicate ID.",
+    description="A BACnet IP device showing offline is usually a network problem, not dead hardware: wrong subnet, dropped scan traffic, a firewall, or a duplicate ID.",
     answer_html="""<p>&ldquo;Offline&rdquo; means the head-end or your tool stopped getting
     answers from the device. More often than not that is a network or addressing problem
-    rather than dead hardware. The usual causes: you are on a different subnet, broadcasts
-    are being dropped, an access list or firewall is blocking UDP 47808, two devices share a
+    rather than dead hardware. The usual causes: you are on a different subnet, the network
+    is dropping scan traffic, an access list or firewall is blocking UDP 47808, two devices share a
     Device ID or MS/TP MAC, or the device has really lost power or its network link. First
     make sure the device itself is not answering; a point with a <em>Fault</em> flag on a
     device that does answer is a different problem.</p>""",
@@ -2274,23 +2278,23 @@ GUIDES.append(dict(
   <h3>1. Are you on the same subnet?</h3>
   <p>Controls equipment normally sits on its own subnet or VLAN. A phone on guest Wi-Fi or
   the office network never hears the device, so everything looks offline. When a scan
-  finds nothing, Easy BACnet shows the phone's IP and mask; compare them with the
-  controller's address. If they differ, see
+  finds nothing, Easy BACnet shows the phone's IP address; compare it with the
+  controller's. If they differ, see
   <a href="subnets.html">what is a subnet, and why doesn't the switch give me the
   right one?</a> A device on another subnet needs a
   BBMD or a direct add by IP (step 3).</p>
 
   <h3>2. Scan again</h3>
-  <p>Discovery is a broadcast, and broadcasts get dropped, especially over Wi-Fi. A device
-  that appears in one scan and not the next is usually this. The app repeats the Who-Is
-  through the scan and, if nothing answers, tries the subnet's addresses directly, but a
-  second scan or a wired connection settles it.</p>
+  <p>Scan traffic gets dropped, especially over Wi-Fi. A device that appears in one scan
+  and not the next is usually this. The app keeps asking through the scan, but a second
+  scan or a wired connection settles it.</p>
 
   <h3>3. Add it directly by IP</h3>
-  <p>Menu &rarr; <strong>Add device by IP&hellip;</strong> sends a directed request instead
-  of a broadcast. If the device answers, it is online and the problem is that broadcasts are
-  not reaching it: another subnet, Wi-Fi client isolation, or a switch filtering them. If it
-  does not answer, carry on.</p>
+  <p>Menu &rarr; <strong>Add device by IP&hellip;</strong> goes straight to the device's
+  address. If it answers, it is online and the scan just isn't reaching it: it's on another
+  subnet, or the Wi-Fi is blocking scan traffic. If it does not answer, ping it from the
+  <em>No devices found</em> screen: no reply means a network problem, a reply means the
+  device's BACnet settings. Then carry on.</p>
 
   <h3>4. Is UDP 47808 blocked, or is the device on another port?</h3>
   <p>An access list between VLANs, or a device set to 47809 or another non-standard port,
@@ -2489,8 +2493,7 @@ GUIDES.append(dict(
   <h2>Step by step: collect and export from a phone</h2>
   <ol>
     <li><strong>Get on the controls network.</strong> Usually a USB-C Ethernet adapter into
-    the controls switch or BAS VLAN, with an IP in the controls range. If the phone says
-    <em>Connected, no internet</em>, turn mobile data off.</li>
+    the controls switch or BAS VLAN, with an IP in the controls range.</li>
     <li><strong>Scan.</strong> Open Easy BACnet, tap <strong>Easy BACnet Mode</strong>, then
     <strong>Scan for Devices</strong>. Wait for <em>Success! Found N device(s)</em> (up to a
     minute). For controllers on other subnets, add them with menu &rarr; <strong>Add device
@@ -2567,7 +2570,7 @@ GUIDES.append(dict(
   Details are in the <a href="../privacy.html">privacy policy</a>.</p>
 """,
     related=[
-        ("guides/how-to-use-easy-bacnet", "How do I get a BACnet IP points list off a building?"),
+        ("guides/how-to-use-easy-bacnet", "How do I scan for my BACnet points list?"),
         ("guides/what-is-a-bacnet-points-list", "What is a BACnet IP points list?"),
         ("guides/vendor-asking-for-bacnet-information", "A vendor asked for my BACnet information"),
         ("guides/read-bacnet-values-from-phone", "How do I read BACnet values from a phone?"),
@@ -2581,8 +2584,8 @@ GUIDES.append(dict(
     description="You don't need the BMS to prove a BACnet IP device works. How to discover it, read its points and check that it responds to commands, with a phone.",
     answer_html="""<p>You do not need the head-end to prove a BACnet IP controller is up and
     working. Any BACnet client on the same subnet can do it, including
-    <a href="../index.html">Easy BACnet</a> on a phone. Plug into the network, run a Who-Is,
-    and if the controller answers with its Device ID it is powered, addressed and speaking
+    <a href="../index.html">Easy BACnet</a> on a phone. Plug into the network, run a scan,
+    and if the controller shows up with its Device ID it is powered, addressed and speaking
     BACnet. Read its inputs to check the sensors make sense, then, where it is safe,
     command an output, watch the equipment respond, and release it. That is a useful
     point-to-point check before the BMS is connected.</p>""",
@@ -2604,7 +2607,7 @@ GUIDES.append(dict(
   <h2>The test, step by step</h2>
 
   <h3>1. Prove it is on the network (discovery)</h3>
-  <p>Run a scan. If the controller answers a Who-Is with its Device ID and IP, it is
+  <p>Run a scan. If the controller shows up with its Device ID and IP, it is
   powered, on the network and speaking BACnet/IP. If it does not answer, that is a network
   or addressing problem first, not necessarily a dead controller: see
   <a href="bacnet-device-shows-offline.html">why does my BACnet IP device show offline?</a></p>
@@ -2767,8 +2770,8 @@ GUIDES.append(dict(
 
   <h2>What to have ready</h2>
   <ul>
-    <li><strong>Your phone's IP address and mask.</strong> When a scan finds nothing, the app
-    lists them on the results screen. That's the first thing a network person will ask for.</li>
+    <li><strong>Your phone's IP address.</strong> The app shows it on the scan screen, with a
+    Copy button. That's the first thing a network person will ask for.</li>
     <li><strong>The Device ID, name and IP</strong> of the controller in question.</li>
     <li><strong>The point and what it's doing:</strong> Present Value, units, status, and the
     <em>Commanded At</em> priority from the point screen.</li>
@@ -2803,7 +2806,7 @@ GUIDES.append(dict(
 """,
     related=[
         ("guides/subnets", "Why am I on the wrong network even though I'm plugged into the switch?"),
-        ("guides/cant-find-what-im-looking-for", "The app can&rsquo;t find what I&rsquo;m looking for"),
+        ("guides/cant-find-what-im-looking-for", "What do I do if I can&rsquo;t find my BACnet devices?"),
         ("guides/does-easy-bacnet-support-mstp-rs485", "Does Easy BACnet support MS/TP or RS-485?"),
         ("guides/vendor-asking-for-bacnet-information", "A vendor asked for my BACnet information &mdash; what do I send?"),
     ],
@@ -2849,12 +2852,13 @@ GUIDES.append(dict(
   with names and values, that's its <a href="what-is-a-bacnet-points-list.html">points
   list</a>.</p>
 
-  <h2>Finding devices: Who-Is / I-Am</h2>
-  <p>A tool doesn't need to know addresses up front. It broadcasts a
-  <a href="who-is-i-am-explained.html">Who-Is</a>, and devices that receive it answer with an
-  <em>I-Am</em> carrying their Device ID. Broadcasts stay on the local subnet unless a BBMD
-  forwards them, so a device on another subnet won't hear a plain scan. That's what happens
-  when you tap <strong>Scan for Devices</strong> in Easy BACnet.</p>
+  <h2>Finding devices</h2>
+  <p>A tool doesn't need to know addresses up front. It asks the whole network &ldquo;who's
+  out there?&rdquo; and every BACnet device answers with its Device ID. That's what happens
+  when you tap <strong>Scan for Devices</strong> in Easy BACnet. The question only reaches
+  your own subnet (unless the site has a BBMD to pass it on), so a device on another subnet
+  won't show up in a plain scan. The technical names for the question and answer are
+  <a href="who-is-i-am-explained.html">Who-Is and I-Am</a>.</p>
 
   <h2>BACnet IP and MS/TP</h2>
   <ul>
@@ -3048,9 +3052,9 @@ GUIDES.append(dict(
     body_html="""
   <h2>Why duplicates cause trouble</h2>
   <p>BACnet clients find a device by its <a href="bacnet-device-id-explained.html">Device
-  ID</a> and then remember its address. A head-end polling device 20114 sends a Who-Is for
-  20114, takes the I-Am that comes back, and uses that address from then on. With two
-  controllers on 20114:</p>
+  ID</a> and then remember its address. A head-end looking for device 20114 asks the network
+  &ldquo;who is 20114?&rdquo;, takes whichever answer comes back, and uses that address from
+  then on. With two controllers on 20114:</p>
   <ul>
     <li>Both answer, and the head-end's binding can <strong>flip between them</strong> after
     a restart or rediscovery.</li>
@@ -3059,7 +3063,6 @@ GUIDES.append(dict(
     <li><strong>Commands can land on the wrong controller</strong>, because the head-end is
     sending to whatever address it last bound.</li>
   </ul>
-{{fig:whois}}
 
   <h2>How Easy BACnet shows it</h2>
   <p>The app keeps every reply it gets, keyed by Device ID <em>and</em> address, so two
@@ -3177,8 +3180,9 @@ GUIDES.append(dict(
 
   <h2>What Easy BACnet does to help</h2>
   <p>Write mode is <strong>off by default and turns off every time the app starts</strong>.
-  Every write shows a confirmation with the old value, the new value and the priority before
-  anything is sent, and the app re-reads the point afterwards so you see what actually
+  On the point screen every write shows a confirmation with the old value, the new value and
+  the priority before anything is sent (on a custom remote, minus/plus, a toggle and a
+  multi-state pick act at once; a button and a release ask first), and the app re-reads the point afterwards so you see what actually
   happened. On an input it warns you that the write will be ignored unless the point is out of
   service. <a href="bacnet-priority-and-stuck-overrides.html">Release to Auto</a> is on the same
   screen. The judgement is still yours.</p>
@@ -3202,9 +3206,9 @@ GUIDE_GROUPS = [
     ]),
     ("Reading and exporting", [
         "how-to-use-easy-bacnet",
+        "export-bacnet-points-to-csv",
         "read-bacnet-values-from-phone",
         "how-to-find-your-bacnet-points-list",
-        "export-bacnet-points-to-csv",
         "vendor-asking-for-bacnet-information",
         "test-bacnet-device-without-bms",
     ]),
@@ -3578,7 +3582,7 @@ footer a{color:var(--mut); text-decoration:underline}
       "operatingSystem": "Android 8.0 or later",
       "offers": { "@type": "Offer", "price": "0", "priceCurrency": "USD" },
       "publisher": { "@id": "{{BASE}}/#org" },
-      "description": "Scans a local network for BACnet IP devices, reads their points, commands and releases them by priority, builds custom remotes and multi-device control panels, and exports the results as an Excel (.xlsx) spreadsheet."
+      "description": "Scans a local network for BACnet IP devices, reads their points, commands and releases them by priority, builds custom remotes for its devices, and exports the results as an Excel (.xlsx) spreadsheet."
     }
   ]
 }
@@ -3652,7 +3656,7 @@ footer a{color:var(--mut); text-decoration:underline}
     <div class="shotrow">
       <figure><img src="img/points.png" alt="A device's points" width="480" height="1068" loading="lazy"><figcaption>Browse each device and its points</figcaption></figure>
       <figure><img src="img/write.png" alt="Writing a value at a chosen priority" width="480" height="1068" loading="lazy"><figcaption>Command a point at the priority you choose</figcaption></figure>
-      <figure><img src="img/remote-use.png" alt="A custom control panel" width="480" height="1068" loading="lazy"><figcaption>Build your own control panel</figcaption></figure>
+      <figure><img src="img/remote-use.png" alt="A custom remote for one unit" width="480" height="1068" loading="lazy"><figcaption>Build your own custom remote</figcaption></figure>
     </div>
   </div>
 </section>
@@ -3718,25 +3722,6 @@ footer a{color:var(--mut); text-decoration:underline}
   <div class="wrap">
     <h2>Guides</h2>
 {{GUIDES}}
-  </div>
-</section>
-
-<section class="band">
-  <div class="wrap">
-    <h2>Before you connect</h2>
-    <ul class="notes">
-      <li><strong>Put the phone on the same subnet as the controllers.</strong> BACnet
-      discovery relies on broadcast, and broadcast traffic does not cross a router
-      without a BBMD &mdash; so a phone on guest Wi&#8209;Fi or a separate VLAN will not
-      see the equipment.</li>
-      <li><strong>Discovery runs on UDP&nbsp;47808</strong>, the standard BACnet/IP port.
-      Some sites assign 47809 and above; the app checks the common range automatically.</li>
-      <li><strong>Reading is safe. Writing carries real weight.</strong> A commanded point
-      holds the value you write until it is released. If you intend to command anything on
-      a live system, read
-      <a href="guides/bacnet-priority-and-stuck-overrides.html">how BACnet priority works</a>
-      first.</li>
-    </ul>
   </div>
 </section>
 

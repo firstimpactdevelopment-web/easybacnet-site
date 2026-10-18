@@ -161,14 +161,14 @@ def d_subnets():
     b.append(node(36, 54, 200, 64, "Your phone", "10.20.30.50", stroke=ACC))
     b.append(node(324, 54, 200, 64, "RTU-1", "10.20.30.11"))
     b.append(line(236, 86, 320, 86, stroke=OK, sw=2.5, arrow="ok"))
-    b.append(text(278, 78, "Who-Is", size=12, anchor="middle", fill=OK))
+    b.append(text(278, 78, "scan", size=12, anchor="middle", fill=OK))
     # unicast drawn first so the router box sits on top of it
     b.append(path("M210,118 V280 C210,300 424,296 424,318", stroke=ACC, sw=2.5, arrow="acc"))
-    b.append(text(222, 162, "unicast to 10.20.40.15", size=12, fill=ACC, mono=True))
+    b.append(text(222, 162, "Add by IP: 10.20.40.15", size=12, fill=ACC, mono=True))
     # broadcast blocked
     b.append(path("M80,118 V223 H168", stroke=BAD, sw=2.5, dash="5 4"))
     b.append(cross(176, 223))
-    b.append(text(30, 252, "broadcast stops here", size=12, fill=BAD))
+    b.append(text(30, 252, "a scan stops here", size=12, fill=BAD))
     b.append(node(186, 196, 200, 54, "IP router / firewall", "between VLANs", stroke=BLUE))
     b.append(box(16, 282, 528, 128, fill="none", stroke=MUTED, dash="6 5"))
     b.append(text(30, 306, "Subnet B  \u00b7  10.20.40.0/24", size=14, fill=MUTED, weight=700))
@@ -381,16 +381,16 @@ def _diamond(cx, cy, w, h, label1, label2=None):
 def d_scanflow():
     b = []
     b.append(node(130, 10, 220, 40, "Scan found nothing", stroke=BAD, tsize=14))
-    qs = [("Phone IP in the", "controls subnet?", "No", "Get on the controls VLAN:", "static IP or the right port"),
-          ("Link light on? Can", "you reach a controller?", "No", "Cable, switch port,", "controller power"),
-          ("Scanning over", "Wi-Fi?", "Yes", "Wi-Fi often drops broadcasts:", "plug in with USB-Ethernet"),
-          ("Controller on a", "different subnet?", "Yes", "Add device by IP,", "or enter the site BBMD")]
+    qs = [("On the same network", "as the controls?", "No", "Join the controls Wi-Fi,", "or plug into its switch"),
+          ("BACnet IP turned", "on in the device?", "No", "Turn it on in the", "device setup (port 47808)"),
+          ("Does the device", "answer a ping?", "No", "Wrong network, or the", "device is off / unplugged"),
+          ("Device on a", "different subnet?", "Yes", "Add device by IP,", "or enter the site BBMD")]
     y = 112
     b.append(line(240, 50, 240, y - 44, stroke=MUTED, arrow="mut"))
     for i, (q1, q2, take, a1, a2) in enumerate(qs):
-        col = BAD if i < 2 else OK
+        col = BAD if i < 3 else OK
         b.append(_diamond(240, y, 230, 84, q1, q2))
-        b.append(line(355, y, 368, y, stroke=col, sw=2, arrow="ok" if i >= 2 else "bad"))
+        b.append(line(355, y, 368, y, stroke=col, sw=2, arrow="ok" if i >= 3 else "bad"))
         b.append(text(361, y - 10, take, size=11.5, anchor="middle", fill=col, weight=700))
         b.append(box(370, y - 32, 180, 64, fill=BOX, stroke=col, r=8))
         b.append(text(460, y - 6, a1, size=11.5, anchor="middle"))
@@ -399,7 +399,7 @@ def d_scanflow():
             b.append(line(240, y + 42, 240, y + 70, stroke=MUTED, arrow="mut"))
             b.append(text(250, y + 60, "Yes" if take == "No" else "No", size=11.5, fill=MUTED, weight=700))
         y += 112
-    b.append(text(280, y - 40, "Still nothing? Call the controls contractor with your IP and mask.",
+    b.append(text(280, y - 40, "Still nothing? Call the controls contractor with your phone’s IP address.",
                   size=12.5, anchor="middle", fill=MUTED))
     return svg(y - 24, "".join(b), "Troubleshooting flow when a BACnet IP scan finds no devices")
 
@@ -512,7 +512,7 @@ def d_writeflow():
 DIAGRAMS = {
     "network": (d_network, "BACnet IP devices sit on the controls network. MS/TP devices hang off a router and show up at the router’s IP with a network number and MAC."),
     "whois": (d_whois, "Discovery: one broadcast Who-Is, one I-Am back from each device, then a read for each device’s name."),
-    "subnets": (d_subnets, "Broadcasts stay inside a subnet. Reaching another one needs a direct (unicast) request or a BBMD."),
+    "subnets": (d_subnets, "A scan stays inside your subnet. Reaching another one needs Add device by IP or a BBMD."),
     "bbmd": (d_bbmd, "BBMDs pass broadcasts between subnets. A phone or laptop elsewhere registers as a foreign device to join in."),
     "objects": (d_objects, "Device → objects → properties. A points list is one row per object."),
     "priority": (d_priority, "Sixteen slots, one winner: the lowest-numbered slot that holds a value."),
