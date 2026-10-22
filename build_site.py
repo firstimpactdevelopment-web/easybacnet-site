@@ -40,6 +40,17 @@ INDEXNOW_KEY = "e9a7c4f20b8d46139f5c1a7e63d02b8f"
 UPDATED = "2026-10-11"            # ISO, for JSON-LD and sitemap <lastmod>
 UPDATED_HUMAN = "11 October 2026"  # for the visible "Updated" line
 
+
+def play_url(medium, campaign="site"):
+    # Google Play listing with UTM tags, so Play Console (Store analysis ->
+    # traffic sources) credits installs to the site and to the placement.
+    # GA4 enhanced measurement logs the outbound "click" event on its own.
+    # Returned HTML-escaped (&amp;) for use straight inside href="...".
+    return ("https://play.google.com/store/apps/details?id=com.easybacnet.app"
+            "&amp;utm_source=easybacnet.com&amp;utm_medium=%s&amp;utm_campaign=%s"
+            % (medium, campaign))
+
+
 HERE = os.path.dirname(os.path.abspath(__file__))
 
 # Google Analytics 4 measurement ID for easybacnet.com (GA4 property under
@@ -155,6 +166,17 @@ CSS = """
              border-left:3px solid var(--accent); border-radius:12px;
              padding:1rem 1.25rem; margin:1.75rem 0; }
   .callout p:last-child { margin-bottom:0; }
+  header.site .getapp { margin-left:.9rem; padding:.3rem .7rem; border-radius:8px;
+                        background:var(--accent); color:var(--ink); font-weight:700;
+                        font-family:"IBM Plex Mono",ui-monospace,monospace; font-size:.7rem;
+                        letter-spacing:.1em; text-transform:uppercase; }
+  .appcta { background:var(--box); border:1px solid var(--line);
+            border-left:3px solid var(--accent); border-radius:12px;
+            padding:1.1rem 1.3rem; margin:2.5rem 0 0; display:flex; gap:1rem;
+            align-items:center; flex-wrap:wrap; }
+  .appcta p { margin:0; flex:1 1 18rem; }
+  .appcta a.btn { background:var(--accent); color:var(--ink); text-decoration:none;
+                  font-weight:700; padding:.6rem 1rem; border-radius:10px; white-space:nowrap; }
 """ + diagrams.CSS
 
 
@@ -299,6 +321,7 @@ def page(slug, title, question, answer_html, body_html, related, description):
   <a href="%(prefix)sindex.html" style="display:inline-flex;align-items:center;gap:.5rem;text-decoration:none"><img src="icon.svg" alt="" width="28" height="28" style="border-radius:7px"><b class="brand">Easy BACnet</b></a>
   <span class="muted">&middot; BACnet IP Controls made Easy</span>
   <a href="%(prefix)sbacnet-points-lists/index.html" style="margin-left:1rem;font-family:'IBM Plex Mono',monospace;font-size:.72rem;letter-spacing:.12em;text-transform:uppercase;color:#ff9a1f">Points lists</a>
+  <a class="getapp" href="%(play_nav)s" rel="noopener">Get the app</a>
 </header>
 
 <article>
@@ -311,11 +334,16 @@ def page(slug, title, question, answer_html, body_html, related, description):
   </div>
 %(shots)s
 %(body)s
+  <div class="appcta">
+    <p><strong>Check it on your own network.</strong> Easy BACnet is a free Android app
+    that finds BACnet IP devices and reads their points in a couple of taps.</p>
+    <a class="btn" href="%(play_cta)s" rel="noopener">Get it on Google Play</a>
+  </div>
 </article>%(rel)s
 
 <footer>
-  <p>Published alongside <a href="%(prefix)sindex.html">Easy BACnet</a>, a free
-  Android app that scans a building network for BACnet IP devices, reads and
+  <p>Published alongside <a href="%(prefix)sindex.html">Easy BACnet</a>, a
+  <a href="%(play_footer)s" rel="noopener">free Android app</a> that scans a building network for BACnet IP devices, reads and
   commands their points, and exports the results as an Excel (.xlsx) spreadsheet.</p>
   <p><a href="%(prefix)sindex.html#guides">All guides</a> &middot;
   <a href="%(prefix)sbacnet-points-lists/index.html">BACnet points lists by manufacturer</a> &middot;
@@ -339,6 +367,9 @@ def page(slug, title, question, answer_html, body_html, related, description):
         "rel": rel,
         "prefix": prefix,
         "updated_h": UPDATED_HUMAN,
+        "play_nav": play_url("nav", slug.split("/")[-1]),
+        "play_cta": play_url("guide_cta", slug.split("/")[-1]),
+        "play_footer": play_url("footer", slug.split("/")[-1]),
     }
 
 
@@ -3300,6 +3331,8 @@ def tool_page(slug, title, question, description, intro_html, tool_html, related
             .replace("{{UPDATED}}", UPDATED_HUMAN)
             .replace("{{INTRO}}", intro_html)
             .replace("{{TOOL}}", tool_html)
+            .replace("{{PLAY_NAV}}", play_url("nav", slug))
+            .replace("{{PLAY_FOOTER}}", play_url("footer", slug))
             .replace("{{REL}}", rel))
 
 
@@ -3338,6 +3371,7 @@ TOOL_TEMPLATE = """<!doctype html>
 <header class="site">
   <a href="index.html" style="display:inline-flex;align-items:center;gap:.5rem;text-decoration:none"><img src="icon.svg" alt="" width="26" height="26" style="border-radius:6px"><span>Easy BACnet</span></a>
   <span class="muted">&middot; free BACnet tools</span>
+  <a class="getapp" href="{{PLAY_NAV}}" rel="noopener">Get the app</a>
 </header>
 
 <article>
@@ -3348,7 +3382,8 @@ TOOL_TEMPLATE = """<!doctype html>
 </article>{{REL}}
 
 <footer>
-  <p>Published alongside <a href="index.html">Easy BACnet</a>, a free Android app that
+  <p>Published alongside <a href="index.html">Easy BACnet</a>, a
+  <a href="{{PLAY_FOOTER}}" rel="noopener">free Android app</a> that
   scans a building network for BACnet IP devices, reads and commands their points, and
   exports an Excel (.xlsx) report. This tool runs entirely in your browser.</p>
   <p><a href="terms.html">Terms of use</a> &middot; <a href="privacy.html">Privacy policy</a></p>
@@ -3504,6 +3539,10 @@ strong{color:#fff}
 .brand img{width:30px; height:30px; border-radius:8px; display:block}
 .brand b{font-family:"Archivo",sans-serif; font-weight:900; text-transform:uppercase; letter-spacing:.02em; font-size:1.05rem}
 .top .tag{margin-left:auto; color:var(--mut); font-family:"IBM Plex Mono",monospace; font-size:.72rem; letter-spacing:.14em; text-transform:uppercase}
+.top .getapp{margin-left:.9rem; padding:.35rem .75rem; border-radius:8px; background:var(--accent); color:#0d0f11; font-weight:700; font-family:"IBM Plex Mono",monospace; font-size:.72rem; letter-spacing:.1em; text-transform:uppercase; text-decoration:none; white-space:nowrap}
+.hero .cta{display:flex; align-items:center; gap:1rem; flex-wrap:wrap; margin-top:1.5rem}
+.hero .cta .btn{background:var(--accent); color:#0d0f11; font-weight:800; padding:.8rem 1.3rem; border-radius:12px; text-decoration:none; font-size:1.05rem}
+.hero .cta span{color:var(--mut); font-family:"IBM Plex Mono",monospace; font-size:.75rem; letter-spacing:.12em; text-transform:uppercase}
 
 /* hero */
 .hero{padding:clamp(2.5rem,6vw,5rem) 0 clamp(2rem,4vw,3.5rem)}
@@ -3595,6 +3634,7 @@ footer a{color:var(--mut); text-decoration:underline}
     <a class="brand" href="index.html"><img src="icon.svg" alt=""><b>Easy BACnet</b></a>
     <span class="tag">BACnet IP Controls made Easy</span>
     <a href="bacnet-points-lists/index.html" style="margin-left:1.2rem;font-family:'IBM Plex Mono',monospace;font-size:.72rem;letter-spacing:.14em;text-transform:uppercase">Points lists</a>
+    <a class="getapp" href="{{PLAY_NAV}}" rel="noopener">Get the app</a>
   </div>
 </div>
 
@@ -3610,6 +3650,8 @@ footer a{color:var(--mut); text-decoration:underline}
       equipment you touch most.</p>
       <p class="sub">No account, no sign-up, no cloud. <b>Easy.</b> Your scan data stays on
       your phone and your local network.</p>
+      <p class="cta"><a class="btn" href="{{PLAY_HERO}}" rel="noopener">Get it on Google Play</a>
+      <span>Free &middot; Android</span></p>
     </div>
     <div class="art">
       <div class="phone"><img src="img/scan.png" alt="A finished scan in Easy BACnet" width="480" height="1068" fetchpriority="high"></div>
@@ -3727,7 +3769,8 @@ footer a{color:var(--mut); text-decoration:underline}
 
 <footer>
   <div class="wrap">
-    <p><a href="terms.html">Terms of use</a> &middot; <a href="privacy.html">Privacy policy</a> &middot;
+    <p><a href="{{PLAY_FOOTER}}" rel="noopener">Easy BACnet on Google Play</a> &middot;
+    <a href="terms.html">Terms of use</a> &middot; <a href="privacy.html">Privacy policy</a> &middot;
     Contact: <a href="mailto:Firstimpactdevelopment@gmail.com">Firstimpactdevelopment@gmail.com</a></p>
   </div>
 </footer>
@@ -3829,7 +3872,10 @@ def main(ping=False):
         for t in TOOLS
     )
     write("index.html", INDEX.replace("{{BASE}}", BASE_URL)
-          .replace("{{TOOLS}}", tool_links).replace("{{GUIDES}}", links))
+          .replace("{{TOOLS}}", tool_links).replace("{{GUIDES}}", links)
+          .replace("{{PLAY_NAV}}", play_url("nav", "home"))
+          .replace("{{PLAY_HERO}}", play_url("hero", "home"))
+          .replace("{{PLAY_FOOTER}}", play_url("footer", "home")))
 
     # sitemap + robots so crawlers and agents can enumerate the whole set
     # <loc> values are normalised to extensionless clean URLs in write().

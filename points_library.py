@@ -38,6 +38,11 @@ ROOT = "bacnet-points-lists"
 UPDATED = "2026-10-16"
 UPDATED_HUMAN = "16 October 2026"
 
+# Google Play listing with UTM tags (same scheme as build_site.play_url), so
+# Play Console credits installs that start from a points-list page.
+PLAY_URL = ("https://play.google.com/store/apps/details?id=com.easybacnet.app"
+            "&amp;utm_source=easybacnet.com&amp;utm_medium=%s&amp;utm_campaign=points")
+
 # abbreviation -> (full object type name, BACnet object type number)
 OBJECT_TYPES = {
     "AI": ("Analog Input", 0), "AO": ("Analog Output", 1), "AV": ("Analog Value", 2),
@@ -216,6 +221,7 @@ strong{color:#fff}
 .top nav{margin-left:auto;display:flex;gap:1.1rem;font-family:"IBM Plex Mono",monospace;font-size:.72rem;letter-spacing:.12em;text-transform:uppercase}
 .top nav a{color:var(--mut)}
 .top nav a.on{color:var(--accent)}
+.top nav a.getapp{background:var(--accent);color:#0d0f11;font-weight:700;padding:.3rem .65rem;border-radius:8px;text-decoration:none;white-space:nowrap}
 .crumbs{font-family:"IBM Plex Mono",monospace;font-size:.74rem;letter-spacing:.06em;color:var(--mut);margin:1.6rem 0 0;padding:0;list-style:none;display:flex;flex-wrap:wrap;gap:.35rem}
 .crumbs li:not(:last-child)::after{content:"/";margin-left:.35rem;color:var(--line)}
 .crumbs a{color:var(--mut)}
@@ -277,7 +283,7 @@ table.pts.min{min-width:560px}
 .sr-only{position:absolute;width:1px;height:1px;padding:0;margin:-1px;overflow:hidden;clip:rect(0,0,0,0);white-space:nowrap;border:0}
 footer{border-top:1px solid var(--line);margin-top:3.5rem;padding:2rem 0 3rem;color:var(--mut);font-size:.9rem}
 footer a{color:var(--mut);text-decoration:underline}
-@media (max-width:640px){.top nav{display:none}body{font-size:16px}}
+@media (max-width:640px){.top nav a:not(.getapp){display:none}body{font-size:16px}}
 """
 
 FONTS = ('<link rel="preconnect" href="https://fonts.googleapis.com">\n'
@@ -322,7 +328,7 @@ def shell(relpath, title, description, h1_html, body, jsonld, crumbs, og_type="w
 <body>
 <div class="top"><div class="wrap">
   <a class="brand" href="/index.html"><img src="/icon.svg" alt="" width="28" height="28"><b>Easy BACnet</b></a>
-  <nav aria-label="Site"><a href="/bacnet-points-lists/index.html" class="on">Points lists</a><a href="/index.html#guides">Guides</a><a href="/index.html">The app</a></nav>
+  <nav aria-label="Site"><a href="/bacnet-points-lists/index.html" class="on">Points lists</a><a href="/index.html#guides">Guides</a><a href="/index.html">The app</a><a class="getapp" href="%(play_nav)s" rel="noopener">Get the app</a></nav>
 </div></div>
 <main class="wrap">
 <ol class="crumbs" aria-label="Breadcrumb">%(crumbs)s</ol>
@@ -334,7 +340,8 @@ def shell(relpath, title, description, h1_html, body, jsonld, crumbs, og_type="w
   Point availability varies by firmware, options and configuration &mdash; always confirm against the live device.
   Brand names identify the equipment only; Easy BACnet is not affiliated with any manufacturer listed.
   Spotted an error, or want a list removed? Email <a href="mailto:Firstimpactdevelopment@gmail.com">Firstimpactdevelopment@gmail.com</a>.</p>
-  <p><a href="/index.html">Easy BACnet</a> &middot; <a href="/bacnet-points-lists/index.html">Points lists</a> &middot;
+  <p><a href="/index.html">Easy BACnet</a> &middot; <a href="%(play_footer)s" rel="noopener">Get it on Google Play</a> &middot;
+  <a href="/bacnet-points-lists/index.html">Points lists</a> &middot;
   <a href="/index.html#guides">Guides</a> &middot; <a href="/terms.html">Terms of use</a> &middot; <a href="/privacy.html">Privacy policy</a></p>
 </div></footer>
 %(script)s
@@ -344,6 +351,7 @@ def shell(relpath, title, description, h1_html, body, jsonld, crumbs, og_type="w
         "title": esc(title), "desc": esc(description), "url": url, "base": BASE_URL,
         "ogtype": og_type, "fonts": FONTS, "css": CSS, "jsonld": jsonld,
         "crumbs": crumb_html, "h1": h1_html, "body": body, "script": FILTER_JS,
+        "play_nav": PLAY_URL % "nav", "play_footer": PLAY_URL % "footer",
     }
 
 
