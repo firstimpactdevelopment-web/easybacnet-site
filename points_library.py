@@ -324,6 +324,60 @@ table.cmp td.dls a:hover{border-color:var(--accent);text-decoration:none}
 }
 .hidden{display:none!important}
 .sr-only{position:absolute;width:1px;height:1px;padding:0;margin:-1px;overflow:hidden;clip:rect(0,0,0,0);white-space:nowrap;border:0}
+.fbar{padding:.2rem 0 .5rem;margin:.6rem 0 0}
+.frow{display:flex;gap:.55rem;align-items:center;flex-wrap:wrap}
+.sbox{position:relative;flex:1 1 260px;display:flex}
+.sbox .search{flex:1;padding:.55rem 2.2rem .55rem .8rem}
+.sclear{position:absolute;right:.35rem;top:50%;transform:translateY(-50%);width:1.7rem;height:1.7rem;border:0;border-radius:6px;background:transparent;color:var(--mut);font-size:1.15rem;cursor:pointer}
+.sclear:hover{color:var(--fg);background:var(--panel)}
+.fbtn,.freset,.tog,.tgl,.seg button,.linkbtn{font:inherit;cursor:pointer}
+.fbtn{display:none;align-items:center;gap:.4rem;font-family:"IBM Plex Mono",monospace;font-size:.74rem;letter-spacing:.08em;text-transform:uppercase;color:var(--fg);background:var(--panel);border:1px solid var(--line);border-radius:9px;padding:.55rem .8rem}
+.fbtn b,.tog b,.seg b{font-weight:600;color:var(--accent);margin-left:.35rem}
+.fbtn b{margin:0;background:var(--accent);color:var(--ink);border-radius:999px;padding:0 .4rem;font-size:.68rem}
+.freset{font-family:"IBM Plex Mono",monospace;font-size:.72rem;color:var(--accent);background:none;border:1px solid rgba(255,154,31,.45);border-radius:8px;padding:.3rem .65rem}
+.freset:hover{background:rgba(255,154,31,.1)}
+.fpanel{display:flex;flex-wrap:wrap;gap:.45rem 1.4rem;align-items:center;margin-top:.55rem}
+.fg{display:flex;align-items:center;gap:.5rem;flex-wrap:wrap}
+.fl{font-family:"IBM Plex Mono",monospace;font-size:.64rem;letter-spacing:.16em;text-transform:uppercase;color:var(--mut)}
+.fc{display:flex;flex-wrap:wrap;gap:.35rem;align-items:center}
+.tg{display:inline-flex;align-items:center;gap:.25rem;padding:.12rem .3rem .12rem .15rem;border:1px dashed var(--line);border-radius:999px}
+.tgl{font-family:"IBM Plex Mono",monospace;font-size:.66rem;color:var(--mut);background:none;border:0;padding:.15rem .35rem;border-radius:999px}
+button.tgl:hover{color:var(--fg)}
+.fbar .chip{padding:.18rem .55rem;font-size:.72rem}
+.chip:hover,.tog:hover,.seg button:hover{border-color:#4a535c}
+.seg{display:inline-flex;border:1px solid var(--line);border-radius:9px;overflow:hidden;background:var(--panel2)}
+.seg button{font-family:"IBM Plex Mono",monospace;font-size:.7rem;color:var(--mut);background:none;border:0;border-left:1px solid var(--line);padding:.32rem .6rem}
+.seg button:first-child{border-left:0}
+.seg button[aria-checked="true"]{background:rgba(255,154,31,.14);color:var(--fg)}
+.tog{font-family:"IBM Plex Mono",monospace;font-size:.7rem;color:var(--mut);background:var(--panel2);border:1px solid var(--line);border-radius:8px;padding:.3rem .6rem}
+.tog::before{content:"";display:inline-block;width:.55rem;height:.55rem;border:1px solid var(--mut);border-radius:2px;margin-right:.4rem;vertical-align:-1px}
+.tog[aria-pressed="true"]{color:var(--fg);border-color:var(--accent)}
+.tog[aria-pressed="true"]::before{background:var(--accent);border-color:var(--accent)}
+.fbar select.mini{font-size:.78rem;padding:.3rem .5rem;max-width:12rem}
+.chip:focus-visible,.tog:focus-visible,.seg button:focus-visible,.tgl:focus-visible,.fbtn:focus-visible,.freset:focus-visible,table.pts th button:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+table.pts th button{all:unset;cursor:pointer;color:inherit}
+table.pts th button::after{content:" \\2195";opacity:.3}
+table.pts th[aria-sort="ascending"] button,table.pts th[aria-sort="descending"] button{color:#fff}
+table.pts th[aria-sort="ascending"] button::after{content:" \\2191";opacity:1}
+table.pts th[aria-sort="descending"] button::after{content:" \\2193";opacity:1}
+table.pts th.r{text-align:right}
+.minmark{display:inline-block;margin-left:.35rem;font-size:.58rem;letter-spacing:.08em;text-transform:uppercase;color:var(--ink);background:var(--accent);border-radius:4px;padding:0 .25rem;vertical-align:1px}
+table.pts.compact td{padding:.28rem .6rem;font-size:.84rem}
+table.pts.compact td.d,table.pts.compact td.s{white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:20rem}
+table.pts.compact td.n{white-space:nowrap}
+table.pts.compact tr:hover td.d,table.pts.compact tr:hover td.s{white-space:normal}
+.fnone{color:var(--mut);margin:.4rem 0 1rem}
+.linkbtn{background:none;border:0;padding:0;color:var(--accent);text-decoration:underline}
+@media (max-width:640px){
+  .fbtn{display:inline-flex}
+  .fpanel{display:none;flex-direction:column;align-items:stretch;gap:.7rem;padding:.7rem;border:1px solid var(--line);border-radius:10px;background:var(--panel2)}
+  .fbar.open .fpanel{display:flex}
+  .fg{align-items:flex-start;flex-direction:column;gap:.35rem}
+  .count{order:3;flex-basis:100%}
+  .seg{display:flex;flex-wrap:wrap;max-width:100%}
+  .seg button{flex:1 1 auto;white-space:nowrap;border-top:1px solid var(--line);margin-top:-1px}
+  .fbar select.mini{max-width:100%}
+}
 .share{background:var(--panel);border:1px solid var(--line);border-left:3px solid var(--accent);border-radius:12px;padding:1.1rem 1.3rem;margin:3rem 0 0;max-width:78ch}
 .share p{margin:0}
 .share b{color:#fff}
@@ -433,6 +487,89 @@ FILTER_JS = """<script>
       chips.forEach(function(x){x.setAttribute('aria-pressed',x.getAttribute('data-type')===type?'true':'false');});run();});});
     box.addEventListener('input',run);
   });
+  (function(){
+    var T=document.getElementById('pts'),bar=document.getElementById('pts-fbar');if(!T||!bar)return;
+    var tb=T.tBodies[0],rows=[].slice.call(tb.rows),ths=[].slice.call(T.tHead.rows[0].cells);
+    var q=document.getElementById('pts-q'),clr=document.getElementById('pts-clear'),us=document.getElementById('pts-u');
+    var out=document.getElementById('pts-count'),rst=document.getElementById('pts-reset'),none=document.getElementById('pts-none');
+    var fb=document.getElementById('pts-fbtn'),nact=document.getElementById('pts-nact');
+    var chips=[].slice.call(bar.querySelectorAll('[data-t]')),grps=[].slice.call(bar.querySelectorAll('[data-g]'));
+    var segs=[].slice.call(bar.querySelectorAll('[data-a]')),togs=[].slice.call(bar.querySelectorAll('[data-x]'));
+    var S={types:{},acc:'',unit:'*',min:false,st:false,cmp:false,sort:''};
+    rows.forEach(function(r){r._t=r.textContent.toLowerCase();});
+    function apply(){
+      var s=q.value.trim().toLowerCase(),ty=Object.keys(S.types),n=0;
+      rows.forEach(function(r){
+        var a=r.getAttribute('data-acc');
+        var ok=(!s||r._t.indexOf(s)>=0)&&(!ty.length||S.types[r.getAttribute('data-type')])&&
+          (!S.acc||S.acc.indexOf(a)>=0)&&(S.unit==='*'||r.getAttribute('data-u')===S.unit)&&
+          (!S.min||r.hasAttribute('data-min'))&&(!S.st||r.hasAttribute('data-st'));
+        r.classList.toggle('hidden',!ok);if(ok)n++;
+      });
+      T.classList.toggle('compact',S.cmp);
+      out.textContent=n+' of '+rows.length+' shown';
+      var act=ty.length+(S.acc?1:0)+(S.unit!=='*'?1:0)+(S.min?1:0)+(S.st?1:0);
+      nact.hidden=!act;nact.textContent=act;
+      rst.hidden=!(act||s||S.cmp||S.sort);clr.hidden=!s;none.hidden=n>0;
+      chips.forEach(function(c){c.setAttribute('aria-pressed',S.types[c.getAttribute('data-t')]?'true':'false');});
+      segs.forEach(function(b){b.setAttribute('aria-checked',b.getAttribute('data-a')===S.acc?'true':'false');});
+      togs.forEach(function(b){b.setAttribute('aria-pressed',S[b.getAttribute('data-x')]?'true':'false');});
+      if(us)us.value=S.unit;
+      save(s);
+    }
+    function key(r,k){
+      if(k==='t')return [+r.getAttribute('data-to'),+(r.getAttribute('data-i')||0)];
+      if(k==='i')return [+(r.getAttribute('data-i')||-1),0];
+      if(k==='a')return ['RWC'.indexOf(r.getAttribute('data-acc')),+r.getAttribute('data-o')];
+      if(k==='u')return [r.getAttribute('data-u').toLowerCase(),+r.getAttribute('data-o')];
+      return [r.cells[2].textContent.toLowerCase(),0];
+    }
+    function sort(){
+      var p=S.sort.split(':'),k=p[0],d=p[1]==='d'?-1:1;
+      ths.forEach(function(h){var b=h.querySelector('button');if(b)h.setAttribute('aria-sort',b.getAttribute('data-k')===k?(d>0?'ascending':'descending'):'none');});
+      rows.slice().sort(function(x,y){
+        if(!k)return x.getAttribute('data-o')-y.getAttribute('data-o');
+        var a=key(x,k),b=key(y,k);
+        for(var i=0;i<2;i++){if(a[i]<b[i])return -d;if(a[i]>b[i])return d;}return 0;
+      }).forEach(function(r){tb.appendChild(r);});
+    }
+    function save(s){
+      try{var u=new URL(location.href),P=u.searchParams;
+        ['q','type','access','units','min','states','compact','sort'].forEach(function(x){P.delete(x);});
+        if(s)P.set('q',s);var ty=Object.keys(S.types);if(ty.length)P.set('type',ty.join(','));
+        if(S.acc)P.set('access',S.acc);if(S.unit!=='*')P.set('units',S.unit);
+        if(S.min)P.set('min','1');if(S.st)P.set('states','1');if(S.cmp)P.set('compact','1');if(S.sort)P.set('sort',S.sort);
+        history.replaceState(null,'',u.pathname+(P.toString()?'?'+P.toString():'')+u.hash);}catch(e){}
+    }
+    try{var P=new URLSearchParams(location.search);
+      if(P.get('q'))q.value=P.get('q');
+      (P.get('type')||'').split(',').forEach(function(t){if(t&&bar.querySelector('[data-t="'+t+'"]'))S.types[t]=1;});
+      if(P.get('access')&&bar.querySelector('[data-a="'+P.get('access')+'"]'))S.acc=P.get('access');
+      if(P.has('units')&&us){var v=P.get('units');if([].some.call(us.options,function(o){return o.value===v;}))S.unit=v;}
+      S.min=P.get('min')==='1'&&!!bar.querySelector('[data-x="min"]');S.st=P.get('states')==='1'&&!!bar.querySelector('[data-x="st"]');
+      S.cmp=P.get('compact')==='1';S.sort=P.get('sort')||'';
+      if(S.sort)sort();}catch(e){}
+    chips.forEach(function(c){c.addEventListener('click',function(){var t=c.getAttribute('data-t');
+      if(S.types[t])delete S.types[t];else S.types[t]=1;apply();});});
+    grps.forEach(function(g){g.addEventListener('click',function(){var ts=g.getAttribute('data-g').split(' ');
+      var all=ts.every(function(t){return S.types[t];});ts.forEach(function(t){if(all)delete S.types[t];else S.types[t]=1;});apply();});});
+    segs.forEach(function(b){b.addEventListener('click',function(){S.acc=b.getAttribute('data-a');apply();});});
+    togs.forEach(function(b){b.addEventListener('click',function(){var x=b.getAttribute('data-x');S[x]=!S[x];apply();});});
+    if(us)us.addEventListener('change',function(){S.unit=us.value;apply();});
+    ths.forEach(function(h){var b=h.querySelector('button');if(!b)return;b.addEventListener('click',function(){
+      var k=b.getAttribute('data-k'),p=S.sort.split(':');
+      S.sort=p[0]!==k?k+':a':(p[1]==='a'?k+':d':'');sort();apply();});});
+    q.addEventListener('input',apply);
+    q.addEventListener('keydown',function(e){if(e.key==='Escape'){q.value='';apply();}});
+    clr.addEventListener('click',function(){q.value='';apply();q.focus();});
+    function reset(){q.value='';S={types:{},acc:'',unit:'*',min:false,st:false,cmp:false,sort:''};sort();apply();}
+    rst.addEventListener('click',reset);
+    [].forEach.call(document.querySelectorAll('[data-reset]'),function(b){b.addEventListener('click',reset);});
+    fb.addEventListener('click',function(){var o=bar.classList.toggle('open');fb.setAttribute('aria-expanded',o?'true':'false');});
+    document.addEventListener('keydown',function(e){
+      if(e.key==='/'&&!/input|select|textarea/i.test((document.activeElement||{}).tagName||'')){e.preventDefault();q.focus();}});
+    apply();
+  })();
   var t=document.getElementById('cmp');if(!t)return;
   var tb=t.tBodies[0],rows=[].slice.call(tb.rows),ths=[].slice.call(t.tHead.rows[0].cells);
   var q=document.getElementById('cmp-q'),mf=document.getElementById('cmp-mf'),sm=document.getElementById('cmp-sort');
@@ -812,24 +949,117 @@ def integration_html(m):
     return "\n".join(out)
 
 
+def min_point_ids(m):
+    """ids of the point dicts named in the minimum list (by identity, so duplicate instances stay distinct)."""
+    it = integration_of(m)
+    return {id(pt) for pt, _ in it["minimum_points"]} if it else set()
+
+
 def points_table(m, tid="pts"):
     rows = []
-    for pt in m["points"]:
+    mins = min_point_ids(m)
+    for k, pt in enumerate(m["points"]):
         full = OBJECT_TYPES[pt["type"]][0]
         inst = "" if pt.get("instance") is None else str(pt["instance"])
         rows.append(
-            '<tr data-row data-type="%s" id="%s"><td class="t"><abbr title="%s">%s</abbr></td><td class="i">%s</td>'
-            '<td class="n">%s</td><td class="d">%s</td><td>%s</td>'
+            '<tr data-row data-type="%s" data-to="%d" data-o="%d" data-i="%s" data-acc="%s" data-u="%s"%s%s id="%s">'
+            '<td class="t"><abbr title="%s">%s</abbr>%s</td><td class="i">%s</td>'
+            '<td class="n">%s</td><td class="d">%s</td><td class="u">%s</td>'
             '<td><span class="acc %s">%s</span></td><td class="s">%s</td></tr>'
-            % (esc(pt["type"]), row_id(pt), esc(full), esc(pt["type"]), inst, esc(pt["name"]),
-               esc(pt["description"]), esc(pt["units"]), pt["access"], access_label(pt["access"]),
-               esc(pt["states"])))
+            % (esc(pt["type"]), TYPE_ORDER.index(pt["type"]), k, inst, pt["access"], esc(pt["units"]),
+               ' data-min="1"' if id(pt) in mins else "", ' data-st="1"' if pt["states"] else "",
+               row_id(pt), esc(full), esc(pt["type"]),
+               '<span class="minmark" title="In the minimum points list">min</span>' if id(pt) in mins else "",
+               inst, esc(pt["name"]), esc(pt["description"]), esc(pt["units"]), pt["access"],
+               access_label(pt["access"]), esc(pt["states"])))
+    head = "".join(
+        '<th scope="col"%s><button type="button" data-k="%s">%s</button></th>' % (cls, k, label)
+        if k else '<th scope="col">%s</th>' % label
+        for k, label, cls in (("t", "Type", ""), ("i", "Instance", ' class="r"'), ("n", "Object name", ""),
+                              ("", "Description", ""), ("u", "Units", ""), ("a", "Access", ""), ("", "States", "")))
     return ('<div class="tablewrap"><table class="pts" id="%s">'
             '<caption class="sr-only">%s</caption>'
-            '<thead><tr><th scope="col">Type</th><th scope="col">Instance</th><th scope="col">Object name</th>'
-            '<th scope="col">Description</th><th scope="col">Units</th><th scope="col">Access</th>'
-            '<th scope="col">States</th></tr></thead><tbody>\n%s\n</tbody></table></div>'
-            % (tid, esc(model_title(m)), "\n".join(rows)))
+            '<thead><tr>%s</tr></thead><tbody>\n%s\n</tbody></table></div>'
+            % (tid, esc(model_title(m)), head, "\n".join(rows)))
+
+
+TYPE_GROUPS = (("Analog", ("AI", "AO", "AV")), ("Binary", ("BI", "BO", "BV")), ("Multi-state", ("MI", "MO", "MV")))
+
+
+def filter_bar(m):
+    """Compact filter toolbar for the full points table (wired up by FILTER_JS)."""
+    pts = m["points"]
+    n = len(pts)
+    tc = dict(type_counts(pts))
+    groups, used = [], set()
+    for label, ts in TYPE_GROUPS:
+        present = [t for t in ts if t in tc]
+        if present:
+            groups.append((label, present))
+            used.update(present)
+    other = [t for t, _ in type_counts(pts) if t not in used]
+    if other:
+        groups.append(("Other", other))
+
+    def chip(t):
+        return ('<button type="button" class="chip" data-t="%s" aria-pressed="false" title="%s">%s<b>%d</b></button>'
+                % (t, esc(OBJECT_TYPES[t][0]), t, tc[t]))
+
+    type_html = "".join(
+        '<span class="tg">%s%s</span>' % (
+            ('<button type="button" class="tgl" data-g="%s" title="Toggle all %s types">%s</button>'
+             % (" ".join(ts), label.lower(), label)) if len(ts) > 1 else '<span class="tgl">%s</span>' % label,
+            "".join(chip(t) for t in ts))
+        for label, ts in groups)
+    out = ['<div class="fg"><span class="fl">Type</span><div class="fc">%s</div></div>' % type_html]
+
+    acc = {a: sum(1 for p in pts if p["access"] == a) for a in ("R", "W", "C")}
+    if sum(1 for v in acc.values() if v) > 1:
+        segs = [("", "All", n), ("R", "Read-only", acc["R"])]
+        if acc["W"] and acc["C"]:
+            segs.append(("WC", "Writable", acc["W"] + acc["C"]))
+        if acc["W"]:
+            segs.append(("W", "Write", acc["W"]))
+        if acc["C"]:
+            segs.append(("C", "Command", acc["C"]))
+        out.append('<div class="fg"><span class="fl">Access</span><div class="seg" role="radiogroup" aria-label="Access">%s'
+                   '</div></div>' % "".join(
+                       '<button type="button" role="radio" data-a="%s" aria-checked="%s">%s<b>%d</b></button>'
+                       % (k, "true" if not k else "false", label, c) for k, label, c in segs))
+
+    units = {}
+    for p in pts:
+        units[p["units"]] = units.get(p["units"], 0) + 1
+    if len([u for u in units if u]) > 1:
+        opts = ['<option value="*">Any units</option>']
+        if units.get(""):
+            opts.append('<option value="">No units (%d)</option>' % units[""])
+        opts += ['<option value="%s">%s (%d)</option>' % (esc(u), esc(u), c)
+                 for u, c in sorted(units.items(), key=lambda x: (-x[1], x[0].lower())) if u]
+        out.append('<div class="fg"><label class="fl" for="pts-u">Units</label>'
+                   '<select class="mini" id="pts-u">%s</select></div>' % "".join(opts))
+
+    toggles = []
+    nmin = len(min_point_ids(m))
+    if nmin:
+        toggles.append(('min', "Minimum points", nmin))
+    nst = sum(1 for p in pts if p["states"])
+    if 0 < nst < n:
+        toggles.append(('st', "Has states", nst))
+    toggles.append(('cmp', "Compact rows", None))
+    out.append('<div class="fg"><span class="fl">Show</span><div class="fc">%s</div></div>' % "".join(
+        '<button type="button" class="tog" data-x="%s" aria-pressed="false">%s%s</button>'
+        % (k, label, "" if c is None else "<b>%d</b>" % c) for k, label, c in toggles))
+
+    return ('<div class="fbar" id="pts-fbar">'
+            '<div class="frow"><div class="sbox"><input class="search" id="pts-q" type="search" autocomplete="off"'
+            ' placeholder="Search name, description, units, states&hellip;  ( / )" aria-label="Search points">'
+            '<button type="button" class="sclear" id="pts-clear" aria-label="Clear search" hidden>&times;</button></div>'
+            '<button type="button" class="fbtn" id="pts-fbtn" aria-expanded="false" aria-controls="pts-panel">'
+            'Filters<b id="pts-nact" hidden></b></button>'
+            '<span class="count" id="pts-count" aria-live="polite">%d of %d shown</span>'
+            '<button type="button" class="freset" id="pts-reset" hidden>Reset</button></div>'
+            '<div class="fpanel" id="pts-panel">%s</div></div>' % (n, n, "".join(out)))
 
 
 def model_faq(m):
@@ -898,11 +1128,6 @@ def model_page(m, siblings):
     s = m["source"]
     faq = model_faq(m)
 
-    chips = "".join(
-        '<li><button type="button" class="chip" data-chip-for="pts" data-type="%s" aria-pressed="false" '
-        'title="%s">%s<b>%d</b></button></li>' % (t, esc(OBJECT_TYPES[t][0]), t, c)
-        for t, c in type_counts(pts))
-
     aliases = [a for a in (m.get("aliases") or []) if a and a != m["model"]]
     facts = [
         ("Manufacturer", '<a href="%s">%s</a>' % (mfr_href, esc(m["manufacturer"]))),
@@ -964,10 +1189,9 @@ It is re-typed from %(mfr)s&rsquo;s own free documentation, linked below.</p></d
 <p class="count">Type: <abbr title="Analog Input">AI</abbr>, AO, AV, BI, BO, BV, MI/MO/MV (multi-state) &middot;
 Access: <span class="acc">Read</span> read-only, <span class="acc W">Write</span> writable,
 <span class="acc C">Command</span> writable with a priority array.</p>
-%(inferred)s<ul class="chips" aria-label="Filter by object type">%(chips)s</ul>
-<div class="tools"><input class="search" type="search" placeholder="Filter points &mdash; name, units, description&hellip;"
- aria-label="Filter points" data-filter="pts"><span class="count" data-count-for="pts">%(n)d of %(n)d shown</span></div>
+%(inferred)s%(fbar)s
 %(table)s
+<p class="fnone" id="pts-none" hidden>No points match these filters. <button type="button" class="linkbtn" data-reset>Clear filters</button></p>
 %(notes)s
 <div class="callout"><p><strong>Check it against the live device.</strong> A points list tells you what the
 controller <em>can</em> expose; the unit in front of you may differ by firmware or installed options.
@@ -982,7 +1206,7 @@ Object names, instances and units are reproduced as published; descriptions are 
 """ % {
         "summary": esc(m.get("summary") or ""), "n": n, "w": w,
         "mfr": esc(m["manufacturer"]), "model": esc(m["model"]), "facts": facts_html,
-        "base": base, "src": esc(s["url"]), "chips": chips, "table": points_table(m),
+        "base": base, "src": esc(s["url"]), "fbar": filter_bar(m), "table": points_table(m),
         "notes": notes_html, "faq": faq_html, "integ": integration_html(m),
         "inferred": ('<p class="count"><strong>Note:</strong> the source document has no read/write column, so access '
                      'here is inferred from the object type (inputs read-only, values writable). Confirm on the live '
