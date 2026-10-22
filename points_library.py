@@ -279,8 +279,54 @@ table.pts tr:hover td{background:rgba(255,255,255,.025)}
 .ib p{margin:0;color:#dfe4e8;font-size:.95rem}
 .integ h3{margin-top:1.4rem}
 table.pts.min{min-width:560px}
+.facets{display:flex;flex-wrap:wrap;gap:.5rem 1.2rem;align-items:center;margin:.2rem 0 .8rem}
+.facets .lbl{font-family:"IBM Plex Mono",monospace;font-size:.68rem;letter-spacing:.14em;text-transform:uppercase;color:var(--mut)}
+.facets .chips{margin:0}
+select.mini{font:inherit;font-size:.85rem;color:var(--fg);background:var(--code);border:1px solid var(--line);border-radius:9px;padding:.45rem .6rem}
+select.sortm{display:none}
+table.cmp{border-collapse:collapse;width:100%;font-size:.92rem}
+table.cmp th,table.cmp td{text-align:left;padding:.55rem .8rem;border-bottom:1px solid var(--line);vertical-align:middle}
+table.cmp thead th{background:#20262c;font-family:"IBM Plex Mono",monospace;font-size:.68rem;letter-spacing:.12em;text-transform:uppercase;color:var(--mut);font-weight:600;white-space:nowrap}
+table.cmp thead th button{all:unset;cursor:pointer;color:inherit}
+table.cmp thead th button:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+table.cmp thead th button::after{content:" \\2195";opacity:.35}
+table.cmp thead th[aria-sort="ascending"] button,table.cmp thead th[aria-sort="descending"] button{color:var(--accent)}
+table.cmp thead th[aria-sort="ascending"] button::after{content:" \\2191";opacity:1}
+table.cmp thead th[aria-sort="descending"] button::after{content:" \\2193";opacity:1}
+table.cmp tbody tr:nth-child(even) td{background:rgba(255,255,255,.015)}
+table.cmp tbody tr:hover td{background:rgba(255,154,31,.05)}
+table.cmp td.mf{font-weight:700;white-space:nowrap}
+table.cmp td.md a{font-weight:700;color:var(--fg)}
+table.cmp td.md a:hover{color:var(--accent)}
+table.cmp td.md small{display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;color:var(--mut);font-size:.8rem;line-height:1.35;margin-top:.15rem}
+table.cmp td.md .doc{font-family:"IBM Plex Mono",monospace;font-size:.7rem;color:#7d8790}
+.tag{display:inline-block;font-family:"IBM Plex Mono",monospace;font-size:.68rem;border:1px solid var(--line);border-radius:5px;padding:.05rem .4rem;margin:.1rem .25rem .1rem 0;color:#cfe1f2;white-space:nowrap}
+table.cmp td.num{font-family:"IBM Plex Mono",monospace;text-align:right;white-space:nowrap}
+table.cmp th.num{text-align:right}
+.bar{display:block;height:4px;border-radius:2px;background:var(--line);margin-top:.3rem;overflow:hidden}
+.bar i{display:block;height:100%;background:var(--accent)}
+.bar.w i{background:var(--ok)}
+table.cmp td.dls{white-space:nowrap}
+table.cmp td.dls a{font-family:"IBM Plex Mono",monospace;font-size:.72rem;border:1px solid var(--line);border-radius:6px;padding:.15rem .45rem;margin-right:.3rem;color:var(--fg)}
+table.cmp td.dls a:hover{border-color:var(--accent);text-decoration:none}
+@media (max-width:760px){
+  table.cmp thead{display:none}
+  table.cmp,table.cmp tbody,table.cmp td{display:block;width:100%}
+  table.cmp tr{display:grid;grid-template-columns:1fr 1fr;gap:.2rem .8rem;padding:.75rem .9rem;border-bottom:1px solid var(--line)}
+  table.cmp td{border:0;padding:0;background:none!important}
+  table.cmp td.mf{grid-column:1/-1;font-family:"IBM Plex Mono",monospace;font-size:.7rem;letter-spacing:.1em;text-transform:uppercase;color:var(--accent)}
+  table.cmp td.md,table.cmp td.ty,table.cmp td.dls{grid-column:1/-1}
+  table.cmp td.ty:empty{display:none}
+  table.cmp td.num{text-align:left}
+  table.cmp td.num::before{content:attr(data-l) " ";color:var(--mut)}
+  table.cmp td.num .bar{display:none}
+  select.sortm{display:inline-block}
+}
 .hidden{display:none!important}
 .sr-only{position:absolute;width:1px;height:1px;padding:0;margin:-1px;overflow:hidden;clip:rect(0,0,0,0);white-space:nowrap;border:0}
+.share{background:var(--panel);border:1px solid var(--line);border-left:3px solid var(--accent);border-radius:12px;padding:1.1rem 1.3rem;margin:3rem 0 0;max-width:78ch}
+.share p{margin:0}
+.share b{color:#fff}
 footer{border-top:1px solid var(--line);margin-top:3.5rem;padding:2rem 0 3rem;color:var(--mut);font-size:.9rem}
 footer a{color:var(--mut);text-decoration:underline}
 @media (max-width:640px){.top nav a:not(.getapp){display:none}body{font-size:16px}}
@@ -334,6 +380,12 @@ def shell(relpath, title, description, h1_html, body, jsonld, crumbs, og_type="w
 <ol class="crumbs" aria-label="Breadcrumb">%(crumbs)s</ol>
 %(h1)s
 %(body)s
+<aside class="share">
+  <p><b>Have a list to share?</b> Got a BACnet points list, PICS or integration notes for
+  equipment that isn&rsquo;t here, or a newer version of one that is? Send it to us at
+  <a href="mailto:Firstimpactdevelopment@gmail.com?subject=Points%%20list%%20to%%20share">Firstimpactdevelopment@gmail.com</a>
+  and we&rsquo;ll add it to the library.</p>
+</aside>
 </main>
 <footer><div class="wrap">
   <p>Points lists are re-typed from each manufacturer&rsquo;s free public documentation and linked to the original.
@@ -381,6 +433,37 @@ FILTER_JS = """<script>
       chips.forEach(function(x){x.setAttribute('aria-pressed',x.getAttribute('data-type')===type?'true':'false');});run();});});
     box.addEventListener('input',run);
   });
+  var t=document.getElementById('cmp');if(!t)return;
+  var tb=t.tBodies[0],rows=[].slice.call(tb.rows),ths=[].slice.call(t.tHead.rows[0].cells);
+  var q=document.getElementById('cmp-q'),mf=document.getElementById('cmp-mf'),sm=document.getElementById('cmp-sort');
+  var out=document.getElementById('cmp-count'),kchips=[].slice.call(document.querySelectorAll('[data-kind]')),kind='';
+  function filt(){
+    var s=q.value.trim().toLowerCase(),n=0;
+    rows.forEach(function(r){
+      var ok=(!s||r.textContent.toLowerCase().indexOf(s)>=0)&&(!mf.value||r.getAttribute('data-mf')===mf.value)&&
+        (!kind||(' '+r.getAttribute('data-kinds')+' ').indexOf(' '+kind+' ')>=0);
+      r.classList.toggle('hidden',!ok);if(ok)n++;
+    });
+    out.textContent=n+' of '+rows.length+' shown';
+  }
+  function sortBy(k,dir){
+    var num=k==='o'||k==='w';
+    ths.forEach(function(h){if(h.getAttribute('data-k'))h.setAttribute('aria-sort',h.getAttribute('data-k')===k?dir:'none');});
+    rows.sort(function(a,b){
+      var x=a.getAttribute('data-'+k),y=b.getAttribute('data-'+k),c=num?(+x)-(+y):x.localeCompare(y);
+      return dir==='ascending'?c:-c;
+    });
+    rows.forEach(function(r){tb.appendChild(r);});
+    if(sm)sm.value=k+':'+dir;
+  }
+  ths.forEach(function(h){var b=h.querySelector('button'),k=h.getAttribute('data-k');if(!b)return;
+    b.addEventListener('click',function(){var cur=h.getAttribute('aria-sort'),num=k==='o'||k==='w';
+      sortBy(k,cur==='none'?(num?'descending':'ascending'):(cur==='ascending'?'descending':'ascending'));});});
+  kchips.forEach(function(c){c.addEventListener('click',function(){
+    var k=c.getAttribute('data-kind');kind=(kind===k)?'':k;
+    kchips.forEach(function(x){x.setAttribute('aria-pressed',x.getAttribute('data-kind')===kind?'true':'false');});filt();});});
+  q.addEventListener('input',filt);mf.addEventListener('change',filt);
+  if(sm)sm.addEventListener('change',function(){var p=sm.value.split(':');sortBy(p[0],p[1]);});
 })();
 </script>"""
 
@@ -466,12 +549,81 @@ def page_title(m, n):
     return "%s BACnet Points List" % out
 
 
+# Unit-type filter chips on each category page: (key, label, keywords matched against
+# equipment_type). A model can carry several tags; the chip row is hidden under two tags.
+CAT_TAGS = {
+    "rooftop-ahu-doas": [("rtu", "Rooftop unit", ["rooftop"]), ("ahu", "Air handler", ["air handl", "ahu"]),
+                         ("doas", "DOAS", ["doas"]), ("mua", "Make-up air", ["make-up air"]),
+                         ("erv", "Energy recovery", ["energy recovery"]), ("sc", "Self-contained", ["self-contained"])],
+    "drives-pumps": [("vfd", "Drive", ["frequency drive"]), ("pump", "Pump", ["pump"]),
+                     ("card", "Option card / module", ["option card", "module"])],
+    "boilers": [("boiler", "Boiler", ["boiler"]), ("wh", "Water heater", ["water heater"]),
+                ("cond", "Condensing", ["condensing"])],
+    "sensors-thermostats": [("room", "Room / thermostat", ["thermostat", "room"]), ("duct", "Duct / outdoor", ["duct"]),
+                            ("meter", "Energy meter", ["meter"]), ("air", "Airflow", ["airflow"]),
+                            ("flow", "Liquid flow", ["flow sensor"])],
+    "valves-actuators": [("picv", "Control valve", ["control valve"]), ("em", "Energy meter", ["energy meter"]),
+                         ("vav", "VAV actuator", ["vav"])],
+    "terminal-units": [("vav", "VAV", ["vav"]), ("dd", "Dual duct", ["dual duct"]), ("fcu", "Fan coil", ["fan coil"]),
+                       ("diff", "Diffuser", ["diffuser"])],
+    "heat-pumps": [("wshp", "Water-source", ["water-source", "water source"]),
+                   ("ww", "Water-to-water", ["water-to-water"])],
+    "chillers": [("ac", "Air-cooled", ["air-cooled"]), ("wc", "Water-cooled", ["water-cooled"]),
+                 ("screw", "Screw", ["screw"]), ("scroll", "Scroll", ["scroll"]),
+                 ("cent", "Centrifugal", ["centrifugal"]), ("hp", "Heat pump", ["heat pump"])],
+    "humidifiers": [("steam", "Steam", ["steam"]), ("evap", "Evaporative", ["evaporative"]),
+                    ("hp", "High-pressure", ["high-pressure", "atomizing"]), ("hyb", "Hybrid", ["hybrid"]),
+                    ("gw", "BACnet gateway", ["gateway"]), ("ro", "Water treatment", ["reverse osmosis"])],
+    "vrf-split-ac": [("vrf", "VRF / VRV", ["vrf", "vrv"]), ("split", "Split AC", ["split"]),
+                     ("gw", "Gateway / interface", ["gateway", "interface"]),
+                     ("cc", "Central controller", ["central controller"])],
+    "cooling-towers": [("ct", "Cooling tower", ["cooling tower"]), ("fc", "Fluid cooler", ["fluid cooler"])],
+}
+
+
+def tags_of(m, tags):
+    et = (m.get("equipment_type") or "").lower()
+    return [t for t in tags if any(k in et for k in t[2])]
+
+
+def cat_row(m, tags, maxo):
+    pts = m["points"]
+    n, w = len(pts), writable_count(pts)
+    mt = tags_of(m, tags)
+    doc = m["source"].get("doc_number")
+    return ('<tr data-mf="%(mf)s" data-md="%(md)s" data-o="%(n)d" data-w="%(w)d" data-kinds="%(kinds)s">'
+            '<td class="mf">%(mf)s</td>'
+            '<td class="md"><a href="/%(href)s">%(mfa)s%(md)s</a><small>%(ap)s%(doc)s</small>%(al)s</td>'
+            '%(ty)s'
+            '<td class="num" data-l="Objects">%(n)d<span class="bar" aria-hidden="true"><i style="width:%(po).0f%%"></i></span></td>'
+            '<td class="num" data-l="Writable">%(w)d<span class="bar w" aria-hidden="true"><i style="width:%(pw).0f%%"></i></span></td>'
+            '<td class="dls"><a href="/%(csv)s" aria-label="%(mf)s %(md)s CSV">CSV</a>'
+            '<a href="/%(ede)s" aria-label="%(mf)s %(md)s EDE">EDE</a></td></tr>') % {
+        "mf": esc(m["manufacturer"]), "md": esc(m["model"]), "n": n, "w": w,
+        "mfa": "" if m["model"].lower().startswith(m["manufacturer"].lower()) else
+               '<span class="sr-only">%s </span>' % esc(m["manufacturer"]),
+        "kinds": " ".join(t[0] for t in mt), "href": model_path(m), "ap": esc(m.get("applies_to") or ""),
+        "doc": (' <span class="doc">&middot; %s</span>' % esc(doc)) if doc else "",
+        "al": ('<span class="sr-only"> Also known as: %s</span>' % esc(", ".join(m["aliases"])))
+              if m.get("aliases") else "",
+        "ty": ('<td class="ty">%s</td>' % "".join('<span class="tag">%s</span>' % esc(t[1]) for t in mt)) if tags else "",
+        "po": 100.0 * n / maxo, "pw": 100.0 * w / maxo,
+        "csv": model_path(m, ".csv"), "ede": model_path(m, "-ede.csv")}
+
+
 def cat_page(cat, models, all_cats):
     cslug, heading, noun, _ = cat
+    models = sorted(models, key=lambda m: (m["manufacturer"].lower(), m["model"].lower()))
+    tags = CAT_TAGS.get(cslug, [])
     relpath = cat_path(cslug)
     url = clean(relpath)
     crumbs = [("Home", "/index.html"), ("BACnet points lists", "/" + hub_path()), (heading, None)]
     mfrs = sorted({m["manufacturer"] for m in models})
+    maxo = max(len(m["points"]) for m in models) or 1
+    chip_counts = [(t, sum(1 for m in models if t in tags_of(m, tags))) for t in tags]
+    chip_counts = [tc for tc in chip_counts if tc[1]]
+    if not chip_counts:
+        tags = []
     title = "%s BACnet Points Lists | Easy BACnet" % heading.replace(" & ", " and ")
     if len(title) > 62:
         title = "%s BACnet Points Lists" % heading
@@ -484,13 +636,32 @@ def cat_page(cat, models, all_cats):
     h1 = ('<p class="eyebrow">Equipment type</p><h1><span class="mfr">%s</span> BACnet points lists</h1>'
           '<p class="updated">Updated %s</p>' % (esc(heading), UPDATED_HUMAN))
     body = """
-<p class="lede">%(n)d %(heading_l)s BACnet points lists from %(nm)d manufacturers &mdash; %(mfrs)s. Each one has the
-full object table, the minimum points an integrator needs, enable and heartbeat notes, and CSV/EDE downloads.</p>
-<div class="tools"><input class="search" type="search" placeholder="Filter %(heading_l)s&hellip;"
- aria-label="Filter models" data-filter="models"><span class="count" data-count-for="models">%(n)d of %(n)d shown</span></div>
-<ul class="grid" id="models">%(cards)s</ul>
-""" % {"n": len(models), "heading_l": esc(heading.lower()), "nm": len(mfrs), "mfrs": esc(", ".join(mfrs)),
-       "cards": "".join(card(m) for m in models)}
+<p class="lede">%(n)d %(heading_l)s BACnet points lists from %(nm)d manufacturer%(nms)s &mdash; %(mfrs)s. Each one has the
+full object table, the minimum points an integrator needs, enable and heartbeat notes, and CSV/EDE downloads.
+Click a column heading to sort.</p>
+<div class="tools"><input class="search" id="cmp-q" type="search" placeholder="Search model, part number or alias&hellip;"
+ aria-label="Filter models">
+<select class="mini" id="cmp-mf" aria-label="Manufacturer"><option value="">All manufacturers (%(nm)d)</option>%(opts)s</select>
+<select class="mini sortm" id="cmp-sort" aria-label="Sort by"><option value="mf:ascending">Sort: manufacturer</option>
+<option value="md:ascending">Sort: model</option><option value="o:descending">Sort: most objects</option>
+<option value="w:descending">Sort: most writable</option></select>
+<span class="count" id="cmp-count" aria-live="polite">%(n)d of %(n)d shown</span></div>
+%(chips)s<div class="tablewrap"><table class="cmp" id="cmp"><thead><tr>
+<th scope="col" data-k="mf" aria-sort="ascending"><button type="button">Manufacturer</button></th>
+<th scope="col" data-k="md" aria-sort="none"><button type="button">Model</button></th>
+%(tyh)s
+<th scope="col" class="num" data-k="o" aria-sort="none"><button type="button">Objects</button></th>
+<th scope="col" class="num" data-k="w" aria-sort="none"><button type="button">Writable</button></th>
+<th scope="col">Download</th></tr></thead>
+<tbody>%(rows)s</tbody></table></div>
+""" % {"n": len(models), "heading_l": esc(heading[0].lower() + heading[1:]), "nm": len(mfrs),
+       "nms": "" if len(mfrs) == 1 else "s", "mfrs": esc(", ".join(mfrs)),
+       "opts": "".join('<option>%s</option>' % esc(x) for x in mfrs),
+       "chips": ('<div class="facets"><span class="lbl">Unit type</span><ul class="chips">%s</ul></div>\n'
+                 % "".join('<li><button class="chip" type="button" data-kind="%s" aria-pressed="false">%s<b>%d</b>'
+                           '</button></li>' % (t[0], esc(t[1]), c) for t, c in chip_counts)) if len(chip_counts) > 1 else "",
+       "tyh": '<th scope="col">Type</th>' if tags else "",
+       "rows": "".join(cat_row(m, tags, maxo) for m in models)}
     item_list = {"@type": "ItemList", "itemListElement": [
         {"@type": "ListItem", "position": i, "url": clean(model_path(m)), "name": model_title(m)}
         for i, m in enumerate(models, 1)]}
