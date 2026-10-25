@@ -1,0 +1,167 @@
+{
+  "manufacturer": "Melink",
+  "manufacturer_slug": "melink",
+  "model": "Intelli-Hood IH4 Exhaust Fan / Auxiliary Airflow",
+  "model_slug": "intelli-hood-ih4-exhaust-fan",
+  "aliases": [
+    "Intelli-Hood",
+    "IH4",
+    "IH4-SC",
+    "Melink IH4",
+    "Intelli-Hood 4"
+  ],
+  "equipment_type": "Kitchen exhaust / make-up air fan VFD device (Intelli-Hood demand ventilation)",
+  "applies_to": "Each exhaust fan and auxiliary airflow (make-up air fan) VFD run by a Melink Intelli-Hood 4 system.",
+  "summary": "On a Melink Intelli-Hood 4 system every exhaust fan and auxiliary airflow (typically a make-up air unit) VFD appears as its own virtual BACnet IP device behind the System Controller. Each device has the same eight objects: run status, VFD fault, a fault reset, maximum frequency, commanded and actual speed, current and kWh. Fan speed is set by the Intelli-Hood from hood temperature and smoke, not by the BMS.",
+  "bacnet_transport": [
+    "BACnet IP",
+    "BACnet IPv6"
+  ],
+  "firmware": "Application 4.0, firmware 1.0.0",
+  "default_device_instance": null,
+  "access_inferred": false,
+  "notes": [
+    "The same object list repeats on every exhaust fan and auxiliary airflow device; only the Device ID differs.",
+    "Output Current is not updated for System VFDs; Output Energy is not updated for System and Allen-Bradley PowerFlex 4/40 VFDs.",
+    "Actual speed lags commanded speed during VFD ramp up and ramp down; that difference is normal.",
+    "To get speed in Hz, multiply the % speed by Maximum Output Frequency (AV 0).",
+    "A fan can be hidden from BACnet with its 'Active on BACnet' setting (default Yes for fans)."
+  ],
+  "source": {
+    "title": "Intelli-Hood BACnet Protocol Implementation Conformance Statement (PICS)",
+    "doc_number": null,
+    "revision_date": "Revision 250723 (PICS dated 07-18-2025)",
+    "url": "https://melinkcorp.com/wp-content/uploads/2021/10/IH4_BACnet_PICS.pdf"
+  },
+  "integration": {
+    "summary": "Read run status, actual speed and the VFD fault flag from each fan device; add the kWh counter for energy tracking. The BMS can only clear VFD faults (BV 2); speed and start/stop come from the Intelli-Hood.",
+    "minimum_points": [
+      {
+        "ref": "BV 2",
+        "name": "Reset VFD Fault",
+        "why": "Write Active to clear a VFD fault"
+      },
+      {
+        "ref": "BV 0",
+        "name": "Operation Status",
+        "why": "Fan running (Active) or stopped"
+      },
+      {
+        "ref": "AV 2",
+        "name": "% Actual Speed",
+        "why": "Speed reported by the VFD, %"
+      },
+      {
+        "ref": "AV 1",
+        "name": "% Commanded Speed",
+        "why": "Speed the Intelli-Hood is asking for, %"
+      },
+      {
+        "ref": "AV 0",
+        "name": "Maximum Output Frequency",
+        "why": "Hz at 100 %, to convert speed to Hz"
+      },
+      {
+        "ref": "AV 4",
+        "name": "Output Energy",
+        "why": "VFD kWh counter (rolls over)"
+      },
+      {
+        "ref": "BV 1",
+        "name": "Fault Active",
+        "why": "VFD tripped or lost comms with the Intelli-Hood"
+      }
+    ],
+    "enable": "No BACnet start/stop or speed command. Fans are started from the Touchpad, schedules or digital inputs; use the Virtual Input Module to do that over BACnet.",
+    "heartbeat": null,
+    "remote_sensors": null,
+    "setup": [
+      "The System Controller is the main BACnet IP device (default Device ID 654000) and a virtual router (default DNET 654) for the fan, hood controller and virtual module devices; UDP port 47808.",
+      "With BACnet Auto Number on (default), the virtual devices are numbered from 654001: exhaust fans and auxiliary airflows (sorted by name), then hood controllers, virtual output modules, virtual input modules.",
+      "IP defaults to DHCP. BACnet runs on IPv4 or IPv6, not both; for IPv6 set IP Type to 'IPv4 & IPv6' and BACnet IP Type to IPv6 (multicast scope default ff05).",
+      "Settings are on the Touchpad (System Controller configuration) or the web configurator at http://<controller IP>/ih4-configurator.",
+      "Check each fan's Device ID on the Touchpad: Status > VFDs, then press the progress bar above the device name."
+    ],
+    "gotchas": [
+      "Front ends that send Who-Is without routing only find the System Controller; run a network/router discovery, select the router with the Intelli-Hood DNET, then discover devices again.",
+      "The DNET must be unique; another router or BBMD using 654 breaks access to the virtual devices.",
+      "Clearing a VFD fault before the cause is fixed can damage the VFD, motor or fan.",
+      "Putting BV 2 Reset VFD Fault Out of Service disables it; writes then do nothing.",
+      "Output Energy rolls over on every VFD; poll it often enough to catch the rollover."
+    ]
+  },
+  "points": [
+    {
+      "type": "BV",
+      "instance": 0,
+      "name": "Operation Status",
+      "description": "Fan running or stopped",
+      "units": "",
+      "access": "R",
+      "states": "Inactive = Stopped, Active = Running"
+    },
+    {
+      "type": "BV",
+      "instance": 1,
+      "name": "Fault Active",
+      "description": "VFD tripped or lost communication with the Intelli-Hood",
+      "units": "",
+      "access": "R",
+      "states": "Inactive = No, Active = Yes"
+    },
+    {
+      "type": "BV",
+      "instance": 2,
+      "name": "Reset VFD Fault",
+      "description": "Write Active to try clearing the VFD fault; reads back Inactive",
+      "units": "",
+      "access": "C",
+      "states": "Inactive = No, Active = Yes"
+    },
+    {
+      "type": "AV",
+      "instance": 0,
+      "name": "Maximum Output Frequency",
+      "description": "Fan maximum speed, 0-254 Hz",
+      "units": "Hz",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 1,
+      "name": "% Commanded Speed",
+      "description": "Speed the Intelli-Hood is commanding, 0-100 %",
+      "units": "%",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 2,
+      "name": "% Actual Speed",
+      "description": "Speed reported by the VFD, 0-100 %",
+      "units": "%",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 3,
+      "name": "Output Current",
+      "description": "VFD output current; not updated for System VFDs",
+      "units": "A",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 4,
+      "name": "Output Energy",
+      "description": "VFD kWh counter; rolls over, not on all VFDs",
+      "units": "kWh",
+      "access": "R",
+      "states": ""
+    }
+  ]
+}

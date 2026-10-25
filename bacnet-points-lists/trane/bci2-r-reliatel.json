@@ -1,0 +1,2366 @@
+{
+ "manufacturer": "Trane",
+ "manufacturer_slug": "trane",
+ "model": "BCI2-R (ReliaTel)",
+ "model_slug": "bci2-r-reliatel",
+ "aliases": [
+  "BCI2-R",
+  "BCI2R",
+  "ReliaTel BACnet interface",
+  "BACnet Communication Interface for ReliaTel",
+  "BAS-SVP053",
+  "Voyager",
+  "Precedent",
+  "Odyssey"
+ ],
+ "equipment_type": "Rooftop unit communication interface (ReliaTel)",
+ "applies_to": "Trane packaged rooftop units with ReliaTel controls (Voyager, Precedent, Odyssey) fitted with the BCI2-R BACnet card.",
+ "summary": "The BCI2-R is a BACnet MS/TP card for ReliaTel rooftop units. It talks Modbus to the unit's RTRM board and builds its BACnet object list from what the RTRM reports at first power-up, so only the objects for the installed option modules (RTEM, RTAM, RTDM, RTOM, RTVM...) appear. Objects use short instances (AI 1, AO 2, BO 1...). The BAS writes AO/BO/MO output objects and reads AI/BI/MI status and diagnostics.",
+ "bacnet_transport": [
+  "BACnet MS/TP"
+ ],
+ "firmware": null,
+ "default_device_instance": null,
+ "access_inferred": false,
+ "notes": [
+  "The tables have no read/write column. The guide states that output objects (AO/BO/MO) carry the BAS commands, setpoints and sensor values and input objects (AI/BI/MI) are status; its object-type table gives AO/BO/MO/AV a priority array, so those are marked commandable.",
+  "'When exists' conditions from the doc (RTEM, RTAM, RTDM, RTOM, RTVM, VSM option modules, gas heat, heat pump) are shown in brackets in the descriptions where they fit.",
+  "Units are given as IP/SI pairs; the BCI2-R communicates in whichever system is set under its device units (SI by default after the point list is built).",
+  "BI 151 is 'Diagnostic: Drain Pan Overflow' in the diagnostics table but 'Diagnostic: External Auto-Stop' in the doc's alphabetical index; the table name is used here.",
+  "The card can run Trane Air-Fi wireless (addresses 1-999) instead of wired BACnet MS/TP.",
+  "The 'Diagnostic:' BIs carry a BACnet notification class (001 Critical, 002 Service Required, 003 Advisory, 004 Information) and send event notifications."
+ ],
+ "source": {
+  "title": "Integration Guide: BACnet Communication Interface for ReliaTel Controllers (BCI2-R)",
+  "doc_number": "BAS-SVP053A-EN",
+  "revision_date": "April 2022",
+  "url": "https://elibrary.tranetechnologies.com/public/commercial-hvac/Literature/Integration/BAS-SVP053A-EN_04162022.pdf"
+ },
+ "integration": {
+  "summary": "Set BO 1 System Control Command to Active (Trane also recommends setting its relinquish default to Active). Then put each output object the BMS will drive in service with the BCI2 Service Tool or Tracer TU. Schedule the unit with MO 7 Occupancy Request, set the mode with MO 8 and the space setpoint with AO 2. BAS sensor values must be rewritten within 900 s.",
+  "minimum_points": [
+   {
+    "ref": "BO 1",
+    "name": "System Control Command",
+    "why": "Active = BAS control; Inactive = standalone, monitor only"
+   },
+   {
+    "ref": "MO 7",
+    "name": "Occupancy Request",
+    "why": "Occupancy command (1 = Occupied, 2 = Unoccupied)"
+   },
+   {
+    "ref": "MO 8",
+    "name": "Heat Cool Mode Request BAS",
+    "why": "Heat/cool mode command (1 = Auto)"
+   },
+   {
+    "ref": "AO 2",
+    "name": "Space Temperature Setpoint BAS",
+    "why": "Space setpoint; occupied/standby offsets apply to it"
+   },
+   {
+    "ref": "BI 1",
+    "name": "System Control Status",
+    "why": "Confirms the unit is under BAS control"
+   },
+   {
+    "ref": "MI 20",
+    "name": "Occupancy Status",
+    "why": "Confirms the occupancy the unit is running in"
+   },
+   {
+    "ref": "MI 19",
+    "name": "Heat Cool Mode Status/ Application Mode Status",
+    "why": "Current heat/cool operating mode"
+   },
+   {
+    "ref": "MI 41",
+    "name": "Supply Fan Status",
+    "why": "Supply fan on/off (2 = On)"
+   },
+   {
+    "ref": "AI 15",
+    "name": "Space Temperature Active",
+    "why": "Space temperature the unit is controlling to"
+   },
+   {
+    "ref": "BI 165",
+    "name": "Alarm Relay Output Status",
+    "why": "Unit alarm relay; Active = energized"
+   }
+  ],
+  "enable": "BO 1 System Control Command must be in service and Active (BAS Control); while Inactive the unit runs standalone and the BMS can only monitor. BI 1 System Control Status shows which is in charge. Most output objects ship with Out_of_Service = True, so the unit uses its local value; set Out_of_Service to False (BCI2 Service Tool Points screens or Tracer TU) on each output the BMS will write.",
+  "heartbeat": "The BAS sensor outputs with a 900 s refresh rate (AO 10, 11, 14, 15, 18, 25) must be rewritten within that time. If not, the BCI2-R puts the object in fault and the unit falls back to its own sensor. At power-up these objects start in fault until the first write. Setpoint and command outputs have no refresh limit.",
+  "remote_sensors": "Write BMS sensor values to the '... BAS' AOs (AO 11 Space Temperature BAS, AO 14 Outdoor Air Temperature BAS, AO 15 Outdoor Air Humidity BAS, AO 18 Space CO2 Concentration BAS, AO 25 Space Humidity BAS, AO 10 Space Static Pressure BAS) with the object in service, and keep refreshing them. The matching '... Active' AIs show the value in use.",
+  "setup": [
+   "BACnet MS/TP default baud is 76,800 bps. The MS/TP address is set at the factory and printed on a label on the board; valid 001-127 (1-999 on Air-Fi).",
+   "There are no rotary dials on the current board: change the address in the embedded BCI2 Service Tool (USB cable, browser at 198.80.18.1, Installation > Identification and Communication > Protocol Configuration) or with Tracer TU 11.6 or later.",
+   "The Device ID defaults to the address; tick 'Use Software Device ID' to set a different one. Tracer SC builds its own Device IDs (e.g. 101030).",
+   "Non-Trane front ends: Max Master (Max Requestor) must be higher than the card's address or it won't be discovered.",
+   "Device units default to SI after the point list is built; to switch to IP, clear the controller with the Modbus cable unplugged (or the unit powered down) so the units selection is enabled.",
+   "The card's clock resets to Jan 1 1970 after a power loss; send TimeSynchronization from the BMS periodically."
+  ],
+  "gotchas": [
+   "Writing an output object has no effect while it is Out of Service (the factory default); the unit keeps using its local value.",
+   "The point list is fixed at first power-up. After adding an option such as an economizer, clear the controller so it rebuilds the list.",
+   "BO 13 Filter Timer Reset and BO 14 Reset Diagnostic return to Inactive on their own after the reset.",
+   "The guide also names Discharge Air Temperature BAS, Duct Static Air Pressure BAS and Outdoor Airflow BAS as BAS sensor values, but no such objects are in the point tables.",
+   "BO 8 Supply Fan Configuration Command: Inactive = Auto (cycling), Active = On (continuous)."
+  ]
+ },
+ "points": [
+  {
+   "type": "AI",
+   "instance": 1,
+   "name": "Cooling Capacity Status",
+   "description": "Unit cooling capacity being utilized",
+   "units": "%",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "AI",
+   "instance": 2,
+   "name": "Heat Primary Capacity Status",
+   "description": "Unit primary heating capacity being utilized (with modulating heat)",
+   "units": "%",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "AI",
+   "instance": 3,
+   "name": "Heat Secondary Capacity Status",
+   "description": "Unit secondary heating capacity being utilized (with RTDM installed)",
+   "units": "%",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "AI",
+   "instance": 5,
+   "name": "Reheat Capacity Status",
+   "description": "Unit reheat heating capacity being utilized (with RTDM installed)",
+   "units": "%",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "AI",
+   "instance": 6,
+   "name": "Filter Runtime Hours",
+   "description": "Number of hours air has flowed through the filter",
+   "units": "h",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "AI",
+   "instance": 7,
+   "name": "Supply Fan Speed Command",
+   "description": "Unit commanded supply fan speed",
+   "units": "%",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "AI",
+   "instance": 8,
+   "name": "Exhaust Fan Speed Command",
+   "description": "Unit commanded exhaust fan speed (with RTEM installed)",
+   "units": "%",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "AI",
+   "instance": 9,
+   "name": "Exhaust Damper Position Status",
+   "description": "Unit exhaust damper position",
+   "units": "%",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "AI",
+   "instance": 11,
+   "name": "Outdoor Air Damper Position Status",
+   "description": "Unit outdoor air damper position",
+   "units": "%",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "AI",
+   "instance": 15,
+   "name": "Space Temperature Active",
+   "description": "The space temperature currently used for unit control",
+   "units": "°F / °C",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "AI",
+   "instance": 16,
+   "name": "Space Humidity Active",
+   "description": "The space humidity value from a unit-mounted control (with RTOM installed)",
+   "units": "%RH",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "AI",
+   "instance": 18,
+   "name": "Outdoor Air Temperature Active",
+   "description": "The outdoor air temperature currently used for unit control (with RTEM installed)",
+   "units": "°F / °C",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "AI",
+   "instance": 20,
+   "name": "Outdoor Air Humidity Active",
+   "description": "The outdoor air humidity value used for unit control (with RTEM installed)",
+   "units": "%RH",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "AI",
+   "instance": 24,
+   "name": "Discharge Air Temperature Active",
+   "description": "The discharge air temperature currently used for unit control (with RTOM installed)",
+   "units": "°F / °C",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "AI",
+   "instance": 25,
+   "name": "Mixed Air Temperature",
+   "description": "The mixed air temperature value from a unit-mounted sensor",
+   "units": "°F / °C",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "AI",
+   "instance": 26,
+   "name": "Return Air Temperature",
+   "description": "The return air temperature value from a unit-mounted sensor (with RTEM installed)",
+   "units": "°F / °C",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "AI",
+   "instance": 28,
+   "name": "Duct Static Pressure Active",
+   "description": "Duct static air pressure value currently being used for unit control (with RTAM installed)",
+   "units": "inH2O / Pa",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "AI",
+   "instance": 31,
+   "name": "Space Static Air Pressure Active",
+   "description": "Space static air pressure value being used for unit control",
+   "units": "inH2O / Pa",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "AI",
+   "instance": 32,
+   "name": "Space CO2 Concentration Active",
+   "description": "Space CO2 concentration being used for unit control (with RTEM installed)",
+   "units": "ppm",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "AI",
+   "instance": 34,
+   "name": "Outdoor Air Flow Active",
+   "description": "Outdoor airflow utilized by the unit",
+   "units": "cfm / l/s",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "AI",
+   "instance": 48,
+   "name": "Duct Static Pressure Setpoint Active",
+   "description": "Duct static pressure setpoint value being used for unit control",
+   "units": "inH2O / Pa",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "AI",
+   "instance": 50,
+   "name": "Space Temperature Setpoint Active",
+   "description": "Space temperature setpoint value being used for unit control",
+   "units": "°F / °C",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "AI",
+   "instance": 52,
+   "name": "Discharge Air Temperature Setpoint Active",
+   "description": "Discharge air temperature setpoint value being used for unit control",
+   "units": "°F / °C",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "AI",
+   "instance": 54,
+   "name": "Morning Warmup Temperature Setpoint Active",
+   "description": "The air temperature setpoint used during morning warmup mode (when RTAM installed and heat installed)",
+   "units": "°F / °C",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "AI",
+   "instance": 57,
+   "name": "Outdoor Air Minimum Flow Setpoint Active",
+   "description": "The minimum outdoor airflow setpoint being utilized by the unit",
+   "units": "cfm / l/s",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "AI",
+   "instance": 58,
+   "name": "Dehumidification High Limit Setpoint",
+   "description": "Humidity setpoint value that starts dehumidification control (with RTDM installed)",
+   "units": "%",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "AI",
+   "instance": 61,
+   "name": "Discharge Air Reheat Setpoint Active",
+   "description": "Active supply air reheat temperature setpoint (with RTDM installed)",
+   "units": "°F / °C",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "AI",
+   "instance": 71,
+   "name": "Exhaust Enable Damper Position Setpoint Status",
+   "description": "Exhaust air damper minimum position to enable exhaust sequence (with RTEM installed)",
+   "units": "%",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "AI",
+   "instance": 74,
+   "name": "Space Temperature Cooling Setpoint Input",
+   "description": "Cooling temperature setpoint from space sensor module",
+   "units": "°F / °C",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "AI",
+   "instance": 75,
+   "name": "Space Temperature Heating Setpoint Input",
+   "description": "Heating temperature setpoint from space sensor module",
+   "units": "°F / °C",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "AI",
+   "instance": 78,
+   "name": "Space Temperature Setpoint Local",
+   "description": "Setpoint derived locally by the RTRM",
+   "units": "°F / °C",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "AI",
+   "instance": 79,
+   "name": "Dehumidification Capacity Status",
+   "description": "Unit dehumidification capacity being utilized (with RTDM installed)",
+   "units": "%",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "AI",
+   "instance": 80,
+   "name": "Cabinet Style",
+   "description": "Different cabinet types",
+   "units": "",
+   "access": "R",
+   "states": "6 = Voyager/Precedent/Odyssey, 22 = Voyager Commercial"
+  },
+  {
+   "type": "AI",
+   "instance": 81,
+   "name": "Cool Type",
+   "description": "Different cooling types",
+   "units": "",
+   "access": "R",
+   "states": "7 = 1-Stage DX, 8 = 2-Stage DX, 9 = 3-Stage DX"
+  },
+  {
+   "type": "AI",
+   "instance": 82,
+   "name": "Preheat Type",
+   "description": "Different heating types",
+   "units": "",
+   "access": "R",
+   "states": "129 = None, 19 = 1-Stage DX, 20 = 2-Stage DX, 130 = Modulating Hot Water, 134 = Modulating Electric, 135 = 1-Stage Electric, 136 = 2-Stage Electric, 140 = 1-Stage Gas, 141 = 2-Stage Gas, 142 = Modulating Gas"
+  },
+  {
+   "type": "AI",
+   "instance": 83,
+   "name": "Reheat Type",
+   "description": "Different reheat types",
+   "units": "",
+   "access": "R",
+   "states": "129 = None, 17 = Hot Gas, 19 = 1-Stage DX, 20 = 2-Stage DX, 130 = Modulating Hot Water, 134 = Modulating Electric, 135 = 1-Stage Electric, 136 = 2-Stage Electric, 140 = 1-Stage Gas, 141 = 2-Stage Gas, 142 = Modulating Gas"
+  },
+  {
+   "type": "AI",
+   "instance": 86,
+   "name": "Economizer Minimum Position Setpoint Local",
+   "description": "Local economizer minimum position setpoint (with RTEM installed)",
+   "units": "%",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "AI",
+   "instance": 87,
+   "name": "Space Temperature Local",
+   "description": "The space air temperature measured by a unit-mounted sensor",
+   "units": "°F / °C",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "AI",
+   "instance": 88,
+   "name": "Unit Energy Demand",
+   "description": "Current heat/cool energy demand of the unit",
+   "units": "%",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "AI",
+   "instance": 89,
+   "name": "Supply Fan Type",
+   "description": "Different supply fan types",
+   "units": "",
+   "access": "R",
+   "states": "2 = 1-Speed Supply Fan, 3 = 2-Speed Supply Fan, 4 = 3-Speed Supply Fan, 7 = 4-Speed Supply Fan, 8 = 5-Speed Supply Fan, 5 = Modulating Inlet Guide Vanes Supply Fan, 6 = Variable Speed Supply Fan, 35 = SZVAV 2-Speed Supply Fan, 36 = SZVAV 3-Speed Supply Fan, 39 = SZVAV 4-Speed Supply Fan, 40 = SZVAV 5-Speed Supply Fan, 38 = SZVAV Variable Speed Supply Fan"
+  },
+  {
+   "type": "AI",
+   "instance": 90,
+   "name": "Exhaust or Return Fan Type",
+   "description": "Different exhaust or return fan types",
+   "units": "",
+   "access": "R",
+   "states": "1 = None, 2 = 1-Speed Exhaust Fan, 7 = 1-Speed Exhaust Fan with Modulating Exhaust Damper"
+  },
+  {
+   "type": "AI",
+   "instance": 91,
+   "name": "RTRM Major Version",
+   "description": "Major software version number of the RTRM module",
+   "units": "",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "AI",
+   "instance": 92,
+   "name": "RTRM Minor Version",
+   "description": "Minor software version number of the RTRM module",
+   "units": "",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "AI",
+   "instance": 93,
+   "name": "RTOM Major Version",
+   "description": "Major software version number of the RTOM module (with RTOM installed)",
+   "units": "",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "AI",
+   "instance": 94,
+   "name": "RTOM Minor Version",
+   "description": "Minor software version number of the RTOM module (with RTOM installed)",
+   "units": "",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "AI",
+   "instance": 95,
+   "name": "BCI2-R Major Version",
+   "description": "Major software version number of the BCI2-R module",
+   "units": "",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "AI",
+   "instance": 96,
+   "name": "BCI2-R Minor Version",
+   "description": "Minor software version number of the BCI2-R module",
+   "units": "",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "AI",
+   "instance": 97,
+   "name": "RTAM Major Version",
+   "description": "Major software version number of the RTAM module (with RTAM installed)",
+   "units": "",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "AI",
+   "instance": 98,
+   "name": "RTAM Minor Version",
+   "description": "Minor software version number of the RTAM module (with RTAM installed)",
+   "units": "",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "AI",
+   "instance": 99,
+   "name": "RTEM Major Version",
+   "description": "Major software version number of the RTEM module (with RTEM installed)",
+   "units": "",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "AI",
+   "instance": 100,
+   "name": "RTEM Minor Version",
+   "description": "Minor software version number of the RTEM module (with RTEM installed)",
+   "units": "",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "AI",
+   "instance": 101,
+   "name": "RTDM Major Version",
+   "description": "Major software version number of the RTDM module",
+   "units": "",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "AI",
+   "instance": 102,
+   "name": "RTDM Minor Version",
+   "description": "Minor software version number of the RTDM module",
+   "units": "",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "AI",
+   "instance": 103,
+   "name": "RTVM Major Version",
+   "description": "Major software version number of the RTVM module",
+   "units": "",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "AI",
+   "instance": 104,
+   "name": "RTVM Minor Version",
+   "description": "Minor software version number of the RTVM module",
+   "units": "",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "AI",
+   "instance": 105,
+   "name": "VSM Major Version",
+   "description": "Major Software version number of the VSM module",
+   "units": "",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "AI",
+   "instance": 106,
+   "name": "VSM Minor Version",
+   "description": "Minor software version number of the VSM module",
+   "units": "",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "AI",
+   "instance": 107,
+   "name": "Space Static Pressure Setpoint Active",
+   "description": "Space pressure setpoint currently used for unit control",
+   "units": "inH2O",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "AI",
+   "instance": 108,
+   "name": "Tracer TD5 Major Version",
+   "description": "Major Software version number of the TD5 module",
+   "units": "",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "AI",
+   "instance": 109,
+   "name": "Tracer TD5 Minor Version",
+   "description": "Minor Software version number of the TD5 module",
+   "units": "",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "AO",
+   "instance": 1,
+   "name": "Economizer Minimum Position Setpoint BAS",
+   "description": "Economizer minimum position; range 0 to 50 % (with RTEM installed)",
+   "units": "%",
+   "access": "C",
+   "states": ""
+  },
+  {
+   "type": "AO",
+   "instance": 2,
+   "name": "Space Temperature Setpoint BAS",
+   "description": "Base space setpoint (occupied/standby); range 50.0 to 90.0 °F (10.0 to 32.2 °C)",
+   "units": "°F / °C",
+   "access": "C",
+   "states": ""
+  },
+  {
+   "type": "AO",
+   "instance": 4,
+   "name": "Morning Warmup Setpoint BAS",
+   "description": "Morning warmup setpoint; range 50.0 to 90.0 °F (10.0 to 32.2 °C)",
+   "units": "°F / °C",
+   "access": "C",
+   "states": ""
+  },
+  {
+   "type": "AO",
+   "instance": 5,
+   "name": "Daytime Warmup Terminate Temperature Setpoint BAS",
+   "description": "Daytime warmup end temperature; range 50.0 to 90.0 °F (10.0 to 32.2 °C)",
+   "units": "°F / °C",
+   "access": "C",
+   "states": ""
+  },
+  {
+   "type": "AO",
+   "instance": 6,
+   "name": "Discharge Air Cooling Setpoint BAS",
+   "description": "Discharge air cooling setpoint; range 40.0 to 80.0 °F (4.4 to 26.7 °C)",
+   "units": "°F / °C",
+   "access": "C",
+   "states": ""
+  },
+  {
+   "type": "AO",
+   "instance": 7,
+   "name": "Discharge Air Heating Setpoint BAS",
+   "description": "Discharge air heating setpoint; range 50.0 to 158.0 °F (10.0 to 70.0 °C)",
+   "units": "°F / °C",
+   "access": "C",
+   "states": ""
+  },
+  {
+   "type": "AO",
+   "instance": 8,
+   "name": "Duct Static Pressure Setpoint BAS",
+   "description": "Duct static setpoint; range 0.0 to 2.5 inH2O (with RTAM installed)",
+   "units": "inH2O / Pa",
+   "access": "C",
+   "states": ""
+  },
+  {
+   "type": "AO",
+   "instance": 9,
+   "name": "Space Static Pressure Setpoint BAS",
+   "description": "Space static setpoint; range 0.3 to -0.2 inH2O",
+   "units": "inH2O / Pa",
+   "access": "C",
+   "states": ""
+  },
+  {
+   "type": "AO",
+   "instance": 10,
+   "name": "Space Static Pressure BAS",
+   "description": "Space static pressure from BAS; range -0.67 to 0.67 inH2O; rewrite within 900 s",
+   "units": "inH2O / Pa",
+   "access": "C",
+   "states": ""
+  },
+  {
+   "type": "AO",
+   "instance": 11,
+   "name": "Space Temperature BAS",
+   "description": "Space temperature; range -40.0 to 150.0 °F (-40.0 to 65.6 °C); rewrite within 900 s",
+   "units": "°F / °C",
+   "access": "C",
+   "states": ""
+  },
+  {
+   "type": "AO",
+   "instance": 14,
+   "name": "Outdoor Air Temperature BAS",
+   "description": "Outdoor air; range -40.0 to 158.0 °F (-40.0 to 70.0 °C); rewrite within 900 s",
+   "units": "°F / °C",
+   "access": "C",
+   "states": ""
+  },
+  {
+   "type": "AO",
+   "instance": 15,
+   "name": "Outdoor Air Humidity BAS",
+   "description": "Outdoor humidity from BAS; range 0 to 100 %; rewrite within 900 s",
+   "units": "%",
+   "access": "C",
+   "states": ""
+  },
+  {
+   "type": "AO",
+   "instance": 16,
+   "name": "Outdoor Air Minimum Flow Setpoint BAS",
+   "description": "Minimum outdoor airflow setpoint; range 0 to 40,000 cfm",
+   "units": "cfm / l/s",
+   "access": "C",
+   "states": ""
+  },
+  {
+   "type": "AO",
+   "instance": 18,
+   "name": "Space CO2 Concentration BAS",
+   "description": "Space CO2 from BAS; range 0.0 to 2000 ppm; rewrite within 900 s",
+   "units": "ppm",
+   "access": "C",
+   "states": ""
+  },
+  {
+   "type": "AO",
+   "instance": 19,
+   "name": "Cool Capacity Enable Setpoint BAS",
+   "description": "Cooling capacity limit; range 0 to 100 %",
+   "units": "%",
+   "access": "C",
+   "states": ""
+  },
+  {
+   "type": "AO",
+   "instance": 20,
+   "name": "Heat Capacity Enable Setpoint BAS",
+   "description": "Heating capacity limit; range 0 to 100 % (with all heat types)",
+   "units": "%",
+   "access": "C",
+   "states": ""
+  },
+  {
+   "type": "AO",
+   "instance": 21,
+   "name": "Space Dehumidification Setpoint BAS",
+   "description": "Space dehumidification setpoint; range 40 to 65 % (with RTDM installed)",
+   "units": "%",
+   "access": "C",
+   "states": ""
+  },
+  {
+   "type": "AO",
+   "instance": 23,
+   "name": "Discharge Air Reheat Setpoint BAS",
+   "description": "Discharge air reheat setpoint; range 65.0 to 80.0 °F (18.3 to 26.7 °C) (with RTDM installed)",
+   "units": "°F / °C",
+   "access": "C",
+   "states": ""
+  },
+  {
+   "type": "AO",
+   "instance": 25,
+   "name": "Space Humidity BAS",
+   "description": "Space humidity from BAS; range 10 to 100 %; rewrite within 900 s (with RTDM installed)",
+   "units": "%",
+   "access": "C",
+   "states": ""
+  },
+  {
+   "type": "AO",
+   "instance": 29,
+   "name": "Occupied Offset",
+   "description": "Occupied setpoint offset; range 1.0 to 5.0 °F (0.6 to 2.8 °C)",
+   "units": "°F / °C",
+   "access": "C",
+   "states": ""
+  },
+  {
+   "type": "AO",
+   "instance": 30,
+   "name": "Standby Offset",
+   "description": "Standby setpoint offset; range 1.0 to 10.0 °F (0.06 to 5.6 °C)",
+   "units": "°F / °C",
+   "access": "C",
+   "states": ""
+  },
+  {
+   "type": "AO",
+   "instance": 31,
+   "name": "Unoccupied Cooling Setpoint",
+   "description": "Unoccupied cooling setpoint; range 50 to 90 °F (10.0 to 32.2 °C)",
+   "units": "°F / °C",
+   "access": "C",
+   "states": ""
+  },
+  {
+   "type": "AO",
+   "instance": 32,
+   "name": "Unoccupied Heating Setpoint",
+   "description": "Unoccupied heating setpoint; range 50.0 to 90.0 °F (10.0 to 32.2 °C)",
+   "units": "°F / °C",
+   "access": "C",
+   "states": ""
+  },
+  {
+   "type": "AO",
+   "instance": 33,
+   "name": "Exhaust or Return Fan Configuration",
+   "description": "Exhaust/return fan type setting; range 1.0 to 255",
+   "units": "",
+   "access": "C",
+   "states": ""
+  },
+  {
+   "type": "AO",
+   "instance": 34,
+   "name": "Power Exhaust Enable Setpoint BAS",
+   "description": "Power exhaust enable point; range 0.0 to 100 % (with RTEM installed)",
+   "units": "%",
+   "access": "C",
+   "states": ""
+  },
+  {
+   "type": "AO",
+   "instance": 35,
+   "name": "Space Cooling Setpoint High Limit BAS",
+   "description": "Upper clamp on space cooling setpoint; range 50.0 to 90.0 °F (10.0 to 32.2 °C)",
+   "units": "°F / °C",
+   "access": "C",
+   "states": ""
+  },
+  {
+   "type": "AO",
+   "instance": 36,
+   "name": "Space Cooling Setpoint Low Limit BAS",
+   "description": "Lower clamp on space cooling setpoint; range 50.0 to 90.0 °F (10.0 to 32.2 °C)",
+   "units": "°F / °C",
+   "access": "C",
+   "states": ""
+  },
+  {
+   "type": "AO",
+   "instance": 37,
+   "name": "Space Heating Setpoint High Limit BAS",
+   "description": "Upper clamp on space heating setpoint; range 50.0 to 90.0 °F (10.0 to 32.2 °C)",
+   "units": "°F / °C",
+   "access": "C",
+   "states": ""
+  },
+  {
+   "type": "AO",
+   "instance": 38,
+   "name": "Space Heating Setpoint Low Limit BAS",
+   "description": "Lower clamp on space heating setpoint; range 50.0 to 90.0 °F (10.0 to 32.2 °C)",
+   "units": "°F / °C",
+   "access": "C",
+   "states": ""
+  },
+  {
+   "type": "AO",
+   "instance": 41,
+   "name": "Economizing Temperature Enable Setpoint",
+   "description": "Economizer dry-bulb enable setpoint; range 50.0 to 140.0 °F (10.0 to 60.0 °C) (with RTEM installed)",
+   "units": "°F / °C",
+   "access": "C",
+   "states": ""
+  },
+  {
+   "type": "AO",
+   "instance": 42,
+   "name": "Economizing Enthalpy Enable Setpoint",
+   "description": "Economizer enthalpy enable setpoint; range 19.0 to 28.0 Btu/lb (with RTEM installed)",
+   "units": "Btu/lb",
+   "access": "C",
+   "states": ""
+  },
+  {
+   "type": "AO",
+   "instance": 43,
+   "name": "Daytime Warmup Initiate Temperature Setpoint BAS",
+   "description": "Daytime warmup start temperature; range 50.0 to 87.0 °F (rTAM is present and heat is present)",
+   "units": "°F",
+   "access": "C",
+   "states": ""
+  },
+  {
+   "type": "AO",
+   "instance": 44,
+   "name": "Supply Fan Minimum Speed BAS",
+   "description": "Supply fan minimum speed; range 0.0 to 100.0 % (supply fan is not single speed)",
+   "units": "%",
+   "access": "C",
+   "states": ""
+  },
+  {
+   "type": "AO",
+   "instance": 45,
+   "name": "Supply Fan Maximum Speed BAS",
+   "description": "Supply fan maximum speed; range 0.0 to 100.0 % (supply fan is not single speed)",
+   "units": "%",
+   "access": "C",
+   "states": ""
+  },
+  {
+   "type": "AO",
+   "instance": 46,
+   "name": "Outdoor Air Temperature Heating Lockout Low Limit",
+   "description": "Heat pump mechanical heat OA lockout; range 0.0 to 45.0 °F (configured as a Heat Pump)",
+   "units": "°F",
+   "access": "C",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 1,
+   "name": "Filter Runtime Hours Setpoint",
+   "description": "The setpoint value used by the filter run hours calculation; range 0-10,000",
+   "units": "h",
+   "access": "C",
+   "states": ""
+  },
+  {
+   "type": "BI",
+   "instance": 1,
+   "name": "System Control Status",
+   "description": "Control system currently in command of the unit",
+   "units": "",
+   "access": "R",
+   "states": "Inactive = Standalone control, Active = BAS control"
+  },
+  {
+   "type": "BI",
+   "instance": 2,
+   "name": "Compressor Lockout Status",
+   "description": "One or more compressors are locked out with no diagnostic",
+   "units": "",
+   "access": "R",
+   "states": "Inactive = Normal, Active = Locked Out"
+  },
+  {
+   "type": "BI",
+   "instance": 9,
+   "name": "VAV Box Command",
+   "description": "Whether VAV boxes should be in control or wide open (multi-zone VAV and RTAM installed)",
+   "units": "",
+   "access": "R",
+   "states": "Inactive = Auto, Active = Open"
+  },
+  {
+   "type": "BI",
+   "instance": 11,
+   "name": "Service Test Mode Status",
+   "description": "If the unit is in service test mode",
+   "units": "",
+   "access": "R",
+   "states": "Inactive = Inactive, Active = Active"
+  },
+  {
+   "type": "BI",
+   "instance": 15,
+   "name": "Supply Fan Configuration Status",
+   "description": "Supply fan configuration (constant volume)",
+   "units": "",
+   "access": "R",
+   "states": "Inactive = Cycling, Active = Continuous"
+  },
+  {
+   "type": "BI",
+   "instance": 22,
+   "name": "Economizer Airside Enable Status",
+   "description": "Status of the airside economizer system (with RTEM Installed)",
+   "units": "",
+   "access": "R",
+   "states": "Inactive = Disabled, Active = Enabled"
+  },
+  {
+   "type": "BI",
+   "instance": 29,
+   "name": "Diagnostic: Zone Temperature Sensor Failure",
+   "description": "Diagnostic, class 002 Service Required",
+   "units": "",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "BI",
+   "instance": 30,
+   "name": "Diagnostic: Supply Air Temp Sensor Fail",
+   "description": "Diagnostic, class 002 Service Required",
+   "units": "",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "BI",
+   "instance": 32,
+   "name": "Diagnostic: Outdoor Air Temperature Sensor Fail",
+   "description": "Diagnostic, class 002 Service Required",
+   "units": "",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "BI",
+   "instance": 34,
+   "name": "Diagnostic: Local Cool Setpoint Fail",
+   "description": "Diagnostic, class 002 Service Required",
+   "units": "",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "BI",
+   "instance": 35,
+   "name": "Diagnostic: Local Zone Heat Setpoint Fail",
+   "description": "Diagnostic, class 002 Service Required",
+   "units": "",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "BI",
+   "instance": 36,
+   "name": "Diagnostic: SA Pressure Sensor Fail",
+   "description": "Diagnostic, class 002 Service Required",
+   "units": "",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "BI",
+   "instance": 37,
+   "name": "Diagnostic: Outdoor Humidity Sensor Failure",
+   "description": "Diagnostic, class 002 Service Required (with RTEM installed)",
+   "units": "",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "BI",
+   "instance": 38,
+   "name": "Diagnostic: Local Emergency Stop Initiated",
+   "description": "Diagnostic, class 001 Critical",
+   "units": "",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "BI",
+   "instance": 39,
+   "name": "Diagnostic: Fan Failure",
+   "description": "Diagnostic, class 001 Critical (with RTEM installed)",
+   "units": "",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "BI",
+   "instance": 40,
+   "name": "Diagnostic: Exhaust Fan Proving Failure",
+   "description": "Diagnostic, class 001 Critical (with RTEM installed)",
+   "units": "",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "BI",
+   "instance": 43,
+   "name": "Diagnostic: Compressor 1 LPC Lockout",
+   "description": "Diagnostic, class 001 Critical",
+   "units": "",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "BI",
+   "instance": 44,
+   "name": "Diagnostic: Compressor 2 LPC Lockout",
+   "description": "Diagnostic, class 001 Critical",
+   "units": "",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "BI",
+   "instance": 45,
+   "name": "Diagnostic: Coil Temp Sensor #1 Fail",
+   "description": "Diagnostic, class 002 Service Required",
+   "units": "",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "BI",
+   "instance": 46,
+   "name": "Diagnostic: Coil Temp Sensor #2 Fail",
+   "description": "Diagnostic, class 002 Service Required",
+   "units": "",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "BI",
+   "instance": 47,
+   "name": "Diagnostic: Compressor 1 HPC Lockout",
+   "description": "Diagnostic, class 001 Critical",
+   "units": "",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "BI",
+   "instance": 48,
+   "name": "Diagnostic: Compressor 2 HPC Lockout",
+   "description": "Diagnostic, class 001 Critical",
+   "units": "",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "BI",
+   "instance": 51,
+   "name": "Diagnostic: Heat Failure",
+   "description": "Diagnostic, class 003 Advisory",
+   "units": "",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "BI",
+   "instance": 54,
+   "name": "Diagnostic: SA Pressure Setpoint Failure",
+   "description": "Diagnostic, class 002 Service Required",
+   "units": "",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "BI",
+   "instance": 55,
+   "name": "Diagnostic: Space Pressure Setpoint Fail",
+   "description": "Diagnostic, class 002 Service Required",
+   "units": "",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "BI",
+   "instance": 56,
+   "name": "Diagnostic: Space Pressure Sensor Fail",
+   "description": "Diagnostic, class 002 Service Required",
+   "units": "",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "BI",
+   "instance": 57,
+   "name": "Diagnostic: Return Air Temp Sensor Fail",
+   "description": "Diagnostic, class 002 Service Required (with RTEM installed)",
+   "units": "",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "BI",
+   "instance": 58,
+   "name": "Diagnostic: Return Air Humidity Sensor Fail",
+   "description": "Diagnostic, class 002 Service Required (with RTEM installed)",
+   "units": "",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "BI",
+   "instance": 59,
+   "name": "Diagnostic: Auto - SA High Press Limit",
+   "description": "Diagnostic, class 002 Service Required",
+   "units": "",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "BI",
+   "instance": 74,
+   "name": "Diagnostic: SA Temp Cool Setpoint Fail",
+   "description": "Diagnostic, class 002 Service Required",
+   "units": "",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "BI",
+   "instance": 75,
+   "name": "Diagnostic: SA Temp Heat Setpoint Fail",
+   "description": "Diagnostic, class 002 Service Required",
+   "units": "",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "BI",
+   "instance": 76,
+   "name": "Diagnostic: Dirty Filter",
+   "description": "Diagnostic, class 003 Advisory",
+   "units": "",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "BI",
+   "instance": 83,
+   "name": "Diagnostic: CO2 Sensor Failure",
+   "description": "Diagnostic, class 002 Service Required (with RTEM installed)",
+   "units": "",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "BI",
+   "instance": 86,
+   "name": "Diagnostic: Velocity Press Sensor Fail",
+   "description": "Diagnostic, class 002 Service Required (with RTVM version 3 or greater installed)",
+   "units": "",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "BI",
+   "instance": 95,
+   "name": "Diagnostic: Mixed Air Temp Sensor Failure",
+   "description": "Diagnostic, class 002 Service Required (with RTEM installed)",
+   "units": "",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "BI",
+   "instance": 106,
+   "name": "Diagnostic: Space Humidity Sensor Fail",
+   "description": "Diagnostic, class 002 Service Required (with RTEM installed)",
+   "units": "",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "BI",
+   "instance": 107,
+   "name": "Diagnostic: Entering Evap Temp Sensor Fail",
+   "description": "Diagnostic, class 002 Service Required",
+   "units": "",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "BI",
+   "instance": 123,
+   "name": "Diagnostic: SA Reheat Setpoint Failure",
+   "description": "Diagnostic, class 002 Service Required",
+   "units": "",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "BI",
+   "instance": 125,
+   "name": "Diagnostic: Dehumid Setpoint Failure",
+   "description": "Diagnostic, class 002 Service Required (with RTOM installed)",
+   "units": "",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "BI",
+   "instance": 147,
+   "name": "Diagnostic: Maintenance Required",
+   "description": "Diagnostic, class 002 Service Required",
+   "units": "",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "BI",
+   "instance": 148,
+   "name": "Diagnostic: Unit Communications Failure",
+   "description": "Diagnostic, class 002 Service Required",
+   "units": "",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "BI",
+   "instance": 151,
+   "name": "Diagnostic: Drain Pan Overflow",
+   "description": "Diagnostic, class 004 Information (with RTOM installed)",
+   "units": "",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "BI",
+   "instance": 165,
+   "name": "Alarm Relay Output Status",
+   "description": "State of the alarm relay on the unit",
+   "units": "",
+   "access": "R",
+   "states": "Inactive = De-energized, Active = Energized"
+  },
+  {
+   "type": "BI",
+   "instance": 239,
+   "name": "Diagnostic: Morning Warmup Setpoint Fail",
+   "description": "Diagnostic, class 002 Service Required",
+   "units": "",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "BI",
+   "instance": 242,
+   "name": "Diagnostic: Min OA Flow Setpoint Fail",
+   "description": "Diagnostic, class 002 Service Required (with RTVM installed)",
+   "units": "",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "BI",
+   "instance": 244,
+   "name": "Diagnostic: Comp 1 Disable Input LPC",
+   "description": "Diagnostic, class 004 Information",
+   "units": "",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "BI",
+   "instance": 245,
+   "name": "Diagnostic: Comp 2 Disable Input LPC",
+   "description": "Diagnostic, class 004 Information",
+   "units": "",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "BI",
+   "instance": 246,
+   "name": "Diagnostic: Smoke Detector",
+   "description": "Diagnostic, class 004 Information (with RTOM installed)",
+   "units": "",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "BI",
+   "instance": 247,
+   "name": "Diagnostic: FroStat Trip",
+   "description": "Diagnostic, class 004 Information (with RTOM installed)",
+   "units": "",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "BI",
+   "instance": 248,
+   "name": "Diagnostic: Demand Defrost Fault A",
+   "description": "Diagnostic, class 004 Information (with Heat Pump installed)",
+   "units": "",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "BI",
+   "instance": 249,
+   "name": "Diagnostic: Demand Defrost Fault B",
+   "description": "Diagnostic, class 004 Information (with Heat Pump installed)",
+   "units": "",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "BI",
+   "instance": 250,
+   "name": "Diagnostic: Demand Defrost Fault C",
+   "description": "Diagnostic, class 004 Information (with Heat Pump installed)",
+   "units": "",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "BI",
+   "instance": 251,
+   "name": "Diagnostic: Demand Defrost Fault D",
+   "description": "Diagnostic, class 004 Information (with Heat Pump installed)",
+   "units": "",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "BI",
+   "instance": 252,
+   "name": "Diagnostic: Default Defrost Flag",
+   "description": "Diagnostic, class 004 Information (with Heat Pump installed)",
+   "units": "",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "BI",
+   "instance": 253,
+   "name": "Diagnostic: Vent Override - Exhaust",
+   "description": "Diagnostic, class 004 Information (with RTOM installed)",
+   "units": "",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "BI",
+   "instance": 254,
+   "name": "Diagnostic: Vent Override - Purge",
+   "description": "Diagnostic, class 004 Information (with RTOM installed)",
+   "units": "",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "BI",
+   "instance": 255,
+   "name": "Diagnostic: Vent Override - Pressurize",
+   "description": "Diagnostic, class 004 Information (with RTOM installed)",
+   "units": "",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "BI",
+   "instance": 256,
+   "name": "Diagnostic: Freezestat Tripped",
+   "description": "Diagnostic, class 004 Information (with RTOM installed)",
+   "units": "",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "BI",
+   "instance": 257,
+   "name": "Diagnostic: CO2 Setpoint Failure",
+   "description": "Diagnostic, class 004 Information (with RTEM installed)",
+   "units": "",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "BI",
+   "instance": 258,
+   "name": "Diagnostic: Heating High Temp Limit Open",
+   "description": "Diagnostic, class 004 Information (with Gas Heat installed)",
+   "units": "",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "BI",
+   "instance": 259,
+   "name": "Diagnostic: Flame Rollout Switch Open",
+   "description": "Diagnostic, class 004 Information (with Gas Heat installed)",
+   "units": "",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "BI",
+   "instance": 260,
+   "name": "Diagnostic: Inducer Proving Switch Fail",
+   "description": "Diagnostic, class 004 Information (with Gas Heat installed)",
+   "units": "",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "BI",
+   "instance": 261,
+   "name": "Diagnostic: No Flame Sensed on heat call",
+   "description": "Diagnostic, class 004 Information (with Gas Heat installed)",
+   "units": "",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "BI",
+   "instance": 262,
+   "name": "Diagnostic: Flame Sensed with Gas Valve Off",
+   "description": "Diagnostic, class 004 Information (with Gas Heat installed)",
+   "units": "",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "BI",
+   "instance": 263,
+   "name": "Diagnostic: Gas Heat Module Failure",
+   "description": "Diagnostic, class 004 Information",
+   "units": "",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "BI",
+   "instance": 264,
+   "name": "Diagnostic: Economizer Actuator Fault",
+   "description": "Diagnostic, class 004 Information",
+   "units": "",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "BI",
+   "instance": 265,
+   "name": "Diagnostic: SA Reset Amount Failure",
+   "description": "Diagnostic, class 004 Information (with RTOM installed)",
+   "units": "",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "BI",
+   "instance": 266,
+   "name": "Diagnostic: SA Reset Setpoint Failure",
+   "description": "Diagnostic, class 004 Information (with RTAM installed)",
+   "units": "",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "BI",
+   "instance": 267,
+   "name": "Diagnostic: SA Pressure Dead Band Failure",
+   "description": "Diagnostic, class 004 Information (with RTAM installed)",
+   "units": "",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "BI",
+   "instance": 268,
+   "name": "Diagnostic: SA Pressure PWM Fault",
+   "description": "Diagnostic, class 004 Information (with RTAM installed)",
+   "units": "",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "BI",
+   "instance": 269,
+   "name": "Diagnostic: Comp 1 Disable Input HPC",
+   "description": "Diagnostic, class 004 Information",
+   "units": "",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "BI",
+   "instance": 270,
+   "name": "Diagnostic: Comp 2 Disable Input HPC",
+   "description": "Diagnostic, class 004 Information",
+   "units": "",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "BI",
+   "instance": 271,
+   "name": "Diagnostic: CO2 Low Limit Setpoint Fault",
+   "description": "Diagnostic, class 004 Information (with RTEM installed)",
+   "units": "",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "BI",
+   "instance": 272,
+   "name": "Diagnostic: RTOM Comm Fail",
+   "description": "Diagnostic, class 004 Information (with RTOM installed)",
+   "units": "",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "BI",
+   "instance": 273,
+   "name": "Diagnostic: RTEM Comm Fail",
+   "description": "Diagnostic, class 004 Information (with RTEM installed)",
+   "units": "",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "BI",
+   "instance": 274,
+   "name": "Diagnostic: RTAM Comm Fail",
+   "description": "Diagnostic, class 004 Information (with RTAM installed)",
+   "units": "",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "BI",
+   "instance": 275,
+   "name": "Diagnostic: RTVM Comm Fail",
+   "description": "Diagnostic, class 004 Information (with RTVM installed)",
+   "units": "",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "BI",
+   "instance": 276,
+   "name": "Diagnostic: VSM Comm Fail",
+   "description": "Diagnostic, class 004 Information (with VSM installed)",
+   "units": "",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "BI",
+   "instance": 277,
+   "name": "Diagnostic: RTDM Comm Fail",
+   "description": "Diagnostic, class 004 Information (with RTDM installed)",
+   "units": "",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "BI",
+   "instance": 278,
+   "name": "Diagnostic: Space Press Deadband Fail",
+   "description": "Diagnostic, class 004 Information",
+   "units": "",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "BI",
+   "instance": 279,
+   "name": "Diagnostic: Mod Dehumid Config Error",
+   "description": "Diagnostic, class 004 Information",
+   "units": "",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "BI",
+   "instance": 280,
+   "name": "Diagnostic: Demand Defrost Fault A Ckt 2",
+   "description": "Diagnostic, class 004 Information (with heat pump installed)",
+   "units": "",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "BI",
+   "instance": 281,
+   "name": "Diagnostic: Demand Defrost Fault B Ckt 2",
+   "description": "Diagnostic, class 004 Information (with Heat Pump installed)",
+   "units": "",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "BI",
+   "instance": 282,
+   "name": "Diagnostic: Demand Defrost Fault C Ckt 2",
+   "description": "Diagnostic, class 004 Information (with Heat Pump installed)",
+   "units": "",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "BI",
+   "instance": 283,
+   "name": "Diagnostic: Defrost Default Mode Ckt 2",
+   "description": "Diagnostic, class 004 Information (with Heat Pump installed)",
+   "units": "",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "BI",
+   "instance": 284,
+   "name": "Diagnostic: Demand Defrost Fault A Ckt 1",
+   "description": "Diagnostic, class 004 Information (with Heat Pump installed)",
+   "units": "",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "BI",
+   "instance": 285,
+   "name": "Diagnostic: Demand Defrost Fault B Ckt 1",
+   "description": "Diagnostic, class 004 Information (with Heat Pump installed)",
+   "units": "",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "BI",
+   "instance": 286,
+   "name": "Diagnostic: Demand Defrost Fault C Ckt 1",
+   "description": "Diagnostic, class 004 Information (with Heat Pump installed)",
+   "units": "",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "BI",
+   "instance": 287,
+   "name": "Diagnostic: Defrost Default Mode Ckt 1",
+   "description": "Diagnostic, class 004 Information (with Heat Pump installed)",
+   "units": "",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "BI",
+   "instance": 288,
+   "name": "Diagnostic: Exhaust Fan Setpoint Failure",
+   "description": "Diagnostic, class 004 Information (with RTOM installed)",
+   "units": "",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "BI",
+   "instance": 289,
+   "name": "Diagnostic: Discharge Air Heat Setpoint Failure",
+   "description": "Diagnostic, class 004 Information (with RTOM installed)",
+   "units": "",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "BI",
+   "instance": 290,
+   "name": "Diagnostic: IGN1 Communications Timed out",
+   "description": "Diagnostic, class 004 Information (with Gas Heat installed)",
+   "units": "",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "BI",
+   "instance": 291,
+   "name": "Diagnostic: IGN2 Communications Timed out",
+   "description": "Diagnostic, class 004 Information (with Gas Heat installed)",
+   "units": "",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "BI",
+   "instance": 292,
+   "name": "Supply Air Tempering Status",
+   "description": "Status of the supply air tempering function",
+   "units": "",
+   "access": "R",
+   "states": "Inactive = Inactive, Active = Active"
+  },
+  {
+   "type": "BI",
+   "instance": 293,
+   "name": "Diagnostic: DCV Min Position Setpoint Fail",
+   "description": "Diagnostic, class 004 Information (with RTEM installed)",
+   "units": "",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "BI",
+   "instance": 294,
+   "name": "Diagnostic: Design Min Position Setpoint Fail",
+   "description": "Diagnostic, class 004 Information (with RTEM installed)",
+   "units": "",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "BI",
+   "instance": 295,
+   "name": "Diagnostic: Enthalpy Setpoint Fail",
+   "description": "Diagnostic, class 004 Information",
+   "units": "",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "BI",
+   "instance": 296,
+   "name": "Diagnostic: Design Min Position at Minimum Fan Speed Fail",
+   "description": "Diagnostic, class 004 Information (with RTVM installed)",
+   "units": "",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "BI",
+   "instance": 297,
+   "name": "Diagnostic: DCV Min Position at Minimum Fan Speed",
+   "description": "Diagnostic, class 004 Information (with RTVM installed)",
+   "units": "",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "BI",
+   "instance": 298,
+   "name": "Diagnostic: Design Min Position at Midpoint Fan Speed Fail",
+   "description": "Diagnostic, class 004 Information (with RTVM installed)",
+   "units": "",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "BI",
+   "instance": 299,
+   "name": "Diagnostic: Compressor 3 HPC Lockout Status",
+   "description": "Diagnostic, class 001 Critical (with Compressor 3 or VSPD compressor and RTRM 16 or higher installed)",
+   "units": "",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "BI",
+   "instance": 300,
+   "name": "Diagnostic: Compressor 3 LPC Lockout Status",
+   "description": "Diagnostic, class 001 Critical (with Compressor 3 or VSPD compressor and RTRM 16 or higher installed)",
+   "units": "",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "BI",
+   "instance": 301,
+   "name": "Diagnostic: Compressor 3 HPC Disable",
+   "description": "Diagnostic, class 004 Information (with Compressor 3 or VSPD compressor and RTRM 16 or higher installed)",
+   "units": "",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "BI",
+   "instance": 302,
+   "name": "Diagnostic: Comp 3 Disable Input LPC",
+   "description": "Diagnostic, class 004 Information (with Compressor 3 or VSPD compressor and RTRM 16 or higher installed)",
+   "units": "",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "BI",
+   "instance": 303,
+   "name": "Diagnostic: Compressor Drive Fault",
+   "description": "Diagnostic, class 001 Critical (with VSPD compressor and RTRM 16 or higher installed)",
+   "units": "",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "BI",
+   "instance": 304,
+   "name": "Diagnostic: Compressor Drive Lockout",
+   "description": "Diagnostic, class 001 Critical (with Compressor 3 and RTRM 16 or higher installed)",
+   "units": "",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "BI",
+   "instance": 305,
+   "name": "Diagnostic: Unit Economizing When It Should Not",
+   "description": "Diagnostic, class 004 Information (with RTEM 3 or higher installed and RTRM 16 or higher installed)",
+   "units": "",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "BI",
+   "instance": 306,
+   "name": "Diagnostic: Unit Not Economizing When It Should",
+   "description": "Diagnostic, class 004 Information (with RTEM 3 or higher installed and RTRM 16 or higher installed)",
+   "units": "",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "BI",
+   "instance": 307,
+   "name": "Diagnostic: Excessive Air",
+   "description": "Diagnostic, class 004 Information (with RTRM 16 or higher installed)",
+   "units": "",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "BI",
+   "instance": 308,
+   "name": "Diagnostic: Air Damper Not Modulating",
+   "description": "Diagnostic, class 004 Information (with RTRM 16 or higher installed)",
+   "units": "",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "BI",
+   "instance": 309,
+   "name": "Diagnostic: TD5 Comm Fail",
+   "description": "Diagnostic, class 004 Information (with TD5 installed and RTRM 15 or higher installed)",
+   "units": "",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "BI",
+   "instance": 310,
+   "name": "Diagnostic: Mixed Air Temp Low Limit Cycle Active",
+   "description": "Diagnostic, class 004 Information",
+   "units": "",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "BI",
+   "instance": 311,
+   "name": "Diagnostic: Supply Airflow Sensor Fail",
+   "description": "Diagnostic, class 004 Information",
+   "units": "",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "BI",
+   "instance": 312,
+   "name": "Diagnostic: Gas Heat Supply Airflow Limit Trip",
+   "description": "Diagnostic, class 004 Information",
+   "units": "",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "BO",
+   "instance": 1,
+   "name": "System Control Command",
+   "description": "Command the unit to standalone- or BAS-controlled operation; default Inactive",
+   "units": "",
+   "access": "C",
+   "states": "Inactive = Standalone Control, Active = BAS Control"
+  },
+  {
+   "type": "BO",
+   "instance": 5,
+   "name": "Heat Lockout Command",
+   "description": "Command the unit to prevent heating operation; default Inactive",
+   "units": "",
+   "access": "C",
+   "states": "Inactive = Allow Heating, Active = Heating Locked Out"
+  },
+  {
+   "type": "BO",
+   "instance": 6,
+   "name": "Cool Lockout Command",
+   "description": "Command the unit to prevent cooling operation; default Inactive",
+   "units": "",
+   "access": "C",
+   "states": "Inactive = Allow Cooling, Active = Cooling Locked Out"
+  },
+  {
+   "type": "BO",
+   "instance": 7,
+   "name": "Economizer Minimum Position Enable Command",
+   "description": "Command the unit to the minimum position operation; default Inactive (with RTEM installed)",
+   "units": "",
+   "access": "C",
+   "states": "Inactive = Disabled, Active = Enabled"
+  },
+  {
+   "type": "BO",
+   "instance": 8,
+   "name": "Supply Fan Configuration Command",
+   "description": "Command the unit supply fan to cycling or continuous operation; default Inactive",
+   "units": "",
+   "access": "C",
+   "states": "Inactive = Auto, Active = On"
+  },
+  {
+   "type": "BO",
+   "instance": 13,
+   "name": "Filter Timer Reset",
+   "description": "Command the unit to reset the accumulated filter run hours; default Inactive",
+   "units": "",
+   "access": "C",
+   "states": "Inactive = Accumulating, Active = Reset"
+  },
+  {
+   "type": "BO",
+   "instance": 14,
+   "name": "Reset Diagnostic",
+   "description": "Command the unit to reset and clear diagnostics; default Inactive",
+   "units": "",
+   "access": "C",
+   "states": "Inactive = Normal, Active = Reset"
+  },
+  {
+   "type": "BO",
+   "instance": 15,
+   "name": "Dehumidification Enable Command",
+   "description": "Command the operating state of the dehumidification system; default Active (with RTDM installed)",
+   "units": "",
+   "access": "C",
+   "states": "Inactive = Disabled, Active = Auto"
+  },
+  {
+   "type": "BO",
+   "instance": 17,
+   "name": "Service Test Command",
+   "description": "Command the unit to step through service test; default 1 (Auto)",
+   "units": "",
+   "access": "C",
+   "states": "Inactive = Normal, Active = Service test"
+  },
+  {
+   "type": "BO",
+   "instance": 18,
+   "name": "Supply Air Tempering Enable Command",
+   "description": "Command the unit supply air tempering operation; default Inactive (with all heat types)",
+   "units": "",
+   "access": "C",
+   "states": "Inactive = Disabled, Active = Enabled"
+  },
+  {
+   "type": "BO",
+   "instance": 19,
+   "name": "Lead-Lag Enable Command",
+   "description": "Command the unit compressor startup order; default Inactive",
+   "units": "",
+   "access": "C",
+   "states": "Inactive = Disabled, Active = Enabled"
+  },
+  {
+   "type": "BO",
+   "instance": 20,
+   "name": "Morning Warmup Enable Command",
+   "description": "Command the unit morning warmup operation; default Inactive",
+   "units": "",
+   "access": "C",
+   "states": "Inactive = Disabled, Active = Enabled"
+  },
+  {
+   "type": "BO",
+   "instance": 21,
+   "name": "Daytime Warmup Enable Command",
+   "description": "Command the unit daytime warmup operation; default Inactive",
+   "units": "",
+   "access": "C",
+   "states": "Inactive = Disabled, Active = Enabled"
+  },
+  {
+   "type": "MI",
+   "instance": 2,
+   "name": "Trane Unit Type",
+   "description": "General description of the equipment-type classification",
+   "units": "",
+   "access": "R",
+   "states": "1 = 1 Heat/1 Cool, 2 = Heat Pump, 3 = Blower Coil, 4 = Unit Ventilator, 5 = Fan Coil, 6 = Rooftop, 7 = Air Handler, 8 = Vertical Self Contained, 9 = Unitary, 10 = VAV Box, 11 = Fan Coil"
+  },
+  {
+   "type": "MI",
+   "instance": 9,
+   "name": "Economizer Type",
+   "description": "General description of the equipment economizer system (with RTEM installed)",
+   "units": "",
+   "access": "R",
+   "states": "1 = None, 2 = 2 Position Ventilation, 3 = Modulation Economizer, 4 = 2 Position Ventilation/Waterside Economizer, 5 = Waterside Economizer, 6 = Airside/Waterside Economizer, 7 = TRAQ Damper, 8 = Airside Economizer and TRAQ Damper/Sensor, 9 = Waterside Economizer and TRAQ Damper/Sensor, 10 = Airside/Waterside Economizer and TRAQ Damper/Sensor"
+  },
+  {
+   "type": "MI",
+   "instance": 17,
+   "name": "Cooling Reset Type Status",
+   "description": "Type of cooling reset (with Multi-zone VAV and RTAM installed or Single-zone VAV)",
+   "units": "",
+   "access": "R",
+   "states": "1 = None, 2 = Outdoor Air, 3 = Zone"
+  },
+  {
+   "type": "MI",
+   "instance": 19,
+   "name": "Heat Cool Mode Status/ Application Mode Status",
+   "description": "Current heat/cool (application) mode",
+   "units": "",
+   "access": "R",
+   "states": "1 = Auto, 2 = Heat, 3 = Morning Warm-up, 4 = Cool, 5 = Night Purge, 6 = Pre Cool, 7 = Off, 8 = Test, 9 = Emergency Heat, 10 = Fan Only, 11 = Free Cool, 12 = Ice-Making, 13 = Max Heat, 14 = Economy Mode, 15 = Dehumidifying, 16 = Calibrate"
+  },
+  {
+   "type": "MI",
+   "instance": 20,
+   "name": "Occupancy Status",
+   "description": "Current occupancy mode of the unit",
+   "units": "",
+   "access": "R",
+   "states": "1 = Occupied, 2 = Unoccupied, 3 = Occupied Bypass, 4 = Occupied Standby"
+  },
+  {
+   "type": "MI",
+   "instance": 21,
+   "name": "Unit Stop Source",
+   "description": "Source of the stop command that turned off the equipment",
+   "units": "",
+   "access": "R",
+   "states": "1 = None, 2 = Emergency Stop, 3 = Drain Pan Overflow, 4 = Local HI Stop"
+  },
+  {
+   "type": "MI",
+   "instance": 22,
+   "name": "Cooling Setpoint Source",
+   "description": "Source of the space cooling setpoint",
+   "units": "",
+   "access": "R",
+   "states": "1 = RTM Zone Sensor, 2 = Night Setback Panel, 3 = Human Interface, 4 = GBAS 0-5V, 5 = BAS/Network, 6 = GBAS 0-10V"
+  },
+  {
+   "type": "MI",
+   "instance": 23,
+   "name": "Heating Setpoint Source",
+   "description": "Source of the space heating setpoint",
+   "units": "",
+   "access": "R",
+   "states": "1 = RTM Zone Sensor, 2 = Night Setback Panel, 3 = Human Interface, 4 = GBAS 0-5V, 5 = BAS/Network, 6 = GBAS 0-10V"
+  },
+  {
+   "type": "MI",
+   "instance": 24,
+   "name": "Timed Override Status",
+   "description": "Timed override request or cancel from zone sensor",
+   "units": "",
+   "access": "R",
+   "states": "1 = Idle, 2 = On, 3 = Cancel"
+  },
+  {
+   "type": "MI",
+   "instance": 25,
+   "name": "Cool Output 1",
+   "description": "Commanded state of cooling output 1",
+   "units": "",
+   "access": "R",
+   "states": "1 = Off, 2 = On, 3 = Not Present"
+  },
+  {
+   "type": "MI",
+   "instance": 26,
+   "name": "Cool Output 2",
+   "description": "Commanded state of cooling output 2",
+   "units": "",
+   "access": "R",
+   "states": "1 = Off, 2 = On, 3 = Not Present"
+  },
+  {
+   "type": "MI",
+   "instance": 29,
+   "name": "Heat Output 1",
+   "description": "Commanded state of heating output 1",
+   "units": "",
+   "access": "R",
+   "states": "1 = Off, 2 = On, 3 = Not Present"
+  },
+  {
+   "type": "MI",
+   "instance": 30,
+   "name": "Heat Output 2",
+   "description": "Commanded state of heating output 2",
+   "units": "",
+   "access": "R",
+   "states": "1 = Off, 2 = On, 3 = Not Present"
+  },
+  {
+   "type": "MI",
+   "instance": 31,
+   "name": "Heat Output 3",
+   "description": "Commanded state of heating output 3",
+   "units": "",
+   "access": "R",
+   "states": "1 = Off, 2 = On, 3 = Not Present"
+  },
+  {
+   "type": "MI",
+   "instance": 32,
+   "name": "Heat Output 4",
+   "description": "Commanded state of heating output 4",
+   "units": "",
+   "access": "R",
+   "states": "1 = Off, 2 = On, 3 = Not Present"
+  },
+  {
+   "type": "MI",
+   "instance": 35,
+   "name": "Primary Filter Status",
+   "description": "Primary filter media state",
+   "units": "",
+   "access": "R",
+   "states": "1 = Clean, 2 = Dirty, 3 = Not Present"
+  },
+  {
+   "type": "MI",
+   "instance": 37,
+   "name": "Supply Fan Proving Status",
+   "description": "Current state of the supply fan",
+   "units": "",
+   "access": "R",
+   "states": "1 = Off, 2 = On, 3 = Not Present"
+  },
+  {
+   "type": "MI",
+   "instance": 38,
+   "name": "Exhaust Fan Status",
+   "description": "Commanded state of the exhaust fan (with RTEM Installed)",
+   "units": "",
+   "access": "R",
+   "states": "1 = Off, 2 = On, 3 = Not Present"
+  },
+  {
+   "type": "MI",
+   "instance": 39,
+   "name": "Exhaust Fan Proving Status",
+   "description": "If the unit exhaust fan is off or on",
+   "units": "",
+   "access": "R",
+   "states": "1 = Off, 2 = On, 3 = Not Present"
+  },
+  {
+   "type": "MI",
+   "instance": 41,
+   "name": "Supply Fan Status",
+   "description": "State of the supply fan",
+   "units": "",
+   "access": "R",
+   "states": "1 = Off, 2 = On, 3 = Not Present"
+  },
+  {
+   "type": "MI",
+   "instance": 43,
+   "name": "Outdoor Damper Status",
+   "description": "Operating state of the outdoor damper (with RTEM Installed)",
+   "units": "",
+   "access": "R",
+   "states": "1 = At or Below Minimum Position, 2 = Above Minimum Position, 3 = Not Present"
+  },
+  {
+   "type": "MI",
+   "instance": 44,
+   "name": "Economizer System Status",
+   "description": "Operating state of the waterside economizer system (with RTEM Installed)",
+   "units": "",
+   "access": "R",
+   "states": "1 = Disabled, 2 = Enabled, 3 = Not Present"
+  },
+  {
+   "type": "MI",
+   "instance": 45,
+   "name": "Service Test Status",
+   "description": "Current Service Test state",
+   "units": "",
+   "access": "R",
+   "states": "1 = Inactive, 2 = Fan On, 3 = IGV Open, 4 = IGV Close, 5 = Min Vent, 6 = Econ Open, 7 = Cool 1, 8 = Cool 2, 9 = Cool 3, 10 = Dehumidification/Reheat, 11 = Heat 1, 12 = Heat 2, 13 = Heat 3, 14 = Heat 4, 15 = Defrost, 16 = Emergency Heat"
+  },
+  {
+   "type": "MO",
+   "instance": 1,
+   "name": "Economizer Airside Enable BAS",
+   "description": "Command the state of the airside economizer system (with RTEM Installed)",
+   "units": "",
+   "access": "C",
+   "states": "1 = Disabled, 2 = Enabled, 3 = Auto"
+  },
+  {
+   "type": "MO",
+   "instance": 2,
+   "name": "Emergency Override Command",
+   "description": "Command the unit into an emergency mode of operation",
+   "units": "",
+   "access": "C",
+   "states": "1 = Normal, 2 = Pressurize, 3 = Depressurize, 4 = Purge, 5 = Shutdown, 6 = Fire"
+  },
+  {
+   "type": "MO",
+   "instance": 7,
+   "name": "Occupancy Request",
+   "description": "Command the unit into an occupancy mode",
+   "units": "",
+   "access": "C",
+   "states": "1 = Occupied, 2 = Unoccupied, 3 = Occupied Bypass, 4 = Occupied Standby"
+  },
+  {
+   "type": "MO",
+   "instance": 8,
+   "name": "Heat Cool Mode Request BAS",
+   "description": "Command the unit to a specific application mode",
+   "units": "",
+   "access": "C",
+   "states": "1 = Auto, 2 = Heat, 3 = Morning Warmup, 4 = Cool, 5 = Night Purge, 6 = Precool, 7 = Off, 8 = Test, 9 = Emergency Heat, 10 = Fan Only, 11 = Free Cool, 12 = Ice Making, 13 = Max Heat, 14 = Economy Mode, 15 = Dehumidifying, 16 = Calibrate"
+  }
+ ],
+ "page": "https://easybacnet.com/bacnet-points-lists/trane/bci2-r-reliatel",
+ "note": "Re-typed from the manufacturer's public documentation (see source). Point availability varies by firmware and options; verify against the live device."
+}
