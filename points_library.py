@@ -322,6 +322,30 @@ table.cmp td.dls a:hover{border-color:var(--accent);text-decoration:none}
   table.cmp td.num .bar{display:none}
   select.sortm{display:inline-block}
 }
+.hn{font-family:"IBM Plex Mono",monospace;font-size:.8rem;font-weight:500;color:var(--mut);margin-left:.4rem;vertical-align:middle}
+table.lst{border-collapse:collapse;width:100%;font-size:.92rem}
+table.lst th,table.lst td{text-align:left;padding:.55rem .8rem;border-bottom:1px solid var(--line);vertical-align:middle}
+table.lst thead th{background:#20262c;font-family:"IBM Plex Mono",monospace;font-size:.68rem;letter-spacing:.12em;text-transform:uppercase;color:var(--mut);font-weight:600;white-space:nowrap}
+table.lst tbody tr:nth-child(even)>*{background:rgba(255,255,255,.015)}
+table.lst tbody tr:hover>*{background:rgba(255,154,31,.05)}
+table.lst tbody tr:last-child>*{border-bottom:0}
+table.lst tbody th{font-weight:700;white-space:nowrap}
+table.lst tbody th a{color:var(--fg)}
+table.lst tbody th a:hover{color:var(--accent)}
+table.lst .num{font-family:"IBM Plex Mono",monospace;text-align:right;white-space:nowrap;width:1%}
+table.lst td.mk{color:var(--mut);font-size:.86rem}
+table.lst td.mk span,table.lst .via{font-family:"IBM Plex Mono",monospace;font-size:.72rem;color:#7d8790}
+@media (max-width:760px){
+  table.lst thead{display:none}
+  table.lst,table.lst tbody,table.lst tr,table.lst th,table.lst td{display:block;width:100%}
+  table.lst tr{display:flex;flex-wrap:wrap;align-items:baseline;gap:.15rem .9rem;padding:.65rem .9rem;border-bottom:1px solid var(--line)}
+  table.lst tbody tr:last-child{border-bottom:0}
+  table.lst th,table.lst td{border:0;padding:0;background:none!important}
+  table.lst tbody th{flex:1 1 auto;width:auto;white-space:normal}
+  table.lst .num{width:auto;text-align:left;color:var(--mut);font-size:.78rem}
+  table.lst .num::before{content:attr(data-l) " "}
+  table.lst td.mk,table.lst td.ty{order:5;flex-basis:100%}
+}
 .hidden{display:none!important}
 .sr-only{position:absolute;width:1px;height:1px;padding:0;margin:-1px;overflow:hidden;clip:rect(0,0,0,0);white-space:nowrap;border:0}
 .fbar{padding:.2rem 0 .5rem;margin:.6rem 0 0}
@@ -726,7 +750,7 @@ def tags_of(m, tags):
     return [t for t in tags if any(k in et for k in t[2])]
 
 
-def cat_row(m, tags, maxo):
+def cat_row(m, tags, maxo, show_type=False):
     pts = m["points"]
     n, w = len(pts), writable_count(pts)
     mt = tags_of(m, tags)
@@ -742,11 +766,12 @@ def cat_row(m, tags, maxo):
         "mf": esc(m["manufacturer"]), "md": esc(m["model"]), "n": n, "w": w,
         "mfa": "" if m["model"].lower().startswith(m["manufacturer"].lower()) else
                '<span class="sr-only">%s </span>' % esc(m["manufacturer"]),
-        "kinds": " ".join(t[0] for t in mt), "href": model_path(m), "ap": esc(m.get("applies_to") or ""),
+        "kinds": category_of(m)[0] if show_type else " ".join(t[0] for t in mt), "href": model_path(m), "ap": esc(m.get("applies_to") or ""),
         "doc": (' <span class="doc">&middot; %s</span>' % esc(doc)) if doc else "",
         "al": ('<span class="sr-only"> Also known as: %s</span>' % esc(", ".join(m["aliases"])))
               if m.get("aliases") else "",
-        "ty": ('<td class="ty">%s</td>' % "".join('<span class="tag">%s</span>' % esc(t[1]) for t in mt)) if tags else "",
+        "ty": ('<td class="ty">%s</td>' % "".join('<span class="tag">%s</span>' % esc(t[1]) for t in mt)) if tags else
+              ('<td class="ty"><span class="tag">%s</span></td>' % esc(category_of(m)[1])) if show_type else "",
         "po": 100.0 * n / maxo, "pw": 100.0 * w / maxo,
         "csv": model_path(m, ".csv"), "ede": model_path(m, "-ede.csv")}
 
@@ -811,11 +836,12 @@ Click a column heading to sort.</p>
     return shell(relpath, title, desc, h1, body, graph(ORG, page_ld, breadcrumb_ld(crumbs, url)), crumbs)
 
 
-def cat_card(cat, models):
-    mf = sorted({m["manufacturer"] for m in models})
-    return ('<li><a class="card" href="/%s" data-row><span class="k">%d model%s</span><h3>%s</h3><p>%s</p></a></li>'
-            % (cat_path(cat[0]), len(models), "" if len(models) == 1 else "s", esc(cat[1]),
-               esc(", ".join(mf[:5])) + ("&hellip;" if len(mf) > 5 else "")))
+def cat_item(cat, models):
+    mf = sorted({m["manufacturer"] for m in models}, key=str.lower)
+    return ('<tr><th scope="row"><a href="/%s">%s</a></th><td class="mk">%s</td><td class="num" data-l="Models">%d</td></tr>'
+            % (cat_path(cat[0]), esc(cat[1]),
+               esc(", ".join(mf[:6])) + (" <span>+%d more</span>" % (len(mf) - 6) if len(mf) > 6 else ""),
+               len(models)))
 
 
 def group_by_category(models):
@@ -1304,14 +1330,20 @@ documentation and links back to the original PDF.</p></div>
     return shell(relpath, title, desc, h1, body, graph(ORG, page_ld, breadcrumb_ld(crumbs, url)), crumbs)
 
 
-def mfr_card(models):
-    m0 = models[0]
-    total = sum(len(m["points"]) for m in models)
-    names = ", ".join(m["model"] for m in models[:4]) + ("&hellip;" if len(models) > 4 else "")
-    return ('<li><a class="card" href="/%s" data-row><span class="k">%d model%s &middot; %s objects</span>'
-            '<h3>%s</h3><p>%s</p></a></li>'
-            % (mfr_path(m0["manufacturer_slug"]), len(models), "" if len(models) == 1 else "s",
-               "{:,}".format(total), esc(m0["manufacturer"]), names))
+def mfr_rows(groups, gw_only):
+    """Manufacturer table: name, equipment types covered, model count, total objects. Gateway-only
+    brands (no list of their own, only third-party gateway lists) sort in with a 'via gateway' note."""
+    rows = []
+    for sl, g in groups.items():
+        cats = sorted({category_of(m)[1] for m in g})
+        rows.append((g[0]["manufacturer"], sl, "".join('<span class="tag">%s</span>' % esc(c) for c in cats),
+                     str(len(g)), "{:,}".format(sum(len(m["points"]) for m in g))))
+    for sl, (b, gws) in gw_only.items():
+        rows.append((b, sl, '<span class="via">via %s</span>' % esc(" / ".join(sorted({m["manufacturer"] for m in gws}))),
+                     "&ndash;", "&ndash;"))
+    return "".join('<tr><th scope="row"><a href="/%s">%s</a></th><td class="ty">%s</td>'
+                   '<td class="num" data-l="Models">%s</td><td class="num" data-l="Objects">%s</td></tr>'
+                   % (mfr_path(sl), esc(n), ty, nm, ob) for n, sl, ty, nm, ob in sorted(rows, key=lambda r: r[0].lower()))
 
 
 # ---------------------------------------------------------------------------
@@ -1378,13 +1410,6 @@ rule &mdash; see the integration notes on each list.</p></div>
     return shell(relpath, title, desc, h1, body, graph(ORG, page_ld, breadcrumb_ld(crumbs, url)), crumbs)
 
 
-def brand_card(bslug, brand, gws):
-    return ('<li><a class="card" href="/%s" data-row><span class="k">via %d gateway list%s</span>'
-            '<h3>%s</h3><p>%s</p></a></li>' % (
-                mfr_path(bslug), len(gws), "" if len(gws) == 1 else "s", esc(brand),
-                esc(", ".join(sorted({m["manufacturer"] for m in gws})))))
-
-
 # ---------------------------------------------------------------------------
 # Hub
 # ---------------------------------------------------------------------------
@@ -1397,6 +1422,9 @@ def hub_page(groups, brands=None):
     crumbs = [("Home", "/index.html"), ("BACnet points lists", None)]
     models = [m for g in groups.values() for m in g]
     total = sum(len(m["points"]) for m in models)
+    models_sorted = sorted(models, key=lambda m: (m["manufacturer"].lower(), m["model"].lower()))
+    maxo = max(len(m["points"]) for m in models) or 1
+    cats = group_by_category(models)
     title = "BACnet Points Lists by Manufacturer | Easy BACnet"
     desc = ("Free BACnet points lists for %d models from %d manufacturers, including %s. Object types, "
             "instances, units and access, with CSV and EDE downloads." % (
@@ -1419,19 +1447,40 @@ name, engineering units and read/write access, ready to download as CSV or EDE.<
   <label class="mono count" for="mfr-pick">Select manufacturer</label>
   <select class="pick" id="mfr-pick"><option value="">Choose a manufacturer&hellip;</option>%(options)s</select>
 </form>
+<h2>Equipment types</h2>
+<div class="tablewrap"><table class="lst types"><thead><tr><th scope="col">Equipment type</th>
+<th scope="col">Manufacturers</th><th scope="col" class="num">Models</th></tr></thead>
+<tbody>%(types)s</tbody></table></div>
 <h2>Manufacturers</h2>
-<ul class="grid">%(mcards)s</ul>
-<h2>Browse by equipment type</h2>
-<ul class="grid">%(ccards)s</ul>
-<h2>Search every model</h2>
-<div class="tools"><input class="search" type="search" placeholder="Model, part number or equipment &mdash; e.g. Symbio, VRV, chiller, drive&hellip;"
- aria-label="Search all models" data-filter="all"><span class="count" data-count-for="all">%(nm)d of %(nm)d shown</span></div>
-<ul class="grid" id="all">%(cards)s</ul>
-""" % {"nm": len(models), "ng": len(groups), "total": "{:,}".format(total), "options": options,
-       "mcards": "".join(mfr_card(g) for g in groups.values())
-                 + "".join(brand_card(s, b, gws) for s, (b, gws) in gw_only.items()),
-       "ccards": "".join(cat_card(c, ms) for c, ms in group_by_category(models)),
-       "cards": "".join(card(m) for m in models)}
+<div class="tablewrap"><table class="lst mfrs"><thead><tr><th scope="col">Manufacturer</th>
+<th scope="col">Equipment</th><th scope="col" class="num">Models</th><th scope="col" class="num">Objects</th></tr></thead>
+<tbody>%(mrows)s</tbody></table></div>
+<h2 id="models">Every model <span class="hn">%(nm)d</span></h2>
+<div class="tools"><input class="search" id="cmp-q" type="search" placeholder="Model, part number or equipment &mdash; e.g. Symbio, VRV, chiller, drive&hellip;"
+ aria-label="Search all models">
+<select class="mini" id="cmp-mf" aria-label="Manufacturer"><option value="">All manufacturers (%(ng)d)</option>%(mopts)s</select>
+<select class="mini sortm" id="cmp-sort" aria-label="Sort by"><option value="mf:ascending">Sort: manufacturer</option>
+<option value="md:ascending">Sort: model</option><option value="o:descending">Sort: most objects</option>
+<option value="w:descending">Sort: most writable</option></select>
+<span class="count" id="cmp-count" aria-live="polite">%(nm)d of %(nm)d shown</span></div>
+<div class="facets"><span class="lbl">Type</span><ul class="chips">%(chips)s</ul></div>
+<div class="tablewrap"><table class="cmp" id="cmp"><thead><tr>
+<th scope="col" data-k="mf" aria-sort="ascending"><button type="button">Manufacturer</button></th>
+<th scope="col" data-k="md" aria-sort="none"><button type="button">Model</button></th>
+<th scope="col">Type</th>
+<th scope="col" class="num" data-k="o" aria-sort="none"><button type="button">Objects</button></th>
+<th scope="col" class="num" data-k="w" aria-sort="none"><button type="button">Writable</button></th>
+<th scope="col">Download</th></tr></thead>
+<tbody>%(rows)s</tbody></table></div>
+""" % {"nm": len(models), "ng": len(groups),
+       "total": "{:,}".format(total), "options": options,
+       "mrows": mfr_rows(groups, gw_only),
+       "types": "".join(cat_item(c, ms) for c, ms in cats),
+       "mopts": "".join('<option>%s</option>' % esc(x)
+                        for x in sorted({m["manufacturer"] for m in models}, key=str.lower)),
+       "chips": "".join('<li><button class="chip" type="button" data-kind="%s" aria-pressed="false">%s<b>%d</b>'
+                        '</button></li>' % (c[0], esc(c[1]), len(ms)) for c, ms in cats),
+       "rows": "".join(cat_row(m, [], maxo, show_type=True) for m in models_sorted)}
     catalog = {"@type": "DataCatalog", "@id": url + "#catalog", "name": "Easy BACnet points-list library",
                "url": url, "description": desc, "publisher": {"@id": ORG["@id"]},
                "dataset": [{"@id": clean(model_path(m)) + "#dataset"} for m in models]}
