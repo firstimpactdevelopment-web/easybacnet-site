@@ -1,0 +1,624 @@
+{
+ "manufacturer": "Fulton",
+ "manufacturer_slug": "fulton",
+ "model": "PURE Control - Endura+ EDR+ 2500-6000 (N54 ProtoNode)",
+ "model_slug": "pure-control-protonode-n54",
+ "aliases": [
+  "PURE",
+  "Fulton PURE",
+  "Endura+",
+  "EDR+",
+  "Endura Plus",
+  "Hydronic PURE",
+  "N54 ProtoNode"
+ ],
+ "equipment_type": "Boiler controller gateway",
+ "applies_to": "Fulton hydronic boilers run by the PURE control (the file name points to Endura+ EDR+ 2500-6000 MBH sizes), read through the N54 ProtoNode.",
+ "summary": "Fulton's N54 ProtoNode publishes a block of 58 objects for each hydronic boiler with the PURE control. It covers burner phase, lead/lag role, modulation, combustion fan drive and O2 sensor data, water temperatures, safety switch states, alarms and pump/isolation valve status. The BMS can enable the boiler, send a water setpoint and a heartbeat, and supply header, outdoor and DHW temperatures when the boiler is set up for them.",
+ "bacnet_transport": [],
+ "firmware": null,
+ "default_device_instance": null,
+ "access_inferred": false,
+ "notes": [
+  "Object IDs are written (X)001-(X)058, where (X) is the boiler's Modbus address on the ProtoNode. This list shows boiler address 1 (1001-1058); boiler 2 uses 2001-2058, boiler 10 uses 10001-10058.",
+  "The sheet does not say which BACnet transport the gateway is set to; ProtoNode gateways are normally configured for BACnet IP or BACnet MS/TP.",
+  "The BMS Enable point only works after a physical jumper is removed at the boiler.",
+  "Outdoor, header and DHW temperature AVs are writable only when the boiler program is set to take that value from the BMS.",
+  "Current Alarm Index is decoded with Fulton's alarm chart and is only valid while Active Alarm = 1.",
+  "Several safety inputs use 0 = Fault, 1 = No Fault; low water inputs use the opposite. Check the states."
+ ],
+ "integration": {
+  "summary": "Remove the BMS enable jumper at the boiler, then write BMS Enable = 1, send the water setpoint to the BMS Network Setpoint and keep writing 1 to the BMS Heartbeat at least every 10 s. Watch Current Setpoint Mode to confirm the boiler is on BMS Network, and read LMV status, outlet temperature, modulation rate and the alarm points.",
+  "minimum_points": [
+   {
+    "ref": "BV 1057",
+    "name": "Boiler 1 BMS Enable",
+    "why": "Network enable; jumper must be removed first"
+   },
+   {
+    "ref": "AV 1052",
+    "name": "Boiler 1 BMS Network Setpoint",
+    "why": "Water temperature setpoint, 40-185 °F"
+   },
+   {
+    "ref": "AV 1058",
+    "name": "Boiler 1 BMS Heartbeat",
+    "why": "Write 1 at least every 10 s for remote operation"
+   },
+   {
+    "ref": "AI 1051",
+    "name": "Boiler 1 Current Setpoint Mode",
+    "why": "Setpoint source; 3 = BMS Network"
+   },
+   {
+    "ref": "AI 1001",
+    "name": "Boiler 1 LMV Status",
+    "why": "Burner phase; 60 = modulating, 0 = lockout"
+   },
+   {
+    "ref": "AI 1017",
+    "name": "Boiler 1 Outlet Temperature",
+    "why": "Outlet water temperature, °F"
+   },
+   {
+    "ref": "AI 1005",
+    "name": "Boiler 1 Modulation Rate",
+    "why": "Actual modulation rate, %"
+   },
+   {
+    "ref": "AI 1044",
+    "name": "Boiler 1 Active Alarm",
+    "why": "Any alarm active (1 = alarm)"
+   },
+   {
+    "ref": "AI 1043",
+    "name": "Boiler 1 Current Alarm Index",
+    "why": "Alarm number from Fulton's alarm chart"
+   }
+  ],
+  "enable": "Remove the physical jumper at the boiler, then write BV (X)057 BMS Enable = 1. The setpoint comes from AV (X)052 BMS Network Setpoint (40-185 °F); AI (X)051 Current Setpoint Mode reads 3 when the BMS network setpoint is in use.",
+  "heartbeat": "AV (X)058 BMS Heartbeat: the BMS must write 1 at least once every 10 seconds for remote operation. What the boiler does when the heartbeat stops is not stated.",
+  "remote_sensors": "AV (X)025 outdoor air, (X)026 header supply, (X)027 header return and (X)029 DHW temperature are writable only when the boiler program is set to accept that value from the BMS (°F).",
+  "setup": [
+   "Object ID = boiler Modbus address followed by the three-digit point number: (X)001-(X)058. Boiler 1 = 1001-1058, boiler 2 = 2001-2058.",
+   "The sheet gives no device instance, MAC address or baud rate; those are set on the ProtoNode gateway."
+  ],
+  "gotchas": [
+   "BMS Enable does nothing until the physical jumper is removed.",
+   "Safety BIs mostly read 0 = Fault, 1 = No Fault; the low water BIs read 1 = Fault.",
+   "For the isolation valve, read the output state together with the valve type chosen on the boiler; a spring-open valve is open when the output is off."
+  ]
+ },
+ "source": {
+  "title": "Hydronic PURE Per Boiler - Fulton N54 ProtoNode BACnet Network Addressing",
+  "doc_number": null,
+  "revision_date": "2021-08-02 (file date)",
+  "url": "https://fulton.com/app/uploads/2021/02/N54-PURE-EDRP2.5-6MM-Single-BACnet-list_2021-0802.pdf"
+ },
+ "points": [
+  {
+   "type": "AI",
+   "instance": 1001,
+   "name": "Boiler 1 LMV Status",
+   "description": "LMV burner sequence phase code",
+   "units": "",
+   "access": "R",
+   "states": "0=LMV Safety Lockout, 2=LMV Safety Phase, 10=LMV Home Run, 12=LMV Standby, 22=Fan Motor, 24=Air Damper, 30=Prepurging, 36=Air Damper, 38=Preignition, 39=Testing Pressure Switch, 40=Fuel Valve, 42=Ignition, 44=Interval 1, 50=Safety Time 2, 52=Interval 2, 60=Modulating, 70=Afterburn Time, 72=Afterburn Time, 74=Postpurge Time, 78=Postpurge Time, 80=Evacuation of Test Space, 81=Atmospheric Pressure Test, 83=Gas Pressure Test, 90=Gas Shortage Waiting Time, 91=Limit String Open"
+  },
+  {
+   "type": "AI",
+   "instance": 1002,
+   "name": "Boiler 1 Control Status",
+   "description": "Lead/lag role or control state",
+   "units": "",
+   "access": "R",
+   "states": "0=Waiting, 1=Disabled, 2=Not Available, 3=Lead, 4=Lag 1, 5=Lag 2, 6=Lag 3, 7=Lag 4, 8=Lag 5, 9=Lag 6, 10=Lag 7, 11=Lag 8, 12=Lag 9, 14=Lag 1 (T), 15=Lag 2 (T), 16=Lag 3 (T), 17=Lag 4 (T), 18=Lag 5 (T), 19=Lag 6 (T), 20=Lag 7 (T), 21=Lag 8 (T), 22=Lag 9 (T), 23=Not Used, 24=Local, 25=Manual"
+  },
+  {
+   "type": "AI",
+   "instance": 1003,
+   "name": "Boiler 1 Modulation Status",
+   "description": "Why modulation is limited, if at all",
+   "units": "",
+   "access": "R",
+   "states": "0=Normal Rate, 1=Low Fire Hold, 2=Cold Start, 3=Freeze Protection, 4=Delta T Protection, 5=Outlet Soft Limit, 6=Venting Limitation"
+  },
+  {
+   "type": "AI",
+   "instance": 1004,
+   "name": "Boiler 1 Modulation Target",
+   "description": "Target modulation, 0-100 %",
+   "units": "%",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "AI",
+   "instance": 1005,
+   "name": "Boiler 1 Modulation Rate",
+   "description": "Actual modulation rate, 0-100 %",
+   "units": "%",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "AI",
+   "instance": 1006,
+   "name": "Boiler 1 Flame Signal",
+   "description": "Flame signal, 0-100 %",
+   "units": "%",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "AI",
+   "instance": 1007,
+   "name": "Boiler 1 Air Actuator Position",
+   "description": "Air actuator position, -50 to 100",
+   "units": "",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "AI",
+   "instance": 1008,
+   "name": "Boiler 1 Fuel Actuator Position",
+   "description": "Fuel actuator position, -50 to 100",
+   "units": "",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "AI",
+   "instance": 1009,
+   "name": "Boiler 1 VFD Status",
+   "description": "Combustion fan drive fault code",
+   "units": "",
+   "access": "R",
+   "states": "0=No Fault, 2=Auxiliary Input, 3=Power Loss, 4=Undervoltage, 5=Motor Overload, 8=Heatsink Over Temperature, 12=Hardware Overcurrent 300%, 13=Analog Input Loss, 14=Auto Restart Tried, 38=Phase U to Ground Short, 39=Phase V to Ground Short, 40=Phase W to Ground Short, 41=Phase U / V Short, 42=Phase U / W Short, 63=Software Overcurrent, 70=Power Unit Failure, 80=Autotune Failure, 122=I/O Board Failure"
+  },
+  {
+   "type": "AI",
+   "instance": 1010,
+   "name": "Boiler 1 O2 Sensor Status",
+   "description": "O2 sensor fault code",
+   "units": "",
+   "access": "R",
+   "states": "0=Normal Operation, 1=E1: Internal Communication Error, 2=E2: Internal Register Error, 3=E3: Short to Power, 4=E4: Short to Ground, 5=E5: Short to Power, 6=E6: Short to Ground, 7=E7: Short to Power, 8=E8: Short to Ground, 9=E9: Operating Voltage Too Low, 10=E10: Check Sensor Connection, 11=E11: Heater Circuit Short, 12=E12: Heater Circuit Short"
+  },
+  {
+   "type": "AI",
+   "instance": 1011,
+   "name": "Boiler 1 VFD Command",
+   "description": "Fan drive command, 0-95",
+   "units": "",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "AI",
+   "instance": 1012,
+   "name": "Boiler 1 VFD Feedback",
+   "description": "Fan drive feedback, 0-95",
+   "units": "",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "AI",
+   "instance": 1013,
+   "name": "Boiler 1 Fan Calculated RPM",
+   "description": "Calculated fan speed, 0-5500 RPM",
+   "units": "",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "AI",
+   "instance": 1014,
+   "name": "Boiler 1 VFD Output Current",
+   "description": "Fan drive output current, 0-15",
+   "units": "",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "AI",
+   "instance": 1015,
+   "name": "Boiler 1 VFD Output Voltage",
+   "description": "Fan drive output voltage, 0-461",
+   "units": "",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "AI",
+   "instance": 1016,
+   "name": "Boiler 1 Current O2%",
+   "description": "Flue gas oxygen, 0-21 %",
+   "units": "%",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "AI",
+   "instance": 1017,
+   "name": "Boiler 1 Outlet Temperature",
+   "description": "Boiler outlet water temperature",
+   "units": "°F",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "AI",
+   "instance": 1018,
+   "name": "Boiler 1 Inlet Temperature",
+   "description": "Boiler inlet water temperature",
+   "units": "°F",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "AI",
+   "instance": 1019,
+   "name": "Boiler 1 Delta T",
+   "description": "Outlet minus inlet temperature",
+   "units": "°F",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "AI",
+   "instance": 1020,
+   "name": "Boiler 1 Start Temperature",
+   "description": "Temperature at which the boiler starts",
+   "units": "°F",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "AI",
+   "instance": 1021,
+   "name": "Boiler 1 Stop Temperature",
+   "description": "Temperature at which the boiler stops",
+   "units": "°F",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "AI",
+   "instance": 1022,
+   "name": "Boiler 1 Stack Temperature",
+   "description": "Flue (stack) temperature",
+   "units": "°F",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "AI",
+   "instance": 1023,
+   "name": "Boiler 1 Combustion Air Temperature",
+   "description": "Combustion air temperature",
+   "units": "°F",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "AI",
+   "instance": 1024,
+   "name": "Boiler 1 Current Setpoint",
+   "description": "Active water temperature setpoint",
+   "units": "°F",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 1025,
+   "name": "Boiler 1 Outdoor Air Temperature",
+   "description": "Outdoor temperature; writable when set for BMS input",
+   "units": "°F",
+   "access": "W",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 1026,
+   "name": "Boiler 1 Common Header Supply Temperature",
+   "description": "Header supply temp; writable when set for BMS input",
+   "units": "°F",
+   "access": "W",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 1027,
+   "name": "Boiler 1 Common Header Return Temperature",
+   "description": "Header return temp; writable when set for BMS input",
+   "units": "°F",
+   "access": "W",
+   "states": ""
+  },
+  {
+   "type": "AI",
+   "instance": 1028,
+   "name": "Boiler 1 Common Header Delta T",
+   "description": "Header supply minus return",
+   "units": "°F",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 1029,
+   "name": "Boiler 1 DHW Temperature",
+   "description": "DHW temperature; writable when set for BMS input",
+   "units": "°F",
+   "access": "W",
+   "states": ""
+  },
+  {
+   "type": "BI",
+   "instance": 1030,
+   "name": "Boiler 1 Call For Heat",
+   "description": "Call for heat present",
+   "units": "",
+   "access": "R",
+   "states": "0=No Call, 1=Call For Heat"
+  },
+  {
+   "type": "BI",
+   "instance": 1031,
+   "name": "Boiler 1 On/Off Switch",
+   "description": "Boiler on/off switch position",
+   "units": "",
+   "access": "R",
+   "states": "0=Off, 1=On"
+  },
+  {
+   "type": "BI",
+   "instance": 1032,
+   "name": "Boiler 1 Primary Low Water",
+   "description": "Primary low water cutoff",
+   "units": "",
+   "access": "R",
+   "states": "0=No Fault, 1=Fault"
+  },
+  {
+   "type": "BI",
+   "instance": 1033,
+   "name": "Boiler 1 High Limit Aquastat",
+   "description": "High limit aquastat (0 = fault)",
+   "units": "",
+   "access": "R",
+   "states": "0=Fault, 1=No Fault"
+  },
+  {
+   "type": "BI",
+   "instance": 1034,
+   "name": "Boiler 1 Operating Aquastat",
+   "description": "Operating aquastat (0 = fault)",
+   "units": "",
+   "access": "R",
+   "states": "0=Fault, 1=No Fault"
+  },
+  {
+   "type": "BI",
+   "instance": 1035,
+   "name": "Boiler 1 Low Gas Pressure",
+   "description": "Low gas pressure switch (0 = fault)",
+   "units": "",
+   "access": "R",
+   "states": "0=Fault, 1=No Fault"
+  },
+  {
+   "type": "BI",
+   "instance": 1036,
+   "name": "Boiler 1 Blocked Flue",
+   "description": "Blocked flue switch (0 = fault)",
+   "units": "",
+   "access": "R",
+   "states": "0=Fault, 1=No Fault"
+  },
+  {
+   "type": "BI",
+   "instance": 1037,
+   "name": "Boiler 1 Customer Interlock 1",
+   "description": "Customer interlock 1 (0 = fault)",
+   "units": "",
+   "access": "R",
+   "states": "0=Fault, 1=No Fault"
+  },
+  {
+   "type": "BI",
+   "instance": 1038,
+   "name": "Boiler 1 Customer Interlock 2",
+   "description": "Customer interlock 2 (0 = fault)",
+   "units": "",
+   "access": "R",
+   "states": "0=Fault, 1=No Fault"
+  },
+  {
+   "type": "BI",
+   "instance": 1039,
+   "name": "Boiler 1 Secondary Low Water",
+   "description": "Secondary low water cutoff",
+   "units": "",
+   "access": "R",
+   "states": "0=No Fault, 1=Fault"
+  },
+  {
+   "type": "AI",
+   "instance": 1040,
+   "name": "Boiler 1 Run Hours",
+   "description": "Burner run hours",
+   "units": "",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "AI",
+   "instance": 1041,
+   "name": "Boiler 1 Cycles",
+   "description": "Burner cycle count",
+   "units": "",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "AI",
+   "instance": 1042,
+   "name": "Boiler 1 Powered Hours",
+   "description": "Hours the control has been powered",
+   "units": "",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "AI",
+   "instance": 1043,
+   "name": "Boiler 1 Current Alarm Index",
+   "description": "Alarm number; valid when Active Alarm = 1",
+   "units": "",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "AI",
+   "instance": 1044,
+   "name": "Boiler 1 Active Alarm",
+   "description": "Any alarm active",
+   "units": "",
+   "access": "R",
+   "states": "0=No Alarm, 1=Alarm"
+  },
+  {
+   "type": "BI",
+   "instance": 1045,
+   "name": "Boiler 1 Isolation Valve Enabled",
+   "description": "Isolation valve function enabled",
+   "units": "",
+   "access": "R",
+   "states": "0=Not Enabled, 1=Enabled"
+  },
+  {
+   "type": "BI",
+   "instance": 1046,
+   "name": "Boiler 1 Isolation Valve Position",
+   "description": "Isolation valve output state",
+   "units": "",
+   "access": "R",
+   "states": "0=Off, 1=On"
+  },
+  {
+   "type": "BI",
+   "instance": 1047,
+   "name": "Boiler 1 Isolation Valve Control",
+   "description": "Isolation valve manual or automatic",
+   "units": "",
+   "access": "R",
+   "states": "0=Manual, 1=Automatic"
+  },
+  {
+   "type": "BI",
+   "instance": 1048,
+   "name": "Boiler 1 Primary Pump Enabled",
+   "description": "Primary pump function enabled",
+   "units": "",
+   "access": "R",
+   "states": "0=Not Enabled, 1=Enabled"
+  },
+  {
+   "type": "BI",
+   "instance": 1049,
+   "name": "Boiler 1 Primary Pump On/Off",
+   "description": "Primary pump output",
+   "units": "",
+   "access": "R",
+   "states": "0=Off, 1=On"
+  },
+  {
+   "type": "BI",
+   "instance": 1050,
+   "name": "Boiler 1 Primary Pump Mode",
+   "description": "Primary pump mode",
+   "units": "",
+   "access": "R",
+   "states": "0=Off, 1=On"
+  },
+  {
+   "type": "AI",
+   "instance": 1051,
+   "name": "Boiler 1 Current Setpoint Mode",
+   "description": "Where the active setpoint comes from",
+   "units": "",
+   "access": "R",
+   "states": "0=Outdoor Reset Curve, 1=BMS Analog 4-20mA, 2=BMS Analog 0-10VDC, 3=BMS Network, 4=Manual"
+  },
+  {
+   "type": "AV",
+   "instance": 1052,
+   "name": "Boiler 1 BMS Network Setpoint",
+   "description": "Water temperature setpoint from the BMS, 40-185 °F",
+   "units": "°F",
+   "access": "W",
+   "states": ""
+  },
+  {
+   "type": "AI",
+   "instance": 1053,
+   "name": "Boiler 1 Maximum Setpoint",
+   "description": "Maximum allowed setpoint",
+   "units": "°F",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "AI",
+   "instance": 1054,
+   "name": "Boiler 1 Minimum Setpoint",
+   "description": "Minimum allowed setpoint",
+   "units": "°F",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "AI",
+   "instance": 1055,
+   "name": "Boiler 1 Outdoor Air Cutoff",
+   "description": "Outdoor air cutoff temperature",
+   "units": "°F",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "AI",
+   "instance": 1056,
+   "name": "Boiler 1 Outdoor Air Cutoff Reset",
+   "description": "Outdoor air cutoff reset temperature",
+   "units": "°F",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "BV",
+   "instance": 1057,
+   "name": "Boiler 1 BMS Enable",
+   "description": "Network enable; physical jumper must be removed",
+   "units": "",
+   "access": "W",
+   "states": "0=Not Enabled, 1=Enabled"
+  },
+  {
+   "type": "AV",
+   "instance": 1058,
+   "name": "Boiler 1 BMS Heartbeat",
+   "description": "Write 1 at least every 10 s for remote operation",
+   "units": "",
+   "access": "W",
+   "states": ""
+  }
+ ],
+ "page": "https://easybacnet.com/bacnet-points-lists/fulton/pure-control-protonode-n54",
+ "note": "Re-typed from the manufacturer's public documentation (see source). Point availability varies by firmware and options; verify against the live device."
+}

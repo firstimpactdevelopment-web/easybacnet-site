@@ -1,0 +1,785 @@
+{
+ "manufacturer": "Daikin Applied",
+ "manufacturer_slug": "daikin-applied",
+ "model": "MicroTech III Fan Coil Unit Controller",
+ "model_slug": "microtech-iii-fan-coil",
+ "aliases": [
+  "MicroTech III FCU",
+  "MTIIIUC_FCU",
+  "Applied Terminal Systems fan coil",
+  "ED 15135"
+ ],
+ "equipment_type": "Fan coil unit controller",
+ "applies_to": "Daikin Applied fan coil units with the MicroTech III unit controller and the plug-in BACnet MS/TP communication module.",
+ "summary": "The MicroTech III fan coil controller joins a BACnet MS/TP trunk through a plug-in BACnet communication module (a LonWorks module is the alternative; only the BACnet objects are listed here). Points cover space, water and discharge temperatures, occupancy setpoints and differentials, valve and economizer tuning, network space temperature and setpoint inputs, occupancy and application mode commands, alarm status and PI loop objects. Configuration (cp...) objects live in non-volatile memory.",
+ "bacnet_transport": [
+  "BACnet MS/TP"
+ ],
+ "firmware": "BACnet module v1.1 or later for Receive Heartbeat and BV 5 (PICS firmware v1.3)",
+ "default_device_instance": "3101000 + MS/TP MAC address (e.g. 3101007)",
+ "access_inferred": false,
+ "notes": [
+  "BACnet MS/TP only; the same document also covers a LonWorks module, which is not listed here.",
+  "Configuration (cp...) objects are stored in non-volatile memory with a limited write life; avoid frequent writes.",
+  "BI 1 and BV 2-5 are bit-packed status words; the bits are returned in each object's Description property.",
+  "Loop objects LO 1-4 also expose writable Proportional_Constant and Integral_Constant properties (stored in non-volatile memory).",
+  "MV 9 text in the guide still says Null is 7 in one place; the state list (8 = Null) is the corrected one from revision 6.",
+  "Analog Null (sensor failed or unused) reads 621.806 °F / 327.67 °C."
+ ],
+ "source": {
+  "title": "MicroTech III Fan Coil Unit Controller Protocol Information (LonWorks / BACnet MS/TP)",
+  "doc_number": "ED 15135-6",
+  "revision_date": "2021-01",
+  "url": "https://tahoeweb.daikinapplied.com/api/general/DownloadDocumentByName/media/MicroTech%20III%20FCU%20Unit%20Controller%20Protocol%20Information%20Daikin%20ED%2015135-6.pdf"
+ },
+ "integration": {
+  "summary": "Give the module a unique MAC and instance, then command occupancy and application mode and, if the BMS owns the setpoint, write Temperature Setpoint Input after disabling local setpoint adjust. Supply the space or water temperature from the BMS only when needed, and use Receive Heartbeat if overrides must fall back when the BMS goes quiet.",
+  "minimum_points": [
+   {
+    "ref": "MV 6",
+    "name": "OccManCmd",
+    "why": "Occupancy override from the BMS"
+   },
+   {
+    "ref": "MV 9",
+    "name": "ApplicMode",
+    "why": "Application mode (Auto/Heat/Cool/Off/Fan/Economy/Dehumid)"
+   },
+   {
+    "ref": "AV 37",
+    "name": "Setpoint",
+    "why": "Network reference setpoint"
+   },
+   {
+    "ref": "BV 1",
+    "name": "ClearAlarm",
+    "why": "Clear the current alarm"
+   },
+   {
+    "ref": "MV 4",
+    "name": "McQFcuStatus",
+    "why": "Unit operating status"
+   },
+   {
+    "ref": "AV 22",
+    "name": "EffectSpaceTemp",
+    "why": "Space temperature used for control"
+   },
+   {
+    "ref": "MV 3",
+    "name": "Fan Speed",
+    "why": "Commanded fan speed"
+   },
+   {
+    "ref": "MV 1",
+    "name": "CurrentAlarm",
+    "why": "Highest-priority active alarm"
+   }
+  ],
+  "enable": "No local/remote switch is described. Network inputs take effect when written: Application Mode Input (MV 9) overrides the room sensor mode switch, Occupancy Override Input (MV 6) and Occupancy Scheduler Input (MV 7) set occupancy, Energy Hold Off (MV 11) forces standby setpoints. These overrides revert to Null after a controller reboot.",
+  "heartbeat": "Receive Heartbeat (AV 34, cpRcvHrtBt, 0-6553.4 s, default 0 = disabled, v1.1 and later) is the longest a supported override may go without being rewritten before it reverts to its default. Supported points: AV 35, AV 36, AV 38, MV 7, MV 8, MV 9, MV 10, MV 11 and MV 13. Disabling device communication also triggers the revert.",
+  "remote_sensors": "Write the space temperature to Space Temperature Input (AV 36) and the water temperature to Remote Entering Water Temperature (AV 35); the effective values (AV 22, AV 20) use the local sensors unless these hold valid values. Temperature Setpoint Input (AV 37) sets the occupied/standby reference setpoint once local setpoint adjust is disabled with MV 12 = 1. Temperature Setpoint Offset Input (AV 38) shifts the occupied and standby setpoints. Occupancy Sensor Input (MV 8) accepts a network occupancy sensor.",
+  "setup": [
+   "Default device instance is 3101000 plus the MS/TP MAC address (example 3101007); System Minimum Instance (AV 412) sets the base.",
+   "MS/TP baud (9600, 19200, 38400 default, 76800) is set only in the module's serial configuration menu (DB-9 port, 19200 8-N-1, null-modem cable).",
+   "MS/TP MAC address comes from address switch S3; it can only be set from the BAS or menu when S3 is at 255.",
+   "Set MaxMasters to the highest MS/TP master address on the segment.",
+   "Equipment configuration (BV 5) can only be set from the configuration menu, not from the BAS."
+  ],
+  "gotchas": [
+   "Configuration (cp...) objects are stored in non-volatile memory with a limited write life; do not write them cyclically.",
+   "Network overrides revert to Null on controller reboot, so the BMS must restore them.",
+   "ReinitializeDevice password is McQuay or MicroTech; the password wink makes the unit identify itself.",
+   "Occupancy setpoints must stay in order: unoccupied heat <= standby heat <= occupied heat <= occupied cool <= standby cool <= unoccupied cool."
+  ]
+ },
+ "short_model": "MicroTech III Fan Coil",
+ "points": [
+  {
+   "type": "AI",
+   "instance": 1,
+   "name": "LocalSpaceTemp",
+   "description": "Local Space Temperature Output",
+   "units": "°F",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "AI",
+   "instance": 2,
+   "name": "LocalSetpt",
+   "description": "Local Setpoint Adjust Output",
+   "units": "°F",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "AI",
+   "instance": 3,
+   "name": "EWT",
+   "description": "Local Entering Water Temperature",
+   "units": "°F",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "AI",
+   "instance": 4,
+   "name": "DischAirTemp",
+   "description": "Discharge Air Temperature",
+   "units": "°F",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "AI",
+   "instance": 5,
+   "name": "OutdoorTemp",
+   "description": "Outdoor Air Temperature",
+   "units": "°F",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 1,
+   "name": "cpOccupied_Cool_Setpt",
+   "description": "Occupied Cooling Setpoint",
+   "units": "°F",
+   "access": "W",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 2,
+   "name": "cpStandby_Cool_Setpt",
+   "description": "Standby Cool Setpoint",
+   "units": "°F",
+   "access": "W",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 3,
+   "name": "cpUnoccupied_Cool_Setpt",
+   "description": "Unoccupied Cool Setpoint",
+   "units": "°F",
+   "access": "W",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 4,
+   "name": "cpOccupied_Heat_Setpt",
+   "description": "Occupied Heat Setpoint",
+   "units": "°F",
+   "access": "W",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 5,
+   "name": "cpStandby_Heat_Setpt",
+   "description": "Standby Heat Setpoint",
+   "units": "°F",
+   "access": "W",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 6,
+   "name": "cpUnoccupied_Heat_Setpt",
+   "description": "Unoccupied Heat Setpoint",
+   "units": "°F",
+   "access": "W",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 7,
+   "name": "cpCoolEnDiff",
+   "description": "Cooling Enable Differential",
+   "units": "°F",
+   "access": "W",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 8,
+   "name": "cpCoolIntStgTmr",
+   "description": "Cooling Interstage Timer",
+   "units": "s",
+   "access": "W",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 9,
+   "name": "cpCoolDB",
+   "description": "Cooling Valve Deadband",
+   "units": "%",
+   "access": "W",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 10,
+   "name": "cpCoolVlvStroke",
+   "description": "Cooling Valve Stroke Time",
+   "units": "s",
+   "access": "W",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 11,
+   "name": "cpMaxDASpt",
+   "description": "Economizer Maximum Discharge Air Setpoint",
+   "units": "°F",
+   "access": "W",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 12,
+   "name": "cpMinDASpt",
+   "description": "Economizer Minimum Discharge Air Setpoint",
+   "units": "°F",
+   "access": "W",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 13,
+   "name": "cpEconOaEnDiff",
+   "description": "Economizer Outdoor Air Enable Differential",
+   "units": "°F",
+   "access": "W",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 14,
+   "name": "cpEconOaEn",
+   "description": "Economizer Outdoor Air Enable Setpoint",
+   "units": "°F",
+   "access": "W",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 15,
+   "name": "cpEconLowMin",
+   "description": "Economizer Min Position at Fan Low",
+   "units": "%",
+   "access": "W",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 16,
+   "name": "cpEconMedMin",
+   "description": "Economizer Min Position at Fan Med",
+   "units": "%",
+   "access": "W",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 17,
+   "name": "cpEconHighMin",
+   "description": "Economizer Min Position at Fan High",
+   "units": "%",
+   "access": "W",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 18,
+   "name": "cpEconDB",
+   "description": "Economizer Position Deadband",
+   "units": "%",
+   "access": "W",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 19,
+   "name": "cpEconStroke",
+   "description": "Economizer Stroke Time",
+   "units": "s",
+   "access": "W",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 20,
+   "name": "EffectEWT",
+   "description": "Effective Entering Water Temperature",
+   "units": "°F",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 21,
+   "name": "EffectSetpt",
+   "description": "Effective Setpoint Output",
+   "units": "°F",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 22,
+   "name": "EffectSpaceTemp",
+   "description": "Effective Space Temperature Output",
+   "units": "°F",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 23,
+   "name": "cpEWTFlowTmr",
+   "description": "Entering Water Temperature Flow Sample Delay Timer",
+   "units": "s",
+   "access": "W",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 24,
+   "name": "cpEWTSampleTmr",
+   "description": "Entering Water Temperature Sample Interval Timer",
+   "units": "min",
+   "access": "W",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 25,
+   "name": "cpFanMinOffTmr",
+   "description": "Fan Minimum OFF Timer",
+   "units": "s",
+   "access": "W",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 26,
+   "name": "cpFanMinOnTmr",
+   "description": "Fan Minimum ON Timer",
+   "units": "s",
+   "access": "W",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 27,
+   "name": "cpHeatEnDiff",
+   "description": "Heating Enable Differential",
+   "units": "°F",
+   "access": "W",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 28,
+   "name": "cpHeatIntStgTmr",
+   "description": "Heating Interstage Timer",
+   "units": "s",
+   "access": "W",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 29,
+   "name": "cpHeatDB",
+   "description": "Heating Valve Deadband",
+   "units": "%",
+   "access": "W",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 30,
+   "name": "cpHeatVlvStroke",
+   "description": "Heating Valve Stroke Time",
+   "units": "s",
+   "access": "W",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 31,
+   "name": "cpBypassTime",
+   "description": "Local Bypass Time Setpoint",
+   "units": "min",
+   "access": "W",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 32,
+   "name": "SetpointShift",
+   "description": "Setpoint Shift Output",
+   "units": "°F",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 33,
+   "name": "cpOccDiff",
+   "description": "Occupied Setpoint Differential",
+   "units": "°F",
+   "access": "W",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 34,
+   "name": "cpRcvHrtBt",
+   "description": "Receive Heartbeat",
+   "units": "s",
+   "access": "W",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 35,
+   "name": "Network_EWT",
+   "description": "Remote Entering Water Temperature",
+   "units": "°F",
+   "access": "C",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 36,
+   "name": "Network_SpaceTemp",
+   "description": "Space Temperature Input",
+   "units": "°F",
+   "access": "C",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 37,
+   "name": "Setpoint",
+   "description": "Temperature Setpoint Input",
+   "units": "°F",
+   "access": "C",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 38,
+   "name": "SetptOffset",
+   "description": "Temperature Setpoint Offset Input",
+   "units": "°F",
+   "access": "C",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 39,
+   "name": "cpUnoccDiff",
+   "description": "Unoccupied Setpoint Differential",
+   "units": "°F",
+   "access": "W",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 40,
+   "name": "TerminalLoad",
+   "description": "Terminal Load Output",
+   "units": "%",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 41,
+   "name": "cpSptAdjMax",
+   "description": "Long Range Setpoint Adjust Maximum",
+   "units": "°F",
+   "access": "W",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 42,
+   "name": "cpSptAdjMin",
+   "description": "Long Range Setpoint Adjust Minimum",
+   "units": "°F",
+   "access": "W",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 43,
+   "name": "cpFltrChangeHrs",
+   "description": "Air Filter Change Timer",
+   "units": "h",
+   "access": "W",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 411,
+   "name": "MacAddress",
+   "description": "MAC address; named MacAddressSwitch when address switch is set",
+   "units": "",
+   "access": "W",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 412,
+   "name": "SystemMinInstance",
+   "description": "System Minimum Instance",
+   "units": "",
+   "access": "W",
+   "states": ""
+  },
+  {
+   "type": "BI",
+   "instance": 1,
+   "name": "BinaryIn",
+   "description": "Binary Input Status",
+   "units": "",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "BV",
+   "instance": 1,
+   "name": "ClearAlarm",
+   "description": "Clear Alarm",
+   "units": "",
+   "access": "W",
+   "states": "0=Normal, 1=Clear Alarm"
+  },
+  {
+   "type": "BV",
+   "instance": 2,
+   "name": "BinaryOut",
+   "description": "Binary Output Status",
+   "units": "",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "BV",
+   "instance": 3,
+   "name": "UnitAppStatus",
+   "description": "Unit Application Status",
+   "units": "",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "BV",
+   "instance": 4,
+   "name": "UnitFaults",
+   "description": "Unit Faults",
+   "units": "",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "BV",
+   "instance": 5,
+   "name": "SoftJumpers",
+   "description": "Equipment Configuration (v1.1 and later)",
+   "units": "",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "MI",
+   "instance": 1,
+   "name": "FanModeSpdSw",
+   "description": "Fan Mode/Speed Status",
+   "units": "",
+   "access": "R",
+   "states": "1=Off, 2=Low, 3=Med, 4=High, 5=Auto, 6=Null (no switch present)"
+  },
+  {
+   "type": "MI",
+   "instance": 2,
+   "name": "HeatCoolAuto",
+   "description": "System Mode Switch (Heat/Cool/Auto) Status",
+   "units": "",
+   "access": "R",
+   "states": "1=Off, 2=Heat, 3=Cool, 4=Auto, 5=Null (no switch present)"
+  },
+  {
+   "type": "MV",
+   "instance": 1,
+   "name": "CurrentAlarm",
+   "description": "Current Alarm",
+   "units": "",
+   "access": "R",
+   "states": "1=No Alarms, 2=Invalid Equipment Configuration, 3=Emergency Shutdown, 4=Freeze Fault, 5=EWT Sensor Failure, 6=Room Temperature Sensor Failure, 7=IO Expansion Board Com Failure, 8=Condensate Overflow, 9=Outdoor Air Temp Sensor Failure, 10=Discharge Air Temp Sensor Failure, 11=Dirty Air Filter, 12=BB Serial EEPROM Corrupted"
+  },
+  {
+   "type": "MV",
+   "instance": 2,
+   "name": "PreviousAlarm",
+   "description": "Previous Alarm",
+   "units": "",
+   "access": "R",
+   "states": "1=No Alarms, 2=Invalid Equipment Configuration, 3=Emergency Shutdown, 4=Freeze Fault, 5=EWT Sensor Failure, 6=Room Temperature Sensor Failure, 7=IO Expansion Board Com Failure, 8=Condensate Overflow, 9=Outdoor Air Temp Sensor Fail, 10=Discharge Air Temp Sensor Fail, 11=Dirty Air Filter, 12=Serial EEPROM Corrupted"
+  },
+  {
+   "type": "MV",
+   "instance": 3,
+   "name": "Fan Speed",
+   "description": "Fan Speed Output",
+   "units": "",
+   "access": "R",
+   "states": "1=Off, 2=Low, 3=Medium, 4=High, 5=On"
+  },
+  {
+   "type": "MV",
+   "instance": 4,
+   "name": "McQFcuStatus",
+   "description": "McQuay FCU Status",
+   "units": "",
+   "access": "R",
+   "states": "1=Off Alarm, 2=Off, 3=Start, 4=Fan Only, 5=Heating, 6=Economizer, 7=Cooling, 8=Dehumid, 9=Null"
+  },
+  {
+   "type": "MV",
+   "instance": 5,
+   "name": "EffectOccup",
+   "description": "Effective Occupancy Output",
+   "units": "",
+   "access": "R",
+   "states": "1=Occupied, 2=Unoccupied, 3=Bypass, 4=Standby, 5=Null"
+  },
+  {
+   "type": "MV",
+   "instance": 6,
+   "name": "OccManCmd",
+   "description": "Occupancy Override Input",
+   "units": "",
+   "access": "C",
+   "states": "1=Occupied, 2=Unoccupied, 3=Bypass, 4=Standby, 5=Null"
+  },
+  {
+   "type": "MV",
+   "instance": 7,
+   "name": "OccSchedule",
+   "description": "Occupancy Scheduler Input",
+   "units": "",
+   "access": "C",
+   "states": "1=Occupied, 2=Unoccupied, 3=Standby, 4=Null"
+  },
+  {
+   "type": "MV",
+   "instance": 8,
+   "name": "OccSensor",
+   "description": "Occupancy Sensor Input",
+   "units": "",
+   "access": "C",
+   "states": "1=Occupied, 2=Unoccupied, 3=Null"
+  },
+  {
+   "type": "MV",
+   "instance": 9,
+   "name": "ApplicMode",
+   "description": "Application Mode Input",
+   "units": "",
+   "access": "C",
+   "states": "1=Auto, 2=Heat, 3=Cool, 4=Off, 5=Fan Only, 6=Economy, 7=Dehumid, 8=Null"
+  },
+  {
+   "type": "MV",
+   "instance": 10,
+   "name": "AuxHeatEnable",
+   "description": "Auxiliary Heat Enable Input",
+   "units": "",
+   "access": "C",
+   "states": "1=Disabled, 2=Enabled, 3=Null"
+  },
+  {
+   "type": "MV",
+   "instance": 11,
+   "name": "EnergyHoldOff",
+   "description": "Energy Hold Off Input",
+   "units": "",
+   "access": "C",
+   "states": "1=Normal, 2=Energy Hold Off, 3=Null"
+  },
+  {
+   "type": "MV",
+   "instance": 12,
+   "name": "cpLocSpEnable",
+   "description": "Room Sensor Setpoint Adjust Enable/Disable",
+   "units": "",
+   "access": "W",
+   "states": "1=Disabled, 2=Enabled"
+  },
+  {
+   "type": "MV",
+   "instance": 13,
+   "name": "EconEnable",
+   "description": "Economizer Enable Input",
+   "units": "",
+   "access": "C",
+   "states": "1=Disabled, 2=Enabled, 3=Null"
+  },
+  {
+   "type": "MV",
+   "instance": 14,
+   "name": "Units",
+   "description": "Units (English / Metric)",
+   "units": "",
+   "access": "W",
+   "states": "1=English (E), 2=Metric (M)"
+  },
+  {
+   "type": "LO",
+   "instance": 1,
+   "name": "Heat Valve Loop",
+   "description": "Heating valve PI loop (output = valve position)",
+   "units": "%",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "LO",
+   "instance": 2,
+   "name": "Cool Valve Loop",
+   "description": "Cooling valve PI loop (output = valve position)",
+   "units": "%",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "LO",
+   "instance": 3,
+   "name": "DASP_Loop",
+   "description": "Economizer discharge-air PI loop (output = damper position)",
+   "units": "%",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "LO",
+   "instance": 4,
+   "name": "EconPos_Loop",
+   "description": "Economizer position PI loop (output = damper position)",
+   "units": "%",
+   "access": "R",
+   "states": ""
+  }
+ ],
+ "page": "https://easybacnet.com/bacnet-points-lists/daikin-applied/microtech-iii-fan-coil",
+ "note": "Re-typed from the manufacturer's public documentation (see source). Point availability varies by firmware and options; verify against the live device."
+}

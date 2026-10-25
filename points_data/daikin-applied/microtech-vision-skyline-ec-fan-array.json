@@ -1,0 +1,1425 @@
+{
+  "manufacturer": "Daikin Applied",
+  "manufacturer_slug": "daikin-applied",
+  "model": "MicroTech Vision / Skyline EC Fan Array Controller",
+  "model_slug": "microtech-vision-skyline-ec-fan-array",
+  "aliases": [
+    "Vision",
+    "Skyline",
+    "MT4_DFA_EC",
+    "MT4_DFA",
+    "CAH",
+    "CAC",
+    "OAH",
+    "OAC",
+    "EC fan array",
+    "ED 19122"
+  ],
+  "equipment_type": "EC fan array controller (air handler)",
+  "applies_to": "Vision (CAH/CAC) and Skyline (OAH/OAC) air handlers with an EC fan array on the MicroTech 4 fan controller (Premium controls option), up to 20 fans.",
+  "summary": "The MicroTech 4 fan array controller drives up to 20 EC fans (Delta, ebm-papst or Infinitum) over an internal Modbus bus and exposes the array on BACnet MS/TP (RS-485 port 2) or BACnet IP. Points cover demand, duct static and airflow setpoints, array speed, airflow and power, relay and input status, a unit alarm text, and per-fan speed, comm, fault, RPM and alarm-code objects. BACnet can only command the array when its Demand Source is set to BACnet at the HMI.",
+  "bacnet_transport": [
+    "BACnet MS/TP",
+    "BACnet IP"
+  ],
+  "firmware": "Application 2506990201 or later (PICS); DSP/CFM setpoint control needs application 2.1 or later",
+  "default_device_instance": "Last 4 digits of the MT4 controller serial number",
+  "access_inferred": false,
+  "notes": [
+    "Per-fan objects (AV 101-120, BV 11-30, BV 51-70, BV 101-120, MV 101-120) only exist for the configured number of fans.",
+    "Fan alarm code states (MV 101-120) differ by fan make: Delta, ebm-papst or Infinitum.",
+    "Active control needs Demand Source = BACnet (MV 5 reads BACnet); otherwise the BACnet objects are monitor-only.",
+    "DSP, CFM and fan tracking control are not in application 2.0 and earlier.",
+    "Total Fan Power (AV 5) is in kW but the object carries no units property.",
+    "Manual mode set at the HMI reverts to Normal after 60 minutes or a power cycle."
+  ],
+  "source": {
+    "title": "MicroTech Vision and Skyline EC Fan Array Controller - Network Integration Guide (BACnet MS/TP and BACnet IP)",
+    "doc_number": "ED 19122-3",
+    "revision_date": "2025-10",
+    "url": "https://tahoeweb.daikinapplied.com/api/general/DownloadDocumentByName/media/ED%2019122-3%20MicroTech%20Vision_Skyline%20EC%20Fan%20Controller%20Protocol%20Document.pdf"
+  },
+  "integration": {
+    "summary": "Set the Demand Source to BACnet at the fan controller HMI, then start and stop the array with Unit Control Mode (MV 23) and set capacity with Demand Setpoint (AV 11), or the duct static (AV 9) or airflow (AV 10) setpoint when the array runs in DSP or CFM mode. Read Unit State, fan speed, airflow and the alarm text and relay status.",
+    "minimum_points": [
+      {
+        "ref": "MV 23",
+        "name": "UnitCtrlMode",
+        "why": "Array Auto/Off command (Demand Source must be BACnet)"
+      },
+      {
+        "ref": "AV 11",
+        "name": "Demand SP",
+        "why": "Capacity setpoint, 0-100 %"
+      },
+      {
+        "ref": "MV 20",
+        "name": "ClearAlarms",
+        "why": "Clear resettable alarms (2 = Yes)"
+      },
+      {
+        "ref": "MV 13",
+        "name": "UnitState",
+        "why": "Array operating state"
+      },
+      {
+        "ref": "MV 5",
+        "name": "DmdSrc",
+        "why": "Shows BACnet when the BMS has control"
+      },
+      {
+        "ref": "AV 4",
+        "name": "AvgFanSpd",
+        "why": "Average speed of all fans, rpm"
+      },
+      {
+        "ref": "AV 8",
+        "name": "TotalAirFl",
+        "why": "Total array airflow"
+      },
+      {
+        "ref": "MV 3",
+        "name": "RO3 Alarm",
+        "why": "Alarm relay output (2 = On)"
+      },
+      {
+        "ref": "CSV 2",
+        "name": "Unit Alarm Info",
+        "why": "Highest-priority active alarm text"
+      }
+    ],
+    "enable": "Demand Source must be configured as BACnet in the Config Array HMI menu (MV 5 shows it). With the HMI Control Mode at Auto, Unit Control Mode (MV 23) toggles the array between Auto and Off; Off at the HMI overrides BACnet. With HMI, 0-10 VDC or 4-20 mA as the demand source, BACnet is read-only monitoring.",
+    "heartbeat": "No receive heartbeat (listed as not applicable). BACnet values stay at the last valid value on communication loss; invalid network values fall back to defaults.",
+    "remote_sensors": null,
+    "setup": [
+      "Device instance defaults to the last 4 digits of the MT4 controller serial number; device name is MT4_DFA_<instance>.",
+      "BACnet MS/TP defaults: MAC 18, 38400 baud, Max Master 127, Max Info Frames 10.",
+      "BACnet IP defaults: 192.168.1.42 / 255.255.255.0, gateway 192.168.1.1, UDP 47808, DHCP off.",
+      "Set addressing in the HMI BMS Communications menus, then set Save Config to Yes; the controller restarts.",
+      "BACnet Units of Measurement (MV 18): SI, US (default) or CA."
+    ],
+    "gotchas": [
+      "Demand, DSP, airflow and RPM setpoints are linked: writing one re-scales the others.",
+      "Out-of-range setpoint writes are ignored and the last valid value is kept.",
+      "Clear Alarms (MV 20) returns to No after about 3 s; alarms also clear on a power cycle and come back if the cause remains.",
+      "Fire alarm input (BI 1) and safety input (BI 3) read 0 when the alarm is active."
+    ]
+  },
+  "short_model": "Vision/Skyline EC Fan Array",
+  "points": [
+    {
+      "type": "AI",
+      "instance": 1,
+      "name": "Demand Input",
+      "description": "Fan Speed Demand Input",
+      "units": "%",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AI",
+      "instance": 2,
+      "name": "DSP Pressure",
+      "description": "Duct static pressure sensor",
+      "units": "in. w.c.",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AI",
+      "instance": 3,
+      "name": "CFM Pressure",
+      "description": "CFM Differential Pressure Sensor",
+      "units": "in. w.c.",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "BI",
+      "instance": 1,
+      "name": "Fire Mode Input",
+      "description": "Fire alarm input (0 = fire warning active)",
+      "units": "",
+      "access": "R",
+      "states": "0=Off, 1=On"
+    },
+    {
+      "type": "BI",
+      "instance": 2,
+      "name": "Interlock Input",
+      "description": "Interlock Switch Input",
+      "units": "",
+      "access": "R",
+      "states": "0=Off, 1=On"
+    },
+    {
+      "type": "BI",
+      "instance": 3,
+      "name": "Safety Input",
+      "description": "Safety (emergency) switch input (0 = open, fans stopped)",
+      "units": "",
+      "access": "R",
+      "states": "0=Off, 1=On"
+    },
+    {
+      "type": "BI",
+      "instance": 4,
+      "name": "Array ON/OFF",
+      "description": "Start-Stop (On-Off) Input",
+      "units": "",
+      "access": "R",
+      "states": "0=Off, 1=On"
+    },
+    {
+      "type": "CSV",
+      "instance": 1,
+      "name": "Unit Name",
+      "description": "Unit device name (14 characters)",
+      "units": "",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "CSV",
+      "instance": 2,
+      "name": "Unit Alarm Info",
+      "description": "Highest-priority active unit alarm text",
+      "units": "",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "CSV",
+      "instance": 3,
+      "name": "Unit SN",
+      "description": "Unit serial number (13 characters)",
+      "units": "",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 1,
+      "name": "AO1 RPM",
+      "description": "Fan tracking output AO1 to a secondary array",
+      "units": "%",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 2,
+      "name": "AO2 CFM",
+      "description": "Airflow output AO2, % of max airflow",
+      "units": "%",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 3,
+      "name": "FanSpdCmd",
+      "description": "Fan Speed Command",
+      "units": "%",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 4,
+      "name": "AvgFanSpd",
+      "description": "Average Fan Speed",
+      "units": "rpm",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 5,
+      "name": "TotalFanPwr",
+      "description": "Total power of all fans",
+      "units": "kW",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 6,
+      "name": "FanSpdActCmd",
+      "description": "Fan Speed Actual Command",
+      "units": "%",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 7,
+      "name": "FanNumber",
+      "description": "Number of fans running",
+      "units": "",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 8,
+      "name": "TotalAirFl",
+      "description": "Total Airflow",
+      "units": "cfm",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 9,
+      "name": "DSPSP",
+      "description": "Duct Static Pressure Setpoint",
+      "units": "in. w.c.",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 10,
+      "name": "CFMSP",
+      "description": "Airflow Setpoint",
+      "units": "cfm",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 11,
+      "name": "Demand SP",
+      "description": "Demand Setpoint",
+      "units": "%",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 12,
+      "name": "MaxRPM",
+      "description": "Max RPM",
+      "units": "rpm",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 14,
+      "name": "Air Flow",
+      "description": "Air Flow Nominal",
+      "units": "cfm",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 15,
+      "name": "RPMSP",
+      "description": "Fan Speed RPM Setpoint",
+      "units": "rpm",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 16,
+      "name": "TrckSpdOffsetSP",
+      "description": "Secondary Fan Speed Offset",
+      "units": "rpm",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 101,
+      "name": "Fan1Spd",
+      "description": "Fan 1 Speed",
+      "units": "rpm",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 102,
+      "name": "Fan2Spd",
+      "description": "Fan 2 Speed",
+      "units": "rpm",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 103,
+      "name": "Fan3Spd",
+      "description": "Fan 3 Speed",
+      "units": "rpm",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 104,
+      "name": "Fan4Spd",
+      "description": "Fan 4 Speed",
+      "units": "rpm",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 105,
+      "name": "Fan5Spd",
+      "description": "Fan 5 Speed",
+      "units": "rpm",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 106,
+      "name": "Fan6Spd",
+      "description": "Fan 6 Speed",
+      "units": "rpm",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 107,
+      "name": "Fan7Spd",
+      "description": "Fan 7 Speed",
+      "units": "rpm",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 108,
+      "name": "Fan8Spd",
+      "description": "Fan 8 Speed",
+      "units": "rpm",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 109,
+      "name": "Fan9Spd",
+      "description": "Fan 9 Speed",
+      "units": "rpm",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 110,
+      "name": "Fan10Spd",
+      "description": "Fan 10 Speed",
+      "units": "rpm",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 111,
+      "name": "Fan11Spd",
+      "description": "Fan 11 Speed",
+      "units": "rpm",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 112,
+      "name": "Fan12Spd",
+      "description": "Fan 12 Speed",
+      "units": "rpm",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 113,
+      "name": "Fan13Spd",
+      "description": "Fan 13 Speed",
+      "units": "rpm",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 114,
+      "name": "Fan14Spd",
+      "description": "Fan 14 Speed",
+      "units": "rpm",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 115,
+      "name": "Fan15Spd",
+      "description": "Fan 15 Speed",
+      "units": "rpm",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 116,
+      "name": "Fan16Spd",
+      "description": "Fan 16 Speed",
+      "units": "rpm",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 117,
+      "name": "Fan17Spd",
+      "description": "Fan 17 Speed",
+      "units": "rpm",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 118,
+      "name": "Fan18Spd",
+      "description": "Fan 18 Speed",
+      "units": "rpm",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 119,
+      "name": "Fan19Spd",
+      "description": "Fan 19 Speed",
+      "units": "rpm",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 120,
+      "name": "Fan20Spd",
+      "description": "Fan 20 Speed",
+      "units": "rpm",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "BV",
+      "instance": 1,
+      "name": "InterlockFlt",
+      "description": "Interlock Alarm",
+      "units": "",
+      "access": "R",
+      "states": "0=Off, 1=On"
+    },
+    {
+      "type": "BV",
+      "instance": 2,
+      "name": "DSPFlt",
+      "description": "DSP Alarm",
+      "units": "",
+      "access": "R",
+      "states": "0=Off, 1=On"
+    },
+    {
+      "type": "BV",
+      "instance": 11,
+      "name": "Fan1ComErr",
+      "description": "Fan 1 Comm Error",
+      "units": "",
+      "access": "R",
+      "states": "0=OK, 1=Fault"
+    },
+    {
+      "type": "BV",
+      "instance": 12,
+      "name": "Fan2ComErr",
+      "description": "Fan 2 Comm Error",
+      "units": "",
+      "access": "R",
+      "states": "0=OK, 1=Fault"
+    },
+    {
+      "type": "BV",
+      "instance": 13,
+      "name": "Fan3ComErr",
+      "description": "Fan 3 Comm Error",
+      "units": "",
+      "access": "R",
+      "states": "0=OK, 1=Fault"
+    },
+    {
+      "type": "BV",
+      "instance": 14,
+      "name": "Fan4ComErr",
+      "description": "Fan 4 Comm Error",
+      "units": "",
+      "access": "R",
+      "states": "0=OK, 1=Fault"
+    },
+    {
+      "type": "BV",
+      "instance": 15,
+      "name": "Fan5ComErr",
+      "description": "Fan 5 Comm Error",
+      "units": "",
+      "access": "R",
+      "states": "0=OK, 1=Fault"
+    },
+    {
+      "type": "BV",
+      "instance": 16,
+      "name": "Fan6ComErr",
+      "description": "Fan 6 Comm Error",
+      "units": "",
+      "access": "R",
+      "states": "0=OK, 1=Fault"
+    },
+    {
+      "type": "BV",
+      "instance": 17,
+      "name": "Fan7ComErr",
+      "description": "Fan 7 Comm Error",
+      "units": "",
+      "access": "R",
+      "states": "0=OK, 1=Fault"
+    },
+    {
+      "type": "BV",
+      "instance": 18,
+      "name": "Fan8ComErr",
+      "description": "Fan 8 Comm Error",
+      "units": "",
+      "access": "R",
+      "states": "0=OK, 1=Fault"
+    },
+    {
+      "type": "BV",
+      "instance": 19,
+      "name": "Fan9ComErr",
+      "description": "Fan 9 Comm Error",
+      "units": "",
+      "access": "R",
+      "states": "0=OK, 1=Fault"
+    },
+    {
+      "type": "BV",
+      "instance": 20,
+      "name": "Fan10ComErr",
+      "description": "Fan 10 Comm Error",
+      "units": "",
+      "access": "R",
+      "states": "0=OK, 1=Fault"
+    },
+    {
+      "type": "BV",
+      "instance": 21,
+      "name": "Fan11ComErr",
+      "description": "Fan 11 Comm Error",
+      "units": "",
+      "access": "R",
+      "states": "0=OK, 1=Fault"
+    },
+    {
+      "type": "BV",
+      "instance": 22,
+      "name": "Fan12ComErr",
+      "description": "Fan 12 Comm Error",
+      "units": "",
+      "access": "R",
+      "states": "0=OK, 1=Fault"
+    },
+    {
+      "type": "BV",
+      "instance": 23,
+      "name": "Fan13ComErr",
+      "description": "Fan 13 Comm Error",
+      "units": "",
+      "access": "R",
+      "states": "0=OK, 1=Fault"
+    },
+    {
+      "type": "BV",
+      "instance": 24,
+      "name": "Fan14ComErr",
+      "description": "Fan 14 Comm Error",
+      "units": "",
+      "access": "R",
+      "states": "0=OK, 1=Fault"
+    },
+    {
+      "type": "BV",
+      "instance": 25,
+      "name": "Fan15ComErr",
+      "description": "Fan 15 Comm Error",
+      "units": "",
+      "access": "R",
+      "states": "0=OK, 1=Fault"
+    },
+    {
+      "type": "BV",
+      "instance": 26,
+      "name": "Fan16ComErr",
+      "description": "Fan 16 Comm Error",
+      "units": "",
+      "access": "R",
+      "states": "0=OK, 1=Fault"
+    },
+    {
+      "type": "BV",
+      "instance": 27,
+      "name": "Fan17ComErr",
+      "description": "Fan 17 Comm Error",
+      "units": "",
+      "access": "R",
+      "states": "0=OK, 1=Fault"
+    },
+    {
+      "type": "BV",
+      "instance": 28,
+      "name": "Fan18ComErr",
+      "description": "Fan 18 Comm Error",
+      "units": "",
+      "access": "R",
+      "states": "0=OK, 1=Fault"
+    },
+    {
+      "type": "BV",
+      "instance": 29,
+      "name": "Fan19ComErr",
+      "description": "Fan 19 Comm Error",
+      "units": "",
+      "access": "R",
+      "states": "0=OK, 1=Fault"
+    },
+    {
+      "type": "BV",
+      "instance": 30,
+      "name": "Fan20ComErr",
+      "description": "Fan 20 Comm Error",
+      "units": "",
+      "access": "R",
+      "states": "0=OK, 1=Fault"
+    },
+    {
+      "type": "BV",
+      "instance": 51,
+      "name": "Fan1Fault",
+      "description": "Fan 1 Fault Status",
+      "units": "",
+      "access": "R",
+      "states": "0=OK, 1=Fault"
+    },
+    {
+      "type": "BV",
+      "instance": 52,
+      "name": "Fan2Fault",
+      "description": "Fan 2 Fault Status",
+      "units": "",
+      "access": "R",
+      "states": "0=OK, 1=Fault"
+    },
+    {
+      "type": "BV",
+      "instance": 53,
+      "name": "Fan3Fault",
+      "description": "Fan 3 Fault Status",
+      "units": "",
+      "access": "R",
+      "states": "0=OK, 1=Fault"
+    },
+    {
+      "type": "BV",
+      "instance": 54,
+      "name": "Fan4Fault",
+      "description": "Fan 4 Fault Status",
+      "units": "",
+      "access": "R",
+      "states": "0=OK, 1=Fault"
+    },
+    {
+      "type": "BV",
+      "instance": 55,
+      "name": "Fan5Fault",
+      "description": "Fan 5 Fault Status",
+      "units": "",
+      "access": "R",
+      "states": "0=OK, 1=Fault"
+    },
+    {
+      "type": "BV",
+      "instance": 56,
+      "name": "Fan6Fault",
+      "description": "Fan 6 Fault Status",
+      "units": "",
+      "access": "R",
+      "states": "0=OK, 1=Fault"
+    },
+    {
+      "type": "BV",
+      "instance": 57,
+      "name": "Fan7Fault",
+      "description": "Fan 7 Fault Status",
+      "units": "",
+      "access": "R",
+      "states": "0=OK, 1=Fault"
+    },
+    {
+      "type": "BV",
+      "instance": 58,
+      "name": "Fan8Fault",
+      "description": "Fan 8 Fault Status",
+      "units": "",
+      "access": "R",
+      "states": "0=OK, 1=Fault"
+    },
+    {
+      "type": "BV",
+      "instance": 59,
+      "name": "Fan9Fault",
+      "description": "Fan 9 Fault Status",
+      "units": "",
+      "access": "R",
+      "states": "0=OK, 1=Fault"
+    },
+    {
+      "type": "BV",
+      "instance": 60,
+      "name": "Fan10Fault",
+      "description": "Fan 10 Fault Status",
+      "units": "",
+      "access": "R",
+      "states": "0=OK, 1=Fault"
+    },
+    {
+      "type": "BV",
+      "instance": 61,
+      "name": "Fan11Fault",
+      "description": "Fan 11 Fault Status",
+      "units": "",
+      "access": "R",
+      "states": "0=OK, 1=Fault"
+    },
+    {
+      "type": "BV",
+      "instance": 62,
+      "name": "Fan12Fault",
+      "description": "Fan 12 Fault Status",
+      "units": "",
+      "access": "R",
+      "states": "0=OK, 1=Fault"
+    },
+    {
+      "type": "BV",
+      "instance": 63,
+      "name": "Fan13Fault",
+      "description": "Fan 13 Fault Status",
+      "units": "",
+      "access": "R",
+      "states": "0=OK, 1=Fault"
+    },
+    {
+      "type": "BV",
+      "instance": 64,
+      "name": "Fan14Fault",
+      "description": "Fan 14 Fault Status",
+      "units": "",
+      "access": "R",
+      "states": "0=OK, 1=Fault"
+    },
+    {
+      "type": "BV",
+      "instance": 65,
+      "name": "Fan15Fault",
+      "description": "Fan 15 Fault Status",
+      "units": "",
+      "access": "R",
+      "states": "0=OK, 1=Fault"
+    },
+    {
+      "type": "BV",
+      "instance": 66,
+      "name": "Fan16Fault",
+      "description": "Fan 16 Fault Status",
+      "units": "",
+      "access": "R",
+      "states": "0=OK, 1=Fault"
+    },
+    {
+      "type": "BV",
+      "instance": 67,
+      "name": "Fan17Fault",
+      "description": "Fan 17 Fault Status",
+      "units": "",
+      "access": "R",
+      "states": "0=OK, 1=Fault"
+    },
+    {
+      "type": "BV",
+      "instance": 68,
+      "name": "Fan18Fault",
+      "description": "Fan 18 Fault Status",
+      "units": "",
+      "access": "R",
+      "states": "0=OK, 1=Fault"
+    },
+    {
+      "type": "BV",
+      "instance": 69,
+      "name": "Fan19Fault",
+      "description": "Fan 19 Fault Status",
+      "units": "",
+      "access": "R",
+      "states": "0=OK, 1=Fault"
+    },
+    {
+      "type": "BV",
+      "instance": 70,
+      "name": "Fan20Fault",
+      "description": "Fan 20 Fault Status",
+      "units": "",
+      "access": "R",
+      "states": "0=OK, 1=Fault"
+    },
+    {
+      "type": "BV",
+      "instance": 101,
+      "name": "Fan1RPMAlm",
+      "description": "Fan 1 RPM Alarm Status",
+      "units": "",
+      "access": "R",
+      "states": "0=OK, 1=Fault"
+    },
+    {
+      "type": "BV",
+      "instance": 102,
+      "name": "Fan2RPMAlm",
+      "description": "Fan 2 RPM Alarm Status",
+      "units": "",
+      "access": "R",
+      "states": "0=OK, 1=Fault"
+    },
+    {
+      "type": "BV",
+      "instance": 103,
+      "name": "Fan3RPMAlm",
+      "description": "Fan 3 RPM Alarm Status",
+      "units": "",
+      "access": "R",
+      "states": "0=OK, 1=Fault"
+    },
+    {
+      "type": "BV",
+      "instance": 104,
+      "name": "Fan4RPMAlm",
+      "description": "Fan 4 RPM Alarm Status",
+      "units": "",
+      "access": "R",
+      "states": "0=OK, 1=Fault"
+    },
+    {
+      "type": "BV",
+      "instance": 105,
+      "name": "Fan5RPMAlm",
+      "description": "Fan 5 RPM Alarm Status",
+      "units": "",
+      "access": "R",
+      "states": "0=OK, 1=Fault"
+    },
+    {
+      "type": "BV",
+      "instance": 106,
+      "name": "Fan6RPMAlm",
+      "description": "Fan 6 RPM Alarm Status",
+      "units": "",
+      "access": "R",
+      "states": "0=OK, 1=Fault"
+    },
+    {
+      "type": "BV",
+      "instance": 107,
+      "name": "Fan7RPMAlm",
+      "description": "Fan 7 RPM Alarm Status",
+      "units": "",
+      "access": "R",
+      "states": "0=OK, 1=Fault"
+    },
+    {
+      "type": "BV",
+      "instance": 108,
+      "name": "Fan8RPMAlm",
+      "description": "Fan 8 RPM Alarm Status",
+      "units": "",
+      "access": "R",
+      "states": "0=OK, 1=Fault"
+    },
+    {
+      "type": "BV",
+      "instance": 109,
+      "name": "Fan9RPMAlm",
+      "description": "Fan 9 RPM Alarm Status",
+      "units": "",
+      "access": "R",
+      "states": "0=OK, 1=Fault"
+    },
+    {
+      "type": "BV",
+      "instance": 110,
+      "name": "Fan10RPMAlm",
+      "description": "Fan 10 RPM Alarm Status",
+      "units": "",
+      "access": "R",
+      "states": "0=OK, 1=Fault"
+    },
+    {
+      "type": "BV",
+      "instance": 111,
+      "name": "Fan11RPMAlm",
+      "description": "Fan 11 RPM Alarm Status",
+      "units": "",
+      "access": "R",
+      "states": "0=OK, 1=Fault"
+    },
+    {
+      "type": "BV",
+      "instance": 112,
+      "name": "Fan12RPMAlm",
+      "description": "Fan 12 RPM Alarm Status",
+      "units": "",
+      "access": "R",
+      "states": "0=OK, 1=Fault"
+    },
+    {
+      "type": "BV",
+      "instance": 113,
+      "name": "Fan13RPMAlm",
+      "description": "Fan 13 RPM Alarm Status",
+      "units": "",
+      "access": "R",
+      "states": "0=OK, 1=Fault"
+    },
+    {
+      "type": "BV",
+      "instance": 114,
+      "name": "Fan14RPMAlm",
+      "description": "Fan 14 RPM Alarm Status",
+      "units": "",
+      "access": "R",
+      "states": "0=OK, 1=Fault"
+    },
+    {
+      "type": "BV",
+      "instance": 115,
+      "name": "Fan15RPMAlm",
+      "description": "Fan 15 RPM Alarm Status",
+      "units": "",
+      "access": "R",
+      "states": "0=OK, 1=Fault"
+    },
+    {
+      "type": "BV",
+      "instance": 116,
+      "name": "Fan16RPMAlm",
+      "description": "Fan 16 RPM Alarm Status",
+      "units": "",
+      "access": "R",
+      "states": "0=OK, 1=Fault"
+    },
+    {
+      "type": "BV",
+      "instance": 117,
+      "name": "Fan17RPMAlm",
+      "description": "Fan 17 RPM Alarm Status",
+      "units": "",
+      "access": "R",
+      "states": "0=OK, 1=Fault"
+    },
+    {
+      "type": "BV",
+      "instance": 118,
+      "name": "Fan18RPMAlm",
+      "description": "Fan 18 RPM Alarm Status",
+      "units": "",
+      "access": "R",
+      "states": "0=OK, 1=Fault"
+    },
+    {
+      "type": "BV",
+      "instance": 119,
+      "name": "Fan19RPMAlm",
+      "description": "Fan 19 RPM Alarm Status",
+      "units": "",
+      "access": "R",
+      "states": "0=OK, 1=Fault"
+    },
+    {
+      "type": "BV",
+      "instance": 120,
+      "name": "Fan20RPMAlm",
+      "description": "Fan 20 RPM Alarm Status",
+      "units": "",
+      "access": "R",
+      "states": "0=OK, 1=Fault"
+    },
+    {
+      "type": "MV",
+      "instance": 1,
+      "name": "UnitMode",
+      "description": "Unit Mode",
+      "units": "",
+      "access": "R",
+      "states": "1=Off, 2=Normal, 3=Manual, 4=Manual Off"
+    },
+    {
+      "type": "MV",
+      "instance": 2,
+      "name": "RO1 Ready",
+      "description": "Fan Ready to Run Output",
+      "units": "",
+      "access": "R",
+      "states": "1=Off, 2=On"
+    },
+    {
+      "type": "MV",
+      "instance": 3,
+      "name": "RO3 Alarm",
+      "description": "Fan Array Alarm Output",
+      "units": "",
+      "access": "R",
+      "states": "1=Off, 2=On"
+    },
+    {
+      "type": "MV",
+      "instance": 4,
+      "name": "RO2 Running",
+      "description": "Fan Run Status Output",
+      "units": "",
+      "access": "R",
+      "states": "1=Off, 2=On"
+    },
+    {
+      "type": "MV",
+      "instance": 5,
+      "name": "DmdSrc",
+      "description": "Demand Source",
+      "units": "",
+      "access": "R",
+      "states": "1=0-10 VDC, 2=4-20mA, 3=BACnet, 4=HMI"
+    },
+    {
+      "type": "MV",
+      "instance": 6,
+      "name": "AdaptiveSpd",
+      "description": "Adaptive Speed",
+      "units": "",
+      "access": "R",
+      "states": "1=No, 2=Yes"
+    },
+    {
+      "type": "MV",
+      "instance": 7,
+      "name": "FireAlmEnable",
+      "description": "Fire Alarm Input Enable",
+      "units": "",
+      "access": "R",
+      "states": "1=FireAlm Disabled, 2=FireAlm Enabled"
+    },
+    {
+      "type": "MV",
+      "instance": 8,
+      "name": "InterlockEnable",
+      "description": "Interlock Input Enable",
+      "units": "",
+      "access": "R",
+      "states": "1=Interlock Switch Disabled, 2=Interlock Switch Enabled"
+    },
+    {
+      "type": "MV",
+      "instance": 9,
+      "name": "SafetyInputEnable",
+      "description": "Safety Alarm Input Enable",
+      "units": "",
+      "access": "R",
+      "states": "1=AlmIn Disabled, 2=AlmIn Enabled"
+    },
+    {
+      "type": "MV",
+      "instance": 10,
+      "name": "StartSiglEnEff",
+      "description": "On/Off (Start-Stop) Input Enable",
+      "units": "",
+      "access": "R",
+      "states": "1=Start Switch Disabled, 2=Start Switch Enabled"
+    },
+    {
+      "type": "MV",
+      "instance": 12,
+      "name": "CtrlModeCfg",
+      "description": "Control Mode",
+      "units": "",
+      "access": "R",
+      "states": "1=Dmd RPM, 2=Dmd CFM, 3=Dmd DuctP, 4=Fan Tracking"
+    },
+    {
+      "type": "MV",
+      "instance": 13,
+      "name": "UnitState",
+      "description": "Unit State",
+      "units": "",
+      "access": "R",
+      "states": "1=Off, 2=Ready, 3=Running, 4=Manual, 5=Alarm, 6=Emergency Warning, 7=Emergency Alarm, 8=Run with Alarm, 9=Off with Alarm, 10=DmdSigLow"
+    },
+    {
+      "type": "MV",
+      "instance": 14,
+      "name": "DSPAlm",
+      "description": "DSP Alarm",
+      "units": "",
+      "access": "R",
+      "states": "1=Off, 2=On"
+    },
+    {
+      "type": "MV",
+      "instance": 15,
+      "name": "InterlockAlm",
+      "description": "Interlock Alarm",
+      "units": "",
+      "access": "R",
+      "states": "1=Off, 2=On"
+    },
+    {
+      "type": "MV",
+      "instance": 16,
+      "name": "UnitCtrlModeHMI",
+      "description": "Unit Control Mode HMI",
+      "units": "",
+      "access": "R",
+      "states": "1=Off, 2=Auto"
+    },
+    {
+      "type": "MV",
+      "instance": 18,
+      "name": "BNUnitSystem",
+      "description": "BACnet Units of Measurement",
+      "units": "",
+      "access": "W",
+      "states": "1=SI, 2=US, 3=CA"
+    },
+    {
+      "type": "MV",
+      "instance": 20,
+      "name": "ClearAlarms",
+      "description": "Clear Alarms",
+      "units": "",
+      "access": "W",
+      "states": "1=No, 2=Yes"
+    },
+    {
+      "type": "MV",
+      "instance": 21,
+      "name": "ManualMode",
+      "description": "Manual Mode",
+      "units": "",
+      "access": "R",
+      "states": "1=Off, 2=Normal, 3=Manual"
+    },
+    {
+      "type": "MV",
+      "instance": 23,
+      "name": "UnitCtrlMode",
+      "description": "Unit Control Mode",
+      "units": "",
+      "access": "W",
+      "states": "1=Off, 2=Auto"
+    },
+    {
+      "type": "MV",
+      "instance": 101,
+      "name": "Fan1AlmCode",
+      "description": "Fan 1 alarm code (states depend on fan make)",
+      "units": "",
+      "access": "R",
+      "states": "Delta fans: 1=Offline, 2=Hall, 3=OC, 4=ACOV, 5=ACUV, 6=EEPROM, 7=POC, 8=PL, 9=OV, 10=UV, 11=Lock, 12=OT, 13=RRP, 14=RPMErr, 15=Online; ebm-papst fans: 1=Offline, 2=HLL, 3=TFEI, 4=TFM, 5=TFE, 6=BLK, 7=SKF, 8=PHA, 9=UzL, 10=UzH, 11=UeL, 12=UeH, 13=nLim, 14=RLC, 15=RPMErr, 16=Online; Infinitum fans: 1=Offln, 2=DCOC, 3=OC, 4=VPh, 5=MtrPD, 6=UART, 7=IPh, 8=GDUV, 9=DCOV, 10=DCUV, 11=Lock, 12=OT, 13=GD, 14=RPMEr, 15=Online"
+    },
+    {
+      "type": "MV",
+      "instance": 102,
+      "name": "Fan2AlmCode",
+      "description": "Fan 2 alarm code (states depend on fan make)",
+      "units": "",
+      "access": "R",
+      "states": "Delta fans: 1=Offline, 2=Hall, 3=OC, 4=ACOV, 5=ACUV, 6=EEPROM, 7=POC, 8=PL, 9=OV, 10=UV, 11=Lock, 12=OT, 13=RRP, 14=RPMErr, 15=Online; ebm-papst fans: 1=Offline, 2=HLL, 3=TFEI, 4=TFM, 5=TFE, 6=BLK, 7=SKF, 8=PHA, 9=UzL, 10=UzH, 11=UeL, 12=UeH, 13=nLim, 14=RLC, 15=RPMErr, 16=Online; Infinitum fans: 1=Offln, 2=DCOC, 3=OC, 4=VPh, 5=MtrPD, 6=UART, 7=IPh, 8=GDUV, 9=DCOV, 10=DCUV, 11=Lock, 12=OT, 13=GD, 14=RPMEr, 15=Online"
+    },
+    {
+      "type": "MV",
+      "instance": 103,
+      "name": "Fan3AlmCode",
+      "description": "Fan 3 alarm code (states depend on fan make)",
+      "units": "",
+      "access": "R",
+      "states": "Delta fans: 1=Offline, 2=Hall, 3=OC, 4=ACOV, 5=ACUV, 6=EEPROM, 7=POC, 8=PL, 9=OV, 10=UV, 11=Lock, 12=OT, 13=RRP, 14=RPMErr, 15=Online; ebm-papst fans: 1=Offline, 2=HLL, 3=TFEI, 4=TFM, 5=TFE, 6=BLK, 7=SKF, 8=PHA, 9=UzL, 10=UzH, 11=UeL, 12=UeH, 13=nLim, 14=RLC, 15=RPMErr, 16=Online; Infinitum fans: 1=Offln, 2=DCOC, 3=OC, 4=VPh, 5=MtrPD, 6=UART, 7=IPh, 8=GDUV, 9=DCOV, 10=DCUV, 11=Lock, 12=OT, 13=GD, 14=RPMEr, 15=Online"
+    },
+    {
+      "type": "MV",
+      "instance": 104,
+      "name": "Fan4AlmCode",
+      "description": "Fan 4 alarm code (states depend on fan make)",
+      "units": "",
+      "access": "R",
+      "states": "Delta fans: 1=Offline, 2=Hall, 3=OC, 4=ACOV, 5=ACUV, 6=EEPROM, 7=POC, 8=PL, 9=OV, 10=UV, 11=Lock, 12=OT, 13=RRP, 14=RPMErr, 15=Online; ebm-papst fans: 1=Offline, 2=HLL, 3=TFEI, 4=TFM, 5=TFE, 6=BLK, 7=SKF, 8=PHA, 9=UzL, 10=UzH, 11=UeL, 12=UeH, 13=nLim, 14=RLC, 15=RPMErr, 16=Online; Infinitum fans: 1=Offln, 2=DCOC, 3=OC, 4=VPh, 5=MtrPD, 6=UART, 7=IPh, 8=GDUV, 9=DCOV, 10=DCUV, 11=Lock, 12=OT, 13=GD, 14=RPMEr, 15=Online"
+    },
+    {
+      "type": "MV",
+      "instance": 105,
+      "name": "Fan5AlmCode",
+      "description": "Fan 5 alarm code (states depend on fan make)",
+      "units": "",
+      "access": "R",
+      "states": "Delta fans: 1=Offline, 2=Hall, 3=OC, 4=ACOV, 5=ACUV, 6=EEPROM, 7=POC, 8=PL, 9=OV, 10=UV, 11=Lock, 12=OT, 13=RRP, 14=RPMErr, 15=Online; ebm-papst fans: 1=Offline, 2=HLL, 3=TFEI, 4=TFM, 5=TFE, 6=BLK, 7=SKF, 8=PHA, 9=UzL, 10=UzH, 11=UeL, 12=UeH, 13=nLim, 14=RLC, 15=RPMErr, 16=Online; Infinitum fans: 1=Offln, 2=DCOC, 3=OC, 4=VPh, 5=MtrPD, 6=UART, 7=IPh, 8=GDUV, 9=DCOV, 10=DCUV, 11=Lock, 12=OT, 13=GD, 14=RPMEr, 15=Online"
+    },
+    {
+      "type": "MV",
+      "instance": 106,
+      "name": "Fan6AlmCode",
+      "description": "Fan 6 alarm code (states depend on fan make)",
+      "units": "",
+      "access": "R",
+      "states": "Delta fans: 1=Offline, 2=Hall, 3=OC, 4=ACOV, 5=ACUV, 6=EEPROM, 7=POC, 8=PL, 9=OV, 10=UV, 11=Lock, 12=OT, 13=RRP, 14=RPMErr, 15=Online; ebm-papst fans: 1=Offline, 2=HLL, 3=TFEI, 4=TFM, 5=TFE, 6=BLK, 7=SKF, 8=PHA, 9=UzL, 10=UzH, 11=UeL, 12=UeH, 13=nLim, 14=RLC, 15=RPMErr, 16=Online; Infinitum fans: 1=Offln, 2=DCOC, 3=OC, 4=VPh, 5=MtrPD, 6=UART, 7=IPh, 8=GDUV, 9=DCOV, 10=DCUV, 11=Lock, 12=OT, 13=GD, 14=RPMEr, 15=Online"
+    },
+    {
+      "type": "MV",
+      "instance": 107,
+      "name": "Fan7AlmCode",
+      "description": "Fan 7 alarm code (states depend on fan make)",
+      "units": "",
+      "access": "R",
+      "states": "Delta fans: 1=Offline, 2=Hall, 3=OC, 4=ACOV, 5=ACUV, 6=EEPROM, 7=POC, 8=PL, 9=OV, 10=UV, 11=Lock, 12=OT, 13=RRP, 14=RPMErr, 15=Online; ebm-papst fans: 1=Offline, 2=HLL, 3=TFEI, 4=TFM, 5=TFE, 6=BLK, 7=SKF, 8=PHA, 9=UzL, 10=UzH, 11=UeL, 12=UeH, 13=nLim, 14=RLC, 15=RPMErr, 16=Online; Infinitum fans: 1=Offln, 2=DCOC, 3=OC, 4=VPh, 5=MtrPD, 6=UART, 7=IPh, 8=GDUV, 9=DCOV, 10=DCUV, 11=Lock, 12=OT, 13=GD, 14=RPMEr, 15=Online"
+    },
+    {
+      "type": "MV",
+      "instance": 108,
+      "name": "Fan8AlmCode",
+      "description": "Fan 8 alarm code (states depend on fan make)",
+      "units": "",
+      "access": "R",
+      "states": "Delta fans: 1=Offline, 2=Hall, 3=OC, 4=ACOV, 5=ACUV, 6=EEPROM, 7=POC, 8=PL, 9=OV, 10=UV, 11=Lock, 12=OT, 13=RRP, 14=RPMErr, 15=Online; ebm-papst fans: 1=Offline, 2=HLL, 3=TFEI, 4=TFM, 5=TFE, 6=BLK, 7=SKF, 8=PHA, 9=UzL, 10=UzH, 11=UeL, 12=UeH, 13=nLim, 14=RLC, 15=RPMErr, 16=Online; Infinitum fans: 1=Offln, 2=DCOC, 3=OC, 4=VPh, 5=MtrPD, 6=UART, 7=IPh, 8=GDUV, 9=DCOV, 10=DCUV, 11=Lock, 12=OT, 13=GD, 14=RPMEr, 15=Online"
+    },
+    {
+      "type": "MV",
+      "instance": 109,
+      "name": "Fan9AlmCode",
+      "description": "Fan 9 alarm code (states depend on fan make)",
+      "units": "",
+      "access": "R",
+      "states": "Delta fans: 1=Offline, 2=Hall, 3=OC, 4=ACOV, 5=ACUV, 6=EEPROM, 7=POC, 8=PL, 9=OV, 10=UV, 11=Lock, 12=OT, 13=RRP, 14=RPMErr, 15=Online; ebm-papst fans: 1=Offline, 2=HLL, 3=TFEI, 4=TFM, 5=TFE, 6=BLK, 7=SKF, 8=PHA, 9=UzL, 10=UzH, 11=UeL, 12=UeH, 13=nLim, 14=RLC, 15=RPMErr, 16=Online; Infinitum fans: 1=Offln, 2=DCOC, 3=OC, 4=VPh, 5=MtrPD, 6=UART, 7=IPh, 8=GDUV, 9=DCOV, 10=DCUV, 11=Lock, 12=OT, 13=GD, 14=RPMEr, 15=Online"
+    },
+    {
+      "type": "MV",
+      "instance": 110,
+      "name": "Fan10AlmCode",
+      "description": "Fan 10 alarm code (states depend on fan make)",
+      "units": "",
+      "access": "R",
+      "states": "Delta fans: 1=Offline, 2=Hall, 3=OC, 4=ACOV, 5=ACUV, 6=EEPROM, 7=POC, 8=PL, 9=OV, 10=UV, 11=Lock, 12=OT, 13=RRP, 14=RPMErr, 15=Online; ebm-papst fans: 1=Offline, 2=HLL, 3=TFEI, 4=TFM, 5=TFE, 6=BLK, 7=SKF, 8=PHA, 9=UzL, 10=UzH, 11=UeL, 12=UeH, 13=nLim, 14=RLC, 15=RPMErr, 16=Online; Infinitum fans: 1=Offln, 2=DCOC, 3=OC, 4=VPh, 5=MtrPD, 6=UART, 7=IPh, 8=GDUV, 9=DCOV, 10=DCUV, 11=Lock, 12=OT, 13=GD, 14=RPMEr, 15=Online"
+    },
+    {
+      "type": "MV",
+      "instance": 111,
+      "name": "Fan11AlmCode",
+      "description": "Fan 11 alarm code (states depend on fan make)",
+      "units": "",
+      "access": "R",
+      "states": "Delta fans: 1=Offline, 2=Hall, 3=OC, 4=ACOV, 5=ACUV, 6=EEPROM, 7=POC, 8=PL, 9=OV, 10=UV, 11=Lock, 12=OT, 13=RRP, 14=RPMErr, 15=Online; ebm-papst fans: 1=Offline, 2=HLL, 3=TFEI, 4=TFM, 5=TFE, 6=BLK, 7=SKF, 8=PHA, 9=UzL, 10=UzH, 11=UeL, 12=UeH, 13=nLim, 14=RLC, 15=RPMErr, 16=Online; Infinitum fans: 1=Offln, 2=DCOC, 3=OC, 4=VPh, 5=MtrPD, 6=UART, 7=IPh, 8=GDUV, 9=DCOV, 10=DCUV, 11=Lock, 12=OT, 13=GD, 14=RPMEr, 15=Online"
+    },
+    {
+      "type": "MV",
+      "instance": 112,
+      "name": "Fan12AlmCode",
+      "description": "Fan 12 alarm code (states depend on fan make)",
+      "units": "",
+      "access": "R",
+      "states": "Delta fans: 1=Offline, 2=Hall, 3=OC, 4=ACOV, 5=ACUV, 6=EEPROM, 7=POC, 8=PL, 9=OV, 10=UV, 11=Lock, 12=OT, 13=RRP, 14=RPMErr, 15=Online; ebm-papst fans: 1=Offline, 2=HLL, 3=TFEI, 4=TFM, 5=TFE, 6=BLK, 7=SKF, 8=PHA, 9=UzL, 10=UzH, 11=UeL, 12=UeH, 13=nLim, 14=RLC, 15=RPMErr, 16=Online; Infinitum fans: 1=Offln, 2=DCOC, 3=OC, 4=VPh, 5=MtrPD, 6=UART, 7=IPh, 8=GDUV, 9=DCOV, 10=DCUV, 11=Lock, 12=OT, 13=GD, 14=RPMEr, 15=Online"
+    },
+    {
+      "type": "MV",
+      "instance": 113,
+      "name": "Fan13AlmCode",
+      "description": "Fan 13 alarm code (states depend on fan make)",
+      "units": "",
+      "access": "R",
+      "states": "Delta fans: 1=Offline, 2=Hall, 3=OC, 4=ACOV, 5=ACUV, 6=EEPROM, 7=POC, 8=PL, 9=OV, 10=UV, 11=Lock, 12=OT, 13=RRP, 14=RPMErr, 15=Online; ebm-papst fans: 1=Offline, 2=HLL, 3=TFEI, 4=TFM, 5=TFE, 6=BLK, 7=SKF, 8=PHA, 9=UzL, 10=UzH, 11=UeL, 12=UeH, 13=nLim, 14=RLC, 15=RPMErr, 16=Online; Infinitum fans: 1=Offln, 2=DCOC, 3=OC, 4=VPh, 5=MtrPD, 6=UART, 7=IPh, 8=GDUV, 9=DCOV, 10=DCUV, 11=Lock, 12=OT, 13=GD, 14=RPMEr, 15=Online"
+    },
+    {
+      "type": "MV",
+      "instance": 114,
+      "name": "Fan14AlmCode",
+      "description": "Fan 14 alarm code (states depend on fan make)",
+      "units": "",
+      "access": "R",
+      "states": "Delta fans: 1=Offline, 2=Hall, 3=OC, 4=ACOV, 5=ACUV, 6=EEPROM, 7=POC, 8=PL, 9=OV, 10=UV, 11=Lock, 12=OT, 13=RRP, 14=RPMErr, 15=Online; ebm-papst fans: 1=Offline, 2=HLL, 3=TFEI, 4=TFM, 5=TFE, 6=BLK, 7=SKF, 8=PHA, 9=UzL, 10=UzH, 11=UeL, 12=UeH, 13=nLim, 14=RLC, 15=RPMErr, 16=Online; Infinitum fans: 1=Offln, 2=DCOC, 3=OC, 4=VPh, 5=MtrPD, 6=UART, 7=IPh, 8=GDUV, 9=DCOV, 10=DCUV, 11=Lock, 12=OT, 13=GD, 14=RPMEr, 15=Online"
+    },
+    {
+      "type": "MV",
+      "instance": 115,
+      "name": "Fan15AlmCode",
+      "description": "Fan 15 alarm code (states depend on fan make)",
+      "units": "",
+      "access": "R",
+      "states": "Delta fans: 1=Offline, 2=Hall, 3=OC, 4=ACOV, 5=ACUV, 6=EEPROM, 7=POC, 8=PL, 9=OV, 10=UV, 11=Lock, 12=OT, 13=RRP, 14=RPMErr, 15=Online; ebm-papst fans: 1=Offline, 2=HLL, 3=TFEI, 4=TFM, 5=TFE, 6=BLK, 7=SKF, 8=PHA, 9=UzL, 10=UzH, 11=UeL, 12=UeH, 13=nLim, 14=RLC, 15=RPMErr, 16=Online; Infinitum fans: 1=Offln, 2=DCOC, 3=OC, 4=VPh, 5=MtrPD, 6=UART, 7=IPh, 8=GDUV, 9=DCOV, 10=DCUV, 11=Lock, 12=OT, 13=GD, 14=RPMEr, 15=Online"
+    },
+    {
+      "type": "MV",
+      "instance": 116,
+      "name": "Fan16AlmCode",
+      "description": "Fan 16 alarm code (states depend on fan make)",
+      "units": "",
+      "access": "R",
+      "states": "Delta fans: 1=Offline, 2=Hall, 3=OC, 4=ACOV, 5=ACUV, 6=EEPROM, 7=POC, 8=PL, 9=OV, 10=UV, 11=Lock, 12=OT, 13=RRP, 14=RPMErr, 15=Online; ebm-papst fans: 1=Offline, 2=HLL, 3=TFEI, 4=TFM, 5=TFE, 6=BLK, 7=SKF, 8=PHA, 9=UzL, 10=UzH, 11=UeL, 12=UeH, 13=nLim, 14=RLC, 15=RPMErr, 16=Online; Infinitum fans: 1=Offln, 2=DCOC, 3=OC, 4=VPh, 5=MtrPD, 6=UART, 7=IPh, 8=GDUV, 9=DCOV, 10=DCUV, 11=Lock, 12=OT, 13=GD, 14=RPMEr, 15=Online"
+    },
+    {
+      "type": "MV",
+      "instance": 117,
+      "name": "Fan17AlmCode",
+      "description": "Fan 17 alarm code (states depend on fan make)",
+      "units": "",
+      "access": "R",
+      "states": "Delta fans: 1=Offline, 2=Hall, 3=OC, 4=ACOV, 5=ACUV, 6=EEPROM, 7=POC, 8=PL, 9=OV, 10=UV, 11=Lock, 12=OT, 13=RRP, 14=RPMErr, 15=Online; ebm-papst fans: 1=Offline, 2=HLL, 3=TFEI, 4=TFM, 5=TFE, 6=BLK, 7=SKF, 8=PHA, 9=UzL, 10=UzH, 11=UeL, 12=UeH, 13=nLim, 14=RLC, 15=RPMErr, 16=Online; Infinitum fans: 1=Offln, 2=DCOC, 3=OC, 4=VPh, 5=MtrPD, 6=UART, 7=IPh, 8=GDUV, 9=DCOV, 10=DCUV, 11=Lock, 12=OT, 13=GD, 14=RPMEr, 15=Online"
+    },
+    {
+      "type": "MV",
+      "instance": 118,
+      "name": "Fan18AlmCode",
+      "description": "Fan 18 alarm code (states depend on fan make)",
+      "units": "",
+      "access": "R",
+      "states": "Delta fans: 1=Offline, 2=Hall, 3=OC, 4=ACOV, 5=ACUV, 6=EEPROM, 7=POC, 8=PL, 9=OV, 10=UV, 11=Lock, 12=OT, 13=RRP, 14=RPMErr, 15=Online; ebm-papst fans: 1=Offline, 2=HLL, 3=TFEI, 4=TFM, 5=TFE, 6=BLK, 7=SKF, 8=PHA, 9=UzL, 10=UzH, 11=UeL, 12=UeH, 13=nLim, 14=RLC, 15=RPMErr, 16=Online; Infinitum fans: 1=Offln, 2=DCOC, 3=OC, 4=VPh, 5=MtrPD, 6=UART, 7=IPh, 8=GDUV, 9=DCOV, 10=DCUV, 11=Lock, 12=OT, 13=GD, 14=RPMEr, 15=Online"
+    },
+    {
+      "type": "MV",
+      "instance": 119,
+      "name": "Fan19AlmCode",
+      "description": "Fan 19 alarm code (states depend on fan make)",
+      "units": "",
+      "access": "R",
+      "states": "Delta fans: 1=Offline, 2=Hall, 3=OC, 4=ACOV, 5=ACUV, 6=EEPROM, 7=POC, 8=PL, 9=OV, 10=UV, 11=Lock, 12=OT, 13=RRP, 14=RPMErr, 15=Online; ebm-papst fans: 1=Offline, 2=HLL, 3=TFEI, 4=TFM, 5=TFE, 6=BLK, 7=SKF, 8=PHA, 9=UzL, 10=UzH, 11=UeL, 12=UeH, 13=nLim, 14=RLC, 15=RPMErr, 16=Online; Infinitum fans: 1=Offln, 2=DCOC, 3=OC, 4=VPh, 5=MtrPD, 6=UART, 7=IPh, 8=GDUV, 9=DCOV, 10=DCUV, 11=Lock, 12=OT, 13=GD, 14=RPMEr, 15=Online"
+    },
+    {
+      "type": "MV",
+      "instance": 120,
+      "name": "Fan20AlmCode",
+      "description": "Fan 20 alarm code (states depend on fan make)",
+      "units": "",
+      "access": "R",
+      "states": "Delta fans: 1=Offline, 2=Hall, 3=OC, 4=ACOV, 5=ACUV, 6=EEPROM, 7=POC, 8=PL, 9=OV, 10=UV, 11=Lock, 12=OT, 13=RRP, 14=RPMErr, 15=Online; ebm-papst fans: 1=Offline, 2=HLL, 3=TFEI, 4=TFM, 5=TFE, 6=BLK, 7=SKF, 8=PHA, 9=UzL, 10=UzH, 11=UeL, 12=UeH, 13=nLim, 14=RLC, 15=RPMErr, 16=Online; Infinitum fans: 1=Offln, 2=DCOC, 3=OC, 4=VPh, 5=MtrPD, 6=UART, 7=IPh, 8=GDUV, 9=DCOV, 10=DCUV, 11=Lock, 12=OT, 13=GD, 14=RPMEr, 15=Online"
+    }
+  ]
+}

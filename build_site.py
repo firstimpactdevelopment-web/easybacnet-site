@@ -3743,6 +3743,7 @@ footer a{color:var(--mut); text-decoration:underline}
     <a href="bacnet-points-lists/equipment/heat-pumps/index.html">Heat pumps</a> &middot;
     <a href="bacnet-points-lists/equipment/boilers/index.html">Boilers</a> &middot;
     <a href="bacnet-points-lists/equipment/humidifiers/index.html">Humidifiers</a> &middot;
+    <a href="bacnet-points-lists/equipment/dehumidifiers/index.html">Dehumidifiers</a> &middot;
     <a href="bacnet-points-lists/equipment/cooling-towers/index.html">Cooling towers</a> &middot;
     <a href="bacnet-points-lists/equipment/drives-pumps/index.html">VFDs &amp; pumps</a> &middot;
     <a href="bacnet-points-lists/equipment/valves-actuators/index.html">Valves &amp; actuators</a> &middot;

@@ -1,0 +1,2188 @@
+{
+  "manufacturer": "Trane",
+  "manufacturer_slug": "trane",
+  "model": "Symbio 800 HDWA (UC800)",
+  "model_slug": "symbio-800-hdwa-uc800",
+  "aliases": [
+    "HDWA",
+    "Agility HDWA",
+    "HDWA UC800",
+    "Symbio 800 HDWA",
+    "BAS-PTS028"
+  ],
+  "equipment_type": "Water-cooled centrifugal chiller controller",
+  "applies_to": "Trane HDWA water-cooled chillers whose Symbio 800 points list Trane tags '(UC800)'.",
+  "summary": "This Symbio 800 list for HDWA chillers has about 230 BACnet objects with low instance numbers. Status BIs and diagnostic BIs share one range (BI 1-157), so check the name, not the number range. AIs cover water temperatures and pressures, refrigerant, drive (AFD), bearing and motor data; the BAS writes chilled and hot water setpoints, demand limit, base loading, mode and auto/stop.",
+  "bacnet_transport": [
+    "BACnet IP",
+    "BACnet MS/TP"
+  ],
+  "firmware": null,
+  "default_device_instance": null,
+  "access_inferred": true,
+  "notes": [
+    "Only the points that apply to the unit's factory configuration show up; the doc lists every possible point.",
+    "The chiller tables have no read/write column: AI/BI/MI are read-only, and AV/BV/MV are the BAS command and setpoint objects, marked writable here per Trane's naming convention.",
+    "Trane titles this list 'HDWA (UC800)' and does not explain the suffix in the document. This list uses short instance numbers (AI 1, AV 1, BI 1...) unlike the standard Symbio 800 lists with 5-digit instances, so check which list matches the controller on site.",
+    "Units are printed as SI engineering units (°C, kPa, lpm); the communicated unit system (I-P or SI) is set at the factory.",
+    "Binary inputs from the 'Binary Input Diagnostics' table are individual alarm flags (0/off = normal, 1/on = in alarm); they share one instance range with the status BIs.",
+    "The diagnostic table also gives each alarm's reset level (Local or Remote); it is not carried over here.",
+    "The Symbio 800 integration guide (BAS-SVP083) covers BACnet IP and BACnet MS/TP; the rotary address sets the MS/TP MAC and a default Device ID of 1-127, and a software Device ID can be set instead.",
+    "The same document also maps every object to a Modbus register; only the BACnet side is listed here."
+  ],
+  "source": {
+    "title": "Symbio 800 Integration Points List BACnet - HDWA (UC800)",
+    "doc_number": "BAS-PTS028A-EN",
+    "revision_date": "12/6/2024",
+    "url": "https://elibrary.tranetechnologies.com/public/commercial-hvac/Literature/Points%20List/BAS-PTS028A-EN_12062024.pdf"
+  },
+  "integration": {
+    "summary": "Put the chiller on the network (BACnet MS/TP or IP), then write the auto/stop command, chilled water setpoint, demand limit and mode. Read back running state, leaving water temperature and capacity. Check the local-setpoint flag to confirm the BAS setpoints are actually in use. Most remaining objects are read-only status and per-alarm diagnostic flags.",
+    "minimum_points": [
+      {
+        "ref": "MV 1",
+        "name": "BAS Chiller Auto Stop Command",
+        "why": "BMS auto/stop command (1 = Stop, 2 = Auto)"
+      },
+      {
+        "ref": "MV 2",
+        "name": "BAS Chiller Mode Command",
+        "why": "Cool/heat/ice mode command"
+      },
+      {
+        "ref": "AV 2",
+        "name": "BAS Chilled Water Setpoint",
+        "why": "Chilled water setpoint from the BMS"
+      },
+      {
+        "ref": "AV 3",
+        "name": "BAS Demand Limit Setpoint",
+        "why": "Demand limit from the BMS, % RLA"
+      },
+      {
+        "ref": "BI 14",
+        "name": "Chiller Running State",
+        "why": "Chiller on/off status"
+      },
+      {
+        "ref": "BI 105",
+        "name": "Local Setpoint Control",
+        "why": "Shows if local setpoints override BAS setpoints"
+      },
+      {
+        "ref": "AI 34",
+        "name": "Evaporator Leaving Water Temperature",
+        "why": "Leaving chilled water temperature"
+      },
+      {
+        "ref": "AI 20",
+        "name": "Calculated Chiller Capacity",
+        "why": "Calculated cooling capacity, kW"
+      },
+      {
+        "ref": "BI 10",
+        "name": "Alarm Present",
+        "why": "Any active alarm on the chiller"
+      }
+    ],
+    "enable": "MV 1 BAS Chiller Auto Stop Command (1 = Stop, 2 = Auto; relinquish default Auto) is the BMS auto/stop; with it at Auto the chiller runs when its own run conditions are met. MI 8 External Auto Stop reports the hardwired external auto/stop input, and BI 139 Run Enable shows whether the chiller is enabled to run. The documents don't say how the two combine or how to hand setpoint control to the BAS; BI 105 Local Setpoint Control shows when the chiller is using local setpoints instead of BAS setpoints, and MI 3 Active Chilled Water Setpoint Source shows Front Panel, External, Ice Machine or BAS.",
+    "heartbeat": "No timeout or heartbeat is described. The list includes the diagnostic flags BI 11 'BAS Communication Lost', BI 12 'BAS Failed to Establish Communication' and BI 49 'Comm Loss: Local BAS Interface'; the document doesn't say what timeout sets them or what the chiller does when they are set.",
+    "remote_sensors": null,
+    "setup": [
+      "With no protocol specified at order, the controller ships as BACnet MS/TP at 76,800 bps with the rotary address at 000, and MS/TP is disabled at 000. Set a rotary address of 001-127 to bring it online.",
+      "The rotary address sets the MS/TP MAC and the Device ID and takes effect without a power cycle. A software Device ID (1-4194302) can be set in the web UI, Tracer SC+ or Tracer TU.",
+      "The web UI is reached only over USB at http://198.80.18.1/; the Ethernet ports do not serve it.",
+      "BACnet IP uses Ethernet port 1 (or the optional USB Wi-Fi adapter); the default UDP port is 47808. Enable BBMD only if this is the only BACnet IP device on the subnet, then fill in the BDT.",
+      "MS/TP wiring lands on the P1 link; P2 and P3 are for factory devices only, and Ethernet port 2 is only for the touch-screen display."
+    ],
+    "gotchas": [
+      "Communicated units (I-P or SI) are fixed at the factory; changing them in the field needs a Trane representative. Web UI display units do not change the BACnet values.",
+      "Points that don't apply to the unit's configuration are absent, and a technician can 'recycle' (remove) factory points from the interface, so a missing object may have been recycled.",
+      "The chiller lists have no read/write column; writability of the AV/BV/MV objects is inferred from Trane's naming convention.",
+      "Diagnostic BIs are one object per alarm condition and only exist for the options fitted.",
+      "Auto/stop is a multistate value (MV 1: 1 = Stop, 2 = Auto) that relinquishes to Auto, not a binary as on the standard Symbio 800 lists.",
+      "MI 11 Setpoint Source (BAS/Ext/FP, Ext/FP, Front Panel) decides which setpoint sources are allowed; it is read-only here."
+    ]
+  },
+  "points": [
+    {
+      "type": "AI",
+      "instance": 1,
+      "name": "Active Base Loading Setpoint",
+      "description": "",
+      "units": "%",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AI",
+      "instance": 3,
+      "name": "Active Cool/Heat Setpoint Temperature",
+      "description": "",
+      "units": "°C",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AI",
+      "instance": 4,
+      "name": "Active Demand Limit Setpoint",
+      "description": "",
+      "units": "%",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AI",
+      "instance": 5,
+      "name": "AFD Average Motor Current % RLA",
+      "description": "",
+      "units": "%",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AI",
+      "instance": 6,
+      "name": "AFD Calculated Motor Voltage",
+      "description": "",
+      "units": "V",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AI",
+      "instance": 7,
+      "name": "AFD DC Bus Voltage",
+      "description": "",
+      "units": "V",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AI",
+      "instance": 8,
+      "name": "AFD Frequency Command",
+      "description": "",
+      "units": "%",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AI",
+      "instance": 9,
+      "name": "AFD Heatsink Temperature",
+      "description": "",
+      "units": "°C",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AI",
+      "instance": 10,
+      "name": "AFD Motor Current U",
+      "description": "",
+      "units": "Amps",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AI",
+      "instance": 11,
+      "name": "AFD Motor Current U % RLA",
+      "description": "",
+      "units": "%",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AI",
+      "instance": 12,
+      "name": "AFD Motor Current V",
+      "description": "",
+      "units": "Amps",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AI",
+      "instance": 13,
+      "name": "AFD Motor Current V % RLA",
+      "description": "",
+      "units": "%",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AI",
+      "instance": 14,
+      "name": "AFD Motor Current W",
+      "description": "",
+      "units": "Amps",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AI",
+      "instance": 15,
+      "name": "AFD Motor Current W % RLA",
+      "description": "",
+      "units": "%",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AI",
+      "instance": 16,
+      "name": "AFD Output Power",
+      "description": "",
+      "units": "kW",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AI",
+      "instance": 17,
+      "name": "AFD Percent Speed",
+      "description": "",
+      "units": "%",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AI",
+      "instance": 18,
+      "name": "Approx Cond Water Flow",
+      "description": "",
+      "units": "lpm",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AI",
+      "instance": 19,
+      "name": "Approx Evap Water Flow",
+      "description": "",
+      "units": "lpm",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AI",
+      "instance": 20,
+      "name": "Calculated Chiller Capacity",
+      "description": "",
+      "units": "kW",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AI",
+      "instance": 21,
+      "name": "Compressor Bearing Temperature 1",
+      "description": "",
+      "units": "°C",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AI",
+      "instance": 22,
+      "name": "Compressor Bearing Temperature 2",
+      "description": "",
+      "units": "°C",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AI",
+      "instance": 23,
+      "name": "Compressor Refrigerant Discharge Temperature",
+      "description": "",
+      "units": "°C",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AI",
+      "instance": 24,
+      "name": "Compressor Running Time",
+      "description": "",
+      "units": "Secs",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AI",
+      "instance": 25,
+      "name": "Compressor Starts",
+      "description": "",
+      "units": "",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AI",
+      "instance": 26,
+      "name": "Cond Differential Wtr Press",
+      "description": "",
+      "units": "kPa",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AI",
+      "instance": 27,
+      "name": "Condenser Entering Water Temperature",
+      "description": "",
+      "units": "°C",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AI",
+      "instance": 28,
+      "name": "Condenser Leaving Water Temperature",
+      "description": "",
+      "units": "°C",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AI",
+      "instance": 29,
+      "name": "Condenser Refrigerant Pressure",
+      "description": "",
+      "units": "kPa",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AI",
+      "instance": 30,
+      "name": "Condenser Saturated Rfgt Temp",
+      "description": "",
+      "units": "°C",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AI",
+      "instance": 31,
+      "name": "Differential Refrigerant Pressure",
+      "description": "",
+      "units": "kPa",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AI",
+      "instance": 32,
+      "name": "Evap Differential Wtr Press",
+      "description": "",
+      "units": "kPa",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AI",
+      "instance": 33,
+      "name": "Evaporator Entering Water Temperature",
+      "description": "",
+      "units": "°C",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AI",
+      "instance": 34,
+      "name": "Evaporator Leaving Water Temperature",
+      "description": "",
+      "units": "°C",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AI",
+      "instance": 35,
+      "name": "Evaporator Refrigerant Pressure",
+      "description": "",
+      "units": "kPa",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AI",
+      "instance": 36,
+      "name": "Evaporator Saturated Rfgt Temp",
+      "description": "",
+      "units": "°C",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AI",
+      "instance": 37,
+      "name": "External Base Loading Setpoint",
+      "description": "",
+      "units": "%",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AI",
+      "instance": 38,
+      "name": "External Chilled Water Setpoint",
+      "description": "",
+      "units": "°C",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AI",
+      "instance": 39,
+      "name": "External Demand Limit Setpoint",
+      "description": "",
+      "units": "%",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AI",
+      "instance": 40,
+      "name": "Front Panel Base Loading Setpoint",
+      "description": "",
+      "units": "%",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AI",
+      "instance": 41,
+      "name": "Front Panel Chilled Water Setpoint",
+      "description": "",
+      "units": "°C",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AI",
+      "instance": 42,
+      "name": "Front Panel Demand Limit Setpoint",
+      "description": "",
+      "units": "%",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AI",
+      "instance": 43,
+      "name": "Front Panel Hot Water Setpoint",
+      "description": "",
+      "units": "°C",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AI",
+      "instance": 44,
+      "name": "IGV Percent Open",
+      "description": "",
+      "units": "%",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AI",
+      "instance": 45,
+      "name": "Motor Winding Temp #1",
+      "description": "",
+      "units": "°C",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AI",
+      "instance": 46,
+      "name": "Motor Winding Temp #2",
+      "description": "",
+      "units": "°C",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AI",
+      "instance": 47,
+      "name": "Motor Winding Temp #3",
+      "description": "",
+      "units": "°C",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AI",
+      "instance": 48,
+      "name": "Number of Circuits",
+      "description": "",
+      "units": "",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AI",
+      "instance": 49,
+      "name": "Number of Compressors, Circuit 1",
+      "description": "",
+      "units": "",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AI",
+      "instance": 50,
+      "name": "Number of Compressors, Circuit 2",
+      "description": "",
+      "units": "",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AI",
+      "instance": 51,
+      "name": "Outdoor Air Temperature",
+      "description": "",
+      "units": "°C",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AI",
+      "instance": 52,
+      "name": "Refrigerant Monitor",
+      "description": "",
+      "units": "ppm",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AI",
+      "instance": 53,
+      "name": "Unit Power Consumption",
+      "description": "",
+      "units": "kW",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AI",
+      "instance": 54,
+      "name": "AFD Calculated Input Voltage",
+      "description": "",
+      "units": "V",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AI",
+      "instance": 55,
+      "name": "Condenser Entering Water Pressure",
+      "description": "",
+      "units": "kPa",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AI",
+      "instance": 56,
+      "name": "Condenser Leaving Water Pressure",
+      "description": "",
+      "units": "kPa",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AI",
+      "instance": 57,
+      "name": "Evaporator Entering Water Pressure",
+      "description": "",
+      "units": "kPa",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AI",
+      "instance": 58,
+      "name": "Evaporator Leaving Water Pressure",
+      "description": "",
+      "units": "kPa",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AI",
+      "instance": 59,
+      "name": "Chiller Load Command",
+      "description": "",
+      "units": "%",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 1,
+      "name": "BAS Base Loading Setpoint",
+      "description": "Range 20-100%; default 50%",
+      "units": "",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 2,
+      "name": "BAS Chilled Water Setpoint",
+      "description": "Range -17.78° to 23.9°C (0°F to 75°F); default 6.7°C/44°F",
+      "units": "",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 3,
+      "name": "BAS Demand Limit Setpoint",
+      "description": "Range 20 to 120%; default 100% RLA",
+      "units": "",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 4,
+      "name": "BAS Hot Water Setpoint",
+      "description": "Range 80°F to 140°F (26.7°C to 60°C); default 120°F (48.9°C)",
+      "units": "",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "BI",
+      "instance": 1,
+      "name": "AFD Comm Loss: Main Processor",
+      "description": "",
+      "units": "",
+      "access": "R",
+      "states": "0 = Off, 1 = On"
+    },
+    {
+      "type": "BI",
+      "instance": 2,
+      "name": "AFD Failure to Arm or Start",
+      "description": "",
+      "units": "",
+      "access": "R",
+      "states": "0 = Off, 1 = On"
+    },
+    {
+      "type": "BI",
+      "instance": 3,
+      "name": "AFD Fault",
+      "description": "",
+      "units": "",
+      "access": "R",
+      "states": "0 = Off, 1 = On"
+    },
+    {
+      "type": "BI",
+      "instance": 4,
+      "name": "AFD Ground Fault",
+      "description": "",
+      "units": "",
+      "access": "R",
+      "states": "0 = Off, 1 = On"
+    },
+    {
+      "type": "BI",
+      "instance": 5,
+      "name": "AFD Interrupt Failure",
+      "description": "",
+      "units": "",
+      "access": "R",
+      "states": "0 = Off, 1 = On"
+    },
+    {
+      "type": "BI",
+      "instance": 6,
+      "name": "AFD Mains Failure",
+      "description": "",
+      "units": "",
+      "access": "R",
+      "states": "0 = Off, 1 = On"
+    },
+    {
+      "type": "BI",
+      "instance": 7,
+      "name": "AFD Motor Current Overload",
+      "description": "",
+      "units": "",
+      "access": "R",
+      "states": "0 = Off, 1 = On"
+    },
+    {
+      "type": "BI",
+      "instance": 8,
+      "name": "AFD Safe Stop",
+      "description": "",
+      "units": "",
+      "access": "R",
+      "states": "0 = Off, 1 = On"
+    },
+    {
+      "type": "BI",
+      "instance": 9,
+      "name": "AFD Short Circuit",
+      "description": "",
+      "units": "",
+      "access": "R",
+      "states": "0 = Off, 1 = On"
+    },
+    {
+      "type": "BI",
+      "instance": 10,
+      "name": "Alarm Present",
+      "description": "",
+      "units": "",
+      "access": "R",
+      "states": "0 = No, 1 = Yes"
+    },
+    {
+      "type": "BI",
+      "instance": 11,
+      "name": "BAS Communication Lost",
+      "description": "",
+      "units": "",
+      "access": "R",
+      "states": "0 = Off, 1 = On"
+    },
+    {
+      "type": "BI",
+      "instance": 12,
+      "name": "BAS Failed to Establish Communication",
+      "description": "",
+      "units": "",
+      "access": "R",
+      "states": "0 = Off, 1 = On"
+    },
+    {
+      "type": "BI",
+      "instance": 13,
+      "name": "Base Loading",
+      "description": "",
+      "units": "",
+      "access": "R",
+      "states": "0 = Inactive, 1 = Active"
+    },
+    {
+      "type": "BI",
+      "instance": 14,
+      "name": "Chiller Running State",
+      "description": "",
+      "units": "",
+      "access": "R",
+      "states": "0 = No, 1 = Yes"
+    },
+    {
+      "type": "BI",
+      "instance": 15,
+      "name": "Comm Loss: Adaptive Frequency Drive",
+      "description": "",
+      "units": "",
+      "access": "R",
+      "states": "0 = Off, 1 = On"
+    },
+    {
+      "type": "BI",
+      "instance": 16,
+      "name": "Comm Loss: Chiller % Capacity Output",
+      "description": "",
+      "units": "",
+      "access": "R",
+      "states": "0 = Off, 1 = On"
+    },
+    {
+      "type": "BI",
+      "instance": 17,
+      "name": "Comm Loss: Cprsr Discharge Rfgt Temp",
+      "description": "",
+      "units": "",
+      "access": "R",
+      "states": "0 = Off, 1 = On"
+    },
+    {
+      "type": "BI",
+      "instance": 19,
+      "name": "Comm Loss: Condenser Rfgt Pressure",
+      "description": "",
+      "units": "",
+      "access": "R",
+      "states": "0 = Off, 1 = On"
+    },
+    {
+      "type": "BI",
+      "instance": 20,
+      "name": "Comm Loss: Condenser Rfgt Pressure Output",
+      "description": "",
+      "units": "",
+      "access": "R",
+      "states": "0 = Off, 1 = On"
+    },
+    {
+      "type": "BI",
+      "instance": 21,
+      "name": "Comm Loss: Condenser Entering Water Temp",
+      "description": "",
+      "units": "",
+      "access": "R",
+      "states": "0 = Off, 1 = On"
+    },
+    {
+      "type": "BI",
+      "instance": 22,
+      "name": "Comm Loss: Condenser Leaving Water Temp",
+      "description": "",
+      "units": "",
+      "access": "R",
+      "states": "0 = Off, 1 = On"
+    },
+    {
+      "type": "BI",
+      "instance": 23,
+      "name": "Comm Loss: Condenser Liquid Level Sensor",
+      "description": "",
+      "units": "",
+      "access": "R",
+      "states": "0 = Off, 1 = On"
+    },
+    {
+      "type": "BI",
+      "instance": 24,
+      "name": "Comm Loss: Condenser Water Flow Measurement Sensor",
+      "description": "",
+      "units": "",
+      "access": "R",
+      "states": "0 = Off, 1 = On"
+    },
+    {
+      "type": "BI",
+      "instance": 25,
+      "name": "Comm Loss: Condenser Water Flow Switch",
+      "description": "",
+      "units": "",
+      "access": "R",
+      "states": "0 = Off, 1 = On"
+    },
+    {
+      "type": "BI",
+      "instance": 26,
+      "name": "Comm Loss: Condenser Water Pump Relay",
+      "description": "",
+      "units": "",
+      "access": "R",
+      "states": "0 = Off, 1 = On"
+    },
+    {
+      "type": "BI",
+      "instance": 27,
+      "name": "Comm Loss: Drive Cooling Supply Temperature",
+      "description": "",
+      "units": "",
+      "access": "R",
+      "states": "0 = Off, 1 = On"
+    },
+    {
+      "type": "BI",
+      "instance": 28,
+      "name": "Comm Loss: Drive Cooling Valve",
+      "description": "",
+      "units": "",
+      "access": "R",
+      "states": "0 = Off, 1 = On"
+    },
+    {
+      "type": "BI",
+      "instance": 29,
+      "name": "Comm Loss: Economizer Pressure",
+      "description": "",
+      "units": "",
+      "access": "R",
+      "states": "0 = Off, 1 = On"
+    },
+    {
+      "type": "BI",
+      "instance": 30,
+      "name": "Comm Loss: Economizer Temperature",
+      "description": "",
+      "units": "",
+      "access": "R",
+      "states": "0 = Off, 1 = On"
+    },
+    {
+      "type": "BI",
+      "instance": 31,
+      "name": "Comm Loss: Economizer Valve",
+      "description": "",
+      "units": "",
+      "access": "R",
+      "states": "0 = Off, 1 = On"
+    },
+    {
+      "type": "BI",
+      "instance": 32,
+      "name": "Comm Loss: Emergency Stop",
+      "description": "",
+      "units": "",
+      "access": "R",
+      "states": "0 = Off, 1 = On"
+    },
+    {
+      "type": "BI",
+      "instance": 33,
+      "name": "Comm Loss: Evap Entering Water Temp",
+      "description": "",
+      "units": "",
+      "access": "R",
+      "states": "0 = Off, 1 = On"
+    },
+    {
+      "type": "BI",
+      "instance": 34,
+      "name": "Comm Loss: Evap Leaving Water Temp",
+      "description": "",
+      "units": "",
+      "access": "R",
+      "states": "0 = Off, 1 = On"
+    },
+    {
+      "type": "BI",
+      "instance": 35,
+      "name": "Comm Loss: Evaporator EXV",
+      "description": "",
+      "units": "",
+      "access": "R",
+      "states": "0 = Off, 1 = On"
+    },
+    {
+      "type": "BI",
+      "instance": 36,
+      "name": "Comm Loss: Evaporator Refrigerant Pressure",
+      "description": "",
+      "units": "",
+      "access": "R",
+      "states": "0 = Off, 1 = On"
+    },
+    {
+      "type": "BI",
+      "instance": 37,
+      "name": "Comm Loss: Evaporator Water Flow Measurement Sensor",
+      "description": "",
+      "units": "",
+      "access": "R",
+      "states": "0 = Off, 1 = On"
+    },
+    {
+      "type": "BI",
+      "instance": 38,
+      "name": "Comm Loss: Evaporator Water Flow Switch",
+      "description": "",
+      "units": "",
+      "access": "R",
+      "states": "0 = Off, 1 = On"
+    },
+    {
+      "type": "BI",
+      "instance": 39,
+      "name": "Comm Loss: Evaporator Water Pump Relay",
+      "description": "",
+      "units": "",
+      "access": "R",
+      "states": "0 = Off, 1 = On"
+    },
+    {
+      "type": "BI",
+      "instance": 40,
+      "name": "Comm Loss: Ext Base Loading Command",
+      "description": "",
+      "units": "",
+      "access": "R",
+      "states": "0 = Off, 1 = On"
+    },
+    {
+      "type": "BI",
+      "instance": 41,
+      "name": "Comm Loss: Ext Base Loading Setpoint",
+      "description": "",
+      "units": "",
+      "access": "R",
+      "states": "0 = Off, 1 = On"
+    },
+    {
+      "type": "BI",
+      "instance": 42,
+      "name": "Comm Loss: Ext Chilled/Hot Water Setpoint",
+      "description": "",
+      "units": "",
+      "access": "R",
+      "states": "0 = Off, 1 = On"
+    },
+    {
+      "type": "BI",
+      "instance": 43,
+      "name": "Comm Loss: Ext Demand Limit Setpoint",
+      "description": "",
+      "units": "",
+      "access": "R",
+      "states": "0 = Off, 1 = On"
+    },
+    {
+      "type": "BI",
+      "instance": 44,
+      "name": "Comm Loss: External Auto/Stop",
+      "description": "",
+      "units": "",
+      "access": "R",
+      "states": "0 = Off, 1 = On"
+    },
+    {
+      "type": "BI",
+      "instance": 45,
+      "name": "Comm Loss: External Hot Water Command",
+      "description": "",
+      "units": "",
+      "access": "R",
+      "states": "0 = Off, 1 = On"
+    },
+    {
+      "type": "BI",
+      "instance": 46,
+      "name": "Comm Loss: External Ice Building Command",
+      "description": "",
+      "units": "",
+      "access": "R",
+      "states": "0 = Off, 1 = On"
+    },
+    {
+      "type": "BI",
+      "instance": 47,
+      "name": "Comm Loss: Ice Building Status Relay",
+      "description": "",
+      "units": "",
+      "access": "R",
+      "states": "0 = Off, 1 = On"
+    },
+    {
+      "type": "BI",
+      "instance": 48,
+      "name": "Comm Loss: IGV First Stage Actuator",
+      "description": "",
+      "units": "",
+      "access": "R",
+      "states": "0 = Off, 1 = On"
+    },
+    {
+      "type": "BI",
+      "instance": 49,
+      "name": "Comm Loss: Local BAS Interface",
+      "description": "",
+      "units": "",
+      "access": "R",
+      "states": "0 = Off, 1 = On"
+    },
+    {
+      "type": "BI",
+      "instance": 50,
+      "name": "Comm Loss: Magnetic Bearing Controller",
+      "description": "",
+      "units": "",
+      "access": "R",
+      "states": "0 = Off, 1 = On"
+    },
+    {
+      "type": "BI",
+      "instance": 51,
+      "name": "Comm Loss: MBC Cooling Valve",
+      "description": "",
+      "units": "",
+      "access": "R",
+      "states": "0 = Off, 1 = On"
+    },
+    {
+      "type": "BI",
+      "instance": 52,
+      "name": "Comm Loss: Motor Cooling Valve",
+      "description": "",
+      "units": "",
+      "access": "R",
+      "states": "0 = Off, 1 = On"
+    },
+    {
+      "type": "BI",
+      "instance": 53,
+      "name": "Comm Loss: Motor Winding Temperature 1",
+      "description": "",
+      "units": "",
+      "access": "R",
+      "states": "0 = Off, 1 = On"
+    },
+    {
+      "type": "BI",
+      "instance": 54,
+      "name": "Comm Loss: Motor Winding Temperature 2",
+      "description": "",
+      "units": "",
+      "access": "R",
+      "states": "0 = Off, 1 = On"
+    },
+    {
+      "type": "BI",
+      "instance": 55,
+      "name": "Comm Loss: Motor Winding Temperature 3",
+      "description": "",
+      "units": "",
+      "access": "R",
+      "states": "0 = Off, 1 = On"
+    },
+    {
+      "type": "BI",
+      "instance": 56,
+      "name": "Comm Loss: Outdoor Air Temperature",
+      "description": "",
+      "units": "",
+      "access": "R",
+      "states": "0 = Off, 1 = On"
+    },
+    {
+      "type": "BI",
+      "instance": 57,
+      "name": "Comm Loss: Programmable Relay Board 1",
+      "description": "",
+      "units": "",
+      "access": "R",
+      "states": "0 = Off, 1 = On"
+    },
+    {
+      "type": "BI",
+      "instance": 58,
+      "name": "Comm Loss: Programmable Relay Board 2",
+      "description": "",
+      "units": "",
+      "access": "R",
+      "states": "0 = Off, 1 = On"
+    },
+    {
+      "type": "BI",
+      "instance": 59,
+      "name": "Comm Loss: Refrigerant Monitor Input",
+      "description": "",
+      "units": "",
+      "access": "R",
+      "states": "0 = Off, 1 = On"
+    },
+    {
+      "type": "BI",
+      "instance": 60,
+      "name": "Comm Loss: UPS Fault",
+      "description": "",
+      "units": "",
+      "access": "R",
+      "states": "0 = Off, 1 = On"
+    },
+    {
+      "type": "BI",
+      "instance": 61,
+      "name": "Compressor Discharge Refrigerant Temp Sensor",
+      "description": "",
+      "units": "",
+      "access": "R",
+      "states": "0 = Off, 1 = On"
+    },
+    {
+      "type": "BI",
+      "instance": 62,
+      "name": "Condenser Entering Water Temp Sensor",
+      "description": "",
+      "units": "",
+      "access": "R",
+      "states": "0 = Off, 1 = On"
+    },
+    {
+      "type": "BI",
+      "instance": 63,
+      "name": "Condenser Leaving Water Temp Sensor",
+      "description": "",
+      "units": "",
+      "access": "R",
+      "states": "0 = Off, 1 = On"
+    },
+    {
+      "type": "BI",
+      "instance": 64,
+      "name": "Condenser Liquid Level Sensor",
+      "description": "",
+      "units": "",
+      "access": "R",
+      "states": "0 = Off, 1 = On"
+    },
+    {
+      "type": "BI",
+      "instance": 65,
+      "name": "Condenser Refrigerant Pressure Sensor",
+      "description": "",
+      "units": "",
+      "access": "R",
+      "states": "0 = Off, 1 = On"
+    },
+    {
+      "type": "BI",
+      "instance": 66,
+      "name": "Condenser Water Flow",
+      "description": "",
+      "units": "",
+      "access": "R",
+      "states": "0 = No Flow, 1 = Flow"
+    },
+    {
+      "type": "BI",
+      "instance": 67,
+      "name": "Condenser Water Flow Lost",
+      "description": "",
+      "units": "",
+      "access": "R",
+      "states": "0 = Off, 1 = On"
+    },
+    {
+      "type": "BI",
+      "instance": 68,
+      "name": "Condenser Water Flow Measurement Sensor",
+      "description": "",
+      "units": "",
+      "access": "R",
+      "states": "0 = Off, 1 = On"
+    },
+    {
+      "type": "BI",
+      "instance": 69,
+      "name": "Condenser Water Flow Overdue",
+      "description": "",
+      "units": "",
+      "access": "R",
+      "states": "0 = Off, 1 = On"
+    },
+    {
+      "type": "BI",
+      "instance": 70,
+      "name": "Condenser Water Pump Command",
+      "description": "",
+      "units": "",
+      "access": "R",
+      "states": "0 = Off (Pump Off), 1 = On (Pump On)"
+    },
+    {
+      "type": "BI",
+      "instance": 71,
+      "name": "Drive Cooling Supply Temperature Sensor",
+      "description": "",
+      "units": "",
+      "access": "R",
+      "states": "0 = Off, 1 = On"
+    },
+    {
+      "type": "BI",
+      "instance": 72,
+      "name": "Economizer Pressure Sensor",
+      "description": "",
+      "units": "",
+      "access": "R",
+      "states": "0 = Off, 1 = On"
+    },
+    {
+      "type": "BI",
+      "instance": 73,
+      "name": "Economizer Temperature Sensor",
+      "description": "",
+      "units": "",
+      "access": "R",
+      "states": "0 = Off, 1 = On"
+    },
+    {
+      "type": "BI",
+      "instance": 74,
+      "name": "Emergency Stop",
+      "description": "",
+      "units": "",
+      "access": "R",
+      "states": "0 = Off, 1 = On"
+    },
+    {
+      "type": "BI",
+      "instance": 75,
+      "name": "Emergency Stop",
+      "description": "",
+      "units": "",
+      "access": "R",
+      "states": "0 = Inactive, 1 = Active"
+    },
+    {
+      "type": "BI",
+      "instance": 76,
+      "name": "Evaporator Entering Water Temp Sensor",
+      "description": "",
+      "units": "",
+      "access": "R",
+      "states": "0 = Off, 1 = On"
+    },
+    {
+      "type": "BI",
+      "instance": 77,
+      "name": "Evaporator Leaving Water Temp Sensor",
+      "description": "",
+      "units": "",
+      "access": "R",
+      "states": "0 = Off, 1 = On"
+    },
+    {
+      "type": "BI",
+      "instance": 78,
+      "name": "Evaporator Refrigerant Pressure Sensor",
+      "description": "",
+      "units": "",
+      "access": "R",
+      "states": "0 = Off, 1 = On"
+    },
+    {
+      "type": "BI",
+      "instance": 79,
+      "name": "Evaporator Water Flow",
+      "description": "",
+      "units": "",
+      "access": "R",
+      "states": "0 = No Flow, 1 = Flow"
+    },
+    {
+      "type": "BI",
+      "instance": 80,
+      "name": "Evaporator Water Flow Lost",
+      "description": "",
+      "units": "",
+      "access": "R",
+      "states": "0 = Off, 1 = On"
+    },
+    {
+      "type": "BI",
+      "instance": 81,
+      "name": "Evaporator Water Flow Measurement Sensor",
+      "description": "",
+      "units": "",
+      "access": "R",
+      "states": "0 = Off, 1 = On"
+    },
+    {
+      "type": "BI",
+      "instance": 82,
+      "name": "Evaporator Water Flow Overdue",
+      "description": "",
+      "units": "",
+      "access": "R",
+      "states": "0 = Off, 1 = On"
+    },
+    {
+      "type": "BI",
+      "instance": 83,
+      "name": "Evaporator Water Pump Command",
+      "description": "",
+      "units": "",
+      "access": "R",
+      "states": "0 = Off (Pump Off), 1 = On (Pump On)"
+    },
+    {
+      "type": "BI",
+      "instance": 84,
+      "name": "Extended Compressor Surge",
+      "description": "",
+      "units": "",
+      "access": "R",
+      "states": "0 = Off, 1 = On"
+    },
+    {
+      "type": "BI",
+      "instance": 85,
+      "name": "External Base Loading Setpoint",
+      "description": "",
+      "units": "",
+      "access": "R",
+      "states": "0 = Off, 1 = On"
+    },
+    {
+      "type": "BI",
+      "instance": 86,
+      "name": "External Chilled/Hot Water Setpoint",
+      "description": "",
+      "units": "",
+      "access": "R",
+      "states": "0 = Off, 1 = On"
+    },
+    {
+      "type": "BI",
+      "instance": 87,
+      "name": "External Demand Limit Setpoint",
+      "description": "",
+      "units": "",
+      "access": "R",
+      "states": "0 = Off, 1 = On"
+    },
+    {
+      "type": "BI",
+      "instance": 88,
+      "name": "Front Panel Base Loading Command",
+      "description": "",
+      "units": "",
+      "access": "R",
+      "states": "0 = Auto, 1 = On"
+    },
+    {
+      "type": "BI",
+      "instance": 89,
+      "name": "Head Relief Request Relay",
+      "description": "",
+      "units": "",
+      "access": "R",
+      "states": "0 = Inactive, 1 = Active"
+    },
+    {
+      "type": "BI",
+      "instance": 90,
+      "name": "High Compressor Refrigerant Discharge Temperature",
+      "description": "",
+      "units": "",
+      "access": "R",
+      "states": "0 = Off, 1 = On"
+    },
+    {
+      "type": "BI",
+      "instance": 91,
+      "name": "High Condenser Liquid Level",
+      "description": "",
+      "units": "",
+      "access": "R",
+      "states": "0 = Off, 1 = On"
+    },
+    {
+      "type": "BI",
+      "instance": 92,
+      "name": "High Condenser Pressure",
+      "description": "",
+      "units": "",
+      "access": "R",
+      "states": "0 = Off, 1 = On"
+    },
+    {
+      "type": "BI",
+      "instance": 93,
+      "name": "High Evaporator Refrigerant Pressure",
+      "description": "",
+      "units": "",
+      "access": "R",
+      "states": "0 = Off, 1 = On"
+    },
+    {
+      "type": "BI",
+      "instance": 94,
+      "name": "High Evaporator Water Temperature",
+      "description": "",
+      "units": "",
+      "access": "R",
+      "states": "0 = Off, 1 = On"
+    },
+    {
+      "type": "BI",
+      "instance": 95,
+      "name": "High Motor Winding Temperature 1",
+      "description": "",
+      "units": "",
+      "access": "R",
+      "states": "0 = Off, 1 = On"
+    },
+    {
+      "type": "BI",
+      "instance": 96,
+      "name": "High Motor Winding Temperature 2",
+      "description": "",
+      "units": "",
+      "access": "R",
+      "states": "0 = Off, 1 = On"
+    },
+    {
+      "type": "BI",
+      "instance": 97,
+      "name": "High Motor Winding Temperature 3",
+      "description": "",
+      "units": "",
+      "access": "R",
+      "states": "0 = Off, 1 = On"
+    },
+    {
+      "type": "BI",
+      "instance": 98,
+      "name": "High Vacuum Lockout",
+      "description": "",
+      "units": "",
+      "access": "R",
+      "states": "0 = Off, 1 = On"
+    },
+    {
+      "type": "BI",
+      "instance": 99,
+      "name": "Inverted Condenser Approach Temperature",
+      "description": "",
+      "units": "",
+      "access": "R",
+      "states": "0 = Off, 1 = On"
+    },
+    {
+      "type": "BI",
+      "instance": 100,
+      "name": "Inverted Condenser Water Temperature",
+      "description": "",
+      "units": "",
+      "access": "R",
+      "states": "0 = Off, 1 = On"
+    },
+    {
+      "type": "BI",
+      "instance": 101,
+      "name": "Inverted Evaporator Approach Temperature",
+      "description": "",
+      "units": "",
+      "access": "R",
+      "states": "0 = Off, 1 = On"
+    },
+    {
+      "type": "BI",
+      "instance": 102,
+      "name": "Inverted Evaporator Water Temperature",
+      "description": "",
+      "units": "",
+      "access": "R",
+      "states": "0 = Off, 1 = On"
+    },
+    {
+      "type": "BI",
+      "instance": 103,
+      "name": "LCI-C Software Mismatch: Use BAS Tool",
+      "description": "",
+      "units": "",
+      "access": "R",
+      "states": "0 = Off, 1 = On"
+    },
+    {
+      "type": "BI",
+      "instance": 104,
+      "name": "Limit Mode Relay Status",
+      "description": "",
+      "units": "",
+      "access": "R",
+      "states": "0 = Inactive, 1 = Active"
+    },
+    {
+      "type": "BI",
+      "instance": 105,
+      "name": "Local Setpoint Control",
+      "description": "",
+      "units": "",
+      "access": "R",
+      "states": "0 = No, 1 = Yes"
+    },
+    {
+      "type": "BI",
+      "instance": 106,
+      "name": "Loss of Drive Cooling Control",
+      "description": "",
+      "units": "",
+      "access": "R",
+      "states": "0 = Off, 1 = On"
+    },
+    {
+      "type": "BI",
+      "instance": 107,
+      "name": "Loss of MBC Cooling Control",
+      "description": "",
+      "units": "",
+      "access": "R",
+      "states": "0 = Off, 1 = On"
+    },
+    {
+      "type": "BI",
+      "instance": 108,
+      "name": "Loss of Motor Cooling Control",
+      "description": "",
+      "units": "",
+      "access": "R",
+      "states": "0 = Off, 1 = On"
+    },
+    {
+      "type": "BI",
+      "instance": 109,
+      "name": "Low Condenser Liquid Level",
+      "description": "",
+      "units": "",
+      "access": "R",
+      "states": "0 = Off, 1 = On"
+    },
+    {
+      "type": "BI",
+      "instance": 110,
+      "name": "Low Evap Leaving Water Temp: Unit On",
+      "description": "",
+      "units": "",
+      "access": "R",
+      "states": "0 = Off, 1 = On"
+    },
+    {
+      "type": "BI",
+      "instance": 111,
+      "name": "Low Evap Leaving Water Temp: Unit Off",
+      "description": "",
+      "units": "",
+      "access": "R",
+      "states": "0 = Off, 1 = On"
+    },
+    {
+      "type": "BI",
+      "instance": 112,
+      "name": "Low Evaporator Refrigerant Temperature",
+      "description": "",
+      "units": "",
+      "access": "R",
+      "states": "0 = Off, 1 = On"
+    },
+    {
+      "type": "BI",
+      "instance": 113,
+      "name": "Low Evaporator Water Flow",
+      "description": "",
+      "units": "",
+      "access": "R",
+      "states": "0 = Off, 1 = On"
+    },
+    {
+      "type": "BI",
+      "instance": 114,
+      "name": "Manual Override Exists",
+      "description": "",
+      "units": "",
+      "access": "R",
+      "states": "0 = No, 1 = Yes"
+    },
+    {
+      "type": "BI",
+      "instance": 115,
+      "name": "Maximum Capacity Relay",
+      "description": "",
+      "units": "",
+      "access": "R",
+      "states": "0 = Inactive, 1 = Active"
+    },
+    {
+      "type": "BI",
+      "instance": 116,
+      "name": "MBC Bearing Temperature 1",
+      "description": "",
+      "units": "",
+      "access": "R",
+      "states": "0 = Off, 1 = On"
+    },
+    {
+      "type": "BI",
+      "instance": 117,
+      "name": "MBC Bearing Temperature 2",
+      "description": "",
+      "units": "",
+      "access": "R",
+      "states": "0 = Off, 1 = On"
+    },
+    {
+      "type": "BI",
+      "instance": 118,
+      "name": "MBC Failed Centering",
+      "description": "",
+      "units": "",
+      "access": "R",
+      "states": "0 = Off, 1 = On"
+    },
+    {
+      "type": "BI",
+      "instance": 119,
+      "name": "MBC Failed Clearance Check",
+      "description": "",
+      "units": "",
+      "access": "R",
+      "states": "0 = Off, 1 = On"
+    },
+    {
+      "type": "BI",
+      "instance": 121,
+      "name": "MBC Not Ready To Rotate",
+      "description": "",
+      "units": "",
+      "access": "R",
+      "states": "0 = Off, 1 = On"
+    },
+    {
+      "type": "BI",
+      "instance": 122,
+      "name": "MBC Over Voltage",
+      "description": "",
+      "units": "",
+      "access": "R",
+      "states": "0 = Off, 1 = On"
+    },
+    {
+      "type": "BI",
+      "instance": 123,
+      "name": "MBC Overspeed",
+      "description": "",
+      "units": "",
+      "access": "R",
+      "states": "0 = Off, 1 = On"
+    },
+    {
+      "type": "BI",
+      "instance": 124,
+      "name": "MBC Parameter Table Not Set",
+      "description": "",
+      "units": "",
+      "access": "R",
+      "states": "0 = Off, 1 = On"
+    },
+    {
+      "type": "BI",
+      "instance": 125,
+      "name": "MBC PCB Temperature",
+      "description": "",
+      "units": "",
+      "access": "R",
+      "states": "0 = Off, 1 = On"
+    },
+    {
+      "type": "BI",
+      "instance": 126,
+      "name": "MBC Rotation Detected Without Levitation",
+      "description": "",
+      "units": "",
+      "access": "R",
+      "states": "0 = Off, 1 = On"
+    },
+    {
+      "type": "BI",
+      "instance": 128,
+      "name": "MBC Rotor Unbalance Alarm",
+      "description": "",
+      "units": "",
+      "access": "R",
+      "states": "0 = Off, 1 = On"
+    },
+    {
+      "type": "BI",
+      "instance": 129,
+      "name": "MBC Shutdown Request",
+      "description": "",
+      "units": "",
+      "access": "R",
+      "states": "0 = Off, 1 = On"
+    },
+    {
+      "type": "BI",
+      "instance": 130,
+      "name": "MBC Speed Sensor",
+      "description": "",
+      "units": "",
+      "access": "R",
+      "states": "0 = Off, 1 = On"
+    },
+    {
+      "type": "BI",
+      "instance": 131,
+      "name": "MBC Under Voltage",
+      "description": "",
+      "units": "",
+      "access": "R",
+      "states": "0 = Off, 1 = On"
+    },
+    {
+      "type": "BI",
+      "instance": 132,
+      "name": "Motor Winding Temperature 1 Sensor",
+      "description": "",
+      "units": "",
+      "access": "R",
+      "states": "0 = Off, 1 = On"
+    },
+    {
+      "type": "BI",
+      "instance": 133,
+      "name": "Motor Winding Temperature 2 Sensor",
+      "description": "",
+      "units": "",
+      "access": "R",
+      "states": "0 = Off, 1 = On"
+    },
+    {
+      "type": "BI",
+      "instance": 134,
+      "name": "Motor Winding Temperature 3 Sensor",
+      "description": "",
+      "units": "",
+      "access": "R",
+      "states": "0 = Off, 1 = On"
+    },
+    {
+      "type": "BI",
+      "instance": 135,
+      "name": "MP: Invalid Configuration",
+      "description": "",
+      "units": "",
+      "access": "R",
+      "states": "0 = Off, 1 = On"
+    },
+    {
+      "type": "BI",
+      "instance": 136,
+      "name": "MP: Reset Has Occurred",
+      "description": "",
+      "units": "",
+      "access": "R",
+      "states": "0 = Off, 1 = On"
+    },
+    {
+      "type": "BI",
+      "instance": 137,
+      "name": "Outdoor Air Temp Sensor",
+      "description": "",
+      "units": "",
+      "access": "R",
+      "states": "0 = Off, 1 = On"
+    },
+    {
+      "type": "BI",
+      "instance": 138,
+      "name": "Refrigerant Monitor Input",
+      "description": "",
+      "units": "",
+      "access": "R",
+      "states": "0 = Off, 1 = On"
+    },
+    {
+      "type": "BI",
+      "instance": 139,
+      "name": "Run Enable",
+      "description": "",
+      "units": "",
+      "access": "R",
+      "states": "0 = No, 1 = Yes"
+    },
+    {
+      "type": "BI",
+      "instance": 140,
+      "name": "Software Error 1001: Call Trane Service",
+      "description": "",
+      "units": "",
+      "access": "R",
+      "states": "0 = Off, 1 = On"
+    },
+    {
+      "type": "BI",
+      "instance": 141,
+      "name": "Software Error 1002: Call Trane Service",
+      "description": "",
+      "units": "",
+      "access": "R",
+      "states": "0 = Off, 1 = On"
+    },
+    {
+      "type": "BI",
+      "instance": 142,
+      "name": "Software Error 1003: Call Trane Service",
+      "description": "",
+      "units": "",
+      "access": "R",
+      "states": "0 = Off, 1 = On"
+    },
+    {
+      "type": "BI",
+      "instance": 144,
+      "name": "Unexpected Starter Shutdown",
+      "description": "",
+      "units": "",
+      "access": "R",
+      "states": "0 = Off, 1 = On"
+    },
+    {
+      "type": "BI",
+      "instance": 145,
+      "name": "UPS Fault",
+      "description": "",
+      "units": "",
+      "access": "R",
+      "states": "0 = Off, 1 = On"
+    },
+    {
+      "type": "BI",
+      "instance": 146,
+      "name": "AFD UC800 Speed Mismatch",
+      "description": "",
+      "units": "",
+      "access": "R",
+      "states": "0 = Off, 1 = On"
+    },
+    {
+      "type": "BI",
+      "instance": 147,
+      "name": "MBC Not Centered",
+      "description": "",
+      "units": "",
+      "access": "R",
+      "states": "0 = Off, 1 = On"
+    },
+    {
+      "type": "BI",
+      "instance": 148,
+      "name": "Loss of Evaporator EXV Control",
+      "description": "",
+      "units": "",
+      "access": "R",
+      "states": "0 = Off, 1 = On"
+    },
+    {
+      "type": "BI",
+      "instance": 149,
+      "name": "MBC Rotor Elongation",
+      "description": "",
+      "units": "",
+      "access": "R",
+      "states": "0 = Off, 1 = On"
+    },
+    {
+      "type": "BI",
+      "instance": 150,
+      "name": "Comm Loss: Evaporator Entering Water Pressure",
+      "description": "",
+      "units": "",
+      "access": "R",
+      "states": "0 = Off, 1 = On"
+    },
+    {
+      "type": "BI",
+      "instance": 151,
+      "name": "Comm Loss: Evaporator Leaving Water Pressure",
+      "description": "",
+      "units": "",
+      "access": "R",
+      "states": "0 = Off, 1 = On"
+    },
+    {
+      "type": "BI",
+      "instance": 152,
+      "name": "Comm Loss: Condenser Entering Water Pressure",
+      "description": "",
+      "units": "",
+      "access": "R",
+      "states": "0 = Off, 1 = On"
+    },
+    {
+      "type": "BI",
+      "instance": 153,
+      "name": "Comm Loss: Condenser Leaving Water Pressure",
+      "description": "",
+      "units": "",
+      "access": "R",
+      "states": "0 = Off, 1 = On"
+    },
+    {
+      "type": "BI",
+      "instance": 154,
+      "name": "Evaporator Entering Water Pressure",
+      "description": "",
+      "units": "",
+      "access": "R",
+      "states": "0 = Off, 1 = On"
+    },
+    {
+      "type": "BI",
+      "instance": 155,
+      "name": "Evaporator Leaving Water Pressure",
+      "description": "",
+      "units": "",
+      "access": "R",
+      "states": "0 = Off, 1 = On"
+    },
+    {
+      "type": "BI",
+      "instance": 156,
+      "name": "Condenser Entering Water Pressure",
+      "description": "",
+      "units": "",
+      "access": "R",
+      "states": "0 = Off, 1 = On"
+    },
+    {
+      "type": "BI",
+      "instance": 157,
+      "name": "Condenser Leaving Water Pressure",
+      "description": "",
+      "units": "",
+      "access": "R",
+      "states": "0 = Off, 1 = On"
+    },
+    {
+      "type": "BV",
+      "instance": 1,
+      "name": "BAS Base Loading Enable",
+      "description": "",
+      "units": "",
+      "access": "W",
+      "states": "0 = Disable, 1 = Enable"
+    },
+    {
+      "type": "BV",
+      "instance": 2,
+      "name": "BAS Diagnostic Reset",
+      "description": "",
+      "units": "",
+      "access": "W",
+      "states": "0 = false (no reset), 1 = true (can reset)"
+    },
+    {
+      "type": "MI",
+      "instance": 1,
+      "name": "Chiller Control Mode",
+      "description": "",
+      "units": "",
+      "access": "R",
+      "states": "1 = Cool, 2 = Heat, 3 = Ice"
+    },
+    {
+      "type": "MI",
+      "instance": 2,
+      "name": "Active Base Loading Setpoint Source",
+      "description": "",
+      "units": "",
+      "access": "R",
+      "states": "1 = Front Panel, 2 = External, 3 = Ice Machine, 4 = BAS"
+    },
+    {
+      "type": "MI",
+      "instance": 3,
+      "name": "Active Chilled Water Setpoint Source",
+      "description": "",
+      "units": "",
+      "access": "R",
+      "states": "1 = Front Panel, 2 = External, 3 = Ice Machine, 4 = BAS"
+    },
+    {
+      "type": "MI",
+      "instance": 4,
+      "name": "Active Demand Limit Setpoint Source",
+      "description": "",
+      "units": "",
+      "access": "R",
+      "states": "1 = Front Panel, 2 = External, 3 = Ice Machine, 4 = BAS"
+    },
+    {
+      "type": "MI",
+      "instance": 5,
+      "name": "Active Hot Water Setpoint Source",
+      "description": "",
+      "units": "",
+      "access": "R",
+      "states": "1 = Front Panel, 2 = External, 3 = Ice Machine, 4 = BAS"
+    },
+    {
+      "type": "MI",
+      "instance": 6,
+      "name": "Chiller Running Status",
+      "description": "",
+      "units": "",
+      "access": "R",
+      "states": "1 = Not Running, 2 = Starting, 3 = Running, 4 = Stopping"
+    },
+    {
+      "type": "MI",
+      "instance": 7,
+      "name": "Compressor Running",
+      "description": "",
+      "units": "",
+      "access": "R",
+      "states": "0 = Off, 1 = On"
+    },
+    {
+      "type": "MI",
+      "instance": 8,
+      "name": "External Auto Stop",
+      "description": "",
+      "units": "",
+      "access": "R",
+      "states": "0 = Stop, 1 = Auto"
+    },
+    {
+      "type": "MI",
+      "instance": 9,
+      "name": "Front Panel Auto/Stop",
+      "description": "",
+      "units": "",
+      "access": "R",
+      "states": "0 = Stop, 1 = Auto"
+    },
+    {
+      "type": "MI",
+      "instance": 10,
+      "name": "Front Panel Chiller Mode",
+      "description": "",
+      "units": "",
+      "access": "R",
+      "states": "1 = Cool, 2 = Heat, 3 = Ice"
+    },
+    {
+      "type": "MI",
+      "instance": 11,
+      "name": "Setpoint Source",
+      "description": "",
+      "units": "",
+      "access": "R",
+      "states": "1 = BAS/Ext/FP, 2 = Ext/FP, 3 = Front Panel"
+    },
+    {
+      "type": "MI",
+      "instance": 12,
+      "name": "Refrigerant Type",
+      "description": "",
+      "units": "",
+      "access": "R",
+      "states": "5 = R134a, 13 = R513A"
+    },
+    {
+      "type": "MV",
+      "instance": 1,
+      "name": "BAS Chiller Auto Stop Command",
+      "description": "",
+      "units": "",
+      "access": "W",
+      "states": "1 = Stop, 2 = Auto"
+    },
+    {
+      "type": "MV",
+      "instance": 2,
+      "name": "BAS Chiller Mode Command",
+      "description": "",
+      "units": "",
+      "access": "W",
+      "states": "1 = cool, 2 = heat, 3 = ice"
+    }
+  ]
+}

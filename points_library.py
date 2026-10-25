@@ -628,6 +628,7 @@ ORG = {"@type": "Organization", "@id": BASE_URL + "/#org", "name": "Easy BACnet"
 
 # (slug, plural heading, singular noun, keywords matched against equipment_type) - first match wins.
 CATEGORIES = [
+    ("dehumidifiers", "Dehumidifiers", "dehumidifier", ["dehumidif"]),
     ("humidifiers", "Humidifiers", "humidifier", ["humidif", "evaporative cooler", "reverse osmosis"]),
     ("cooling-towers", "Cooling towers & fluid coolers", "cooling tower", ["cooling tower", "fluid cooler"]),
     ("chillers", "Chillers", "chiller", ["chiller"]),
@@ -708,6 +709,8 @@ CAT_TAGS = {
     "chillers": [("ac", "Air-cooled", ["air-cooled"]), ("wc", "Water-cooled", ["water-cooled"]),
                  ("screw", "Screw", ["screw"]), ("scroll", "Scroll", ["scroll"]),
                  ("cent", "Centrifugal", ["centrifugal"]), ("hp", "Heat pump", ["heat pump"])],
+    "dehumidifiers": [("pool", "Indoor pool", ["pool"]), ("grow", "Grow room", ["grow room"]),
+                      ("ind", "Industrial", ["industrial"]), ("oa", "Outdoor air / DOAS", ["outdoor air", "doas"])],
     "humidifiers": [("steam", "Steam", ["steam"]), ("evap", "Evaporative", ["evaporative"]),
                     ("hp", "High-pressure", ["high-pressure", "atomizing"]), ("hyb", "Hybrid", ["hybrid"]),
                     ("gw", "BACnet gateway", ["gateway"]), ("ro", "Water treatment", ["reverse osmosis"])],

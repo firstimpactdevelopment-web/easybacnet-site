@@ -1,0 +1,2898 @@
+{
+ "manufacturer": "Daikin Applied",
+ "manufacturer_slug": "daikin-applied",
+ "model": "MicroTech PreciseLine Light Air Handler Controller",
+ "model_slug": "microtech-preciseline-light-ahu",
+ "aliases": [
+  "PreciseLine",
+  "MicroTech 4 Lite",
+  "MT4 Lite AHU",
+  "PL AHU",
+  "BCV",
+  "BCA",
+  "BCH",
+  "ED 19126"
+ ],
+ "equipment_type": "Air handler unit controller",
+ "applies_to": "PreciseLine light commercial air handlers (BCV, BCA, BCH; 600-10,000 CFM) with the MicroTech 4 Lite controller, including R-410A D-Kit and R-32 EV-kit VRV units.",
+ "summary": "PreciseLine light air handlers use a MicroTech 4 Lite unit controller with a built-in BACnet MS/TP port (T14). The list covers sensor inputs, network sensor overrides, occupancy and application mode commands, temperature, humidity and duct static setpoints, PI tuning, runtimes, alarm objects and, on VRV-coil units, D-Kit or EV-kit status and error codes. Many points only apply when the matching sensor, option or VRV kit is configured.",
+ "bacnet_transport": [
+  "BACnet MS/TP"
+ ],
+ "firmware": "BSP 11.64 or later (PICS: application 2507490204)",
+ "default_device_instance": 23,
+ "access_inferred": false,
+ "notes": [
+  "BACnet MS/TP only; there is no BACnet IP port on this controller.",
+  "Fifth edition of ED 19126 (first released June 2023). Revision -2 added the VRV D-Kit points, -3 energy recovery, and -4 (August 2026) the R-32 EV-kit and A2L leak-detection points.",
+  "VRV points (CSV 1-8, MV 42-45, MV 48-72, AV 128-131, AV 144-183, BI 31-38) only apply to units with Daikin VRV outdoor units; D-Kit = R-410A, EV kit = R-32.",
+  "Unconfigured or failed sensors read 32767.",
+  "Temperature units follow MV 1 (English or SI); the list shows English units except where the guide gives only °C."
+ ],
+ "source": {
+  "title": "MicroTech 4 Lite Network Integration - BACnet MS/TP Protocol (PreciseLine Light Air Handlers)",
+  "doc_number": "ED 19126-4",
+  "revision_date": "2026-08",
+  "url": "https://tahoeweb.daikinapplied.com/api/general/DownloadDocumentByName/media/MicroTech%20PreciseLine%20Unit%20Controller%20ED%2019126-4.pdf/"
+ },
+ "integration": {
+  "summary": "Set the MS/TP address, baud and device instance from the remote HMI, then occupy the unit with Network Occupancy Schedule (MV 9) and pick the mode with Application Mode (MV 5). Adjust the occupied heating/cooling setpoints and read Unit State, space temperature and the alarm objects. Network sensor values (space temp, OAT, humidity, CO2) are optional overrides of the local sensors.",
+  "minimum_points": [
+   {
+    "ref": "MV 9",
+    "name": "NetOccSchedStat",
+    "why": "Occupancy command from the BMS schedule"
+   },
+   {
+    "ref": "MV 5",
+    "name": "AppModeSel",
+    "why": "Application mode (Auto/Heat/Cool/Fan Only/Off)"
+   },
+   {
+    "ref": "AV 11",
+    "name": "OccClgSp",
+    "why": "Occupied cooling setpoint"
+   },
+   {
+    "ref": "AV 12",
+    "name": "OccHtgSp",
+    "why": "Occupied heating setpoint"
+   },
+   {
+    "ref": "MV 3",
+    "name": "ClearAlms",
+    "why": "Clear alarms (all or by class)"
+   },
+   {
+    "ref": "MV 4",
+    "name": "UnitState",
+    "why": "Unit operating state"
+   },
+   {
+    "ref": "AV 3",
+    "name": "EffSpaceTemp",
+    "why": "Space temperature used for control"
+   },
+   {
+    "ref": "AI 1",
+    "name": "aiDAT",
+    "why": "Discharge air temperature"
+   },
+   {
+    "ref": "AV 127",
+    "name": "ActiveAlarm",
+    "why": "Highest-priority active alarm number"
+   }
+  ],
+  "enable": "No BAS-enable switch is described. Network Occupancy Schedule (MV 9) is the recommended occupancy input and applies while the local Occupancy Command (MV 8) is at its default Auto; Network Occupancy Command (MV 7) overrides the keypad. Application Mode (MV 5) takes the last valid write from either the network or the HMI. MV 36-39 can enable or disable economizer, cooling, heating and dehumidification (Null = local setting).",
+  "heartbeat": "No heartbeat or receive timer. All network values stay at the last valid value if communication is lost. MV 7, MV 9 and MV 36-39 return to their defaults when the controller resets.",
+  "remote_sensors": "Network Space Temperature (AV 8), Network Entering Water Temperature (AV 9), Network Outdoor Air Temperature (AV 10), Network Space CO2 (AV 22), Network Space Humidity (AV 24) and Network Outdoor Humidity (AV 25) override the local sensors; if the network value is invalid or not written, the controller falls back to the local sensor. Effective values read back on AV 1-7 and AV 23. Network Supply Fan Speed (AV 118) sets the fan speed from the BAS.",
+  "setup": [
+   "Defaults: device instance 23, MAC address 18, 38400 baud, Max Master 127, Max Info Frames 10, device name PL AHU_23.",
+   "Set addressing on the remote HMI (Unit Maintenance > BACnet MSTP Set-Up, Manager level), then set Apply Changes to Yes; the controller resets.",
+   "Connect the MS/TP trunk to port T14; the remote HMI uses port TH.",
+   "Max APDU 480, no segmentation."
+  ],
+  "gotchas": [
+   "Do not write Clear Alarms (MV 3) continuously; write it only to clear a known alarm.",
+   "Some alarms use intelligent reset: they self-clear the first two times in 7 days, then lock out until cleared manually.",
+   "Active alarms can stop BAS-commanded values from taking effect.",
+   "Points for sensors or options that are not installed read 32767."
+  ]
+ },
+ "short_model": "MicroTech PreciseLine AHU",
+ "points": [
+  {
+   "type": "AI",
+   "instance": 1,
+   "name": "aiDAT",
+   "description": "Discharge Air Temperature",
+   "units": "°F",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "AI",
+   "instance": 2,
+   "name": "aiRAT",
+   "description": "Return Air Temperature",
+   "units": "°F",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "AI",
+   "instance": 3,
+   "name": "aiOAT",
+   "description": "Outdoor Air Temperature",
+   "units": "°F",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "AI",
+   "instance": 5,
+   "name": "aiEwtLct",
+   "description": "Entering Water/Leaving Coil Temperature",
+   "units": "°F",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "AI",
+   "instance": 6,
+   "name": "aiSpaceHum",
+   "description": "Space Relative Humidity",
+   "units": "%",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "AI",
+   "instance": 7,
+   "name": "aiRetHum",
+   "description": "Return Air Relative Humidity",
+   "units": "%",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "AI",
+   "instance": 8,
+   "name": "aiOutHum",
+   "description": "Outdoor Air Relative Humidity",
+   "units": "%",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "AI",
+   "instance": 9,
+   "name": "aiSpaceCO2",
+   "description": "Space CO2",
+   "units": "ppm",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "AI",
+   "instance": 10,
+   "name": "aiDSP",
+   "description": "Duct Static Pressure",
+   "units": "in. w.c.",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "AI",
+   "instance": 11,
+   "name": "RSSpaceTemp",
+   "description": "Space Temperature",
+   "units": "°F",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "AI",
+   "instance": 12,
+   "name": "aiErLWT",
+   "description": "Energy Recovery Leaving Wheel Temperature",
+   "units": "°F",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "AI",
+   "instance": 13,
+   "name": "aiErEWT",
+   "description": "Energy Recovery Entering Wheel Temperature",
+   "units": "°F",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "BI",
+   "instance": 1,
+   "name": "biFreezeStatus",
+   "description": "Freeze Stat",
+   "units": "",
+   "access": "R",
+   "states": "0=FREEZE, 1=NORMAL"
+  },
+  {
+   "type": "BI",
+   "instance": 2,
+   "name": "biChgFilter",
+   "description": "Dirty Filter",
+   "units": "",
+   "access": "R",
+   "states": "0=NORM_OPEN, 1=NORM_CLOSED"
+  },
+  {
+   "type": "BI",
+   "instance": 3,
+   "name": "biEmergencyStop",
+   "description": "Emergency Stop",
+   "units": "",
+   "access": "R",
+   "states": "0=STOP, 1=RUN"
+  },
+  {
+   "type": "BI",
+   "instance": 4,
+   "name": "biOadEndSwitch",
+   "description": "Outdoor Air Damper End Switch",
+   "units": "",
+   "access": "R",
+   "states": "0=NORM_OPEN, 1=NORM_CLOSED"
+  },
+  {
+   "type": "BI",
+   "instance": 5,
+   "name": "biBlockedCond",
+   "description": "Blocked Condensate",
+   "units": "",
+   "access": "R",
+   "states": "0=WET, 1=DRY"
+  },
+  {
+   "type": "BI",
+   "instance": 6,
+   "name": "biAirFlowStatus",
+   "description": "Air Flow Status",
+   "units": "",
+   "access": "R",
+   "states": "0=NO_FLOW, 1=FLOW"
+  },
+  {
+   "type": "BI",
+   "instance": 7,
+   "name": "EmergStopFltAlm",
+   "description": "Emergency Stop (alarm 220, auto clear)",
+   "units": "",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "BI",
+   "instance": 8,
+   "name": "FreezeFltAlm",
+   "description": "Freeze Alarm (alarm 225, manual clear)",
+   "units": "",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "BI",
+   "instance": 9,
+   "name": "CtrlTempFltAlm",
+   "description": "Control Temp Fail (alarm 215, manual clear)",
+   "units": "",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "BI",
+   "instance": 10,
+   "name": "AirFlwStatFltAlm",
+   "description": "Airflow Status Alert (alarm 210, intelligent reset)",
+   "units": "",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "BI",
+   "instance": 11,
+   "name": "DATSensFltAlm",
+   "description": "Discharge Air Temp Sensor Fail (alarm 205, auto clear)",
+   "units": "",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "BI",
+   "instance": 12,
+   "name": "BlockdCndPrbAlm",
+   "description": "Blocked Condensate (alarm 188, auto clear)",
+   "units": "",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "BI",
+   "instance": 13,
+   "name": "SpcSensPrbAlm",
+   "description": "Space Temperature Sensor Fail (alarm 175, auto clear)",
+   "units": "",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "BI",
+   "instance": 14,
+   "name": "DSPSensPrbAlm",
+   "description": "Duct Static Pressure Sensor Fail (alarm 165, auto clear)",
+   "units": "",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "BI",
+   "instance": 15,
+   "name": "EWTPrbAlm",
+   "description": "Entering Water Temperature Sensor Fail (alarm 160, auto clear)",
+   "units": "",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "BI",
+   "instance": 16,
+   "name": "EWTInadqtPrbAlm",
+   "description": "Entering Water Temperature Sensor Inadequate (alarm 155, auto clear)",
+   "units": "",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "BI",
+   "instance": 17,
+   "name": "OATSensPrbAlm",
+   "description": "Outdoor Air Temperature Sensor Fail (alarm 150, auto clear)",
+   "units": "",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "BI",
+   "instance": 18,
+   "name": "CO2SensPrbAlm",
+   "description": "CO2 Sensor Fail (alarm 145, auto clear)",
+   "units": "",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "BI",
+   "instance": 19,
+   "name": "OutHumSensPrbAlm",
+   "description": "Outdoor Air Humidity Sensor Fail (alarm 140, auto clear)",
+   "units": "",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "BI",
+   "instance": 20,
+   "name": "DhumDATLoPrbAlm",
+   "description": "Dehumidification DAT Low (alarm 135, auto clear)",
+   "units": "",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "BI",
+   "instance": 21,
+   "name": "SpcHumSensPrbAlm",
+   "description": "Space Humidity Sensor Fail (alarm 130, auto clear)",
+   "units": "",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "BI",
+   "instance": 22,
+   "name": "RATSensPrbAlm",
+   "description": "Return Air Temp Sensor Fail (alarm 125, auto clear)",
+   "units": "",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "BI",
+   "instance": 23,
+   "name": "LCTSensPrbAlm",
+   "description": "Leaving Coil Temp Sensor Fail (alarm 120, auto clear)",
+   "units": "",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "BI",
+   "instance": 24,
+   "name": "DSPAlertWrnAlm",
+   "description": "Duct Static Pressure Alert (alarm 25, auto clear)",
+   "units": "",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "BI",
+   "instance": 25,
+   "name": "OverEconWrnAlm",
+   "description": "Over Economizing Warning (alarm 30, auto clear)",
+   "units": "",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "BI",
+   "instance": 26,
+   "name": "FinalFilterWrnAlrm",
+   "description": "Final Filter Warning (alarm 20, auto clear)",
+   "units": "",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "BI",
+   "instance": 27,
+   "name": "UnderEconWrnAlm",
+   "description": "Under Economizing Warning (alarm 35, auto clear)",
+   "units": "",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "BI",
+   "instance": 28,
+   "name": "ExcessOutAirWrnAlm",
+   "description": "Excess Outdoor Air Warning (alarm 40, auto clear)",
+   "units": "",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "BI",
+   "instance": 29,
+   "name": "OADStuckWrnAlm",
+   "description": "Outdoor Air Damper Stuck (alarm 45, auto clear)",
+   "units": "",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "BI",
+   "instance": 30,
+   "name": "ControlModelFltAlm",
+   "description": "Control Model Fail (alarm 230, auto clear)",
+   "units": "",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "BI",
+   "instance": 31,
+   "name": "VrvDKitOutdoorUnitFltAlm",
+   "description": "VRV D-Kit Outdoor Unit Fail (alarm 218, auto clear)",
+   "units": "",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "BI",
+   "instance": 32,
+   "name": "VrvDKitDxConnFltAlm",
+   "description": "VRV D-Kit DX Connection Fail (alarm 208, auto clear)",
+   "units": "",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "BI",
+   "instance": 33,
+   "name": "VrvDKitRhConnFltAlm",
+   "description": "VRV D-Kit RH Connection Fail (alarm 209, auto clear)",
+   "units": "",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "BI",
+   "instance": 34,
+   "name": "VrvDefrostPrbAlm",
+   "description": "VRV in Defrost (alarm 195, auto clear)",
+   "units": "",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "BI",
+   "instance": 36,
+   "name": "ConfigFltAlm",
+   "description": "VRV Configuration Fail (alarm 217, auto clear)",
+   "units": "",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "BI",
+   "instance": 38,
+   "name": "VrvDKitCommFltAlm",
+   "description": "VRV D-Kit Modbus Communication Fail (alarm 219, auto clear)",
+   "units": "",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "BI",
+   "instance": 39,
+   "name": "DATLowFltAlm",
+   "description": "DAT Low Temperature Fail (alarm 213, auto clear)",
+   "units": "",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "BI",
+   "instance": 40,
+   "name": "DATHighFltAlm",
+   "description": "DAT High Temperature Fail (alarm 212, auto clear)",
+   "units": "",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "BI",
+   "instance": 41,
+   "name": "EUTSensFltAlm",
+   "description": "Entering Unit Temperature Sensor Fail (alarm 216, auto clear)",
+   "units": "",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "BI",
+   "instance": 42,
+   "name": "EUTLowFltAlm",
+   "description": "Entering Unit Temperature Low Fail (alarm 207, auto clear)",
+   "units": "",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "BI",
+   "instance": 43,
+   "name": "OASzSpcSensPrbAlm",
+   "description": "OA/SZ VAV Space Temperature Sensor Fail (alarm 177, auto clear)",
+   "units": "",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "BI",
+   "instance": 44,
+   "name": "biErChgFilter",
+   "description": "Energy Recovery Change Filter",
+   "units": "",
+   "access": "R",
+   "states": "0=NORM_OPEN, 1=NORM_CLOSED"
+  },
+  {
+   "type": "BI",
+   "instance": 45,
+   "name": "RAHumPrbAlm",
+   "description": "Return Air Humidity Fail (alarm 149, auto clear)",
+   "units": "",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "BI",
+   "instance": 46,
+   "name": "ErLWTPrbAlm",
+   "description": "Energy Recovery Leaving Wheel Temperature Fail (alarm 148, auto clear)",
+   "units": "",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "BI",
+   "instance": 47,
+   "name": "ErWhlExhPrbAlm",
+   "description": "Energy Recovery Exhaust Wheel Temp Fail (alarm 147, auto clear)",
+   "units": "",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "BI",
+   "instance": 48,
+   "name": "ErWheelWrnAlm",
+   "description": "Energy Recovery Wheel Warning (alarm 5, auto clear)",
+   "units": "",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "BI",
+   "instance": 49,
+   "name": "PreFilterWrnAlrm",
+   "description": "Energy Recovery Pre-Filter Warning (alarm 15, auto clear)",
+   "units": "",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "BI",
+   "instance": 50,
+   "name": "A2LLeakPrbAlm",
+   "description": "A2L Leak Alarm (alarm 190, manual clear)",
+   "units": "",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "BI",
+   "instance": 51,
+   "name": "A2LSensorPrbAlm",
+   "description": "A2L Sensor Fail Alarm (alarm 158, auto clear)",
+   "units": "",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "BI",
+   "instance": 52,
+   "name": "A2LCommLossPrbAlm",
+   "description": "A2L Comm Loss Alarm (alarm 157, auto clear)",
+   "units": "",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "CSV",
+   "instance": 1,
+   "name": "DkitErrorHexCode1",
+   "description": "VRV D-Kit Error 1",
+   "units": "",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "CSV",
+   "instance": 2,
+   "name": "DkitErrorHexCode2",
+   "description": "VRV D-Kit Error 2",
+   "units": "",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "CSV",
+   "instance": 3,
+   "name": "DkitErrorHexCode3",
+   "description": "VRV D-Kit Error 3",
+   "units": "",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "CSV",
+   "instance": 4,
+   "name": "DkitErrorHexCode4",
+   "description": "VRV D-Kit Error 4",
+   "units": "",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "CSV",
+   "instance": 5,
+   "name": "EvKitErrHexCode1",
+   "description": "VRV EV Kit Error 1",
+   "units": "",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "CSV",
+   "instance": 6,
+   "name": "EvKitErrHexCode2",
+   "description": "VRV EV Kit Error 2",
+   "units": "",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "CSV",
+   "instance": 7,
+   "name": "EvKitErrHexCode3",
+   "description": "VRV EV Kit Error 3",
+   "units": "",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "CSV",
+   "instance": 8,
+   "name": "EvKitErrHexCode4",
+   "description": "VRV EV Kit Error 4",
+   "units": "",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 1,
+   "name": "EffSpaceHum",
+   "description": "Effective Space Humidity",
+   "units": "%",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 2,
+   "name": "EffSpaceCO2",
+   "description": "Effective Space CO2",
+   "units": "ppm",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 3,
+   "name": "EffSpaceTemp",
+   "description": "Effective Space Temperature",
+   "units": "°F",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 4,
+   "name": "ControlTemp",
+   "description": "Control Temperature",
+   "units": "°F",
+   "access": "W",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 5,
+   "name": "EffLCT",
+   "description": "Effective Leaving Coil Temperature",
+   "units": "°F",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 6,
+   "name": "EffEWT",
+   "description": "Effective Entering Water Temperature",
+   "units": "°F",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 7,
+   "name": "EffOAT",
+   "description": "Effective Outdoor Air Temperature",
+   "units": "°F",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 8,
+   "name": "NetSpaceTemp",
+   "description": "Network Space Temperature",
+   "units": "°F",
+   "access": "W",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 9,
+   "name": "NetEWT",
+   "description": "Network Entering Water Temperature",
+   "units": "°F",
+   "access": "W",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 10,
+   "name": "NetOAT",
+   "description": "Network Outdoor Air Temperature",
+   "units": "°F",
+   "access": "W",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 11,
+   "name": "OccClgSp",
+   "description": "Occupied Cooling Setpoint",
+   "units": "°F",
+   "access": "W",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 12,
+   "name": "OccHtgSp",
+   "description": "Occupied Heating Setpoint",
+   "units": "°F",
+   "access": "W",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 13,
+   "name": "OccOffDifSp",
+   "description": "Occupied Off Differential Setpoint",
+   "units": "°F",
+   "access": "W",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 14,
+   "name": "StandbyClgSp",
+   "description": "Standby Cooling Setpoint",
+   "units": "°F",
+   "access": "W",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 15,
+   "name": "StandbyHtgSp",
+   "description": "Standby Heating Setpoint",
+   "units": "°F",
+   "access": "W",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 16,
+   "name": "UnoccClgSp",
+   "description": "Unoccupied Cooling Setpoint",
+   "units": "°F",
+   "access": "W",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 17,
+   "name": "UnoccHtgSp",
+   "description": "Unoccupied Heating Setpoint",
+   "units": "°F",
+   "access": "W",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 18,
+   "name": "UnoccOffDifSp",
+   "description": "Unoccupied Off Differential Setpoint",
+   "units": "°F",
+   "access": "W",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 19,
+   "name": "HtgDATSp",
+   "description": "Discharge Air Temperature Heating Setpoint",
+   "units": "°F",
+   "access": "W",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 20,
+   "name": "ClgDATSp",
+   "description": "Discharge Air Temperature Cooling Setpoint",
+   "units": "°F",
+   "access": "W",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 22,
+   "name": "NetSpaceCO2",
+   "description": "Network Space CO2",
+   "units": "ppm",
+   "access": "W",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 23,
+   "name": "EffOutHum",
+   "description": "Effective Outdoor Humidity",
+   "units": "%",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 24,
+   "name": "NetSpaceHum",
+   "description": "Network Space Humidity",
+   "units": "%",
+   "access": "W",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 25,
+   "name": "NetOutHum",
+   "description": "Network Outdoor Humidity",
+   "units": "%",
+   "access": "W",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 26,
+   "name": "DSPSp",
+   "description": "Duct Static Pressure Setpoint",
+   "units": "in. w.c.",
+   "access": "W",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 27,
+   "name": "DspDB",
+   "description": "Duct Static Pressure Deadband",
+   "units": "in. w.c.",
+   "access": "W",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 28,
+   "name": "DspGain",
+   "description": "Duct Static Pressure Gain",
+   "units": "",
+   "access": "W",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 29,
+   "name": "DspPAT",
+   "description": "Duct Static Pressure Project Ahead Time",
+   "units": "s",
+   "access": "W",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 30,
+   "name": "DspPeriod",
+   "description": "Duct Static Pressure Sampling Period",
+   "units": "s",
+   "access": "W",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 31,
+   "name": "DspMaxChg",
+   "description": "Duct Static Pressure Max Change",
+   "units": "%",
+   "access": "W",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 32,
+   "name": "SzVavDB",
+   "description": "Single Zone VAV Deadband",
+   "units": "°F",
+   "access": "W",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 33,
+   "name": "SzVavGain",
+   "description": "Single Zone VAV Gain",
+   "units": "",
+   "access": "W",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 34,
+   "name": "SzVavPAT",
+   "description": "Single Zone VAV Project Ahead Time",
+   "units": "s",
+   "access": "W",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 35,
+   "name": "SzVavPeriod",
+   "description": "Single Zone VAV Sampling Period",
+   "units": "s",
+   "access": "W",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 36,
+   "name": "SzVavMaxChg",
+   "description": "Single Zone VAV Max Change",
+   "units": "%",
+   "access": "W",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 37,
+   "name": "DSPHighAlarmSetpt",
+   "description": "Duct Static Pressure High Alarm",
+   "units": "in. w.c.",
+   "access": "W",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 39,
+   "name": "SupFnCnstSpdSp",
+   "description": "Supply Fan Constant Speed",
+   "units": "%",
+   "access": "W",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 40,
+   "name": "SupFnMinSpdSp",
+   "description": "Supply Fan Minimum Speed",
+   "units": "%",
+   "access": "W",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 41,
+   "name": "SupFnMxSpdSp",
+   "description": "Supply Fan Maximum Speed",
+   "units": "%",
+   "access": "W",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 42,
+   "name": "SupFnDhumSpfSp",
+   "description": "Supply Fan Dehumidification Speed",
+   "units": "%",
+   "access": "W",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 44,
+   "name": "HtgVlvDBSp",
+   "description": "Heating Valve Deadband",
+   "units": "°F",
+   "access": "W",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 45,
+   "name": "HtgVlvPeriodSp",
+   "description": "Heating Valve Sampling Period",
+   "units": "s",
+   "access": "W",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 46,
+   "name": "HtgVlvGnSp",
+   "description": "Heating Valve Gain",
+   "units": "",
+   "access": "W",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 47,
+   "name": "HtgVlvPATSp",
+   "description": "Heating Valve Project Ahead Time",
+   "units": "s",
+   "access": "W",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 48,
+   "name": "HtgVlvMxChgSp",
+   "description": "Heating Valve Max Change",
+   "units": "%",
+   "access": "W",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 49,
+   "name": "ClgVlvDBSp",
+   "description": "Cooling Valve Deadband",
+   "units": "°F",
+   "access": "W",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 50,
+   "name": "ClgVlvPeriodSp",
+   "description": "Cooling Valve Sampling Period",
+   "units": "s",
+   "access": "W",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 51,
+   "name": "ClgVlvGnSp",
+   "description": "Cooling Valve Gain",
+   "units": "",
+   "access": "W",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 52,
+   "name": "ClgVlvPATSp",
+   "description": "Cooling Valve Project Ahead Time",
+   "units": "s",
+   "access": "W",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 53,
+   "name": "ClgVlvMxChgSp",
+   "description": "Cooling Valve Max Change",
+   "units": "%",
+   "access": "W",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 54,
+   "name": "CmpMnOnTmSp",
+   "description": "Compressor Minimum On Time",
+   "units": "s",
+   "access": "W",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 55,
+   "name": "CmpMnOffTmSp",
+   "description": "Compressor Minimum Off Time",
+   "units": "s",
+   "access": "W",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 56,
+   "name": "ClgIStgTmrSp",
+   "description": "Compressor Cooling Timer",
+   "units": "s",
+   "access": "W",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 58,
+   "name": "HtgIStgTmrSp",
+   "description": "Electric Heat Interstage Timer",
+   "units": "s",
+   "access": "W",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 61,
+   "name": "DmprClsdEndSwSp",
+   "description": "Outdoor Air Damper Closed Position",
+   "units": "%",
+   "access": "W",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 62,
+   "name": "DmprOpnEndSwSp",
+   "description": "Outdoor Air Damper Open Position",
+   "units": "%",
+   "access": "W",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 63,
+   "name": "MnDmprSwDiffSp",
+   "description": "Minimum Outdoor Air Damper Differential",
+   "units": "%",
+   "access": "W",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 64,
+   "name": "MxDmprSwDiffSp",
+   "description": "Maximum Outdoor Air Damper Differential",
+   "units": "%",
+   "access": "W",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 65,
+   "name": "EconHighLimitSp",
+   "description": "Economizer High Limit",
+   "units": "°F",
+   "access": "W",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 66,
+   "name": "EconLowLimitSp",
+   "description": "Economizer Low Limit",
+   "units": "°F",
+   "access": "W",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 67,
+   "name": "OADMinSp",
+   "description": "Outdoor Air Damper Minimum Position",
+   "units": "%",
+   "access": "W",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 68,
+   "name": "OADMaxSp",
+   "description": "Outdoor Air Damper Maximum Position",
+   "units": "%",
+   "access": "W",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 69,
+   "name": "EconOutTmpSp",
+   "description": "Economizer Outdoor Air Temperature",
+   "units": "°F",
+   "access": "W",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 70,
+   "name": "OutAirEnthSp",
+   "description": "Economizer Outdoor Air Enthalpy",
+   "units": "Btu/lb",
+   "access": "W",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 71,
+   "name": "EconTmpDiffSp",
+   "description": "Economizer Temperature Differential",
+   "units": "°F",
+   "access": "W",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 72,
+   "name": "EconEnthDiffSp",
+   "description": "Economizer Enthalpy Differential",
+   "units": "Btu/lb",
+   "access": "W",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 73,
+   "name": "OATLckoutTmpSp",
+   "description": "Outdoor Air Temperature Lockout",
+   "units": "°F",
+   "access": "W",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 74,
+   "name": "MnCO2Sp",
+   "description": "Outdoor Air Damper CO2 Minimum Position",
+   "units": "ppm",
+   "access": "W",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 75,
+   "name": "MxCO2Sp",
+   "description": "Outdoor Air Damper CO2 Maximum Position",
+   "units": "ppm",
+   "access": "W",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 76,
+   "name": "RelHumSp",
+   "description": "Indoor Relative Humidity Setpoint",
+   "units": "%",
+   "access": "W",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 77,
+   "name": "RelHumDiffSp",
+   "description": "Indoor Relative Humidity Differential",
+   "units": "%",
+   "access": "W",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 78,
+   "name": "DewptSp",
+   "description": "Indoor Dewpoint Setpoint",
+   "units": "°F",
+   "access": "W",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 79,
+   "name": "DewptDiffSp",
+   "description": "Indoor Dewpoint Differential",
+   "units": "°F",
+   "access": "W",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 80,
+   "name": "LCTSp",
+   "description": "Leaving Coil Temperature Setpoint",
+   "units": "°F",
+   "access": "W",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 81,
+   "name": "DhumDATSp",
+   "description": "Discharge Air Temperature Dehumidification Setpoint",
+   "units": "°F",
+   "access": "W",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 82,
+   "name": "ExhFnSupFnMnSp",
+   "description": "Minimum Exhaust Fan Speed",
+   "units": "%",
+   "access": "W",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 83,
+   "name": "ExhFnSupFnMxSp",
+   "description": "Maximum Exhaust Fan Speed",
+   "units": "%",
+   "access": "W",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 84,
+   "name": "ExhFnCnstSpdSp",
+   "description": "Exhaust Fan Constant Speed",
+   "units": "%",
+   "access": "W",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 85,
+   "name": "FilterRuntime",
+   "description": "Filter Run Time",
+   "units": "h",
+   "access": "W",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 86,
+   "name": "SupFanRuntime",
+   "description": "Supply Fan Run Time",
+   "units": "h",
+   "access": "W",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 87,
+   "name": "ExhFanRuntime",
+   "description": "Exhaust Fan Run Time",
+   "units": "h",
+   "access": "W",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 88,
+   "name": "Cmp1Runtime",
+   "description": "Compressor 1 Runtime",
+   "units": "h",
+   "access": "W",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 89,
+   "name": "Cmp2Runtime",
+   "description": "Compressor 2 Runtime",
+   "units": "h",
+   "access": "W",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 90,
+   "name": "Cmp3Runtime",
+   "description": "Compressor 3 Run Time",
+   "units": "h",
+   "access": "W",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 91,
+   "name": "Cmp4Runtime",
+   "description": "Compressor 4 Runtime",
+   "units": "h",
+   "access": "W",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 92,
+   "name": "Cmp1Starts",
+   "description": "Compressor 1 Starts",
+   "units": "",
+   "access": "W",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 93,
+   "name": "Cmp2Starts",
+   "description": "Compressor 2 Starts",
+   "units": "",
+   "access": "W",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 94,
+   "name": "Cmp3Starts",
+   "description": "Compressor 3 Starts",
+   "units": "",
+   "access": "W",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 95,
+   "name": "Cmp4Starts",
+   "description": "Compressor 4 Starts",
+   "units": "",
+   "access": "W",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 96,
+   "name": "ChgFilterTmSp",
+   "description": "Filter Change Hours",
+   "units": "h",
+   "access": "W",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 98,
+   "name": "aoOADamper",
+   "description": "Outside Air Damper",
+   "units": "%",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 99,
+   "name": "aoReturnAirDamper",
+   "description": "Return Air Damper",
+   "units": "%",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 100,
+   "name": "aoSupFanSpd",
+   "description": "Supply Fan Speed",
+   "units": "%",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 101,
+   "name": "aoExhFanSpd",
+   "description": "Exhaust Fan Speed",
+   "units": "%",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 102,
+   "name": "aoHtgVlvSCR",
+   "description": "Heating Valve and Electric Heat",
+   "units": "%",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 103,
+   "name": "aoClgVlv",
+   "description": "Cooling and Changeover Valve",
+   "units": "%",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 104,
+   "name": "RSOccHtgSp",
+   "description": "Room Sensor Occupied Heating Setpoint",
+   "units": "°F",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 105,
+   "name": "RSOccClgSp",
+   "description": "Room Sensor Occupied Cooling Setpoint",
+   "units": "°F",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 106,
+   "name": "HtgSp",
+   "description": "Active Heating Setpoint",
+   "units": "°F",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 107,
+   "name": "ClgSp",
+   "description": "Active Cooling Setpoint",
+   "units": "°F",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 108,
+   "name": "MinDATTempSp",
+   "description": "Minimum DAT Temperature Setpoint",
+   "units": "°F",
+   "access": "W",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 109,
+   "name": "MinDATTmrSp",
+   "description": "Minimum DAT Temperature Timer Setpoint",
+   "units": "s",
+   "access": "W",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 112,
+   "name": "PreviousAlarm",
+   "description": "Previous Alarm",
+   "units": "",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 113,
+   "name": "CmpDBSp",
+   "description": "Cooling Deadband",
+   "units": "°F",
+   "access": "W",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 114,
+   "name": "CmpPeriodSp",
+   "description": "Cooling Sampling Period",
+   "units": "s",
+   "access": "W",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 115,
+   "name": "CmpGnSp",
+   "description": "Cooling Gain",
+   "units": "",
+   "access": "W",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 116,
+   "name": "CmpPATSp",
+   "description": "Cooling Project Ahead Time",
+   "units": "s",
+   "access": "W",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 117,
+   "name": "CmpMxChgSp",
+   "description": "Cooling Max Change Setpoint",
+   "units": "°F",
+   "access": "W",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 118,
+   "name": "NetSupFanSpd",
+   "description": "Network Supply Fan Speed",
+   "units": "%",
+   "access": "W",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 119,
+   "name": "ElHtgDBSp",
+   "description": "Electric Heat Deadband",
+   "units": "°F",
+   "access": "W",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 120,
+   "name": "ElHtgPeriodSp",
+   "description": "Electric Heat Sampling Period",
+   "units": "s",
+   "access": "W",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 121,
+   "name": "ElHtgGnSp",
+   "description": "Electric Heat Gain",
+   "units": "",
+   "access": "W",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 122,
+   "name": "ElHtgPATSp",
+   "description": "Electric Heat Project Ahead Time",
+   "units": "s",
+   "access": "W",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 123,
+   "name": "ElHtgMxChgSp",
+   "description": "Electric Heat Max Change Setpoint",
+   "units": "",
+   "access": "W",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 124,
+   "name": "ActiveFault",
+   "description": "Fault Alarm",
+   "units": "",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 125,
+   "name": "ActiveProb",
+   "description": "Problem Alarm",
+   "units": "",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 126,
+   "name": "ActiveWarn",
+   "description": "Warning Alarm",
+   "units": "",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 127,
+   "name": "ActiveAlarm",
+   "description": "Current Alarm",
+   "units": "",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 128,
+   "name": "MbRErrorDetail1",
+   "description": "VRV D-Kit Error Detail 1",
+   "units": "",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 129,
+   "name": "MbRErrorDetail2",
+   "description": "VRV D-Kit Error Detail 2",
+   "units": "",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 130,
+   "name": "MbRErrorDetail3",
+   "description": "VRV D-Kit Error Detail 3",
+   "units": "",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 131,
+   "name": "MbRErrorDetail4",
+   "description": "VRV D-Kit Error Detail 4",
+   "units": "",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 132,
+   "name": "ErwRuntime",
+   "description": "Energy Recovery Wheel Run Time",
+   "units": "h",
+   "access": "W",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 133,
+   "name": "ErPhRuntime",
+   "description": "Energy Recovery Preheat Run Time",
+   "units": "h",
+   "access": "W",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 134,
+   "name": "ErFilterRuntime",
+   "description": "Energy Recovery Filter Run Time",
+   "units": "h",
+   "access": "W",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 135,
+   "name": "ErCapacity",
+   "description": "Energy Recovery Wheel Capacity",
+   "units": "%",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 136,
+   "name": "DewptRA",
+   "description": "Return Air Dewpoint",
+   "units": "°F",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 137,
+   "name": "DewptOut",
+   "description": "Outdoor Air Dewpoint",
+   "units": "°F",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 138,
+   "name": "ErPhCapacity",
+   "description": "Energy Recovery Preheat Capacity",
+   "units": "%",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 139,
+   "name": "OadcDBSp",
+   "description": "Outdoor Air Damper PID Deadband Setpoint",
+   "units": "°F",
+   "access": "W",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 140,
+   "name": "OadcPeriodSp",
+   "description": "Outdoor Air Damper PID Cycle Period Setpoint",
+   "units": "s",
+   "access": "W",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 141,
+   "name": "OadcGainSp",
+   "description": "Outdoor Air Damper PID Gain Setpoint",
+   "units": "",
+   "access": "W",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 142,
+   "name": "OadcPATSp",
+   "description": "Outdoor Air Damper Project Ahead Time Setpoint",
+   "units": "s",
+   "access": "W",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 143,
+   "name": "OadcMxChgSp",
+   "description": "Outdoor Air Damper Maximum Change Setpoint",
+   "units": "%",
+   "access": "W",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 144,
+   "name": "EvErrDetail1",
+   "description": "VRV EV Kit Error Detail 1",
+   "units": "",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 145,
+   "name": "EvErrDetail2",
+   "description": "VRV EV Kit Error Detail 2",
+   "units": "",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 146,
+   "name": "EvErrDetail3",
+   "description": "VRV EV Kit Error Detail 3",
+   "units": "",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 147,
+   "name": "EvErrDetail4",
+   "description": "VRV EV Kit Error Detail 4",
+   "units": "",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 148,
+   "name": "EvRDAT1",
+   "description": "EV Discharge Air Temperature 1",
+   "units": "°C",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 149,
+   "name": "EvRDAT2",
+   "description": "EV Discharge Air Temperature 2",
+   "units": "°C",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 150,
+   "name": "EvRDAT3",
+   "description": "EV Discharge Air Temperature 3",
+   "units": "°C",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 151,
+   "name": "EvRDAT4",
+   "description": "EV Discharge Air Temperature 4",
+   "units": "°C",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 152,
+   "name": "EvRRhGasTemp1",
+   "description": "EV RH Gas Temperature 1",
+   "units": "°F",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 153,
+   "name": "EvRRhGasTemp2",
+   "description": "EV RH Gas Temperature 2",
+   "units": "°F",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 154,
+   "name": "EvRRhGasTemp3",
+   "description": "EV RH Gas Temperature 3",
+   "units": "°F",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 155,
+   "name": "EvRRhGasTemp4",
+   "description": "EV RH Gas Temperature 4",
+   "units": "°F",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 156,
+   "name": "EvRDxEVlvFlowRa1",
+   "description": "EV DX Valve Flow Ratio 1 (0 = closed, 1 = full flow)",
+   "units": "%",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 157,
+   "name": "EvRDxEVlvFlowRa2",
+   "description": "EV DX Valve Flow Ratio 2",
+   "units": "%",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 158,
+   "name": "EvRDxEVlvFlowRa3",
+   "description": "EV DX Valve Flow Ratio 3",
+   "units": "%",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 159,
+   "name": "EvRDxEVlvFlowRa4",
+   "description": "EV DX Valve Flow Ratio 4",
+   "units": "%",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 160,
+   "name": "EvRDxGasTemp1",
+   "description": "EV DX Gas Temperature 1",
+   "units": "°F",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 161,
+   "name": "EvRDxGasTemp2",
+   "description": "EV DX Gas Temperature 2",
+   "units": "°F",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 162,
+   "name": "EvRDxGasTemp3",
+   "description": "EV DX Gas Temperature 3",
+   "units": "°F",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 163,
+   "name": "EvRDxGasTemp4",
+   "description": "EV DX Gas Temperature 4",
+   "units": "°F",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 164,
+   "name": "EvRDxLiqTemp1",
+   "description": "EV DX Liquid Temperature 1",
+   "units": "°F",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 165,
+   "name": "EvRDxLiqTemp2",
+   "description": "EV DX Liquid Temperature 2",
+   "units": "°F",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 166,
+   "name": "EvRDxLiqTemp3",
+   "description": "EV DX Liquid Temperature 3",
+   "units": "°F",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 167,
+   "name": "EvRDxLiqTemp4",
+   "description": "EV DX Liquid Temperature 4",
+   "units": "°F",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 168,
+   "name": "EvRErrorCode1",
+   "description": "EV Error Code 1",
+   "units": "",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 169,
+   "name": "EvRErrorCode2",
+   "description": "EV Error Code 2",
+   "units": "",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 170,
+   "name": "EvRErrorCode3",
+   "description": "EV Error Code 3",
+   "units": "",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 171,
+   "name": "EvRErrorCode4",
+   "description": "EV Error Code 4",
+   "units": "",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 172,
+   "name": "EvRRhEVlvFlowRa1",
+   "description": "EV RH Valve Flow Ratio 1",
+   "units": "%",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 173,
+   "name": "EvRRhEVlvFlowRa2",
+   "description": "EV RH Valve Flow Ratio 2",
+   "units": "%",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 174,
+   "name": "EvRRhEVlvFlowRa3",
+   "description": "EV RH Valve Flow Ratio 3",
+   "units": "%",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 175,
+   "name": "EvRRhEVlvFlowRa4",
+   "description": "EV RH Valve Flow Ratio 4",
+   "units": "%",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 176,
+   "name": "EvRRhLiqTemp1",
+   "description": "EV RH Liquid Temperature 1",
+   "units": "°C",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 177,
+   "name": "EvRRhLiqTemp2",
+   "description": "EV RH Liquid Temperature 2",
+   "units": "°C",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 178,
+   "name": "EvRRhLiqTemp3",
+   "description": "EV RH Liquid Temperature 3",
+   "units": "°C",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 179,
+   "name": "EvRRhLiqTemp4",
+   "description": "EV RH Liquid Temperature 4",
+   "units": "°C",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 180,
+   "name": "EvRSuctionAirTemp",
+   "description": "EV Read Suction Air Temperature",
+   "units": "°F",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 181,
+   "name": "EvWDAT",
+   "description": "EV Write Discharge Air Temperature",
+   "units": "°F",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 182,
+   "name": "EvWDatTarget",
+   "description": "EV Write Dewpoint Target",
+   "units": "°F",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 183,
+   "name": "EvWDewptTargetDiff",
+   "description": "EV Write Dewpoint Target Difference",
+   "units": "°F",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 184,
+   "name": "CompfanOffDly",
+   "description": "DX Coil Compressor Off Delay Setpoint",
+   "units": "s",
+   "access": "W",
+   "states": ""
+  },
+  {
+   "type": "MV",
+   "instance": 1,
+   "name": "MSTPUnitSupport",
+   "description": "BACnet Units of Measurement",
+   "units": "",
+   "access": "W",
+   "states": "1=Si, 2=English"
+  },
+  {
+   "type": "MV",
+   "instance": 3,
+   "name": "ClearAlms",
+   "description": "Clear Alarms",
+   "units": "",
+   "access": "W",
+   "states": "1=No, 2=Clrflts, 3=Clrprblms, 4=Clrwrngs, 5=Clrallalms"
+  },
+  {
+   "type": "MV",
+   "instance": 4,
+   "name": "UnitState",
+   "description": "Unit State",
+   "units": "",
+   "access": "R",
+   "states": "1=OFF, 2=HEAT, 3=COOL, 4=ECONO, 5=ECONO_COOL, 6=DEHUMID, 7=FANONLY, 8=OVERRIDE"
+  },
+  {
+   "type": "MV",
+   "instance": 5,
+   "name": "AppModeSel",
+   "description": "Application Mode",
+   "units": "",
+   "access": "W",
+   "states": "1=AUTO, 2=HEAT, 3=COOL, 4=FANONLY, 5=OFF"
+  },
+  {
+   "type": "MV",
+   "instance": 6,
+   "name": "EffOcc",
+   "description": "Effective Occupancy",
+   "units": "",
+   "access": "R",
+   "states": "1=OCCUPIED, 2=UNOCCUPIED, 3=BYPASS, 4=STANDBY"
+  },
+  {
+   "type": "MV",
+   "instance": 7,
+   "name": "NetOccOrSel",
+   "description": "Network Occupancy Command",
+   "units": "",
+   "access": "W",
+   "states": "1=OCCUPIED, 2=UNOCCUPIED, 3=BYPASS, 4=STANDBY, 5=NULL"
+  },
+  {
+   "type": "MV",
+   "instance": 8,
+   "name": "KeyOccOrSel",
+   "description": "Occupancy Command",
+   "units": "",
+   "access": "W",
+   "states": "1=OCCUPIED, 2=UNOCCUPIED, 3=BYPASS, 4=STANDBY, 5=AUTO"
+  },
+  {
+   "type": "MV",
+   "instance": 9,
+   "name": "NetOccSchedStat",
+   "description": "Network Occupancy Schedule",
+   "units": "",
+   "access": "W",
+   "states": "1=OCCUPIED, 2=UNOCCUPIED, 3=STANDBY, 4=NULL"
+  },
+  {
+   "type": "MV",
+   "instance": 10,
+   "name": "IntSchedStat",
+   "description": "Occupancy Schedule Status",
+   "units": "",
+   "access": "R",
+   "states": "1=NULL, 2=UNOCCUPIED, 3=OCCUPIED"
+  },
+  {
+   "type": "MV",
+   "instance": 11,
+   "name": "ExhFnEnSel",
+   "description": "Exhaust Fan Enable",
+   "units": "",
+   "access": "W",
+   "states": "1=DISABLED, 2=ENABLED"
+  },
+  {
+   "type": "MV",
+   "instance": 12,
+   "name": "DhumMethodSel",
+   "description": "Dehumidification Type",
+   "units": "",
+   "access": "W",
+   "states": "1=REL_HUM, 2=DEWPT"
+  },
+  {
+   "type": "MV",
+   "instance": 13,
+   "name": "EconEndSwCalibCmd",
+   "description": "Economizer OAD End Switch Calibration Enable",
+   "units": "",
+   "access": "W",
+   "states": "1=NO, 2=YES"
+  },
+  {
+   "type": "MV",
+   "instance": 14,
+   "name": "EconStrategySel",
+   "description": "Economizer Control Strategy Select",
+   "units": "",
+   "access": "W",
+   "states": "1=NONE, 2=OAT, 3=ENTHALPY_OUT, 4=TEMP_DIFF, 5=ENTHALPY_DIFF"
+  },
+  {
+   "type": "MV",
+   "instance": 15,
+   "name": "RADmprSclgSel",
+   "description": "Return Air Damper Scaling",
+   "units": "",
+   "access": "W",
+   "states": "1=LINEAR, 2=SQUARED"
+  },
+  {
+   "type": "MV",
+   "instance": 16,
+   "name": "OADScalingSel",
+   "description": "Outdoor Air Damper Scaling",
+   "units": "",
+   "access": "W",
+   "states": "1=LINEAR, 2=SQUARED"
+  },
+  {
+   "type": "MV",
+   "instance": 17,
+   "name": "OATLckoutSel",
+   "description": "OA Outdoor Air Lockout Enable",
+   "units": "",
+   "access": "W",
+   "states": "1=DISABLED, 2=ENABLED"
+  },
+  {
+   "type": "MV",
+   "instance": 18,
+   "name": "FilterChgSel",
+   "description": "Filter Change Select",
+   "units": "",
+   "access": "W",
+   "states": "1=NONE, 2=RUNTIME, 3=BINARY_INPUT, 4=BOTH"
+  },
+  {
+   "type": "MV",
+   "instance": 19,
+   "name": "boHtgStg1",
+   "description": "Heating Stage 1",
+   "units": "",
+   "access": "R",
+   "states": "1=OFF, 2=ON"
+  },
+  {
+   "type": "MV",
+   "instance": 20,
+   "name": "boHtgStg2",
+   "description": "Heating Stage 2",
+   "units": "",
+   "access": "R",
+   "states": "1=OFF, 2=ON"
+  },
+  {
+   "type": "MV",
+   "instance": 21,
+   "name": "boHtgStg3",
+   "description": "Heating Stage 3",
+   "units": "",
+   "access": "R",
+   "states": "1=OFF, 2=ON"
+  },
+  {
+   "type": "MV",
+   "instance": 22,
+   "name": "boHtgStg4",
+   "description": "Heating Stage 4",
+   "units": "",
+   "access": "R",
+   "states": "1=OFF, 2=ON"
+  },
+  {
+   "type": "MV",
+   "instance": 23,
+   "name": "boClgStg1",
+   "description": "Cooling Stage 1",
+   "units": "",
+   "access": "R",
+   "states": "1=OFF, 2=ON"
+  },
+  {
+   "type": "MV",
+   "instance": 24,
+   "name": "boClgStg2",
+   "description": "Cooling Stage 2",
+   "units": "",
+   "access": "R",
+   "states": "1=OFF, 2=ON"
+  },
+  {
+   "type": "MV",
+   "instance": 25,
+   "name": "boClgStg3",
+   "description": "Cooling Stage 3",
+   "units": "",
+   "access": "R",
+   "states": "1=OFF, 2=ON"
+  },
+  {
+   "type": "MV",
+   "instance": 26,
+   "name": "boClgStg4",
+   "description": "Cooling Stage 4",
+   "units": "",
+   "access": "R",
+   "states": "1=OFF, 2=ON"
+  },
+  {
+   "type": "MV",
+   "instance": 27,
+   "name": "boSupFanEn",
+   "description": "Supply Fan Enable",
+   "units": "",
+   "access": "R",
+   "states": "1=DISABLED, 2=ENABLED"
+  },
+  {
+   "type": "MV",
+   "instance": 28,
+   "name": "boExhFanEn",
+   "description": "Exhaust Fan Enable",
+   "units": "",
+   "access": "R",
+   "states": "1=DISABLED, 2=ENABLED"
+  },
+  {
+   "type": "MV",
+   "instance": 29,
+   "name": "boVAVBoxEn",
+   "description": "VAV Box Enable",
+   "units": "",
+   "access": "R",
+   "states": "1=DISABLED, 2=ENABLED"
+  },
+  {
+   "type": "MV",
+   "instance": 36,
+   "name": "NetEconEn",
+   "description": "Economizer Enable",
+   "units": "",
+   "access": "W",
+   "states": "1=DISABLED, 2=ENABLED, 3=NULL"
+  },
+  {
+   "type": "MV",
+   "instance": 37,
+   "name": "NetClgEn",
+   "description": "Cool Enable",
+   "units": "",
+   "access": "W",
+   "states": "1=DISABLED, 2=ENABLED, 3=NULL"
+  },
+  {
+   "type": "MV",
+   "instance": 38,
+   "name": "NetHtgEn",
+   "description": "Heat Enable",
+   "units": "",
+   "access": "W",
+   "states": "1=DISABLED, 2=ENABLED, 3=NULL"
+  },
+  {
+   "type": "MV",
+   "instance": 39,
+   "name": "NetDehumEn",
+   "description": "Dehumidification Enable",
+   "units": "",
+   "access": "W",
+   "states": "1=DISABLED, 2=ENABLED, 3=NULL"
+  },
+  {
+   "type": "MV",
+   "instance": 40,
+   "name": "FnCyclingSel",
+   "description": "Fan Cycling Select",
+   "units": "",
+   "access": "W",
+   "states": "1=ON, 2=CYCLE"
+  },
+  {
+   "type": "MV",
+   "instance": 41,
+   "name": "LeadCmpSel",
+   "description": "Lead Compressor Select Method",
+   "units": "",
+   "access": "W",
+   "states": "1=RUN_HOURS, 2=COMP1"
+  },
+  {
+   "type": "MV",
+   "instance": 42,
+   "name": "MbRErrorSys1",
+   "description": "VRV D-Kit System Error 1",
+   "units": "",
+   "access": "R",
+   "states": "1=OFF, 2=Warning, 3=Alarm, 4=Error"
+  },
+  {
+   "type": "MV",
+   "instance": 43,
+   "name": "MbRErrorSys2",
+   "description": "VRV D-Kit System Error 2",
+   "units": "",
+   "access": "R",
+   "states": "1=OFF, 2=Warning, 3=Alarm, 4=Error"
+  },
+  {
+   "type": "MV",
+   "instance": 44,
+   "name": "MbRErrorSys3",
+   "description": "VRV D-Kit System Error 3",
+   "units": "",
+   "access": "R",
+   "states": "1=OFF, 2=Warning, 3=Alarm, 4=Error"
+  },
+  {
+   "type": "MV",
+   "instance": 45,
+   "name": "MbRErrorSys4",
+   "description": "VRV D-Kit System Error 4",
+   "units": "",
+   "access": "R",
+   "states": "1=OFF, 2=Warning, 3=Alarm, 4=Error"
+  },
+  {
+   "type": "MV",
+   "instance": 46,
+   "name": "RefrigerantCfgType",
+   "description": "A2L Refrigerant Configuration",
+   "units": "",
+   "access": "R",
+   "states": "0=None, 1=R410a, 2=R32, 3=R454b"
+  },
+  {
+   "type": "MV",
+   "instance": 47,
+   "name": "A2LNumSensors",
+   "description": "A2L Sensor Configuration (number of leak sensors, 0-3)",
+   "units": "",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "MV",
+   "instance": 48,
+   "name": "EvRErrorSys1",
+   "description": "EV Kit System Error 1",
+   "units": "",
+   "access": "R",
+   "states": "1=OFF, 2=Warning, 3=Alarm, 4=Error"
+  },
+  {
+   "type": "MV",
+   "instance": 49,
+   "name": "EvRErrorSys2",
+   "description": "EV Kit System Error 2",
+   "units": "",
+   "access": "R",
+   "states": "1=OFF, 2=Warning, 3=Alarm, 4=Error"
+  },
+  {
+   "type": "MV",
+   "instance": 50,
+   "name": "EvRErrorSys3",
+   "description": "EV Kit System Error 3",
+   "units": "",
+   "access": "R",
+   "states": "1=OFF, 2=Warning, 3=Alarm, 4=Error"
+  },
+  {
+   "type": "MV",
+   "instance": 51,
+   "name": "EvRErrorSys4",
+   "description": "EV Kit System Error 4",
+   "units": "",
+   "access": "R",
+   "states": "1=OFF, 2=Warning, 3=Alarm, 4=Error"
+  },
+  {
+   "type": "MV",
+   "instance": 52,
+   "name": "EvRComp",
+   "description": "EV Overall Compressor Read",
+   "units": "",
+   "access": "R",
+   "states": "1=Off, 2=On"
+  },
+  {
+   "type": "MV",
+   "instance": 53,
+   "name": "EvRComp1",
+   "description": "EV Compressor 1 Read",
+   "units": "",
+   "access": "R",
+   "states": "1=Off, 2=On"
+  },
+  {
+   "type": "MV",
+   "instance": 54,
+   "name": "EvRComp2",
+   "description": "EV Compressor 2 Read",
+   "units": "",
+   "access": "R",
+   "states": "1=Off, 2=On"
+  },
+  {
+   "type": "MV",
+   "instance": 55,
+   "name": "EvRComp3",
+   "description": "EV Compressor 3 Read",
+   "units": "",
+   "access": "R",
+   "states": "1=Off, 2=On"
+  },
+  {
+   "type": "MV",
+   "instance": 56,
+   "name": "EvRComp4",
+   "description": "EV Compressor 4 Read",
+   "units": "",
+   "access": "R",
+   "states": "1=Off, 2=On"
+  },
+  {
+   "type": "MV",
+   "instance": 57,
+   "name": "EvRDefrost",
+   "description": "EV Overall Defrost",
+   "units": "",
+   "access": "R",
+   "states": "1=Off, 2=On"
+  },
+  {
+   "type": "MV",
+   "instance": 58,
+   "name": "EvRDefrost1",
+   "description": "EV Defrost - Compressor 1",
+   "units": "",
+   "access": "R",
+   "states": "1=Off, 2=On"
+  },
+  {
+   "type": "MV",
+   "instance": 59,
+   "name": "EvRDefrost2",
+   "description": "EV Defrost - Compressor 2",
+   "units": "",
+   "access": "R",
+   "states": "1=Off, 2=On"
+  },
+  {
+   "type": "MV",
+   "instance": 60,
+   "name": "EvRDefrost3",
+   "description": "EV Defrost - Compressor 3",
+   "units": "",
+   "access": "R",
+   "states": "1=Off, 2=On"
+  },
+  {
+   "type": "MV",
+   "instance": 61,
+   "name": "EvRDefrost4",
+   "description": "EV Defrost - Compressor 4",
+   "units": "",
+   "access": "R",
+   "states": "1=Off, 2=On"
+  },
+  {
+   "type": "MV",
+   "instance": 62,
+   "name": "EvRFanReq",
+   "description": "EV Overall Fan Request",
+   "units": "",
+   "access": "R",
+   "states": "1=Off, 2=On"
+  },
+  {
+   "type": "MV",
+   "instance": 63,
+   "name": "EvRFanReq1",
+   "description": "EV Fan Request 1",
+   "units": "",
+   "access": "R",
+   "states": "1=Off, 2=On"
+  },
+  {
+   "type": "MV",
+   "instance": 64,
+   "name": "EvRFanReq2",
+   "description": "EV Fan Request 2",
+   "units": "",
+   "access": "R",
+   "states": "1=Off, 2=On"
+  },
+  {
+   "type": "MV",
+   "instance": 65,
+   "name": "EvRFanReq3",
+   "description": "EV Fan Request 3",
+   "units": "",
+   "access": "R",
+   "states": "1=Off, 2=On"
+  },
+  {
+   "type": "MV",
+   "instance": 66,
+   "name": "EvRFanReq4",
+   "description": "EV Fan Request 4",
+   "units": "",
+   "access": "R",
+   "states": "1=Off, 2=On"
+  },
+  {
+   "type": "MV",
+   "instance": 67,
+   "name": "EvWDxCoilReq",
+   "description": "EV DX Coil Request Write",
+   "units": "",
+   "access": "R",
+   "states": "1=Off, 2=On"
+  },
+  {
+   "type": "MV",
+   "instance": 68,
+   "name": "EvWDxOpMode",
+   "description": "EV Operational Mode Write",
+   "units": "",
+   "access": "R",
+   "states": "1=Cooling, 2=Heating, 3=Fan, 4=Auto"
+  },
+  {
+   "type": "MV",
+   "instance": 69,
+   "name": "ErWFanStatus",
+   "description": "EV Fan Status Write",
+   "units": "",
+   "access": "R",
+   "states": "1=Off, 2=On"
+  },
+  {
+   "type": "MV",
+   "instance": 70,
+   "name": "EvWRefrigLeak",
+   "description": "EV Fan Refrigerant Leak Status",
+   "units": "",
+   "access": "R",
+   "states": "1=Abnormal, 2=Normal"
+  },
+  {
+   "type": "MV",
+   "instance": 71,
+   "name": "EvWRhCoilReq",
+   "description": "EV RH Coil Request Write",
+   "units": "",
+   "access": "R",
+   "states": "1=Off, 2=On"
+  },
+  {
+   "type": "MV",
+   "instance": 72,
+   "name": "EvWStopDrive",
+   "description": "EV Stop/Drive Status",
+   "units": "",
+   "access": "R",
+   "states": "1=Stop, 2=Drive"
+  }
+ ],
+ "page": "https://easybacnet.com/bacnet-points-lists/daikin-applied/microtech-preciseline-light-ahu",
+ "note": "Re-typed from the manufacturer's public documentation (see source). Point availability varies by firmware and options; verify against the live device."
+}

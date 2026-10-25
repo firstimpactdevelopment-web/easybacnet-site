@@ -1,0 +1,667 @@
+{
+  "manufacturer": "Lennox",
+  "manufacturer_slug": "lennox",
+  "model": "CORE LITE Unit Controller",
+  "model_slug": "core-lite-unit-controller",
+  "aliases": [
+    "CORE Lite",
+    "Lennox CORE Lite",
+    "CORE LITE BACnet",
+    "Lennox_M4",
+    "508727"
+  ],
+  "equipment_type": "Rooftop unit controller",
+  "applies_to": "Lennox rooftop units built with the CORE LITE Unit Controller, fitted with the add-on BACnet MS/TP plug-in module.",
+  "summary": "The CORE LITE Unit Controller talks BACnet MS/TP only, through an add-on BACnet plug-in module. Its object set is a smaller version of the full CORE controller's: occupancy, setpoints and network sensor inputs as Analog Outputs and Analog Values, status as Analog Inputs, an alarm log string and multistate status values. Commands are not stored through a reset and must be rewritten regularly.",
+  "bacnet_transport": [
+    "BACnet MS/TP"
+  ],
+  "firmware": null,
+  "default_device_instance": "2 or the S-Bus address",
+  "access_inferred": false,
+  "notes": [
+    "Smaller sibling of the CORE Unit Controller: no BACnet IP, no occupancy override/sensor inputs (AO103, AO107), no static pressure or discharge air setpoints, no legacy error history or heat pump AVs.",
+    "AI253 Current Error is legacy; Lennox says to use CSV302 Alarm Log on new jobs.",
+    "AV142-AV143 appear only in the guide's object details and AV145 only in its object table; all three are listed here.",
+    "The guide's object tables list Present_Value as optionally writable for the CSV and MSV objects, but its quick start calls MSV310 and the status objects read-only; they report status, so they are shown read-only here.",
+    "The guide contradicts itself on COV: it says COV works with the plug-in module from firmware 9.03, and elsewhere that COV is not supported."
+  ],
+  "source": {
+    "title": "Lennox CORE LITE Unit Controller BACnet Setup Guide",
+    "doc_number": "508727-01",
+    "revision_date": "04/2025",
+    "url": "https://www.lennox.com/dA/84d3c99b01/508727-01.pdf"
+  },
+  "integration": {
+    "summary": "Set Configuration ID 1 network character to B (BACnet module installed), then run the Network Setup Wizard in the CORE LITE service app, set MAC, device instance and baud, and choose Room Sensor control mode. The BAS writes occupancy on AO104, setpoints on AV130-133 (or AO109 + AO110) and space temperature, RH and CO2 on AO113, AO112 and AO111 when those sources are set to Network.",
+    "minimum_points": [
+      {
+        "ref": "AO 104",
+        "name": "Occupancy Scheduler Control",
+        "why": "0 = occupied, 1-255 = unoccupied; rewrite every 2 min"
+      },
+      {
+        "ref": "AO 101",
+        "name": "Application Mode Control",
+        "why": "Mode command (0 = auto, 6 = off)"
+      },
+      {
+        "ref": "AV 130",
+        "name": "Heating Occupied Setpoint",
+        "why": "Occupied heating setpoint, 40-95 °F"
+      },
+      {
+        "ref": "AV 131",
+        "name": "Cooling Occupied Setpoint",
+        "why": "Occupied cooling setpoint, 40-95 °F"
+      },
+      {
+        "ref": "AV 132",
+        "name": "Heating Unoccupied Setpoint",
+        "why": "Unoccupied heating setpoint, 40-95 °F"
+      },
+      {
+        "ref": "AV 133",
+        "name": "Cooling Unoccupied Setpoint",
+        "why": "Unoccupied cooling setpoint, 40-95 °F"
+      },
+      {
+        "ref": "AO 113",
+        "name": "Space Temperature Input",
+        "why": "Network space temperature; rewrite every 2 min"
+      },
+      {
+        "ref": "AI 232",
+        "name": "Unit Status",
+        "why": "HVAC state code: 0 idle, 1 heat, 3 cool, 6 off, 9 fan"
+      },
+      {
+        "ref": "AI 239",
+        "name": "Space Temperature",
+        "why": "Space temperature in use"
+      },
+      {
+        "ref": "CSV 302",
+        "name": "Alarm Log",
+        "why": "Alarm codes, comma-separated; replaces AI 253"
+      }
+    ],
+    "enable": "No BACnet enable point. Configuration ID 1 must show B so the BACnet options appear, then the wizard sets the Control Mode: Monitor Only ignores network setpoints and mode demands, Room Sensor (recommended) uses AO104 occupancy plus AV130-133 or AO109 setpoints. AO101 = 6 (Off) disables the whole unit.",
+    "heartbeat": "The controller must receive a write at least every 15 minutes or it treats the network as offline. Network space temperature (AO113), RH, CO2, AO101 demands, occupancy (AO104) and setpoints (AO109, AV130-133) must be rewritten at least every 5 minutes if used; Lennox recommends every 2 minutes.",
+    "remote_sensors": "Space temperature goes to AO113, space RH to AO112 and CO2 to AO111, with the matching sensor source set to Network in the wizard. After start-up the unit waits 5 minutes for AO113 in a no-run mode; after that it uses a local sensor if one is wired, otherwise logs a sensor failure and enters backup mode (code 93). Outdoor air temperature has no network input.",
+    "setup": [
+      "Default device instance is 2 or the S-Bus address; Lennox suggests matching it to the MAC address. It can also be written to AO105.",
+      "MS/TP baud 9.6k, 19.2k, 38.4k or 76.8k; default 38.4k. Max_Master defaults to 127 and Max_Info_Frames to 1.",
+      "Use consecutive MAC addresses starting at 1, and set Max_Master to the highest MAC on the trunk.",
+      "Lennox recommends no repeaters and, above 9.6k baud, no more than 20 Lennox units and 30 devices per router.",
+      "Default device name is Lennox_M4_ followed by the MAC address.",
+      "Up to 32 units per MS/TP segment without a repeater."
+    ],
+    "gotchas": [
+      "Commands are not stored: rewrite all control points after every controller reset.",
+      "AO108 cannot be returned to the local setpoint once written, except by a controller reset.",
+      "AV130-133 are rejected as out of range if a heating setpoint is not below its cooling setpoint by the changeover deadband (Parameter 152, default 3 °F).",
+      "AO129 economizer control only works with the economizer in temperature mode (Configuration ID 1, position 2 = T)."
+    ]
+  },
+  "points": [
+    {
+      "type": "AO",
+      "instance": 101,
+      "name": "Application Mode Control",
+      "description": "Unit mode, fan, exhaust and reset command (coded)",
+      "units": "",
+      "access": "C",
+      "states": "0=Auto; 1=Heat; 3=Cool; 6=Off; 9=Fan only; 255=Null (Auto); 208=Fan auto; 209=Fan on; 216=Exhaust auto; 217=Exhaust 1 on; 218=Exhaust 1 off; 219=Exhaust 2 on; 220=Exhaust 2 off; 221=Exhaust on; 222=Exhaust off; 254=Reset"
+    },
+    {
+      "type": "AO",
+      "instance": 102,
+      "name": "Outdoor Air Min Pos Control",
+      "description": "Economizer minimum damper position; 101-255 = local",
+      "units": "%",
+      "access": "C",
+      "states": ""
+    },
+    {
+      "type": "AO",
+      "instance": 104,
+      "name": "Occupancy Scheduler Control",
+      "description": "Scheduled occupancy from the BAS",
+      "units": "",
+      "access": "C",
+      "states": "0=Occupied; 1-255=Unoccupied"
+    },
+    {
+      "type": "AO",
+      "instance": 105,
+      "name": "BACnet Device Instance",
+      "description": "Device instance, 1-4194302",
+      "units": "",
+      "access": "C",
+      "states": ""
+    },
+    {
+      "type": "AO",
+      "instance": 108,
+      "name": "Space Dehumidification Setpoint",
+      "description": "Space RH setpoint for dehumidification",
+      "units": "%",
+      "access": "C",
+      "states": ""
+    },
+    {
+      "type": "AO",
+      "instance": 109,
+      "name": "Temperature Setpoint (abs)",
+      "description": "Single space setpoint, 36.25-100 °F",
+      "units": "°F",
+      "access": "C",
+      "states": ""
+    },
+    {
+      "type": "AO",
+      "instance": 110,
+      "name": "Temperature Setpoint Offset",
+      "description": "Offset added to the single setpoint, -32 to 31.75",
+      "units": "°F",
+      "access": "C",
+      "states": ""
+    },
+    {
+      "type": "AO",
+      "instance": 111,
+      "name": "IAQ 1 Network Input",
+      "description": "Space CO2 from the BAS, 300-2000",
+      "units": "ppm",
+      "access": "C",
+      "states": ""
+    },
+    {
+      "type": "AO",
+      "instance": 112,
+      "name": "Humidity Network Input",
+      "description": "Space RH from the BAS",
+      "units": "%",
+      "access": "C",
+      "states": ""
+    },
+    {
+      "type": "AO",
+      "instance": 113,
+      "name": "Space Temperature Input",
+      "description": "Space temperature from the BAS",
+      "units": "°F",
+      "access": "C",
+      "states": ""
+    },
+    {
+      "type": "AO",
+      "instance": 114,
+      "name": "Emergency Override Control",
+      "description": "Smoke/emergency mode command",
+      "units": "",
+      "access": "C",
+      "states": "0=Normal; 1=Pressurize; 2=Depressurize (speed); 3=Purge (speed); 4=Shutdown; 5=Fire; 6=Depressurize (pressure); 7=Purge (pressure); >7=Normal"
+    },
+    {
+      "type": "AO",
+      "instance": 115,
+      "name": "Compressor Enable Control",
+      "description": "Compressor stage enable / capacity limit",
+      "units": "%",
+      "access": "C",
+      "states": "0=Disabled; 1-100=Limited to % of maximum; 101-255=Full output allowed"
+    },
+    {
+      "type": "AO",
+      "instance": 117,
+      "name": "Primary Heat Enable Control",
+      "description": "Primary heat stage enable / capacity limit",
+      "units": "%",
+      "access": "C",
+      "states": "0=Disabled; 1-100=Limited to % of maximum; 101-255=Full output allowed"
+    },
+    {
+      "type": "AO",
+      "instance": 119,
+      "name": "Auxiliary Heat Enable Control",
+      "description": "Auxiliary heat stage enable / capacity limit",
+      "units": "%",
+      "access": "C",
+      "states": "0=Disabled; 1-100=Limited to % of maximum; 101-255=Full output allowed"
+    },
+    {
+      "type": "AO",
+      "instance": 127,
+      "name": "Supply Fan Capacity Input",
+      "description": "Supply fan speed, 33-100 %; 101-255 = local",
+      "units": "%",
+      "access": "C",
+      "states": ""
+    },
+    {
+      "type": "AO",
+      "instance": 128,
+      "name": "Exhaust Fan Capacity Input",
+      "description": "Exhaust fan speed, 33-100 %; 255 = local",
+      "units": "%",
+      "access": "C",
+      "states": ""
+    },
+    {
+      "type": "AO",
+      "instance": 129,
+      "name": "Set Economizer Outdoor Air Suitable",
+      "description": "Outdoor air suitable for free cooling",
+      "units": "",
+      "access": "C",
+      "states": "0=Economizer disabled; 1=Economizer enabled; >1=Auto"
+    },
+    {
+      "type": "AI",
+      "instance": 198,
+      "name": "Mac Address",
+      "description": "BACnet MS/TP MAC address, 0-127",
+      "units": "",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AI",
+      "instance": 199,
+      "name": "IMC Address",
+      "description": "L Connection address, 1-31",
+      "units": "",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AI",
+      "instance": 231,
+      "name": "Unit ID",
+      "description": "Unit type code",
+      "units": "",
+      "access": "R",
+      "states": "48-63=Gas heat, electric cool; 64-79=Electric heat, electric cool; 80-95=Heat pump"
+    },
+    {
+      "type": "AI",
+      "instance": 232,
+      "name": "Unit Status",
+      "description": "HVAC operating state (coded)",
+      "units": "",
+      "access": "R",
+      "states": "0=Idle; 1=Heat; 2=Morning warm-up; 3=Cool; 5=Pre-cool; 6=Off; 7=Test; 8=Emergency heat; 9=Fan only; 12=Max heat; 14=Dehumidification; 129=Fresh air heating; 131=Fresh air cooling; 145=Defrost comp 1; 161=Defrost comp 2; 177=Defrost comp 1 & 2"
+    },
+    {
+      "type": "AI",
+      "instance": 239,
+      "name": "Space Temperature",
+      "description": "Space temperature in use (local or network)",
+      "units": "°F",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AI",
+      "instance": 240,
+      "name": "Discharge Air Temperature",
+      "description": "Discharge air temperature",
+      "units": "°F",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AI",
+      "instance": 241,
+      "name": "Effective Occupancy",
+      "description": "Occupancy state in use",
+      "units": "",
+      "access": "R",
+      "states": "0=Occupied; 1=Unoccupied; 2=Occupied (timed override)"
+    },
+    {
+      "type": "AI",
+      "instance": 242,
+      "name": "Local Outside Air Temperature",
+      "description": "Outdoor air temperature from the unit sensor",
+      "units": "°F",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AI",
+      "instance": 243,
+      "name": "Local Space Temperature",
+      "description": "Space temperature from the wired sensor",
+      "units": "°F",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AI",
+      "instance": 244,
+      "name": "Outside Air Damper",
+      "description": "Outdoor air damper position; 255 = no damper",
+      "units": "%",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AI",
+      "instance": 245,
+      "name": "Heat Primary",
+      "description": "Primary heating capacity running",
+      "units": "%",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AI",
+      "instance": 246,
+      "name": "Heat Secondary",
+      "description": "Auxiliary (strip) heating capacity running",
+      "units": "%",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AI",
+      "instance": 247,
+      "name": "Cool Primary",
+      "description": "Compressor cooling capacity running",
+      "units": "%",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AI",
+      "instance": 248,
+      "name": "Economizer Enabled",
+      "description": "Outdoor air suitable for free cooling",
+      "units": "",
+      "access": "R",
+      "states": "0=Disabled; 1=Enabled; 255=No economizer"
+    },
+    {
+      "type": "AI",
+      "instance": 250,
+      "name": "Supply Fan Status",
+      "description": "Supply fan state or speed",
+      "units": "%",
+      "access": "R",
+      "states": "0=Off; 1=On (single speed); 2-100=Speed %"
+    },
+    {
+      "type": "AI",
+      "instance": 252,
+      "name": "Space Temperature Setpoint (Eff)",
+      "description": "Space setpoint in use",
+      "units": "°F",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AI",
+      "instance": 253,
+      "name": "Current Error",
+      "description": "Active alarm code, 0 = none (legacy; use CSV 302)",
+      "units": "",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AI",
+      "instance": 273,
+      "name": "IAQ 2 Effective Value",
+      "description": "IAQ 2 input measured at the controller",
+      "units": "V",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AI",
+      "instance": 274,
+      "name": "Space CO2 Sensor (Eff)",
+      "description": "Space CO2 in use (local or network)",
+      "units": "ppm",
+      "access": "R",
+      "states": "0-6=No sensor; 7-1992=Valid; 1993-2000=Sensor error"
+    },
+    {
+      "type": "AI",
+      "instance": 275,
+      "name": "Space CO2 Sensor (Local)",
+      "description": "Space CO2 from the wired sensor",
+      "units": "ppm",
+      "access": "R",
+      "states": "0-6=No sensor; 7-1992=Valid; 1993-2000=Sensor error"
+    },
+    {
+      "type": "AI",
+      "instance": 276,
+      "name": "Space Humidity (Eff)",
+      "description": "Space RH in use (local or network)",
+      "units": "%",
+      "access": "R",
+      "states": "0=No sensor; 1-99=Valid; 100=Sensor error"
+    },
+    {
+      "type": "AI",
+      "instance": 277,
+      "name": "Space Humidity (Local)",
+      "description": "Space RH from the wired sensor",
+      "units": "%",
+      "access": "R",
+      "states": "0=No sensor; 1-99=Valid; 100=Sensor error"
+    },
+    {
+      "type": "AI",
+      "instance": 278,
+      "name": "Dehumidification Setpoint (Eff)",
+      "description": "Dehumidification RH setpoint in use",
+      "units": "%",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AI",
+      "instance": 279,
+      "name": "Dehumidification Status",
+      "description": "Dehumidification state",
+      "units": "",
+      "access": "R",
+      "states": "0=Not installed; 1=Installed, not running; 2=Running"
+    },
+    {
+      "type": "AI",
+      "instance": 281,
+      "name": "Return Air Temperature",
+      "description": "Return air temperature",
+      "units": "°F",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AI",
+      "instance": 285,
+      "name": "Exhaust Fan Status",
+      "description": "Exhaust fan state or speed",
+      "units": "%",
+      "access": "R",
+      "states": "0=Off; 1=Stage 1 on; 2=Stage 2 on; 33-100=Speed %; 255=No exhaust"
+    },
+    {
+      "type": "AV",
+      "instance": 1,
+      "name": "Baud Rate Setting",
+      "description": "MS/TP baud rate; applies after reset",
+      "units": "",
+      "access": "W",
+      "states": "9600; 19200; 38400; 76800"
+    },
+    {
+      "type": "AV",
+      "instance": 130,
+      "name": "Heating Occupied Setpoint",
+      "description": "Occupied heating setpoint, 40-95",
+      "units": "°F",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 131,
+      "name": "Cooling Occupied Setpoint",
+      "description": "Occupied cooling setpoint, 40-95",
+      "units": "°F",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 132,
+      "name": "Heating Unoccupied Setpoint",
+      "description": "Unoccupied heating setpoint, 40-95",
+      "units": "°F",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 133,
+      "name": "Cooling Unoccupied Setpoint",
+      "description": "Unoccupied cooling setpoint, 40-95",
+      "units": "°F",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 142,
+      "name": "IAQ Setpoint Start Open",
+      "description": "CO2 level where DCV starts opening the damper",
+      "units": "ppm",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 143,
+      "name": "IAQ Setpoint Full Open",
+      "description": "CO2 level for fully open DCV damper",
+      "units": "ppm",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 144,
+      "name": "Free Cooling Temperature Sensible Setpoint",
+      "description": "Economizer sensible changeover setpoint, 40-75",
+      "units": "°F",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 145,
+      "name": "Free Cooling Temperature Offset Setpoint",
+      "description": "Economizer temperature offset setpoint, 0-40",
+      "units": "°F",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 146,
+      "name": "Free Cooling Enthalpy Setpoint",
+      "description": "Single-enthalpy economizer setpoint, 10-19",
+      "units": "mA",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 147,
+      "name": "Free Cooling Enthalpy Offset Setpoint",
+      "description": "Dual-enthalpy economizer offset, 1-5",
+      "units": "mA",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 148,
+      "name": "After Hours Override Delay Setpoint",
+      "description": "After-hours override time, 0-480",
+      "units": "min",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "CSV",
+      "instance": 300,
+      "name": "Unit Model String",
+      "description": "Unit model number",
+      "units": "",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "CSV",
+      "instance": 301,
+      "name": "Board Firmware Version",
+      "description": "Controller firmware, XX.YY.ZZZZ",
+      "units": "",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "CSV",
+      "instance": 302,
+      "name": "Alarm Log",
+      "description": "Comma-separated alarm codes, newest last",
+      "units": "",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "CSV",
+      "instance": 305,
+      "name": "Compressor Runtime Hours",
+      "description": "Run hours per compressor; -1 = not fitted",
+      "units": "",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "MV",
+      "instance": 310,
+      "name": "Mode of Operation",
+      "description": "Control mode the unit is running in",
+      "units": "",
+      "access": "R",
+      "states": "1=Wired thermostat; 2=Remote thermostat; 3=Discharge air control; 4=Room sensor; 5=Backup operation"
+    },
+    {
+      "type": "MV",
+      "instance": 311,
+      "name": "Remote Handset Connection",
+      "description": "Service handset connected",
+      "units": "",
+      "access": "R",
+      "states": "1=Not connected; 2=Connected"
+    },
+    {
+      "type": "MV",
+      "instance": 312,
+      "name": "Unit Status",
+      "description": "HVAC operating state",
+      "units": "",
+      "access": "R",
+      "states": "1=Heat; 2=Morning warm-up; 3=Cool; 5=Pre-cool; 6=Off; 7=Test; 8=Emergency heat; 9=Fan only; 12=Max heat; 14=Dehumidification; 30=Idle; 31=Fresh air heating; 32=Fresh air cooling; 33=Defrost comp 1; 34=Defrost comp 2; 35=Defrost comp 1 & 2"
+    }
+  ]
+}

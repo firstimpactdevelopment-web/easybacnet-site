@@ -1,0 +1,1332 @@
+{
+ "manufacturer": "Trane",
+ "manufacturer_slug": "trane",
+ "model": "Symbio 800 IntelliCore Split System (RAUK)",
+ "model_slug": "symbio-800-intellicore-rauk",
+ "aliases": [
+  "IntelliCore",
+  "RAUK",
+  "IntelliCore split system",
+  "Symbio 800",
+  "BAS-PTS036"
+ ],
+ "equipment_type": "Split system controller",
+ "applies_to": "Trane IntelliCore split systems (RAUK) controlled by a Symbio 800.",
+ "summary": "The Symbio 800 on IntelliCore RAUK split systems exposes about 135 objects with 5-digit instances (AI-10101...). Many points depend on unit size (second circuit from 40 T, third compressor on some sizes), on the system control type (no system control, supply-air VAV or EVP) and on the power-monitoring option. The BAS writes auto/stop, discharge cooling setpoint, demand limit, lockouts and the discharge and outdoor air temperatures.",
+ "bacnet_transport": [
+  "BACnet IP",
+  "BACnet MS/TP"
+ ],
+ "firmware": "62000844-1-00-0003",
+ "default_device_instance": null,
+ "access_inferred": false,
+ "notes": [
+  "Only the points that apply to the unit's factory configuration show up; the doc lists every possible point.",
+  "Name suffixes carry meaning: Status/Local/Active/Input are read-only, BAS/Command/Request/Setpoint value objects are the ones a BAS writes, and Arbitrator objects show which source is winning.",
+  "Compressor run-time AIs (AI 10227, 10229...) report seconds to a third-party BAS and hours to Tracer SC+, per the source footnote; AI 10324-10329 give hours.",
+  "BI 10606 states are printed as '1 = No, 1 = Yes' in the source; BI 10605 uses 0 = No, 1 = Yes.",
+  "The Symbio 800 integration guide (BAS-SVP083) covers BACnet IP and BACnet MS/TP; the rotary address sets the MS/TP MAC and a default Device ID of 1-127, and a software Device ID can be set instead.",
+  "The same document also maps every object to a Modbus register; only the BACnet side is listed here."
+ ],
+ "source": {
+  "title": "Symbio 800 Integration Points List BACnet/Modbus - IntelliCore Split System (RAUK)",
+  "doc_number": "BAS-PTS036A-EN",
+  "revision_date": "12/04/2024",
+  "url": "https://elibrary.tranetechnologies.com/public/commercial-hvac/Literature/Points%20List/BAS-PTS036A-EN_12042024.pdf"
+ },
+ "integration": {
+  "summary": "Use BV 10140 Auto Stop Command BAS to run or stop the unit. On supply-air VAV or EVP units write AV 10121 Discharge Cooling Setpoint BAS; to limit capacity set AV 10163 Demand Limit Setpoint and turn on BV 10116 Demand Limit Request BAS. MI 10119 Arbitration Method must read Full Source for BAS values to be used. Sensor BAS points carry a 900 s heartbeat.",
+  "minimum_points": [
+   {
+    "ref": "BV 10140",
+    "name": "Auto Stop Command BAS",
+    "why": "BMS auto/stop command (0 = Stop, 1 = Auto)"
+   },
+   {
+    "ref": "AV 10121",
+    "name": "Discharge Cooling Setpoint BAS",
+    "why": "Discharge air cooling setpoint (VAV/EVP control)"
+   },
+   {
+    "ref": "AV 10163",
+    "name": "Demand Limit Setpoint",
+    "why": "Demand limit from the BMS, %"
+   },
+   {
+    "ref": "BV 10116",
+    "name": "Demand Limit Request BAS",
+    "why": "Must be Limited for the demand limit to apply"
+   },
+   {
+    "ref": "MI 10119",
+    "name": "Arbitration Method",
+    "why": "Must read Full Source for BAS values to be used"
+   },
+   {
+    "ref": "MI 10140",
+    "name": "Unit Status",
+    "why": "Off, waiting or cooling running"
+   },
+   {
+    "ref": "AI 10101",
+    "name": "Cooling Capacity Status",
+    "why": "Actual cooling capacity, %"
+   },
+   {
+    "ref": "AI 10124",
+    "name": "Discharge Temperature",
+    "why": "Discharge temperature in use"
+   },
+   {
+    "ref": "BI 10176",
+    "name": "Diagnostic Present",
+    "why": "Summary alarm"
+   }
+  ],
+  "enable": "BV 10140 Auto Stop Command BAS (0 = Stop, 1 = Auto) is the BMS auto/stop. BI 10211 Equipment Stop Status reports the hardwired auto/stop input and BI 13000 Front Panel Auto Stop Status the local setting; BI 10210 shows an emergency stop that needs a manual reset. The integration guide describes the arbitration method: with Full the BMS value is used ahead of local or default values, with Local BMS values are ignored. MI 10119 Arbitration Method (read-only) shows which is active.",
+  "heartbeat": "The points list gives a 900 s heartbeat for AV 10111 Discharge Temperature BAS and AV 10113 Outdoor Air Temperature BAS; the other AVs list 0. The documents don't describe what happens when it expires.",
+  "remote_sensors": "Write AV 10113 Outdoor Air Temperature BAS or AV 10111 Discharge Temperature BAS and keep refreshing them within the heartbeat. AV 10103 and AV 10101 (Arbitrator) show every source in their priority array, and AI 10118 Outdoor Air Temperature Active and AI 10124 Discharge Temperature show the value in use. The guide notes the default for sensor arbitrators is invalid, so the value must come from the BMS or a local sensor.",
+  "setup": [
+   "With no protocol specified at order, the controller ships as BACnet MS/TP at 76,800 bps with the rotary address at 000, and MS/TP is disabled at 000. Set a rotary address of 001-127 to bring it online.",
+   "The rotary address sets the MS/TP MAC and the Device ID and takes effect without a power cycle. A software Device ID (1-4194302) can be set in the web UI, Tracer SC+ or Tracer TU.",
+   "The web UI is reached only over USB at http://198.80.18.1/; the Ethernet ports do not serve it.",
+   "BACnet IP uses Ethernet port 1 (or the optional USB Wi-Fi adapter); the default UDP port is 47808. Enable BBMD only if this is the only BACnet IP device on the subnet, then fill in the BDT.",
+   "MS/TP wiring lands on the P1 link; P2 and P3 are for factory devices only, and Ethernet port 2 is only for the touch-screen display."
+  ],
+  "gotchas": [
+   "Communicated units (I-P or SI) are fixed at the factory; changing them in the field needs a Trane representative. Web UI display units do not change the BACnet values.",
+   "Points that don't apply to the unit's configuration are absent, and a technician can 'recycle' (remove) factory points from the interface, so a missing object may have been recycled.",
+   "Arbitrator objects show as writable but are meant to be read; write the matching '... BAS' object instead.",
+   "AV 10139 Cooling Capacity Enable is also described as a BAS percentage that limits cooling capacity; the document doesn't say how it relates to AV 10163.",
+   "Points for circuit 2, extra compressors, the economizer and power monitoring only exist on the unit sizes and options that have them."
+  ]
+ },
+ "points": [
+  {
+   "type": "AI",
+   "instance": 10101,
+   "name": "Cooling Capacity Status",
+   "description": "Actual operating unit cooling capacity",
+   "units": "%",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "AI",
+   "instance": 10111,
+   "name": "Outdoor Air Damper Position",
+   "description": "Requested position of the Outdoor Air Damper",
+   "units": "%",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "AI",
+   "instance": 10118,
+   "name": "Outdoor Air Temperature Active",
+   "description": "Active outdoor air temperature currently being used by the controller",
+   "units": "°F",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "AI",
+   "instance": 10121,
+   "name": "Discharge Cooling Setpoint Active",
+   "description": "Discharge temperature cooling setpoint value resulting from arbitration",
+   "units": "°F",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "AI",
+   "instance": 10124,
+   "name": "Discharge Temperature",
+   "description": "Actual discharge temperature being used by the controller",
+   "units": "°F",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "AI",
+   "instance": 10154,
+   "name": "Economizer Minimum Position Setpoint Active",
+   "description": "Economizer minimum position setpoint value resulting from arbitration",
+   "units": "%",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "AI",
+   "instance": 10156,
+   "name": "Outdoor Air Temperature Local",
+   "description": "Outdoor air temperature value from a sensor connected to the controller",
+   "units": "°F",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "AI",
+   "instance": 10161,
+   "name": "Condenser Capacity",
+   "description": "Status of the unit condenser capacity",
+   "units": "%",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "AI",
+   "instance": 10181,
+   "name": "Discharge Temperature Local",
+   "description": "Discharge temperature value from a sensor connected to the controller",
+   "units": "°F",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "AI",
+   "instance": 10206,
+   "name": "Number of Circuits",
+   "description": "Number of refrigeration circuits in the unit",
+   "units": "",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "AI",
+   "instance": 10207,
+   "name": "Number of Compressors Circuit 1",
+   "description": "Number of compressors on DX circuit 1 of the unit",
+   "units": "",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "AI",
+   "instance": 10208,
+   "name": "Number of Compressors Circuit 2",
+   "description": "Number of compressors on DX circuit 2 of the unit",
+   "units": "",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "AI",
+   "instance": 10224,
+   "name": "Average Current",
+   "description": "",
+   "units": "Amps",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "AI",
+   "instance": 10227,
+   "name": "Run Time - Compressor 1A",
+   "description": "Run time of Compressor 1A",
+   "units": "seconds",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "AI",
+   "instance": 10228,
+   "name": "Starts - Compressor 1A",
+   "description": "Number of starts for Compressor 1A",
+   "units": "",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "AI",
+   "instance": 10229,
+   "name": "Run Time - Compressor 1B",
+   "description": "Run time of Compressor 1B",
+   "units": "seconds",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "AI",
+   "instance": 10230,
+   "name": "Starts - Compressor 1B",
+   "description": "Number of starts for Compressor 1B",
+   "units": "",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "AI",
+   "instance": 10231,
+   "name": "Run Time - Compressor 1C",
+   "description": "Run time of Compressor 1C",
+   "units": "seconds",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "AI",
+   "instance": 10232,
+   "name": "Starts - Compressor 1C",
+   "description": "Number of starts for Compressor 1C",
+   "units": "",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "AI",
+   "instance": 10233,
+   "name": "Run Time - Compressor 2A",
+   "description": "Run time of Compressor 2A",
+   "units": "seconds",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "AI",
+   "instance": 10234,
+   "name": "Starts - Compressor 2A",
+   "description": "Number of starts for Compressor 2A",
+   "units": "",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "AI",
+   "instance": 10235,
+   "name": "Run Time - Compressor 2B",
+   "description": "Run time of Compressor 2B",
+   "units": "seconds",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "AI",
+   "instance": 10236,
+   "name": "Starts - Compressor 2B",
+   "description": "Number of starts for Compressor 2B",
+   "units": "",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "AI",
+   "instance": 10237,
+   "name": "Run Time - Compressor 2C",
+   "description": "Run time of Compressor 2C",
+   "units": "seconds",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "AI",
+   "instance": 10238,
+   "name": "Starts - Compressor 2C",
+   "description": "Number of starts for Compressor 2C",
+   "units": "",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "AI",
+   "instance": 10239,
+   "name": "Current L1",
+   "description": "Current for line/leg 1",
+   "units": "Amps",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "AI",
+   "instance": 10240,
+   "name": "Current L2",
+   "description": "Current for line/leg 2",
+   "units": "Amps",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "AI",
+   "instance": 10241,
+   "name": "Current L3",
+   "description": "Current for line/leg 3",
+   "units": "Amps",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "AI",
+   "instance": 10242,
+   "name": "Current Neutral",
+   "description": "Current for neutral",
+   "units": "Amps",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "AI",
+   "instance": 10243,
+   "name": "Discharge Cooling Setpoint Status",
+   "description": "Actual discharge temperature cooling setpoint value",
+   "units": "°F",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "AI",
+   "instance": 10246,
+   "name": "Discharge Gauge Pressure Circuit 1",
+   "description": "Refrigerant discharge gauge pressure for DX circuit 1",
+   "units": "PSI",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "AI",
+   "instance": 10247,
+   "name": "Discharge Gauge Pressure Circuit 2",
+   "description": "Refrigerant discharge gauge pressure for DX circuit 2",
+   "units": "PSI",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "AI",
+   "instance": 10249,
+   "name": "Energy Consumption Lifetime",
+   "description": "Total energy consumption of the unit (for the lifetime)",
+   "units": "kWh",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "AI",
+   "instance": 10255,
+   "name": "Line Frequency",
+   "description": "Line frequency when the optional power monitoring option is included",
+   "units": "",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "AI",
+   "instance": 10258,
+   "name": "Power Factor",
+   "description": "Reported power factor from the optional power monitoring option, when applicable",
+   "units": "",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "AI",
+   "instance": 10262,
+   "name": "Suction Gauge Pressure Circuit 1",
+   "description": "Gauge suction pressure for DX circuit 1, in PSIG",
+   "units": "PSI",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "AI",
+   "instance": 10263,
+   "name": "Suction Gauge Pressure Circuit 2",
+   "description": "Gauge suction pressure for DX circuit 2, in PSIG",
+   "units": "PSI",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "AI",
+   "instance": 10268,
+   "name": "Total Apparent Energy",
+   "description": "Total apparent energy as reported by the optional power monitoring feature",
+   "units": "kWh",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "AI",
+   "instance": 10269,
+   "name": "Energy Consumption",
+   "description": "Total energy consumption of the unit (since last accumulation reset)",
+   "units": "kWh",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "AI",
+   "instance": 10270,
+   "name": "Total Reactive Energy",
+   "description": "Total reactive energy as reported by the optional power monitoring feature",
+   "units": "kWh",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "AI",
+   "instance": 10271,
+   "name": "Total Real Power",
+   "description": "Total real power as reported by the optional power monitoring feature",
+   "units": "kWh",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "AI",
+   "instance": 10272,
+   "name": "Total Apparent Power",
+   "description": "Total apparent power as reported by the optional power monitoring feature",
+   "units": "kWh",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "AI",
+   "instance": 10273,
+   "name": "Total Reactive Power",
+   "description": "Total reactive power as reported by the optional power monitoring feature",
+   "units": "kWh",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "AI",
+   "instance": 10275,
+   "name": "Voltage L1-L2",
+   "description": "Voltage between line/leg L1 and L2",
+   "units": "Volts",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "AI",
+   "instance": 10276,
+   "name": "Voltage L1-L3",
+   "description": "Voltage between line/leg L1 and L3",
+   "units": "Volts",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "AI",
+   "instance": 10277,
+   "name": "Voltage L1-N",
+   "description": "Voltage between line/leg L1 and Neutral",
+   "units": "Volts",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "AI",
+   "instance": 10278,
+   "name": "Voltage L2-L3",
+   "description": "Voltage between line/leg L2 and L3",
+   "units": "Volts",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "AI",
+   "instance": 10279,
+   "name": "Voltage L2-N",
+   "description": "Voltage between line/leg L2 and Neutral",
+   "units": "Volts",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "AI",
+   "instance": 10280,
+   "name": "Voltage L3-N",
+   "description": "Voltage between line/leg L3 and Neutral",
+   "units": "Volts",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "AI",
+   "instance": 10282,
+   "name": "Air Flow Percentage Circuit 1",
+   "description": "Requested condenser percentage for circuit 1",
+   "units": "%",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "AI",
+   "instance": 10283,
+   "name": "Air Flow Percentage Circuit 2",
+   "description": "Requested condenser percentage for circuit 2",
+   "units": "%",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "AI",
+   "instance": 10284,
+   "name": "Discharge Saturated Refrigerant Temperature Circuit 1",
+   "description": "Discharge saturation temperature for DX circuit 1",
+   "units": "°F",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "AI",
+   "instance": 10285,
+   "name": "Discharge Saturated Refrigerant Temperature Circuit 2",
+   "description": "Discharge saturation temperature for DX circuit 2",
+   "units": "°F",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "AI",
+   "instance": 10286,
+   "name": "Suction Saturated Refrigerant Temperature Circuit 1",
+   "description": "Suction saturated refrigerant temperature for DX circuit 1",
+   "units": "°F",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "AI",
+   "instance": 10287,
+   "name": "Suction Saturated Refrigerant Temperature Circuit 2",
+   "description": "Suction saturated refrigerant temperature for DX circuit 2",
+   "units": "°F",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "AI",
+   "instance": 10288,
+   "name": "Suction Temperature Ckt1",
+   "description": "Suction temperature for DX circuit 1",
+   "units": "°F",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "AI",
+   "instance": 10290,
+   "name": "Suction Temperature Ckt2",
+   "description": "Suction temperature for DX circuit 2",
+   "units": "°F",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "AI",
+   "instance": 10324,
+   "name": "Run Time - Compressor 1A (Hours)",
+   "description": "Run time of Compressor 1A, in hours",
+   "units": "Hours",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "AI",
+   "instance": 10325,
+   "name": "Run Time - Compressor 1B (Hours)",
+   "description": "Run time of Compressor 1B, in hours",
+   "units": "Hours",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "AI",
+   "instance": 10326,
+   "name": "Run Time - Compressor 1C (Hours)",
+   "description": "Run time of Compressor 1C, in hours",
+   "units": "Hours",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "AI",
+   "instance": 10327,
+   "name": "Run Time - Compressor 2A (Hours)",
+   "description": "Run time of Compressor 2A, in hours",
+   "units": "Hours",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "AI",
+   "instance": 10328,
+   "name": "Run Time - Compressor 2B (Hours)",
+   "description": "Run time of Compressor 2B, in hours",
+   "units": "Hours",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "AI",
+   "instance": 10329,
+   "name": "Run Time - Compressor 2C (Hours)",
+   "description": "Run time of Compressor 2C, in hours",
+   "units": "Hours",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "AI",
+   "instance": 10330,
+   "name": "Discharge Pressure Circuit 1",
+   "description": "Refrigerant discharge absolute pressure for DX circuit 1, in PSIA",
+   "units": "PSI",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "AI",
+   "instance": 10331,
+   "name": "Discharge Pressure Circuit 2",
+   "description": "Refrigerant discharge absolute pressure for DX circuit 2, in PSIA",
+   "units": "PSI",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "AI",
+   "instance": 10332,
+   "name": "Suction Pressure Circuit 1",
+   "description": "Absolute suction pressure for DX circuit 1, in PSIA",
+   "units": "PSI",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "AI",
+   "instance": 10333,
+   "name": "Suction Pressure Circuit 2",
+   "description": "Absolute suction pressure for DX circuit 2, in PSIA",
+   "units": "PSI",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "AI",
+   "instance": 10400,
+   "name": "Local Atmospheric Pressure",
+   "description": "Status of the Local Atmospheric Pressure Setting",
+   "units": "PSI",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "AI",
+   "instance": 10401,
+   "name": "Unit Design Capacity",
+   "description": "Design capacity for the Unit",
+   "units": "kWh",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "AI",
+   "instance": 10402,
+   "name": "Ctrl Box Ventilation Fan Run Time",
+   "description": "Run time of Control Box Fan",
+   "units": "Hours",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 10101,
+   "name": "Discharge Temperature Arbitrator",
+   "description": "Actual discharge temperature being used by the controller",
+   "units": "°F",
+   "access": "W",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 10103,
+   "name": "Outdoor Air Temperature Arbitrator",
+   "description": "Actual outdoor air temperature being used by the controller",
+   "units": "°F",
+   "access": "W",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 10111,
+   "name": "Discharge Temperature BAS",
+   "description": "Discharge temperature sensor value",
+   "units": "°F",
+   "access": "W",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 10113,
+   "name": "Outdoor Air Temperature BAS",
+   "description": "Outdoor air temperature sensor value",
+   "units": "°F",
+   "access": "W",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 10121,
+   "name": "Discharge Cooling Setpoint BAS",
+   "description": "Discharge air temperature cooling setpoint value",
+   "units": "°F",
+   "access": "W",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 10139,
+   "name": "Cooling Capacity Enable",
+   "description": "Deman limit the cooling capacity",
+   "units": "%",
+   "access": "W",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 10144,
+   "name": "Economizer Minimum Position Setpoint BAS",
+   "description": "Economizer minimum position setpoint",
+   "units": "%",
+   "access": "W",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 10150,
+   "name": "Economizer Outdoor Air Enable Setpoint BAS",
+   "description": "",
+   "units": "°F",
+   "access": "W",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 10163,
+   "name": "Demand Limit Setpoint",
+   "description": "Demand limit the unit",
+   "units": "%",
+   "access": "W",
+   "states": ""
+  },
+  {
+   "type": "BI",
+   "instance": 10001,
+   "name": "microSD",
+   "description": "A micro SD card is present",
+   "units": "",
+   "access": "R",
+   "states": "0 = MicroSD card is not present, 1 = MicroSD card is present"
+  },
+  {
+   "type": "BI",
+   "instance": 10002,
+   "name": "USB Port 1",
+   "description": "A USB device is present in port 1",
+   "units": "",
+   "access": "R",
+   "states": "0 = USB device is not present, 1 = USB device is present"
+  },
+  {
+   "type": "BI",
+   "instance": 10003,
+   "name": "USB Port 2",
+   "description": "A USB device is present in port 2",
+   "units": "",
+   "access": "R",
+   "states": "0 = USB device is not present, 1 = USB device is present"
+  },
+  {
+   "type": "BI",
+   "instance": 10004,
+   "name": "USB Port 3",
+   "description": "A USB device is present in port 3",
+   "units": "",
+   "access": "R",
+   "states": "0 = USB device is not present, 1 = USB device is present"
+  },
+  {
+   "type": "BI",
+   "instance": 10005,
+   "name": "USB Port 4",
+   "description": "A USB device is present in port 4",
+   "units": "",
+   "access": "R",
+   "states": "0 = USB device is not present, 1 = USB device is present"
+  },
+  {
+   "type": "BI",
+   "instance": 10105,
+   "name": "FDD: Unit Economizing When It Should Not",
+   "description": "FDD: Indicates when the unit is economizing but should not be",
+   "units": "",
+   "access": "R",
+   "states": "0 = Inactive, 1 = Active"
+  },
+  {
+   "type": "BI",
+   "instance": 10106,
+   "name": "FDD: Unit Not Economizing When it Should Be",
+   "description": "FDD: Indicates when the unit is not economizing but should be",
+   "units": "",
+   "access": "R",
+   "states": "0 = Inactive, 1 = Active"
+  },
+  {
+   "type": "BI",
+   "instance": 10111,
+   "name": "Compressor 1A Status",
+   "description": "Operating status of compressor 1A",
+   "units": "",
+   "access": "R",
+   "states": "0 = Off, 1 = Running"
+  },
+  {
+   "type": "BI",
+   "instance": 10112,
+   "name": "Compressor 1B Status",
+   "description": "Operating status of compressor 1B",
+   "units": "",
+   "access": "R",
+   "states": "0 = Off, 1 = Running"
+  },
+  {
+   "type": "BI",
+   "instance": 10113,
+   "name": "Compressor 1C Status",
+   "description": "Operating status of compressor 1C",
+   "units": "",
+   "access": "R",
+   "states": "0 = Off, 1 = Running"
+  },
+  {
+   "type": "BI",
+   "instance": 10114,
+   "name": "Compressor 2A Status",
+   "description": "Operating status of compressor 2A",
+   "units": "",
+   "access": "R",
+   "states": "0 = Off, 1 = Running"
+  },
+  {
+   "type": "BI",
+   "instance": 10115,
+   "name": "Compressor 2B Status",
+   "description": "Operating status of compressor 2B",
+   "units": "",
+   "access": "R",
+   "states": "0 = Off, 1 = Running"
+  },
+  {
+   "type": "BI",
+   "instance": 10116,
+   "name": "Compressor 2C Status",
+   "description": "Operating status of compressor 2C",
+   "units": "",
+   "access": "R",
+   "states": "0 = Off, 1 = Running"
+  },
+  {
+   "type": "BI",
+   "instance": 10132,
+   "name": "FDD: Outdoor Air Temperature Sensor Failure",
+   "description": "FDD: Indicates when the outdoor air temperature sensor has failed",
+   "units": "",
+   "access": "R",
+   "states": "0 = Inactive, 1 = Active"
+  },
+  {
+   "type": "BI",
+   "instance": 10155,
+   "name": "Rapid Restart Status",
+   "description": "Active status of the Rapid Restart event",
+   "units": "",
+   "access": "R",
+   "states": "0 = Inactive, 1 = Active"
+  },
+  {
+   "type": "BI",
+   "instance": 10164,
+   "name": "Coil Frost Protection Status Circuit 1",
+   "description": "Active when actively in coil frost protection for circuit 1",
+   "units": "",
+   "access": "R",
+   "states": "0 = Inactive, 1 = Active"
+  },
+  {
+   "type": "BI",
+   "instance": 10165,
+   "name": "Coil Frost Protection Status Circuit 2",
+   "description": "Active when actively in coil frost protection for circuit 2",
+   "units": "",
+   "access": "R",
+   "states": "0 = Inactive, 1 = Active"
+  },
+  {
+   "type": "BI",
+   "instance": 10176,
+   "name": "Diagnostic Present",
+   "description": "",
+   "units": "",
+   "access": "R",
+   "states": "0 = Normal, 1 = In Alarm"
+  },
+  {
+   "type": "BI",
+   "instance": 10202,
+   "name": "Condenser Fan Circuit 1 Relay 1 Status",
+   "description": "Status of condenser fan circuit 1, relay 1",
+   "units": "",
+   "access": "R",
+   "states": "0 = Off, 1 = On"
+  },
+  {
+   "type": "BI",
+   "instance": 10203,
+   "name": "Condenser Fan Circuit 1 Relay 2 Status",
+   "description": "Status of condenser fan circuit 1, relay 2",
+   "units": "",
+   "access": "R",
+   "states": "0 = Off, 1 = On"
+  },
+  {
+   "type": "BI",
+   "instance": 10204,
+   "name": "Condenser Fan Circuit 1 Relay 3 Status",
+   "description": "Status of condenser fan circuit 1, relay 3",
+   "units": "",
+   "access": "R",
+   "states": "0 = Off, 1 = On"
+  },
+  {
+   "type": "BI",
+   "instance": 10205,
+   "name": "Condenser Fan Circuit 1 Relay 4 Status",
+   "description": "Status of condenser fan circuit 1, relay 4",
+   "units": "",
+   "access": "R",
+   "states": "0 = Off, 1 = On"
+  },
+  {
+   "type": "BI",
+   "instance": 10206,
+   "name": "Condenser Fan Circuit 2 Relay 1 Status",
+   "description": "Status of condenser fan circuit 2, relay 1",
+   "units": "",
+   "access": "R",
+   "states": "0 = Off, 1 = On"
+  },
+  {
+   "type": "BI",
+   "instance": 10207,
+   "name": "Condenser Fan Circuit 2 Relay 2 Status",
+   "description": "Status of condenser fan circuit 2, relay 2",
+   "units": "",
+   "access": "R",
+   "states": "0 = Off, 1 = On"
+  },
+  {
+   "type": "BI",
+   "instance": 10208,
+   "name": "Condenser Fan Circuit 2 Relay 3 Status",
+   "description": "Status of condenser fan circuit 2, relay 3",
+   "units": "",
+   "access": "R",
+   "states": "0 = Off, 1 = On"
+  },
+  {
+   "type": "BI",
+   "instance": 10209,
+   "name": "Condenser Fan Circuit 2 Relay 4 Status",
+   "description": "Status of condenser fan circuit 2, relay 4",
+   "units": "",
+   "access": "R",
+   "states": "0 = Off, 1 = On"
+  },
+  {
+   "type": "BI",
+   "instance": 10210,
+   "name": "Emergency Stop",
+   "description": "Status of the emergency stop function of the unit",
+   "units": "",
+   "access": "R",
+   "states": "0 = Auto, 1 = Emergency Stop - Manual Reset Required"
+  },
+  {
+   "type": "BI",
+   "instance": 10211,
+   "name": "Equipment Stop Status",
+   "description": "Status of the externally- wired auto/stop input",
+   "units": "",
+   "access": "R",
+   "states": "0 = Stop, 1 = Auto"
+  },
+  {
+   "type": "BI",
+   "instance": 10218,
+   "name": "Diagnostic: Manual Reset Required",
+   "description": "A diagnostic exists that requires manual reset",
+   "units": "",
+   "access": "R",
+   "states": "0 = Normal, 1 = In Alarm"
+  },
+  {
+   "type": "BI",
+   "instance": 10219,
+   "name": "Economizer Airside Status",
+   "description": "Status of airside economizing",
+   "units": "",
+   "access": "R",
+   "states": "0 = Inactive, 1 = Active"
+  },
+  {
+   "type": "BI",
+   "instance": 10605,
+   "name": "Diagnostic: Loss of Charge Lockout Ckt1",
+   "description": "A loss of charge lockout diagnostic exists for DX circuit 1",
+   "units": "",
+   "access": "R",
+   "states": "0 = No, 1 = Yes"
+  },
+  {
+   "type": "BI",
+   "instance": 10606,
+   "name": "Diagnostic: Loss of Charge Lockout Ckt2",
+   "description": "A loss of charge lockout diagnostic exists for DX circuit 2",
+   "units": "",
+   "access": "R",
+   "states": "1 = No, 1 = Yes"
+  },
+  {
+   "type": "BI",
+   "instance": 10619,
+   "name": "Diagnostic Shutdown Present",
+   "description": "Unit is shut down due to diagnostics",
+   "units": "",
+   "access": "R",
+   "states": "0 = Normal, 1 = In Alarm"
+  },
+  {
+   "type": "BI",
+   "instance": 10620,
+   "name": "Diagnostic: Local Manual Reset Required",
+   "description": "Diagnostic Reset required [Local only]",
+   "units": "",
+   "access": "R",
+   "states": "0 = Normal, 1 = In Alarm"
+  },
+  {
+   "type": "BI",
+   "instance": 13000,
+   "name": "Front Panel Auto Stop Status",
+   "description": "Status of the the Local Auto Stop setting",
+   "units": "",
+   "access": "R",
+   "states": "0 = Stop, 1 = Auto"
+  },
+  {
+   "type": "BI",
+   "instance": 13002,
+   "name": "Manual Override Exists",
+   "description": "Indicator of a Manual Override being active",
+   "units": "",
+   "access": "R",
+   "states": "0 = Off, 1 = On"
+  },
+  {
+   "type": "BI",
+   "instance": 13003,
+   "name": "Frostat Input Status Circuit 1",
+   "description": "Status of the Frostat input, circuit 1",
+   "units": "",
+   "access": "R",
+   "states": "0 = Open, 1 = Closed"
+  },
+  {
+   "type": "BI",
+   "instance": 13004,
+   "name": "Frostat Input Status Circuit 2",
+   "description": "Status of the Frostat input, circuit 2",
+   "units": "",
+   "access": "R",
+   "states": "0 = Open, 1 = Closed"
+  },
+  {
+   "type": "BI",
+   "instance": 13005,
+   "name": "Freezestat Input Status",
+   "description": "Status of the Freezestat Input",
+   "units": "",
+   "access": "R",
+   "states": "0 = Open, 1 = Closed"
+  },
+  {
+   "type": "BI",
+   "instance": 13006,
+   "name": "Refrigerant Leak Detection",
+   "description": "Active status of a refrigerant leak event",
+   "units": "",
+   "access": "R",
+   "states": "0 = Open, 1 = Closed"
+  },
+  {
+   "type": "BV",
+   "instance": 10110,
+   "name": "Reset Diagnostic",
+   "description": "Request to reset any remote controller diangostic",
+   "units": "",
+   "access": "W",
+   "states": "0 = Normal, 1 = Reset"
+  },
+  {
+   "type": "BV",
+   "instance": 10115,
+   "name": "Cooling Lockout BAS",
+   "description": "Command to (temporarily) prevent all mechanical cooling",
+   "units": "",
+   "access": "W",
+   "states": "0 = Normal, 1 = Locked Out"
+  },
+  {
+   "type": "BV",
+   "instance": 10116,
+   "name": "Demand Limit Request BAS",
+   "description": "Demand limit the unit",
+   "units": "",
+   "access": "W",
+   "states": "0 = Not Limited, 1 = Limited"
+  },
+  {
+   "type": "BV",
+   "instance": 10117,
+   "name": "Energy Consumption Reset",
+   "description": "Reset the energy consumption accumulated total",
+   "units": "",
+   "access": "W",
+   "states": "0 = Accumulating, 1 = Reset"
+  },
+  {
+   "type": "BV",
+   "instance": 10120,
+   "name": "Rapid Restart Enable",
+   "description": "Enables/Disables rapid restart operation",
+   "units": "",
+   "access": "W",
+   "states": "0 = Disable, 1 = Enable"
+  },
+  {
+   "type": "BV",
+   "instance": 10140,
+   "name": "Auto Stop Command BAS",
+   "description": "BAS Auto Stop Command",
+   "units": "",
+   "access": "W",
+   "states": "0 = Stop, 1 = Auto"
+  },
+  {
+   "type": "MI",
+   "instance": 10105,
+   "name": "Cooling Reset Type Status",
+   "description": "Type of cooling reset used by the controller",
+   "units": "",
+   "access": "R",
+   "states": "1 = None, 2 = Outdor Air"
+  },
+  {
+   "type": "MI",
+   "instance": 10108,
+   "name": "Economizer Type",
+   "description": "General description of the type of economizer system",
+   "units": "",
+   "access": "R",
+   "states": "1 = None, 2 = 2 Position Ventilation, 3 = Modulation Economizer, 4 = 2 Position Ventilation/Waterside Economizer, 5 = Waterside Economizer, 6 = Airside/Waterside Economizer, 7 = TRAQ Damper, 8 = Airside Economizer and TRAQ Damper/Sensor, 9 = Waterside Economizer and TRAQ"
+  },
+  {
+   "type": "MI",
+   "instance": 10109,
+   "name": "Condenser Type",
+   "description": "General description of the equipment condenser system",
+   "units": "",
+   "access": "R",
+   "states": "1 = None, 2 = Air Cooled Condenser, 3 = Water Cooled Condenser, 4 = Evaporative Condenser"
+  },
+  {
+   "type": "MI",
+   "instance": 10117,
+   "name": "Refrigerant Type",
+   "description": "Type of refrigerant used in the equipment",
+   "units": "",
+   "access": "R",
+   "states": "1 = R-11, 2 = R-12, 3 = R-22, 4 = R-123, 5 = R-134A, 6 = R-407C, 7 = R-410A, 8 = R-113, 9 = R-114, 10 = R-500, 11 = R-502, 12 = R-404A, 13 = R-513A, 14 = R-1233zd(E), 15 = R-514A, 16 = R-1234ze(E), 17 = R-454B"
+  },
+  {
+   "type": "MI",
+   "instance": 10119,
+   "name": "Arbitration Method",
+   "description": "",
+   "units": "",
+   "access": "R",
+   "states": "1 = Full Source, 2 = Local Source, 3 = Default Source"
+  },
+  {
+   "type": "MI",
+   "instance": 10121,
+   "name": "Electrical Service Type",
+   "description": "Electrical service type used for the unit",
+   "units": "",
+   "access": "R",
+   "states": "1 = A+N, 2 = A+B, 3 = A+B+N, 4 = A+B+C, 5 = A+B+C+N"
+  },
+  {
+   "type": "MI",
+   "instance": 10132,
+   "name": "Economizer Decision Method",
+   "description": "Method of enabling airside economizing",
+   "units": "",
+   "access": "R",
+   "states": "1 = Absolute Temperature, 2 = Relative Temperature, 3 = Absolute Enthalpy, 4 = Comparative Enthalpy"
+  },
+  {
+   "type": "MI",
+   "instance": 10140,
+   "name": "Unit Status",
+   "description": "",
+   "units": "",
+   "access": "R",
+   "states": "1 = Off, 2 = Waiting, 3 = Running"
+  },
+  {
+   "type": "MI",
+   "instance": 10144,
+   "name": "Economizer System Status",
+   "description": "Status of enabling economizing",
+   "units": "",
+   "access": "R",
+   "states": "1 = Disabled, 2 = Enabled, 3 = Not Present"
+  },
+  {
+   "type": "MI",
+   "instance": 10145,
+   "name": "Model Information [GEN2]",
+   "description": "Model Information",
+   "units": "",
+   "access": "R",
+   "states": "64 = RAUK"
+  },
+  {
+   "type": "MV",
+   "instance": 10103,
+   "name": "Economizer Airside Enable BAS",
+   "description": "Enable airside economizing",
+   "units": "",
+   "access": "W",
+   "states": "1 = Disabled, 2 = Enabled, 3 = Auto"
+  }
+ ],
+ "page": "https://easybacnet.com/bacnet-points-lists/trane/symbio-800-intellicore-rauk",
+ "note": "Re-typed from the manufacturer's public documentation (see source). Point availability varies by firmware and options; verify against the live device."
+}

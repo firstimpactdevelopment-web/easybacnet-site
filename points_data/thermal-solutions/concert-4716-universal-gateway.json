@@ -1,0 +1,511 @@
+{
+  "manufacturer": "Thermal Solutions",
+  "manufacturer_slug": "thermal-solutions",
+  "model": "Apex / Arctic with Concert or Panasonic 4716 software (Universal Gateway)",
+  "model_slug": "concert-4716-universal-gateway",
+  "aliases": [
+    "Concert",
+    "Concert control",
+    "Apex 4716",
+    "Arctic",
+    "Arctic 1000",
+    "Arctic 1500",
+    "Universal Gateway",
+    "106417-01",
+    "ProtoNode RER",
+    "FPC-N34-0816"
+  ],
+  "equipment_type": "Boiler controller via ProtoNode gateway",
+  "applies_to": "Thermal Solutions Apex and Arctic boilers with the Concert control and display, and Apex boilers with the Panasonic display running 4716 software, through the Universal Gateway.",
+  "summary": "Apex and Arctic boilers on 4716 software (Concert control, or Apex with the Panasonic display) are read over Modbus RTU by the Thermal Solutions Universal Gateway (a ProtoNode) and served as BACnet IP or BACnet MS/TP devices. The 45-object profile adds BMS demand, setpoint, outdoor temperature and firing-rate commands that must be refreshed within a Modbus command timeout, plus pump status, low-temperature loop values, burner state and lockout and hold codes.",
+  "bacnet_transport": [
+    "BACnet IP",
+    "BACnet MS/TP"
+  ],
+  "firmware": null,
+  "default_device_instance": "50000 + boiler Modbus address (BACnet IP and MS/TP multiple node); Node_Offset default 50,000",
+  "access_inferred": false,
+  "notes": [
+    "The Universal Gateway is a ProtoNode (BACnet RER FPC-N34-0816, LonWorks LER FPC-N35-0817) that auto-discovers up to 8 boilers on its Modbus RS-485 port.",
+    "Every boiler is its own BACnet device with the same object list; the instances here are for one boiler.",
+    "Power all boilers and connect them before running auto-discovery; a boiler added later is not found until discovery is run again.",
+    "On this list the local setpoints (AV 3-6) and Burner On Off (BV 1) are read only; BMS control goes through BV 29-30 and AV 31-34.",
+    "The manual lists BI 43 CH heat demand as W; it is a binary input and the matching Modbus register is read only, so it is recorded here as read only.",
+    "Apex and Arctic boilers with Concert can run their own lead lag sequencer and talk to the EMS at the same time."
+  ],
+  "integration": {
+    "summary": "Set a unique Comm HMI Station ID on each Concert display (Menu > EMS Interface > Modbus Setup), wire the boiler's EMS terminals to the gateway, run auto-discovery, then write a demand (BV 29 or BV 30) plus a setpoint (AV 31 or AV 32) or a firing rate (AV 34). Those values must be rewritten before the Modbus command timeout runs out (default 30 s) or the boiler falls back to local control.",
+    "minimum_points": [
+      {
+        "ref": "BV 29",
+        "name": "CH Modbus Stat",
+        "why": "CH demand from the BMS (1 = demand)"
+      },
+      {
+        "ref": "BV 30",
+        "name": "LLCH Modbus Stat",
+        "why": "Lead lag CH demand from the BMS (1 = demand)"
+      },
+      {
+        "ref": "AV 31",
+        "name": "CH Modbus SP",
+        "why": "Boiler setpoint, 60-190 °F"
+      },
+      {
+        "ref": "AV 32",
+        "name": "CH Sequencer Modbus SP",
+        "why": "Lead lag sequencer setpoint, 60-190 °F"
+      },
+      {
+        "ref": "AV 34",
+        "name": "CH Modbus Rate",
+        "why": "Firing rate command; 0-200 = 0-100 %"
+      },
+      {
+        "ref": "AI 21",
+        "name": "Burner Control State",
+        "why": "Burner sequence state; 12 = Run, 14 = Lockout"
+      },
+      {
+        "ref": "AI 13",
+        "name": "Supply Sensor",
+        "why": "Supply water temperature, °F"
+      },
+      {
+        "ref": "AI 22",
+        "name": "Lockout Code",
+        "why": "Lockout reason; 0 = no lockout"
+      }
+    ],
+    "enable": "Write BV 29 CH Modbus Stat (single boiler) or BV 30 LLCH Modbus Stat (lead lag) = 1 for demand, with AV 31 CH Modbus SP or AV 32 CH Sequencer Modbus SP (60-190 °F). To drive the firing rate instead, write AV 34 CH Modbus Rate (0-200 gives 0-100 %).",
+    "heartbeat": "AV 36 Modbus command timeout (30-120 s, default 30). BV 29, BV 30, AV 31, AV 32 and AV 34 must be rewritten within that time; otherwise the demand drops to 0, setpoints return to the local setpoint and the firing rate returns to local control.",
+    "remote_sensors": "AV 33 Outdoor Temperature (-40 to 302 °F) can be written by the BMS. If it is not rewritten within the Modbus command timeout the value is flagged bad and outdoor reset falls back to the local setpoint.",
+    "setup": [
+      "BACnet IP and MS/TP multiple node: each boiler is its own device, instance = Node_Offset (default 50,000) + boiler Modbus address, so address 1 = 50001.",
+      "BACnet MS/TP single node (for front ends without virtual-node support): one device at Node_Offset + MAC, with boiler objects renumbered 1001, 1002... for address 1, 2001... for address 2.",
+      "S-bank DIP switches pick the protocol (S0-S2 all Off = BACnet IP, S0 On = MS/TP multiple node, S2 On = MS/TP single node); S3 On at power-up runs auto-discovery (about 3 minutes), then set S3 Off to keep the configuration.",
+      "MS/TP MAC address 1-127 on A-bank DIP switches (one MAC for the whole gateway); baud rate on B-bank switches.",
+      "Change the IP address and Node_Offset in the ProtoNode web configurator (default IP 192.168.1.24).",
+      "Concert display: Menu > EMS Interface > Modbus Setup > EMS Modbus Parameter, set a unique Comm HMI Station ID for each boiler wired to the gateway."
+    ],
+    "gotchas": [
+      "AV 34 CH Modbus Rate is scaled 0-200 for 0-100 % firing rate.",
+      "Write the counters (AV 24-28) and AV 36 only when a change is needed.",
+      "AI 19 is the commanded fan speed and AI 35 the measured fan speed.",
+      "Pump status codes 92-127 are listed in the manual's table 1."
+    ]
+  },
+  "source": {
+    "title": "Thermal Solutions Universal Gateway Instruction Manual",
+    "doc_number": "106417-01 Rev. 13",
+    "revision_date": "2017-08-21",
+    "url": "https://boilers-water-heaters.thermalsolutions.com/Asset/106417-01%20Rev%2013%20TS%20Universal%20Gateway%20Instructions.pdf"
+  },
+  "points": [
+    {
+      "type": "BV",
+      "instance": 1,
+      "name": "Burner On Off",
+      "description": "Burner enable state",
+      "units": "",
+      "access": "R",
+      "states": "0=Off, 1=On"
+    },
+    {
+      "type": "AI",
+      "instance": 2,
+      "name": "Demand Source",
+      "description": "Source of the current heat demand",
+      "units": "",
+      "access": "R",
+      "states": "0=Unknown, 1=No source demand, 2=Central heat, 3=Domestic hot water, 4=Lead Lag slave, 5=Lead Lag master, 6=CH frost protection, 7=DHW frost protection, 8=No demand (burner switch off), 9=DHW storage, 11=Warm weather shutdown"
+    },
+    {
+      "type": "AV",
+      "instance": 3,
+      "name": "CH Setpoint",
+      "description": "Central heat setpoint set at the boiler (read only)",
+      "units": "°F",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 4,
+      "name": "DHW Setpoint",
+      "description": "DHW setpoint set at the boiler (read only)",
+      "units": "°F",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 5,
+      "name": "Lead Lag Setpoint",
+      "description": "Lead lag setpoint set at the boiler (read only)",
+      "units": "°F",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 6,
+      "name": "CH TOD Setpoint",
+      "description": "CH time-of-day setpoint set at the boiler (read only)",
+      "units": "°F",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AI",
+      "instance": 7,
+      "name": "CH Setpoint Source",
+      "description": "What sets the active CH setpoint",
+      "units": "",
+      "access": "R",
+      "states": "0=Unknown, 1=Normal setpoint, 2=TOD setpoint, 3=Outdoor reset, 4=Remote control (4-20 mA), 7=Outdoor reset time of day"
+    },
+    {
+      "type": "AI",
+      "instance": 8,
+      "name": "Active CH Setpoint",
+      "description": "CH setpoint in use",
+      "units": "°F",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AI",
+      "instance": 9,
+      "name": "DHW Setpoint Source",
+      "description": "What sets the active DHW setpoint",
+      "units": "",
+      "access": "R",
+      "states": "0=Unknown, 1=Normal setpoint, 2=TOD setpoint, 5=DHW tap setpoint, 6=DHW preheat setpoint"
+    },
+    {
+      "type": "AI",
+      "instance": 10,
+      "name": "Active DHW Setpoint",
+      "description": "DHW setpoint in use",
+      "units": "°F",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AI",
+      "instance": 11,
+      "name": "LL Master Setpoint Source",
+      "description": "What sets the lead lag master setpoint",
+      "units": "",
+      "access": "R",
+      "states": "0=Unknown, 1=CH setpoint, 2=CH TOD setpoint, 3=Outdoor reset, 4=Remote control (4-20 mA), 5=DHW setpoint, 6=DHW TOD setpoint, 7=Outdoor reset time of day, 8=Mix setpoint"
+    },
+    {
+      "type": "AI",
+      "instance": 12,
+      "name": "Active LL Setpoint",
+      "description": "Lead lag setpoint in use",
+      "units": "°F",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AI",
+      "instance": 13,
+      "name": "Supply Sensor",
+      "description": "Supply water temperature (-40 to 266)",
+      "units": "°F",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AI",
+      "instance": 14,
+      "name": "Return Sensor",
+      "description": "Return water temperature (-40 to 266)",
+      "units": "°F",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AI",
+      "instance": 15,
+      "name": "Header Sensor",
+      "description": "Header temperature (-40 to 266)",
+      "units": "°F",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AI",
+      "instance": 16,
+      "name": "Stack Sensor",
+      "description": "Flue stack temperature (-40 to 266)",
+      "units": "°F",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AI",
+      "instance": 17,
+      "name": "Outdoor Sensor",
+      "description": "Outdoor air temperature (-40 to 266)",
+      "units": "°F",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AI",
+      "instance": 18,
+      "name": "4-20 mA Rem Control Input",
+      "description": "4-20 mA remote setpoint/modulation input",
+      "units": "mA",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AI",
+      "instance": 19,
+      "name": "Fan Speed",
+      "description": "Combustion blower commanded speed",
+      "units": "rpm",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AI",
+      "instance": 20,
+      "name": "Flame Signal",
+      "description": "Flame signal (0.00-50.00)",
+      "units": "V or µA",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AI",
+      "instance": 21,
+      "name": "Burner Control State",
+      "description": "Burner sequence state",
+      "units": "",
+      "access": "R",
+      "states": "0=Initiate, 1=Standby Delay, 2=Standby, 3=Safe Startup, 4=Prepurge - Drive to Purge Rate, 5=Prepurge - Measured Purge Time, 6=Prepurge - Drive to Lightoff Rate, 7=Preignition Test, 8=Preignition Time, 9=Pilot Flame Establishing Period, 10=Main Flame Establishing Period, 11=Direct Burner Ignition, 12=Run, 13=Postpurge, 14=Lockout"
+    },
+    {
+      "type": "AI",
+      "instance": 22,
+      "name": "Lockout Code",
+      "description": "Reason for burner lockout",
+      "units": "",
+      "access": "R",
+      "states": "0=No lockout, 4=Supply high limit, 5=DHW high limit, 6=Stack high limit, 12=Flame detected out of sequence, 18=Lightoff rate proving failed, 19=Purge rate proving failed, 20=Invalid safety parameters, 21=Invalid modulation parameter, 22=Safety data verification needed, 23=24VAC voltage low/high, 24=Fuel valve error, 25=Hardware fault, 26=Internal fault, 27=Ignition failure"
+    },
+    {
+      "type": "AI",
+      "instance": 23,
+      "name": "Hold Code",
+      "description": "Reason for burner hold",
+      "units": "",
+      "access": "R",
+      "states": "0=None, 1=Anti short cycle, 2=Boiler safety limit open, 3=Boiler safety limit open (ILK off), 7=Return sensor fault, 8=Supply sensor fault, 9=DHW sensor fault, 10=Stack sensor fault, 11=Ignition failure, 13=Flame rod shorted to ground, 14=Delta T inlet/outlet high, 15=Return temp higher than supply, 16=Supply temp has risen too quickly, 17=Fan speed not proved, 23=24VAC voltage low/high, 25=Hardware fault, 27=Ignition failure"
+    },
+    {
+      "type": "AV",
+      "instance": 24,
+      "name": "Burner Cycle Count",
+      "description": "Burner cycle counter (0-999,999)",
+      "units": "",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 25,
+      "name": "Burner Run Time",
+      "description": "Burner run time counter",
+      "units": "h",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 26,
+      "name": "System Pum Cycle Count",
+      "description": "System pump cycle counter",
+      "units": "",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 27,
+      "name": "DHW Pump Cycle Count",
+      "description": "DHW pump cycle counter",
+      "units": "",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 28,
+      "name": "Boiler Pump Cycle Count",
+      "description": "Boiler pump cycle counter",
+      "units": "",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "BV",
+      "instance": 29,
+      "name": "CH Modbus Stat",
+      "description": "CH demand from the BMS; resend within timeout",
+      "units": "",
+      "access": "W",
+      "states": "0=No demand, 1=Demand"
+    },
+    {
+      "type": "BV",
+      "instance": 30,
+      "name": "LLCH Modbus Stat",
+      "description": "Lead lag CH demand from the BMS; resend within timeout",
+      "units": "",
+      "access": "W",
+      "states": "0=No demand, 1=Demand"
+    },
+    {
+      "type": "AV",
+      "instance": 31,
+      "name": "CH Modbus SP",
+      "description": "Boiler setpoint from the BMS (60 to 190)",
+      "units": "°F",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 32,
+      "name": "CH Sequencer Modbus SP",
+      "description": "Lead lag sequencer setpoint from the BMS (60 to 190)",
+      "units": "°F",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 33,
+      "name": "Outdoor Temperature",
+      "description": "Outdoor temperature from the BMS (-40 to 302)",
+      "units": "°F",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 34,
+      "name": "CH Modbus Rate",
+      "description": "Firing rate from the BMS; 0-200 = 0-100 %",
+      "units": "",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "AI",
+      "instance": 35,
+      "name": "Fan Speed Measured",
+      "description": "Combustion blower measured speed",
+      "units": "rpm",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 36,
+      "name": "Modbus command timeout",
+      "description": "BMS write timeout (30 to 120, default 30)",
+      "units": "s",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "AI",
+      "instance": 37,
+      "name": "CH pump status",
+      "description": "CH pump status code",
+      "units": "",
+      "access": "R",
+      "states": "92-127 = pump status codes (forced on/off reasons, demand, service, frost protection, exercise); see manual table 1"
+    },
+    {
+      "type": "AI",
+      "instance": 38,
+      "name": "DHW pump status",
+      "description": "DHW pump status code",
+      "units": "",
+      "access": "R",
+      "states": "92-127 = pump status codes (forced on/off reasons, demand, service, frost protection, exercise); see manual table 1"
+    },
+    {
+      "type": "AI",
+      "instance": 39,
+      "name": "Boiler pump status",
+      "description": "Boiler pump status code",
+      "units": "",
+      "access": "R",
+      "states": "92-127 = pump status codes (forced on/off reasons, demand, service, frost protection, exercise); see manual table 1"
+    },
+    {
+      "type": "AI",
+      "instance": 40,
+      "name": "Low Temp SP",
+      "description": "Low temperature loop setpoint (79 to 191)",
+      "units": "°F",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AI",
+      "instance": 41,
+      "name": "Low TempSP source",
+      "description": "What sets the low temperature setpoint",
+      "units": "",
+      "access": "R",
+      "states": "0=Unknown, 1=Normal setpoint, 2=TOD setpoint, 3=Outdoor reset, 4=Remote control, 7=Outdoor reset time of day, 9=Outdoor boost"
+    },
+    {
+      "type": "AI",
+      "instance": 42,
+      "name": "Active Low Temp SP",
+      "description": "Low temperature setpoint in use",
+      "units": "°F",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "BI",
+      "instance": 43,
+      "name": "CH heat demand",
+      "description": "CH heat demand present",
+      "units": "",
+      "access": "R",
+      "states": "0=Off, 1=On"
+    },
+    {
+      "type": "BI",
+      "instance": 44,
+      "name": "DHW heat demand",
+      "description": "DHW heat demand present",
+      "units": "",
+      "access": "R",
+      "states": "0=Off, 1=On"
+    },
+    {
+      "type": "BI",
+      "instance": 45,
+      "name": "Low Temp Loop demand",
+      "description": "Low temperature loop heat demand",
+      "units": "",
+      "access": "R",
+      "states": "0=Off, 1=On"
+    }
+  ]
+}
