@@ -1,0 +1,3010 @@
+{
+ "manufacturer": "Johnson Controls",
+ "manufacturer_slug": "johnson-controls",
+ "model": "Premier Rooftop Units 25-50 Ton",
+ "model_slug": "premier-rooftop-25-50-ton",
+ "aliases": [
+  "JCI Premier RTU",
+  "Premier 25-50 ton",
+  "Applied Smart Equipment controller",
+  "Smart Equipment rooftop",
+  "5586996-JSG-A"
+ ],
+ "equipment_type": "Rooftop unit controller",
+ "applies_to": "Johnson Controls Premier 25-50 ton R-410A packaged rooftop units (MZVAV or SZVAV) with the Applied Smart Equipment controller.",
+ "summary": "The Premier 25-50 ton rooftop units use the Applied Smart Equipment controller, which has BACnet MS/TP (plus Modbus and N2) on its FC bus and BACnet IP through an optional plug-in card. The points list is all AV, MV and CSV objects in the 29501-30079 range: occupancy and unit enable commands, heating and cooling setpoints, network override inputs for zone and outdoor sensors, unit, fan, cooling and heating status, refrigerant circuit values, runtimes and fault flags. Many points belong to options and stay unused on units without them.",
+ "bacnet_transport": [
+  "BACnet IP",
+  "BACnet MS/TP"
+ ],
+ "firmware": null,
+ "default_device_instance": null,
+ "access_inferred": false,
+ "notes": [
+  "Taken from Table 32 (BACnet Points List) of the 25-50 ton Premier start-up and operation guide; the table has only AV, MV and CSV objects.",
+  "Multistate states are printed from 0 in the table. BACnet multistate values start at 1, so the device may report the printed number + 1; check the state text on discovery.",
+  "Enable polarity is not consistent: FanOnOcc and C1A-En/C1B-En/C2A-En print 0 = YES, 1 = NO, while C2B-En and most other enables print 0 = NO, 1 = YES.",
+  "The last six rows (MVCritical, MVServicePriority and MVService Active/Inactive Event, instances 29995-30000) give object type \"0\" and no description; they are listed here as type Other.",
+  "Points for heat stages 4-8, the second circuit, exhaust, energy recovery wheel, HGRH, humidification and UV lights only carry data on units with those options.",
+  "Writable setpoint ranges from the table are in the descriptions."
+ ],
+ "source": {
+  "title": "Premier Rooftop Units 25-50 Tons Start-Up & Operation Guide",
+  "doc_number": "5586996-JSG-A-520",
+  "revision_date": "2020-05",
+  "url": "https://docs.johnsoncontrols.com/ductedsystems/api/khub/documents/n3TN8DoIvhMOr21N5iDrIg/content"
+ },
+ "integration": {
+  "summary": "Pick the field bus mode (BACnet MS/TP on the FC bus, or BACnet IP with the optional card) and set the device OID in Controller > Network. Set OccMode (MV 29518) to External so the BAS occupancy request on NetOcc (MV 29520) is used, keep UnitEn (MV 29896) at Enable, and write the occupied heating and cooling setpoints. Read Unit-S, Fan-S, the zone temperature in use and DAT for status.",
+  "minimum_points": [
+   {
+    "ref": "MV 29896",
+    "name": "UnitEn",
+    "why": "Unit enable (0 = shutdown, 1 = enable)"
+   },
+   {
+    "ref": "MV 29520",
+    "name": "NetOcc",
+    "why": "BAS occupancy: occupied, unoccupied or not set"
+   },
+   {
+    "ref": "MV 29518",
+    "name": "OccMode",
+    "why": "Must be External for BAS occupancy"
+   },
+   {
+    "ref": "AV 29608",
+    "name": "ClgOcc-Sp",
+    "why": "Occupied cooling setpoint, 45-98 °F"
+   },
+   {
+    "ref": "AV 29723",
+    "name": "HtgOcc-Sp",
+    "why": "Occupied heating setpoint, 40-85 °F"
+   },
+   {
+    "ref": "MV 29803",
+    "name": "Unit-S",
+    "why": "Unit state: idle, SD alarm, purge, start-up wizard"
+   },
+   {
+    "ref": "MV 29550",
+    "name": "Fan-S",
+    "why": "Fan state: off/idle, on/purge, on/valve or limit fault, on"
+   },
+   {
+    "ref": "AV 29522",
+    "name": "OprZT",
+    "why": "Zone temperature in use"
+   },
+   {
+    "ref": "AV 29564",
+    "name": "DAT",
+    "why": "Discharge air temperature"
+   },
+   {
+    "ref": "MV 29969",
+    "name": "DownInOccAlm",
+    "why": "Unit down during occupied mode (1 = alarm)"
+   }
+  ],
+  "enable": "UnitEn (MV 29896) enables or shuts down the unit; the default is Enable. With OccMode (MV 29518) at Schedule the unit follows its internal schedule. With OccMode at External, an occupied command from the BAS (NetOcc, MV 29520), a zone sensor override or the hard-wired occupancy input makes the unit occupied.",
+  "heartbeat": "No unit-level heartbeat point is listed. A zone temperature written by the BAS times out after 15 minutes without an update; the controller then falls back to a NetSensor, the wired zone sensor, then return air temperature.",
+  "remote_sensors": "Write zone temperature to NetZT (AV 29526), setpoint offset to NetSSO (AV 29540), zone humidity to NetSH (AV 29533), indoor CO2 to NetIAQ (AV 29530), and outdoor air temperature, humidity and CO2 to NetOAT, NetOAH and NetOAQ. A BAS zone temperature has top priority over local sensors. ZTSrc, IAQSrc, SHSrc and OATSrc show which source is in use.",
+  "setup": [
+   "BACnet MS/TP: set FCBusMode to Wired Field Bus; default MAC address 4 (range 4-255), default baud 38400.",
+   "BACnet IP needs the optional BACnet IP card; with it installed, BACnet MS/TP, Modbus and N2 on the FC bus do not work. Choose DHCP or a static IP, mask and router in Controller > Network.",
+   "Device OID range 0-4194302, set from the local display or a MAP gateway; it is also writable as DeviceId (AV 29897).",
+   "FC bus cable: 22 AWG 3-wire twisted shielded; set the EOL switch ON at each end of a bus segment. Use Cat 5/5e/6 for BACnet IP.",
+   "SZVAV must be enabled at commissioning (SZVAVEn); MZVAV is the default unit type."
+  ],
+  "gotchas": [
+   "Multistate values in the table start at 0; confirm the numbering on the device before writing NetOcc, OccMode or UnitEn.",
+   "NetOcc only acts when OccMode is External.",
+   "DctShutdownSp (AV 29567) is a high duct static limit; exceeding it locks the unit out as a critical fault. ResetLO (MV 29826) resets lockouts.",
+   "Unit name, serial number and device name are writable CSVs; do not write them cyclically."
+  ]
+ },
+ "points": [
+  {
+   "type": "AV",
+   "instance": 29521,
+   "name": "TempOccTimeout",
+   "description": "Temporary Occupancy Timeout, 30-480 minutes",
+   "units": "minutes",
+   "access": "W",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 29522,
+   "name": "OprZT",
+   "description": "Operational Zone Temperature",
+   "units": "°F",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 29524,
+   "name": "ZTAlarmOffset",
+   "description": "ZT Alarm Setpoint Offset, 0.0-25.0 °F",
+   "units": "°F",
+   "access": "W",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 29525,
+   "name": "ZTAlarmDelay",
+   "description": "ZT Alarm Time Delay, 0-120 minutes",
+   "units": "minutes",
+   "access": "W",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 29526,
+   "name": "NetZT",
+   "description": "Network Override ZT, 0.0-100.0 °F",
+   "units": "°F",
+   "access": "W",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 29527,
+   "name": "OprIAQ",
+   "description": "Operational IAQ",
+   "units": "ppm",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 29530,
+   "name": "NetIAQ",
+   "description": "Network Override IAQ, 0-5,000 ppm",
+   "units": "ppm",
+   "access": "W",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 29531,
+   "name": "OprZH",
+   "description": "Operational Space Humidity",
+   "units": "%RH",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 29533,
+   "name": "NetSH",
+   "description": "Network Override Zone Humidity, 0-100 %RH",
+   "units": "%RH",
+   "access": "W",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 29537,
+   "name": "OprSSO",
+   "description": "Operational Zone Temperature Setpoint Offset",
+   "units": "Δ°F",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 29540,
+   "name": "NetSSO",
+   "description": "Network Override Space Setpoint Offset, -5.0 to 5.0 Δ°F",
+   "units": "Δ°F",
+   "access": "W",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 29541,
+   "name": "OprOAT",
+   "description": "Operational OAT",
+   "units": "°F",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 29543,
+   "name": "NetOAT",
+   "description": "Network Override OAT, -50.0 to 125.0 °F",
+   "units": "°F",
+   "access": "W",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 29544,
+   "name": "OprOAH",
+   "description": "Operational Outdoor Air Humidity",
+   "units": "%RH",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 29545,
+   "name": "OA-Enth",
+   "description": "Outdoor Air Enthalpy",
+   "units": "BTU/lb",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 29546,
+   "name": "NetOAH",
+   "description": "Network Override Outdoor Air Humidity, 0-100 %RH",
+   "units": "%RH",
+   "access": "W",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 29547,
+   "name": "OprOAQ",
+   "description": "Operational Outdoor Air Quality",
+   "units": "ppm",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 29549,
+   "name": "NetOAQ",
+   "description": "Network Override Outdoor Air Quality",
+   "units": "ppm",
+   "access": "W",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 29551,
+   "name": "FanVFD",
+   "description": "Fan % Command",
+   "units": "%",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 29554,
+   "name": "Fan-RT",
+   "description": "Supply Fan Accumulated Runtime",
+   "units": "hours",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 29559,
+   "name": "FanOffDlyCool",
+   "description": "Fan Off Delay for Cool, 0-255 seconds",
+   "units": "seconds",
+   "access": "W",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 29561,
+   "name": "FanOffDlyHeat",
+   "description": "Fan Off Delay for Heat, 0-30 seconds",
+   "units": "seconds",
+   "access": "W",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 29564,
+   "name": "DAT",
+   "description": "DAT",
+   "units": "°F",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 29565,
+   "name": "DctPrs",
+   "description": "Discharge Air Static Pressure",
+   "units": "iwg",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 29566,
+   "name": "DctPrs-Sp",
+   "description": "Duct Pressure Setpoint",
+   "units": "iwg",
+   "access": "W",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 29567,
+   "name": "DctShutdownSp",
+   "description": "Duct Pressure Shutdown Setpoint",
+   "units": "iwg",
+   "access": "W",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 29576,
+   "name": "#ClgStgs",
+   "description": "Number of Cooling Stages Installed",
+   "units": "",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 29578,
+   "name": "MinRtCoolStg",
+   "description": "Minimum Runtime for a Cooling Stage",
+   "units": "minutes",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 29581,
+   "name": "Circ1ClgOATCutout",
+   "description": "Circuit 1 OAT Cooling Cutout",
+   "units": "°F",
+   "access": "W",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 29582,
+   "name": "Circ2ClgOATCutout",
+   "description": "Circuit 2 OAT Cooling Cutout",
+   "units": "°F",
+   "access": "W",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 29592,
+   "name": "Freeze-Sp",
+   "description": "Freeze Condition Setpoint, 20.0-32.0 °F",
+   "units": "°F",
+   "access": "W",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 29604,
+   "name": "ClgDATUp-SP",
+   "description": "Cooling DAT Upper Setpoint, 41.0-80.0 °F",
+   "units": "°F",
+   "access": "W",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 29605,
+   "name": "ClgDATLo-SP",
+   "description": "Cooling DAT Lower Setpoint, 40.0-79.0 °F",
+   "units": "°F",
+   "access": "W",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 29607,
+   "name": "OprClgDAT-SP",
+   "description": "Operating Cooling DAT Setpoint",
+   "units": "°F",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 29608,
+   "name": "ClgOcc-Sp",
+   "description": "OCC Cooling Setpoint, 45.0-98.0 °F",
+   "units": "°F",
+   "access": "W",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 29609,
+   "name": "ClgUnocc-Sp",
+   "description": "UNOCC Cooling Setpoint, 46.0-99.0 °F",
+   "units": "°F",
+   "access": "W",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 29610,
+   "name": "OprClg-Sp",
+   "description": "Operating Cooling Setpoint",
+   "units": "°F",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 29627,
+   "name": "C1A-RunTime",
+   "description": "Compressor Accumulated Runtime 1A",
+   "units": "hours",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 29628,
+   "name": "C1B-RunTime",
+   "description": "Compressor Accumulated Runtime 1B",
+   "units": "hours",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 29630,
+   "name": "C2A-RunTime",
+   "description": "Compressor Accumulated Runtime 2A",
+   "units": "hours",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 29631,
+   "name": "C1AOnTimer",
+   "description": "Min. ON Time Remaining 1A",
+   "units": "seconds",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 29632,
+   "name": "C1BOnTimer",
+   "description": "Min. ON Time Remaining 1B",
+   "units": "seconds",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 29634,
+   "name": "C2AOnTimer",
+   "description": "Min. ON Time Remaining 2A",
+   "units": "seconds",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 29635,
+   "name": "C1A-ASCDTmr",
+   "description": "Anti-Short Cycle Delay Time Remaining 1A",
+   "units": "seconds",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 29636,
+   "name": "C1B-ASCDTmr",
+   "description": "Anti-Short Cycle Delay Time Remaining 1B",
+   "units": "seconds",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 29638,
+   "name": "C2A-ASCDTmr",
+   "description": "Anti-Short Cycle Delay Time Remaining 2A",
+   "units": "seconds",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 29671,
+   "name": "SLP-1",
+   "description": "Suction Line Pressure 1",
+   "units": "psi",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 29672,
+   "name": "SLP-2",
+   "description": "Suction Line Pressure 2",
+   "units": "psi",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 29675,
+   "name": "LLP-1",
+   "description": "Liquid Line Pressure 1",
+   "units": "psi",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 29676,
+   "name": "LLP-2",
+   "description": "Liquid Line Pressure 2",
+   "units": "psi",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 29679,
+   "name": "SLT-1",
+   "description": "Suction Line Temperature 1",
+   "units": "°F",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 29680,
+   "name": "SLT-2",
+   "description": "Suction Line Temperature 2",
+   "units": "°F",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 29683,
+   "name": "LLT-1",
+   "description": "Liquid Line Temperature 1",
+   "units": "°F",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 29684,
+   "name": "LLT-2",
+   "description": "Liquid Line Temperature 2",
+   "units": "°F",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 29711,
+   "name": "HtgOATCutout-Sp",
+   "description": "OAT Heating Cutout Setpoint, 0.0-100.0 °F",
+   "units": "°F",
+   "access": "W",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 29723,
+   "name": "HtgOcc-Sp",
+   "description": "OCC Heating Setpoint, 40.0-85.0 °F",
+   "units": "°F",
+   "access": "W",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 29725,
+   "name": "HtgUnocc-Sp",
+   "description": "UNOCC Heating Setpoint, 45.0-98.0 °F",
+   "units": "°F",
+   "access": "W",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 29726,
+   "name": "OprHtg-Sp",
+   "description": "Operating Heating Setpoint",
+   "units": "°F",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 29731,
+   "name": "#HtgStgs",
+   "description": "Number of Heating Stages Installed",
+   "units": "",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 29738,
+   "name": "H1-Runtime",
+   "description": "Heating Stage 1 Accumulated Runtime",
+   "units": "hours",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 29739,
+   "name": "H2-Runtime",
+   "description": "Heating Stage 2 Accumulated Runtime",
+   "units": "hours",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 29740,
+   "name": "H3-Runtime",
+   "description": "Heating Stage 3 Accumulated Runtime",
+   "units": "hours",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 29741,
+   "name": "HWV",
+   "description": "Hydronic Heat Valve % Command",
+   "units": "%",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 29746,
+   "name": "DATTemper-Sp",
+   "description": "DAT Tempering Setpoint, 40.0-60.0 °F",
+   "units": "°F",
+   "access": "W",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 29748,
+   "name": "Econ",
+   "description": "Economizer Damper % Command",
+   "units": "%",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 29753,
+   "name": "EconOAT-SpEn",
+   "description": "Economizer OAT Enable Setpoint, 40.0-80.0 °F",
+   "units": "°F",
+   "access": "W",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 29754,
+   "name": "EconOAEnth-Sp",
+   "description": "Economizer Outside Air Enthalpy Setpoint, 10-50 BTU/lb",
+   "units": "BTU/lb",
+   "access": "W",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 29755,
+   "name": "MATClgLim",
+   "description": "Mixed Air Temperature Cooling Limit, 0.0-100.0 °F",
+   "units": "°F",
+   "access": "W",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 29759,
+   "name": "Econ-MinPos",
+   "description": "Economizer Minimum Position Setpoint, 0-100 %",
+   "units": "%",
+   "access": "W",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 29760,
+   "name": "MAT",
+   "description": "Mixed Air Temperature",
+   "units": "°F",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 29762,
+   "name": "DAH",
+   "description": "Discharge Air Humidity",
+   "units": "%RH",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 29763,
+   "name": "RA-Enth",
+   "description": "Return Air Enthalpy",
+   "units": "BTU/lb",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 29764,
+   "name": "RAT",
+   "description": "Return Air Temperature",
+   "units": "°F",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 29766,
+   "name": "DVentMaxEconPos",
+   "description": "Demand Ventilation Maximum Economizer Position",
+   "units": "%",
+   "access": "W",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 29767,
+   "name": "DVentIAQ-Sp",
+   "description": "Demand Ventilation IAQ Setpoint, 0-5,000 ppm",
+   "units": "ppm",
+   "access": "W",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 29768,
+   "name": "DVentDiff-Sp",
+   "description": "Demand Ventilation Differential Setpoint, 0-5,000 ppm",
+   "units": "ppm",
+   "access": "W",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 29776,
+   "name": "ExFanVFD",
+   "description": "Exhaust Fan VFD % Command",
+   "units": "%",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 29779,
+   "name": "ExF-RunTim",
+   "description": "Exhaust Fan Accumulated Runtime",
+   "units": "hours",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 29780,
+   "name": "Bldg-Sp",
+   "description": "Building Pressure Setpoint, -0.25 to 0.25 iwg",
+   "units": "iwg",
+   "access": "W",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 29781,
+   "name": "BldgPres",
+   "description": "Building Static Pressure",
+   "units": "iwg",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 29782,
+   "name": "EAD-O",
+   "description": "Exhaust Damper % Command",
+   "units": "%",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 29783,
+   "name": "ExDmpPosFanOn",
+   "description": "Exhaust Damper Position for Exhaust Fan to Turn ON, 20-99 %",
+   "units": "%",
+   "access": "W",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 29784,
+   "name": "ExDmpPosFanOff",
+   "description": "Exhaust Damper Position for Exhaust Fan to Turn OFF, 20-99 %",
+   "units": "%",
+   "access": "W",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 29790,
+   "name": "HGR",
+   "description": "HGRH Command",
+   "units": "%",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 29792,
+   "name": "Dehum-SP",
+   "description": "Dehumidification Setpoint, 0-100 %RH",
+   "units": "%RH",
+   "access": "W",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 29795,
+   "name": "MOAFlow-Sp",
+   "description": "Min Outside Airflow Setpoint, 0-5,000 CFM",
+   "units": "CFM",
+   "access": "W",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 29796,
+   "name": "Fr Air",
+   "description": "Fresh Air Intake Value",
+   "units": "CFM",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 29808,
+   "name": "LowSpeedFan-MinPos",
+   "description": "Economizer Damper Minimum Position Low Speed Fan, 0-100 %",
+   "units": "%",
+   "access": "W",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 29823,
+   "name": "MornWRAT-Sp",
+   "description": "Morning Warm-up/RAT Setpoint, 50.0-85.0 °F",
+   "units": "°F",
+   "access": "W",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 29824,
+   "name": "EconDampPos",
+   "description": "Economizer Damper Position",
+   "units": "%",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 29828,
+   "name": "RAH",
+   "description": "Return Air Humidity",
+   "units": "%RH",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 29833,
+   "name": "EVAP-T",
+   "description": "Evaporating Temperature Value Circuit 1",
+   "units": "°F",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 29885,
+   "name": "LoadShedAdjust",
+   "description": "Load Shed Adjust, 0-8 Δ°F",
+   "units": "Δ°F",
+   "access": "W",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 29889,
+   "name": "Altitude",
+   "description": "Altitude, -1,500 to 30,000 feet",
+   "units": "feet",
+   "access": "W",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 29892,
+   "name": "MornCRAT-Sp",
+   "description": "Morning Cool Down/RAT Setpoint, 50-85 °F",
+   "units": "°F",
+   "access": "W",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 29895,
+   "name": "EarlyStrtPeriod",
+   "description": "Early Start Period, 0-120 minutes",
+   "units": "minutes",
+   "access": "W",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 29897,
+   "name": "DeviceId",
+   "description": "Device OID, 0-4194302",
+   "units": "",
+   "access": "W",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 29903,
+   "name": "UnoccDehumSP",
+   "description": "HGRH UNOCC Humidity Setpoint, 0-100 %",
+   "units": "%RH",
+   "access": "W",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 29913,
+   "name": "SZVAVMinFanSpd",
+   "description": "SZVAV Minimum Fan Speed, 20-67 %",
+   "units": "%",
+   "access": "W",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 29916,
+   "name": "EconAlrmDly",
+   "description": "FDD Economizer Alarm Delay, 1-3,600 seconds",
+   "units": "seconds",
+   "access": "W",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 29917,
+   "name": "EconPosErr",
+   "description": "FDD Economizer Damper Allowed Error, 0-100 %",
+   "units": "%",
+   "access": "W",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 29918,
+   "name": "EconMinErr",
+   "description": "FDD Damper Min Position Tolerance, 0-10 %",
+   "units": "%",
+   "access": "W",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 29922,
+   "name": "StgClgCmd",
+   "description": "Staged Cooling Command",
+   "units": "%",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 29923,
+   "name": "StgHtgCmd",
+   "description": "Staged Heating Command",
+   "units": "%",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 29924,
+   "name": "PropHtgCmd",
+   "description": "Proportional Heating Command",
+   "units": "%",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 29941,
+   "name": "C1A-Starts",
+   "description": "Compressor Number Times ON 1A",
+   "units": "",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 29942,
+   "name": "C1B-Starts",
+   "description": "Compressor Number Times ON 1B",
+   "units": "",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 29944,
+   "name": "C2A-Starts",
+   "description": "Compressor Number Times ON 2A",
+   "units": "",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 29945,
+   "name": "C2B-ASCDTmr",
+   "description": "Anti-Short Cycle Delay Time Remaining 2B",
+   "units": "seconds",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 29947,
+   "name": "C2BOnTimer",
+   "description": "Min. ON Time Remaining 2B",
+   "units": "seconds",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 29948,
+   "name": "C2B-RunTime",
+   "description": "Compressor Accumulated Runtime 2B",
+   "units": "hours",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 29950,
+   "name": "C2B-Starts",
+   "description": "Compressor Number Times ON 2B",
+   "units": "",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 29964,
+   "name": "ClgCapLim",
+   "description": "Cooling Capacity Limit, 0-100 %",
+   "units": "%",
+   "access": "W",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 29966,
+   "name": "CoastTime",
+   "description": "Coast Time, 0-120 minutes",
+   "units": "minutes",
+   "access": "W",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 29967,
+   "name": "DATCapAlmOffset",
+   "description": "DAT Capability Alarm Offset, 1.0-10.0 °F",
+   "units": "°F",
+   "access": "W",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 29970,
+   "name": "EAHR-T",
+   "description": "Exhaust Air Heat Recovery Temp",
+   "units": "°F",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 29971,
+   "name": "EF-Flow",
+   "description": "Exhaust Flow Value",
+   "units": "CFM",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 29972,
+   "name": "FFILT-DP",
+   "description": "Final Filter Differential Pressure",
+   "units": "iwg",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 29973,
+   "name": "H1-Starts",
+   "description": "Heating Number Times ON 1",
+   "units": "",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 29974,
+   "name": "H2-Starts",
+   "description": "Heating Number Times ON 2",
+   "units": "",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 29975,
+   "name": "H3-Starts",
+   "description": "Heating Number Times ON 3",
+   "units": "",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 29977,
+   "name": "H4-Runtime",
+   "description": "Heating Stage 4 Accumulated Runtime",
+   "units": "hours",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 29979,
+   "name": "H4-Starts",
+   "description": "Heating Number Times ON 4",
+   "units": "",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 29981,
+   "name": "H5-Runtime",
+   "description": "Heating Stage 5 Accumulated Runtime",
+   "units": "hours",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 29983,
+   "name": "H5-Starts",
+   "description": "Heating Number Times ON 5",
+   "units": "",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 29985,
+   "name": "H6-Runtime",
+   "description": "Heating Stage 6 Accumulated Runtime",
+   "units": "hours",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 29987,
+   "name": "H6-Starts",
+   "description": "Heating Number Times ON 6",
+   "units": "",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 29989,
+   "name": "H7-Runtime",
+   "description": "Heating Stage 7 Accumulated Runtime",
+   "units": "hours",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 29991,
+   "name": "H7-Starts",
+   "description": "Heating Number Times ON 7",
+   "units": "",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 29993,
+   "name": "H8-Runtime",
+   "description": "Heating Stage 8 Accumulated Runtime",
+   "units": "hours",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 30004,
+   "name": "HE-T",
+   "description": "Heat Entering Temperature",
+   "units": "°F",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 30006,
+   "name": "HighSpeedFan-MinPos",
+   "description": "Economizer Damper Minimum Position High Speed Fan, 0-100 %",
+   "units": "%",
+   "access": "W",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 30008,
+   "name": "HRW-O",
+   "description": "Heat Recovery Wheel Output",
+   "units": "%",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 30010,
+   "name": "HtgCapLim",
+   "description": "Heating Capacity Limit, 0-100 %",
+   "units": "%",
+   "access": "W",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 30011,
+   "name": "HtgDATLo-SP",
+   "description": "Heating DAT Lower Setpoint, 85.0-134.0 °F",
+   "units": "°F",
+   "access": "W",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 30012,
+   "name": "HtgDATUp-SP",
+   "description": "Heating DAT Upper Setpoint, 85.0-134.0 °F",
+   "units": "°F",
+   "access": "W",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 30014,
+   "name": "Hum-SP",
+   "description": "Humidification Setpoint, 0-100 %RH",
+   "units": "%RH",
+   "access": "W",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 30017,
+   "name": "ModCompOut",
+   "description": "Modulating Compressor Output",
+   "units": "%",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 30018,
+   "name": "ModCondFan1Out",
+   "description": "Modulating Condenser Fan 1 Output",
+   "units": "%",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 30019,
+   "name": "ModCondFan2Out",
+   "description": "Modulating Condenser Fan 2 Output",
+   "units": "%",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 30020,
+   "name": "ModHtgOut",
+   "description": "Modulating Heat Output",
+   "units": "%",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 30021,
+   "name": "OprHtgDAT-SP",
+   "description": "Operating Heating DAT Setpoint",
+   "units": "°F",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 30022,
+   "name": "PFILT-DP",
+   "description": "Pre-Filter Differential Pressure",
+   "units": "iwg",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 30025,
+   "name": "RAD-O",
+   "description": "Return Air Damper Command",
+   "units": "%",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 30026,
+   "name": "RAD-POS",
+   "description": "Return Air Damper Position",
+   "units": "%",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 30028,
+   "name": "RunContAlmDly",
+   "description": "Unit Running Continuously Alarm Delay, 1-99 hours",
+   "units": "hours",
+   "access": "W",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 30029,
+   "name": "SF-DAT-SpHighThresh",
+   "description": "Supply Fan DAT Setpoint High Threshold, 0-100 %",
+   "units": "%",
+   "access": "W",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 30030,
+   "name": "SF-DAT-SpLowThresh",
+   "description": "Supply Fan DAT Setpoint Low Threshold, 0-100 %",
+   "units": "%",
+   "access": "W",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 30034,
+   "name": "SZVAVClgMinFan",
+   "description": "SZVAV Cooling Minimum Fan Speed, 20-67 %",
+   "units": "%",
+   "access": "W",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 30035,
+   "name": "SZVAVHtgMinFan",
+   "description": "SZVAV Heating Minimum Fan Speed, 20-67 %",
+   "units": "%",
+   "access": "W",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 30038,
+   "name": "UVLight-Rt",
+   "description": "UV Light Runtime",
+   "units": "hours",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 30040,
+   "name": "DLP1",
+   "description": "Discharge Line Pressure 1",
+   "units": "psi",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 30041,
+   "name": "DLT1",
+   "description": "Discharge Line Temperature 1",
+   "units": "°F",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 30042,
+   "name": "DLP2",
+   "description": "Discharge Line Pressure 2",
+   "units": "psi",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 30043,
+   "name": "DLT2",
+   "description": "Discharge Line Temperature 2",
+   "units": "°F",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 30044,
+   "name": "DischSuperheat1",
+   "description": "Discharge Superheat 1",
+   "units": "°F",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 30045,
+   "name": "DischSuperheat2",
+   "description": "Discharge Superheat 2",
+   "units": "°F",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 30046,
+   "name": "SucSuperheat1",
+   "description": "Suction Superheat 1",
+   "units": "°F",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 30047,
+   "name": "SucSuperheat2",
+   "description": "Suction Superheat 2",
+   "units": "°F",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 30048,
+   "name": "LLSubcool1",
+   "description": "Liquid Line Sub-Cooling 1",
+   "units": "°F",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 30049,
+   "name": "LLSubcool2",
+   "description": "Liquid Line Sub-Cooling 2",
+   "units": "°F",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 30050,
+   "name": "SatDischTemp1",
+   "description": "Saturated DAT 1",
+   "units": "°F",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 30051,
+   "name": "SatDischTemp2",
+   "description": "Saturated DAT 2",
+   "units": "°F",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 30052,
+   "name": "SatLLTemp1",
+   "description": "Saturated Liquid Line Temperature 1",
+   "units": "°F",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 30053,
+   "name": "SatLLTemp2",
+   "description": "Saturated Liquid Line Temperature 2",
+   "units": "°F",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 30054,
+   "name": "SatSucTemp1",
+   "description": "Saturated Suction Temperature 1",
+   "units": "°F",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 30055,
+   "name": "SatSucTemp2",
+   "description": "Saturated Suction Temperature 2",
+   "units": "°F",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 30056,
+   "name": "H8-Starts",
+   "description": "Heating Number Times ON 8",
+   "units": "",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 30061,
+   "name": "DehumEvapLowSp",
+   "description": "Dehum Evap Low Setpoint",
+   "units": "°F",
+   "access": "W",
+   "states": ""
+  },
+  {
+   "type": "CSV",
+   "instance": 29804,
+   "name": "Name",
+   "description": "Unit Name",
+   "units": "",
+   "access": "W",
+   "states": ""
+  },
+  {
+   "type": "CSV",
+   "instance": 29806,
+   "name": "Serial#",
+   "description": "Unit Serial Number",
+   "units": "",
+   "access": "W",
+   "states": ""
+  },
+  {
+   "type": "CSV",
+   "instance": 29807,
+   "name": "FirmVer",
+   "description": "Firmware Version",
+   "units": "",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "CSV",
+   "instance": 29818,
+   "name": "DevName",
+   "description": "Device Name",
+   "units": "",
+   "access": "W",
+   "states": ""
+  },
+  {
+   "type": "MV",
+   "instance": 29501,
+   "name": "Htg-Type",
+   "description": "Heating Control Type",
+   "units": "",
+   "access": "W",
+   "states": "0=none, 1=gas, 2=electric, 3=hot water, 4=steam"
+  },
+  {
+   "type": "MV",
+   "instance": 29503,
+   "name": "ExFType",
+   "description": "Exhaust Type",
+   "units": "",
+   "access": "W",
+   "states": "0=none, 1=barometric, 2=modulating damper, 3=VFD"
+  },
+  {
+   "type": "MV",
+   "instance": 29504,
+   "name": "Y1-Tstat",
+   "description": "Y1 - Thermostat",
+   "units": "",
+   "access": "R",
+   "states": "0=OFF, 1=ON"
+  },
+  {
+   "type": "MV",
+   "instance": 29505,
+   "name": "Y2-Tstat",
+   "description": "Y2 - Thermostat",
+   "units": "",
+   "access": "R",
+   "states": "0=OFF, 1=ON"
+  },
+  {
+   "type": "MV",
+   "instance": 29508,
+   "name": "W1-Tstat",
+   "description": "W1 - Thermostat",
+   "units": "",
+   "access": "R",
+   "states": "0=OFF, 1=ON"
+  },
+  {
+   "type": "MV",
+   "instance": 29509,
+   "name": "W2-Tstat",
+   "description": "W2 - Thermostat",
+   "units": "",
+   "access": "R",
+   "states": "0=OFF, 1=ON"
+  },
+  {
+   "type": "MV",
+   "instance": 29511,
+   "name": "G-Tstat",
+   "description": "G - Thermostat",
+   "units": "",
+   "access": "R",
+   "states": "0=OFF, 1=ON"
+  },
+  {
+   "type": "MV",
+   "instance": 29512,
+   "name": "Occ-Tstat",
+   "description": "Occupancy Input",
+   "units": "",
+   "access": "R",
+   "states": "0=disabled/UNOCC, 1=enabled/OCC"
+  },
+  {
+   "type": "MV",
+   "instance": 29514,
+   "name": "Tstat-Only",
+   "description": "Thermostat Only Control Enabled",
+   "units": "",
+   "access": "W",
+   "states": "0=NO, 1=YES"
+  },
+  {
+   "type": "MV",
+   "instance": 29515,
+   "name": "OccSrc",
+   "description": "Occupancy Input Source",
+   "units": "",
+   "access": "R",
+   "states": "0=local input, 1=local network sensor, 2=BAS network request, 3=local schedule, 4=temporary occupancy"
+  },
+  {
+   "type": "MV",
+   "instance": 29517,
+   "name": "OprOcc",
+   "description": "Operational Occupancy",
+   "units": "",
+   "access": "R",
+   "states": "0=OCC, 1=UNOCC, 2=bypass, 3=standby"
+  },
+  {
+   "type": "MV",
+   "instance": 29518,
+   "name": "OccMode",
+   "description": "Occupancy Mode",
+   "units": "",
+   "access": "W",
+   "states": "0=schedule, 1=external"
+  },
+  {
+   "type": "MV",
+   "instance": 29519,
+   "name": "NetTempOcc",
+   "description": "Network Temporary Occupancy Request",
+   "units": "",
+   "access": "W",
+   "states": "0=false, 1=true"
+  },
+  {
+   "type": "MV",
+   "instance": 29520,
+   "name": "NetOcc",
+   "description": "Network Occupancy Request",
+   "units": "",
+   "access": "W",
+   "states": "0=OCC, 1=UNOCC, 2=not set"
+  },
+  {
+   "type": "MV",
+   "instance": 29523,
+   "name": "ZTSrc",
+   "description": "ZT Source",
+   "units": "",
+   "access": "R",
+   "states": "0=unreliable, 1=local input, 2=network sensor, 3=high priority"
+  },
+  {
+   "type": "MV",
+   "instance": 29528,
+   "name": "IAQSrc",
+   "description": "IAQ Source",
+   "units": "",
+   "access": "R",
+   "states": "0=unreliable, 1=local input, 2=network sensor, 3=high priority"
+  },
+  {
+   "type": "MV",
+   "instance": 29532,
+   "name": "SHSrc",
+   "description": "Space Humidity Source",
+   "units": "",
+   "access": "R",
+   "states": "0=unreliable, 1=local input, 2=network sensor, 3=high priority"
+  },
+  {
+   "type": "MV",
+   "instance": 29534,
+   "name": "OprFanReq",
+   "description": "Operating Fan Request",
+   "units": "",
+   "access": "R",
+   "states": "0=OFF, 1=ON"
+  },
+  {
+   "type": "MV",
+   "instance": 29535,
+   "name": "FanReqSrc",
+   "description": "Fan Request Source",
+   "units": "",
+   "access": "R",
+   "states": "0=unreliable, 1=local input, 2=network sensor, 3=high priority"
+  },
+  {
+   "type": "MV",
+   "instance": 29536,
+   "name": "NetFanReq",
+   "description": "Network Override Fan Request",
+   "units": "",
+   "access": "W",
+   "states": "0=OFF, 1=ON"
+  },
+  {
+   "type": "MV",
+   "instance": 29542,
+   "name": "OATSrc",
+   "description": "OAT Source",
+   "units": "",
+   "access": "R",
+   "states": "0=unreliable, 1=local input, 2=network sensor, 3=high priority"
+  },
+  {
+   "type": "MV",
+   "instance": 29548,
+   "name": "OAQSrc",
+   "description": "Source of outdoor air CO2 input",
+   "units": "",
+   "access": "R",
+   "states": "0=unreliable, 1=local input, 2=network sensor, 3=high priority"
+  },
+  {
+   "type": "MV",
+   "instance": 29550,
+   "name": "Fan-S",
+   "description": "Supply Fan Status",
+   "units": "",
+   "access": "R",
+   "states": "0=OFF/idle, 1=ON/purge, 2=ON/gas valve or limit fault, 3=ON"
+  },
+  {
+   "type": "MV",
+   "instance": 29552,
+   "name": "SFVFD1Flt",
+   "description": "Supply Fan VFD 1 Fault",
+   "units": "",
+   "access": "R",
+   "states": "0=normal, 1=alarm"
+  },
+  {
+   "type": "MV",
+   "instance": 29557,
+   "name": "APS",
+   "description": "Air Proving Switch",
+   "units": "",
+   "access": "R",
+   "states": "0=OFF, 1=ON"
+  },
+  {
+   "type": "MV",
+   "instance": 29563,
+   "name": "Fan",
+   "description": "Supply Fan Command",
+   "units": "",
+   "access": "R",
+   "states": "0=OFF, 1=ON"
+  },
+  {
+   "type": "MV",
+   "instance": 29568,
+   "name": "FanOnOcc",
+   "description": "Continuous Fan Operation in Occupied Mode",
+   "units": "",
+   "access": "W",
+   "states": "0=YES, 1=NO"
+  },
+  {
+   "type": "MV",
+   "instance": 29575,
+   "name": "Clg-En",
+   "description": "Cooling Mode Enabled For Operation",
+   "units": "",
+   "access": "W",
+   "states": "0=NO, 1=YES"
+  },
+  {
+   "type": "MV",
+   "instance": 29577,
+   "name": "Clg-S",
+   "description": "Cooling Status",
+   "units": "",
+   "access": "R",
+   "states": "0=OFF/idle, 1=thermostat cooling, 2=UNOCC cooling, 3=OCC cooling"
+  },
+  {
+   "type": "MV",
+   "instance": 29584,
+   "name": "AllCompOff-Econ",
+   "description": "All Compressors OFF in Free Cooling",
+   "units": "",
+   "access": "W",
+   "states": "0=NO, 1=YES"
+  },
+  {
+   "type": "MV",
+   "instance": 29611,
+   "name": "C1A",
+   "description": "Compressor 1A Command",
+   "units": "",
+   "access": "R",
+   "states": "0=OFF, 1=ON"
+  },
+  {
+   "type": "MV",
+   "instance": 29612,
+   "name": "C1B",
+   "description": "Compressor 1B Command",
+   "units": "",
+   "access": "R",
+   "states": "0=OFF, 1=ON"
+  },
+  {
+   "type": "MV",
+   "instance": 29614,
+   "name": "C2A",
+   "description": "Compressor 2A Command",
+   "units": "",
+   "access": "R",
+   "states": "0=OFF, 1=ON"
+  },
+  {
+   "type": "MV",
+   "instance": 29615,
+   "name": "C1A-S",
+   "description": "Compressor 1A Status",
+   "units": "",
+   "access": "R",
+   "states": "0=OFF/idle, 1=ON/minimum ON time, 2=ON/normal command, 3=OFF/cooling is disabled"
+  },
+  {
+   "type": "MV",
+   "instance": 29616,
+   "name": "C1B-S",
+   "description": "Compressor 1B Status",
+   "units": "",
+   "access": "R",
+   "states": "0=OFF/idle, 1=ON/minimum ON time, 2=ON/normal command, 3=OFF/cooling is disabled"
+  },
+  {
+   "type": "MV",
+   "instance": 29618,
+   "name": "C2A-S",
+   "description": "Compressor 2A Status",
+   "units": "",
+   "access": "R",
+   "states": "0=OFF/idle, 1=ON/minimum ON time, 2=ON/normal command, 3=OFF/cooling is disabled"
+  },
+  {
+   "type": "MV",
+   "instance": 29619,
+   "name": "C1A-En",
+   "description": "Compressor 1A Enabled",
+   "units": "",
+   "access": "W",
+   "states": "0=YES, 1=NO"
+  },
+  {
+   "type": "MV",
+   "instance": 29620,
+   "name": "C1B-En",
+   "description": "Compressor 1B Enabled",
+   "units": "",
+   "access": "W",
+   "states": "0=YES, 1=NO"
+  },
+  {
+   "type": "MV",
+   "instance": 29622,
+   "name": "C2A-En",
+   "description": "Compressor 2A Enabled",
+   "units": "",
+   "access": "W",
+   "states": "0=YES, 1=NO"
+  },
+  {
+   "type": "MV",
+   "instance": 29639,
+   "name": "COMP1-A",
+   "description": "Compressor Safety Chain 1",
+   "units": "",
+   "access": "R",
+   "states": "0=normal, 1=alarm"
+  },
+  {
+   "type": "MV",
+   "instance": 29640,
+   "name": "COMP2-A",
+   "description": "Compressor Safety Chain 2",
+   "units": "",
+   "access": "R",
+   "states": "0=normal, 1=alarm"
+  },
+  {
+   "type": "MV",
+   "instance": 29643,
+   "name": "COMP1-LO",
+   "description": "Compressor Safety Chain Lockout 1",
+   "units": "",
+   "access": "R",
+   "states": "0=normal, 1=lockout"
+  },
+  {
+   "type": "MV",
+   "instance": 29644,
+   "name": "COMP2-LO",
+   "description": "Compressor Safety Chain Lockout 2",
+   "units": "",
+   "access": "R",
+   "states": "0=normal, 1=lockout"
+  },
+  {
+   "type": "MV",
+   "instance": 29647,
+   "name": "LPS1",
+   "description": "Low Pressure Safety 1",
+   "units": "",
+   "access": "R",
+   "states": "0=normal, 1=alarm"
+  },
+  {
+   "type": "MV",
+   "instance": 29648,
+   "name": "LPS2",
+   "description": "Low Pressure Safety 2",
+   "units": "",
+   "access": "R",
+   "states": "0=normal, 1=alarm"
+  },
+  {
+   "type": "MV",
+   "instance": 29651,
+   "name": "LPS1-LO",
+   "description": "Low Pressure Lockout 1",
+   "units": "",
+   "access": "R",
+   "states": "0=normal, 1=lockout"
+  },
+  {
+   "type": "MV",
+   "instance": 29652,
+   "name": "LPS2-LO",
+   "description": "Low Pressure Lockout 2",
+   "units": "",
+   "access": "R",
+   "states": "0=normal, 1=lockout"
+  },
+  {
+   "type": "MV",
+   "instance": 29707,
+   "name": "Htg-En",
+   "description": "Heating Mode Enabled For Operation",
+   "units": "",
+   "access": "W",
+   "states": "0=OFF, 1=ON"
+  },
+  {
+   "type": "MV",
+   "instance": 29708,
+   "name": "Htg-S",
+   "description": "Heating Status",
+   "units": "",
+   "access": "R",
+   "states": "0=OFF/idle, 1=ON, 2=SAT tempering, 3=morning warm-up"
+  },
+  {
+   "type": "MV",
+   "instance": 29712,
+   "name": "FSHW",
+   "description": "Low Temp Water Coil Freeze Stat",
+   "units": "",
+   "access": "R",
+   "states": "0=normal, 1=alarm"
+  },
+  {
+   "type": "MV",
+   "instance": 29724,
+   "name": "HtgUnocc-En",
+   "description": "Unoccupied Heating Enabled",
+   "units": "",
+   "access": "W",
+   "states": "0=NO, 1=YES"
+  },
+  {
+   "type": "MV",
+   "instance": 29727,
+   "name": "VAV Box",
+   "description": "MZ VAV Box Heat Command",
+   "units": "",
+   "access": "R",
+   "states": "0=OFF, 1=ON"
+  },
+  {
+   "type": "MV",
+   "instance": 29732,
+   "name": "H1",
+   "description": "Heating Stage Command 1",
+   "units": "",
+   "access": "R",
+   "states": "0=OFF, 1=ON"
+  },
+  {
+   "type": "MV",
+   "instance": 29733,
+   "name": "H2",
+   "description": "Heating Stage Command 2",
+   "units": "",
+   "access": "R",
+   "states": "0=OFF, 1=ON"
+  },
+  {
+   "type": "MV",
+   "instance": 29734,
+   "name": "H3",
+   "description": "Heating Stage Command 3",
+   "units": "",
+   "access": "R",
+   "states": "0=OFF, 1=ON"
+  },
+  {
+   "type": "MV",
+   "instance": 29735,
+   "name": "H1-S",
+   "description": "Heating Stage 1 Status",
+   "units": "",
+   "access": "R",
+   "states": "0=OFF/idle, 1=ON/minimum runtime timer, 2=ON/normal command, 3=OFF/heating is disabled"
+  },
+  {
+   "type": "MV",
+   "instance": 29736,
+   "name": "H2-S",
+   "description": "Heating Stage 2 Status",
+   "units": "",
+   "access": "R",
+   "states": "0=OFF/idle, 1=ON/minimum runtime timer, 2=ON/normal command, 3=OFF/heating is disabled"
+  },
+  {
+   "type": "MV",
+   "instance": 29737,
+   "name": "H3-S",
+   "description": "Heating Stage 3 Status",
+   "units": "",
+   "access": "R",
+   "states": "0=OFF/idle, 1=ON/minimum runtime timer, 2=ON/normal command, 3=OFF/heating is disabled"
+  },
+  {
+   "type": "MV",
+   "instance": 29742,
+   "name": "HydReverse",
+   "description": "Hydronic Heat Valve Reverse Acting",
+   "units": "",
+   "access": "W",
+   "states": "0=NO, 1=YES"
+  },
+  {
+   "type": "MV",
+   "instance": 29745,
+   "name": "DATTemper-En",
+   "description": "DAT Tempering Enable",
+   "units": "",
+   "access": "W",
+   "states": "0=NO, 1=YES"
+  },
+  {
+   "type": "MV",
+   "instance": 29747,
+   "name": "Econ-En",
+   "description": "Economizer Enabled For Operation",
+   "units": "",
+   "access": "W",
+   "states": "0=NO, 1=YES"
+  },
+  {
+   "type": "MV",
+   "instance": 29749,
+   "name": "Econ-Free",
+   "description": "Economizer Free Cooling Available",
+   "units": "",
+   "access": "R",
+   "states": "0=NO, 1=YES"
+  },
+  {
+   "type": "MV",
+   "instance": 29750,
+   "name": "Econ-S",
+   "description": "Economizer Status",
+   "units": "",
+   "access": "R",
+   "states": "0=disabled, 1=damper not functional, 2=purge, 3=unavailable sensor fault"
+  },
+  {
+   "type": "MV",
+   "instance": 29751,
+   "name": "FreeClg-Mode",
+   "description": "Free Cooling Current Mode",
+   "units": "",
+   "access": "R",
+   "states": "0=dry bulb temperature, 1=differential dry bulb temperature, 2=single enthalpy, 3=dual enthalpy, 4=unreliable"
+  },
+  {
+   "type": "MV",
+   "instance": 29752,
+   "name": "FreeClg-Sel",
+   "description": "Free Cooling Selection",
+   "units": "",
+   "access": "W",
+   "states": "0=dry bulb temperature, 1=differential dry bulb temperature, 2=single enthalpy, 3=dual enthalpy, 4=unreliable"
+  },
+  {
+   "type": "MV",
+   "instance": 29765,
+   "name": "DVent-Mode",
+   "description": "Demand Ventilation Mode of Operation",
+   "units": "",
+   "access": "W",
+   "states": "0=disabled, 1=controlled by IAQ, 2=difference between IAQ and OAQ"
+  },
+  {
+   "type": "MV",
+   "instance": 29775,
+   "name": "ExFan",
+   "description": "Exhaust Fan Command",
+   "units": "",
+   "access": "R",
+   "states": "0=OFF, 1=ON"
+  },
+  {
+   "type": "MV",
+   "instance": 29777,
+   "name": "ExF-S",
+   "description": "Exhaust Return Fan Status",
+   "units": "",
+   "access": "R",
+   "states": "0=OFF/idle, 1=ON/normal command, 2=OFF/disabled, 3=OFF/VFD fault"
+  },
+  {
+   "type": "MV",
+   "instance": 29778,
+   "name": "ExFanVFDFlt",
+   "description": "Exhaust Fan VFD Fault",
+   "units": "",
+   "access": "R",
+   "states": "0=normal, 1=alarm"
+  },
+  {
+   "type": "MV",
+   "instance": 29787,
+   "name": "ERV-En",
+   "description": "ERV Enabled",
+   "units": "",
+   "access": "W",
+   "states": "0=NO, 1=YES"
+  },
+  {
+   "type": "MV",
+   "instance": 29789,
+   "name": "HGR-En",
+   "description": "HGRH Enabled For Operation",
+   "units": "",
+   "access": "W",
+   "states": "0=none, 1=normal, 2=alternate"
+  },
+  {
+   "type": "MV",
+   "instance": 29791,
+   "name": "HGR-S",
+   "description": "HGRH Status",
+   "units": "",
+   "access": "R",
+   "states": "0=OFF/idle, 1=ON/normal command, 2=ON/alternate operation command, 3=OFF/disabled"
+  },
+  {
+   "type": "MV",
+   "instance": 29798,
+   "name": "OprSafetyCmd",
+   "description": "Operating Safety Command",
+   "units": "",
+   "access": "R",
+   "states": "0=normal, 1=pressurize, 2=depressurize, 3=purge"
+  },
+  {
+   "type": "MV",
+   "instance": 29799,
+   "name": "SafetyCmdSrc",
+   "description": "Safety Command Source",
+   "units": "",
+   "access": "R",
+   "states": "0=unreliable, 1=local input, 2=network sensor, 3=high priority"
+  },
+  {
+   "type": "MV",
+   "instance": 29800,
+   "name": "Safety1",
+   "description": "Local Safety Command Input 1",
+   "units": "",
+   "access": "R",
+   "states": "0=false, 1=true"
+  },
+  {
+   "type": "MV",
+   "instance": 29801,
+   "name": "NetSafety",
+   "description": "Network Override Safety Command",
+   "units": "",
+   "access": "W",
+   "states": "0=false, 1=true"
+  },
+  {
+   "type": "MV",
+   "instance": 29802,
+   "name": "SS-S",
+   "description": "Safety Switch Status",
+   "units": "",
+   "access": "R",
+   "states": "0=normal, 1=alarm"
+  },
+  {
+   "type": "MV",
+   "instance": 29803,
+   "name": "Unit-S",
+   "description": "Unit Status",
+   "units": "",
+   "access": "R",
+   "states": "0=idle, 1=SD alarm, 2=purge command, 3=start-up wizard"
+  },
+  {
+   "type": "MV",
+   "instance": 29809,
+   "name": "ExcessOutAirFlt",
+   "description": "Excess outside air fault (economizer FDD)",
+   "units": "",
+   "access": "R",
+   "states": "0=normal, 1=alarm"
+  },
+  {
+   "type": "MV",
+   "instance": 29810,
+   "name": "NotEconFlt",
+   "description": "Economizer not economizing when conditions suit (FDD)",
+   "units": "",
+   "access": "R",
+   "states": "0=normal, 1=alarm"
+  },
+  {
+   "type": "MV",
+   "instance": 29811,
+   "name": "EconDampFlt",
+   "description": "Economizer damper fault (FDD)",
+   "units": "",
+   "access": "R",
+   "states": "0=normal, 1=alarm"
+  },
+  {
+   "type": "MV",
+   "instance": 29812,
+   "name": "EconWhenShouldNotFlt",
+   "description": "Economizing when outside air is unsuitable (FDD)",
+   "units": "",
+   "access": "R",
+   "states": "0=normal, 1=alarm"
+  },
+  {
+   "type": "MV",
+   "instance": 29822,
+   "name": "MornW-En",
+   "description": "Morning Warm-Up Enabled",
+   "units": "",
+   "access": "W",
+   "states": "0=NO, 1=YES"
+  },
+  {
+   "type": "MV",
+   "instance": 29825,
+   "name": "TempOCC",
+   "description": "Temporary Occupancy Input",
+   "units": "",
+   "access": "W",
+   "states": "0=disable, 1=enable"
+  },
+  {
+   "type": "MV",
+   "instance": 29826,
+   "name": "ResetLO",
+   "description": "Reset Lockouts",
+   "units": "",
+   "access": "W",
+   "states": "0=OFF, 1=ON"
+  },
+  {
+   "type": "MV",
+   "instance": 29881,
+   "name": "HtgAdapTunEn",
+   "description": "Heating Adaptive Tuning Enable",
+   "units": "",
+   "access": "W",
+   "states": "0=NO, 1=YES"
+  },
+  {
+   "type": "MV",
+   "instance": 29882,
+   "name": "ClgAdapTunEn",
+   "description": "Cooling Adaptive Tuning Enable",
+   "units": "",
+   "access": "W",
+   "states": "0=NO, 1=YES"
+  },
+  {
+   "type": "MV",
+   "instance": 29883,
+   "name": "LoadShedEnable",
+   "description": "Load Shed Active",
+   "units": "",
+   "access": "W",
+   "states": "0=NO, 1=YES"
+  },
+  {
+   "type": "MV",
+   "instance": 29891,
+   "name": "MornC-En",
+   "description": "Morning Cool Down Enabled",
+   "units": "",
+   "access": "W",
+   "states": "0=NO, 1=YES"
+  },
+  {
+   "type": "MV",
+   "instance": 29893,
+   "name": "OptStrt-En",
+   "description": "Optimal Start Enabled",
+   "units": "",
+   "access": "W",
+   "states": "0=NO, 1=YES"
+  },
+  {
+   "type": "MV",
+   "instance": 29896,
+   "name": "UnitEn",
+   "description": "Unit Enable",
+   "units": "",
+   "access": "W",
+   "states": "0=shutdown, 1=enable"
+  },
+  {
+   "type": "MV",
+   "instance": 29904,
+   "name": "HGRUnocc-En",
+   "description": "HGRH Enabled for UNOCC Operation",
+   "units": "",
+   "access": "W",
+   "states": "0=NO, 1=YES"
+  },
+  {
+   "type": "MV",
+   "instance": 29908,
+   "name": "SZVAVEn",
+   "description": "SZ VAV Enabled",
+   "units": "",
+   "access": "W",
+   "states": "0=OFF, 1=ON"
+  },
+  {
+   "type": "MV",
+   "instance": 29910,
+   "name": "ADR-S",
+   "description": "Automated Demand Response",
+   "units": "",
+   "access": "R",
+   "states": "0=NO, 1=YES"
+  },
+  {
+   "type": "MV",
+   "instance": 29914,
+   "name": "OffDurUnocc",
+   "description": "OFF During UNOCC",
+   "units": "",
+   "access": "W",
+   "states": "0=NO, 1=YES"
+  },
+  {
+   "type": "MV",
+   "instance": 29915,
+   "name": "EconFltDetectEn",
+   "description": "Economizer Fault Detection Enabled",
+   "units": "",
+   "access": "W",
+   "states": "0=disable, 1=enable"
+  },
+  {
+   "type": "MV",
+   "instance": 29919,
+   "name": "PIDTunRst",
+   "description": "PID Tuning Reset",
+   "units": "",
+   "access": "W",
+   "states": "0=false, 1=true"
+  },
+  {
+   "type": "MV",
+   "instance": 29933,
+   "name": "FrAir-En",
+   "description": "Min Outside Air Enabled",
+   "units": "",
+   "access": "W",
+   "states": "0=disable, 1=enable"
+  },
+  {
+   "type": "MV",
+   "instance": 29934,
+   "name": "EncodeType",
+   "description": "BACnet Encoding Type",
+   "units": "",
+   "access": "W",
+   "states": "0=ISO 10646 (UCS-2), 1=ANSI X3.4 (US-ASCII), 2=Microsoft DBCS code page 932 (Japanese Shift JIS), 3=ISO 10646 (UTF-8)"
+  },
+  {
+   "type": "MV",
+   "instance": 29935,
+   "name": "CF-1A",
+   "description": "Condenser Fan 1A",
+   "units": "",
+   "access": "R",
+   "states": "0=OFF, 1=ON"
+  },
+  {
+   "type": "MV",
+   "instance": 29936,
+   "name": "CF-1B",
+   "description": "Condenser Fan 1B",
+   "units": "",
+   "access": "R",
+   "states": "0=OFF, 1=ON"
+  },
+  {
+   "type": "MV",
+   "instance": 29937,
+   "name": "CF-2A",
+   "description": "Condenser Fan 2A",
+   "units": "",
+   "access": "R",
+   "states": "0=OFF, 1=ON"
+  },
+  {
+   "type": "MV",
+   "instance": 29938,
+   "name": "CF-2B",
+   "description": "Condenser Fan 2B",
+   "units": "",
+   "access": "R",
+   "states": "0=OFF, 1=ON"
+  },
+  {
+   "type": "MV",
+   "instance": 29939,
+   "name": "C2B",
+   "description": "Compressor 2B Command",
+   "units": "",
+   "access": "R",
+   "states": "0=OFF, 1=ON"
+  },
+  {
+   "type": "MV",
+   "instance": 29946,
+   "name": "C2B-En",
+   "description": "Compressor 2B Enabled",
+   "units": "",
+   "access": "W",
+   "states": "0=NO, 1=YES"
+  },
+  {
+   "type": "MV",
+   "instance": 29949,
+   "name": "C2B-S",
+   "description": "Compressor 2B Status",
+   "units": "",
+   "access": "R",
+   "states": "0=OFF/idle, 1=ON/minimum ON time, 2=ON/normal command, 3=OFF/cooling is disabled"
+  },
+  {
+   "type": "MV",
+   "instance": 29965,
+   "name": "Coast-En",
+   "description": "Coast Enable",
+   "units": "",
+   "access": "W",
+   "states": "0=disable, 1=enable"
+  },
+  {
+   "type": "MV",
+   "instance": 29968,
+   "name": "DAT-SPconfig",
+   "description": "DAT Setpoint Configuration",
+   "units": "",
+   "access": "W",
+   "states": "0=fixed, 1=OAT reset, 2=supply fan reset, 3=ZT reset, 4=external mode"
+  },
+  {
+   "type": "MV",
+   "instance": 29969,
+   "name": "DownInOccAlm",
+   "description": "Unit Down in OCC Alarm",
+   "units": "",
+   "access": "R",
+   "states": "0=normal, 1=alarm"
+  },
+  {
+   "type": "MV",
+   "instance": 29976,
+   "name": "H4",
+   "description": "Heating Stage Command 4",
+   "units": "",
+   "access": "R",
+   "states": "0=OFF, 1=ON"
+  },
+  {
+   "type": "MV",
+   "instance": 29978,
+   "name": "H4-S",
+   "description": "Heating Stage 4 Status",
+   "units": "",
+   "access": "R",
+   "states": "0=OFF/idle, 1=ON/minimum ON time, 2=ON/normal command, 3=OFF/heating is disabled"
+  },
+  {
+   "type": "MV",
+   "instance": 29980,
+   "name": "H5",
+   "description": "Heating Stage Command 5",
+   "units": "",
+   "access": "R",
+   "states": "0=OFF, 1=ON"
+  },
+  {
+   "type": "MV",
+   "instance": 29982,
+   "name": "H5-S",
+   "description": "Heating Stage 5 Status",
+   "units": "",
+   "access": "R",
+   "states": "0=OFF/idle, 1=ON/minimum runtime timer, 2=ON/normal command, 3=OFF/heating is disabled"
+  },
+  {
+   "type": "MV",
+   "instance": 29984,
+   "name": "H6",
+   "description": "Heating Stage Command 6",
+   "units": "",
+   "access": "R",
+   "states": "0=OFF, 1=ON"
+  },
+  {
+   "type": "MV",
+   "instance": 29986,
+   "name": "H6-S",
+   "description": "Heating Stage 6 Status",
+   "units": "",
+   "access": "R",
+   "states": "0=OFF/idle, 1=ON/minimum runtime timer, 2=ON/normal command, 3=OFF/heating is disabled"
+  },
+  {
+   "type": "MV",
+   "instance": 29988,
+   "name": "H7",
+   "description": "Heating Stage Command 7",
+   "units": "",
+   "access": "R",
+   "states": "0=OFF, 1=ON"
+  },
+  {
+   "type": "MV",
+   "instance": 29990,
+   "name": "H7-S",
+   "description": "Heating Stage 7 Status",
+   "units": "",
+   "access": "R",
+   "states": "0=OFF/idle, 1=ON/minimum runtime timer, 2=ON/normal command, 3=OFF/heating is disabled"
+  },
+  {
+   "type": "MV",
+   "instance": 29992,
+   "name": "H8",
+   "description": "Heating Stage Command 8",
+   "units": "",
+   "access": "R",
+   "states": "0=OFF, 1=ON"
+  },
+  {
+   "type": "MV",
+   "instance": 29994,
+   "name": "H8-S",
+   "description": "Heating Stage 8 Status",
+   "units": "",
+   "access": "R",
+   "states": "0=OFF/idle, 1=ON/minimum runtime timer, 2=ON/normal command, 3=OFF/heating is disabled"
+  },
+  {
+   "type": "MV",
+   "instance": 30005,
+   "name": "HGRB-C",
+   "description": "HGRH Bleed Valve Command",
+   "units": "",
+   "access": "R",
+   "states": "0=OFF, 1=ON"
+  },
+  {
+   "type": "MV",
+   "instance": 30007,
+   "name": "HRW-C",
+   "description": "Heat Recovery Wheel Command",
+   "units": "",
+   "access": "R",
+   "states": "0=OFF, 1=ON"
+  },
+  {
+   "type": "MV",
+   "instance": 30009,
+   "name": "HRW-S",
+   "description": "Heat Recovery Wheel Status",
+   "units": "",
+   "access": "R",
+   "states": "0=OFF, 1=max cooling, 2=max heating, 3=blocking protection"
+  },
+  {
+   "type": "MV",
+   "instance": 30013,
+   "name": "Hum-En",
+   "description": "Humidification Enabled",
+   "units": "",
+   "access": "W",
+   "states": "0=disable, 1=enable"
+  },
+  {
+   "type": "MV",
+   "instance": 30015,
+   "name": "LowCoolCapAlm",
+   "description": "Insufficient Cooling Capability Alarm",
+   "units": "",
+   "access": "R",
+   "states": "0=normal, 1=alarm"
+  },
+  {
+   "type": "MV",
+   "instance": 30016,
+   "name": "LowHeatCapAlm",
+   "description": "Insufficient Heating Capability Alarm",
+   "units": "",
+   "access": "R",
+   "states": "0=normal, 1=alarm"
+  },
+  {
+   "type": "MV",
+   "instance": 30023,
+   "name": "Safety2",
+   "description": "Local Safety Command Input 2",
+   "units": "",
+   "access": "R",
+   "states": "0=false, 1=true"
+  },
+  {
+   "type": "MV",
+   "instance": 30024,
+   "name": "Safety3",
+   "description": "Local Safety Command Input 3",
+   "units": "",
+   "access": "R",
+   "states": "0=false, 1=true"
+  },
+  {
+   "type": "MV",
+   "instance": 30027,
+   "name": "RunContAlm",
+   "description": "Unit Running Continuously Alarm",
+   "units": "",
+   "access": "R",
+   "states": "0=normal, 1=alarm"
+  },
+  {
+   "type": "MV",
+   "instance": 30031,
+   "name": "SFVFD2Flt",
+   "description": "Supply Fan VFD 2 Fault",
+   "units": "",
+   "access": "R",
+   "states": "0=normal, 1=alarm"
+  },
+  {
+   "type": "MV",
+   "instance": 30032,
+   "name": "SMOKE-A",
+   "description": "Smoke Detector",
+   "units": "",
+   "access": "R",
+   "states": "0=normal, 1=alarm"
+  },
+  {
+   "type": "MV",
+   "instance": 30033,
+   "name": "SPNoChangeAlm",
+   "description": "Setpoint Not Changing Alarm",
+   "units": "",
+   "access": "R",
+   "states": "0=normal, 1=alarm"
+  },
+  {
+   "type": "MV",
+   "instance": 30036,
+   "name": "UVLight-En",
+   "description": "UV Light Installed",
+   "units": "",
+   "access": "W",
+   "states": "0=NO, 1=YES"
+  },
+  {
+   "type": "MV",
+   "instance": 30037,
+   "name": "UVLight-Reset",
+   "description": "UV Light Runtime Reset",
+   "units": "",
+   "access": "W",
+   "states": "0=OFF, 1=reset"
+  },
+  {
+   "type": "MV",
+   "instance": 30039,
+   "name": "UVLight-Service",
+   "description": "UV Light Needs Service",
+   "units": "",
+   "access": "R",
+   "states": "0=normal, 1=alarm"
+  },
+  {
+   "type": "MV",
+   "instance": 30062,
+   "name": "Condensate Alarm",
+   "description": "Condensate Alarm",
+   "units": "",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "MV",
+   "instance": 30063,
+   "name": "Humidistat",
+   "description": "Humidistat",
+   "units": "",
+   "access": "R",
+   "states": "0=OFF, 1=ON"
+  },
+  {
+   "type": "MV",
+   "instance": 29722,
+   "name": "HtgOcc-En",
+   "description": "MZVAV Occupied Heating Enabled",
+   "units": "",
+   "access": "W",
+   "states": "0=NO, 1=YES"
+  },
+  {
+   "type": "MV",
+   "instance": 30064,
+   "name": "HtgClgSP-Mode",
+   "description": "Heat Cool Setpoint Mode",
+   "units": "",
+   "access": "W",
+   "states": "0=NO, 1=YES"
+  },
+  {
+   "type": "AV",
+   "instance": 30065,
+   "name": "Common-SP",
+   "description": "Common Setpoint, 45.0-98.0 °F",
+   "units": "°F",
+   "access": "W",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 30066,
+   "name": "OprEvapTempSp",
+   "description": "Operational Evap Temperature Setpoint",
+   "units": "°F",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 30067,
+   "name": "OprHGRTempSp",
+   "description": "Operational HGRH Temperature Setpoint",
+   "units": "°F",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "MV",
+   "instance": 30075,
+   "name": "DemLoadshd",
+   "description": "Demand Loadshed",
+   "units": "",
+   "access": "R",
+   "states": "0=NO, 1=YES"
+  },
+  {
+   "type": "MV",
+   "instance": 30079,
+   "name": "SafetySetupNI",
+   "description": "Safety Setup Network Input",
+   "units": "",
+   "access": "W",
+   "states": "0=Normal, 1=Pressurize, 2=Depressurize, 3=Purge, 4=Shutdown"
+  },
+  {
+   "type": "Other",
+   "instance": 30000,
+   "name": "MVCriticalActiveEvent",
+   "description": "Critical event (active), no description given",
+   "units": "",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "Other",
+   "instance": 29999,
+   "name": "MVCriticalInactiveEvent",
+   "description": "Critical event (inactive), no description given",
+   "units": "",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "Other",
+   "instance": 29998,
+   "name": "MVServicePriorityActiveEvent",
+   "description": "Service priority event (active), no description given",
+   "units": "",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "Other",
+   "instance": 29997,
+   "name": "MVServicePriorityInactiveEvent",
+   "description": "Service priority event (inactive), no description given",
+   "units": "",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "Other",
+   "instance": 29996,
+   "name": "MVServiceActiveEvent",
+   "description": "Service event (active), no description given",
+   "units": "",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "Other",
+   "instance": 29995,
+   "name": "MVServiceInactiveEvent",
+   "description": "Service event (inactive), no description given",
+   "units": "",
+   "access": "R",
+   "states": ""
+  }
+ ],
+ "page": "https://easybacnet.com/bacnet-points-lists/johnson-controls/premier-rooftop-25-50-ton",
+ "note": "Re-typed from the manufacturer's public documentation (see source). Point availability varies by firmware and options; verify against the live device."
+}

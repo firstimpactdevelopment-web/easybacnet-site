@@ -1,0 +1,1338 @@
+{
+  "manufacturer": "RenewAire",
+  "manufacturer_slug": "renewaire",
+  "model": "Premium Commercial Controls (Legacy, v3.xx)",
+  "model_slug": "premium-controls-legacy",
+  "aliases": [
+    "RenewAire Premium Controls legacy",
+    "Premium Commercial Controls v3",
+    "Carel c.pCO Mini",
+    "105999"
+  ],
+  "equipment_type": "Energy recovery ventilator (ERV) controller (Carel c.pCO, legacy)",
+  "applies_to": "Older RenewAire commercial ERVs (HE1.5-8X, LE-Series and RD-Series) with Premium Commercial Controls version 3.xx (Carel c.pCO Mini plus c.pCOe expansion module).",
+  "summary": "The legacy Premium Commercial Controls manual covers older RenewAire ERVs on Premium controls v3.xx, a Carel c.pCO Mini with c.pCOe expansion that talks BACnet IP or BACnet MS/TP once a BACnet license is installed. Its object map is smaller than the current one (no DOAS reheat, unoccupied or alarm-limit objects). Writes go straight to Present_Value (no priority array).",
+  "bacnet_transport": [
+    "BACnet IP",
+    "BACnet MS/TP"
+  ],
+  "firmware": "Premium controls v3.xx",
+  "default_device_instance": null,
+  "access_inferred": false,
+  "notes": [
+    "Use this list only for older ERVs on Premium controls v3.xx (manual 105999). Current ERV and DOAS controls use manual 147641 (premium-controls), which adds many objects.",
+    "Differences from the current map: AI 30/31 are Space_Pressure / Duct_Press, BI 514/521 are named Al_SA_StaticPress / Al_EA_StaticPress, BI 71 is boost status, and BI 560 is the OA filter / BI 561 the RA filter (swapped in the current list). There is no BV 63 unoccupied command.",
+    "Retained (EEPROM) points are marked '(retained)' in the descriptions.",
+    "The table repeats some alarms under two instances: BI 22/23 and BI 510/511, BI 50 and BI 504.",
+    "The file name says 105999_010_D01_JUN25; the back cover prints 105999_010_MAY25."
+  ],
+  "source": {
+    "title": "Premium Commercial Controls Installation, Operation and Maintenance Manual (Legacy)",
+    "doc_number": "105999_010_D01_JUN25",
+    "revision_date": "2025-06",
+    "url": "https://renewaire.com/wp-content/uploads/2025/05/Premium-Controls-User-Man_LEGACY_105999_010_D01_JUN25.pdf"
+  },
+  "integration": {
+    "summary": "Install the BACnet license, pick BACnet IP or MS/TP as the BMS type and cycle power. Turn on BMS control at the keypad, then start and stop the unit with BV 10. Read BI 21 and MI 7 for status and BI 72 / BI 17 for alarms. Writes land directly on Present_Value with no priority array, and setpoints marked retained should not be written in a loop.",
+    "minimum_points": [
+      {
+        "ref": "BV 10",
+        "name": "OnOffUnitMng.BmsOnOff",
+        "why": "Run/stop command (1 = on)"
+      },
+      {
+        "ref": "AV 55",
+        "name": "Occ_HTG_Setp.Val",
+        "why": "Occupied heating setpoint, °F (retained)"
+      },
+      {
+        "ref": "AV 56",
+        "name": "Occ_CLG_Setp.Val",
+        "why": "Occupied cooling setpoint, °F (retained)"
+      },
+      {
+        "ref": "AV 80",
+        "name": "BMS_SupplyFanCommand",
+        "why": "Supply fan speed, 0-100 % (BMS direct mode)"
+      },
+      {
+        "ref": "AV 81",
+        "name": "BMS_ExhaustFanCommand",
+        "why": "Exhaust fan speed, 0-100 % (BMS direct mode)"
+      },
+      {
+        "ref": "BV 12",
+        "name": "AlarmMng.AlrmResByBms",
+        "why": "Alarm reset (1 = reset; the unit clears it)"
+      },
+      {
+        "ref": "BI 21",
+        "name": "UnitOn",
+        "why": "Unit running status (1 = on)"
+      },
+      {
+        "ref": "MI 7",
+        "name": "UnitStatus_BN",
+        "why": "Operating state, or why the unit is off"
+      },
+      {
+        "ref": "BI 72",
+        "name": "Any_Alarm_Out.Val",
+        "why": "Any active alarm"
+      }
+    ],
+    "enable": "BMS control of on/off is switched on at the keypad (first BMS screen). Once on, the unit will not start until the BMS writes BV 10 = On, so enable it only when the BMS is ready. The unit also needs the start/stop digital input closed, the keypad set On, the scheduler (if used) in an ON period and no serious alarm; any of these can stop it.",
+    "heartbeat": "No BACnet timeout setting is documented. BI 503 Al_BMS_Offline flags that the BMS is offline and clears itself (auto reset); the manual does not say what the unit does then and documents no keep-alive write.",
+    "remote_sensors": "AV 53 BMS_CO2_Reading takes a CO2 value from the BMS in place of a wired sensor. AV 54 is named BMS_Space_Press_Reading but the table describes it as a coil leaving-air setpoint for dehumidification, so check it on site. The BMS can also force heat or cool: set BV 60 to Allow, then write BV 61 (0 = heat, 1 = cool).",
+    "setup": [
+      "BACnet needs a BACnet license file (.ap1, ordered against the controller's Hardware ID), installed from the controller web page Upgrade tab or a USB stick folder named UPGRADE.",
+      "BMS settings are in the keypad's General Settings menu after the scheduler. BMS type: None, BACnet MS/TP, BACnet IP, Modbus RTU or Modbus IP; the BACnet choices appear only once the license is installed. Cycle controller power after changing it.",
+      "BACnet IP: RJ45 port on the controller. For a static address turn DHCP off, enter IP, mask and gateway, set Update? to Yes and cycle power. Only private address ranges (10.x, 172.x, 192.x) are supported. Device ID is entered digit by digit.",
+      "BACnet MS/TP: set Device ID, MAC, baud, Max Master and Max Info Frames. Wire to the 4-pin J3 Disp connector (+, -, GND); it is shared with the remote display, so both can't be used at once, and +Vterm is not used.",
+      "The manual gives no default device instance or MAC address."
+    ],
+    "gotchas": [
+      "Points marked retained (EEPROM) survive power loss. Writing them repeatedly raises BI 500/501 (too many writes to retained memory) and can damage the controller. For fan speed loops use AV 80/AV 81 (firmware 03_00_26 and later), with the fan in constant-speed mode and its BMS direct option set to Yes.",
+      "Priority_Array is not supported: a BMS write goes straight to Present_Value and a later keypad change overwrites it (last one wins).",
+      "Exhaust-fan-only mode: the application notes point to BV 74 (UnitOnOffMng.BMSEFOnly), but the object table has BV 11 OnOffUnitMng.BmsEfOnly for that and BV 74 as the hot-water valve permission. Confirm on the unit.",
+      "To drive the hot-water valve from the BMS, set BV 74 to Allow (or Valve Control = BMS at the keypad), then write AV 34 (0-100 % = 0-10 V) and BV 75.",
+      "Older firmware wrote through the priority array with a smaller object map; a Pri Array legacy setting keeps that old map, which is not this list.",
+      "Which setpoints matter depends on the fan control types (MI 2, MI 3) and the heating and cooling options fitted."
+    ]
+  },
+  "points": [
+    {
+      "type": "AI",
+      "instance": 0,
+      "name": "OA_Temp.Val",
+      "description": "OA Temperature",
+      "units": "°F",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AI",
+      "instance": 1,
+      "name": "OA_Hum.Val",
+      "description": "OA Relative Humidity",
+      "units": "%",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AI",
+      "instance": 2,
+      "name": "RA_Temp.Val",
+      "description": "RA Temperature",
+      "units": "°F",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AI",
+      "instance": 3,
+      "name": "RA_Hum.Val",
+      "description": "RA Relative Humidity",
+      "units": "%",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AI",
+      "instance": 4,
+      "name": "EA_Temp.Val",
+      "description": "EA Temperature",
+      "units": "°F",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AI",
+      "instance": 5,
+      "name": "SA_Temp.Val",
+      "description": "SA Temperature (before tempering)",
+      "units": "°F",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AI",
+      "instance": 6,
+      "name": "OA_Flow_Rate.Val",
+      "description": "OA Flow Rate",
+      "units": "CFM",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AI",
+      "instance": 7,
+      "name": "EA_Flow_Rate.Val",
+      "description": "EA Flow Rate",
+      "units": "CFM",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AI",
+      "instance": 8,
+      "name": "Heating.HTG_SetP_Adjusted",
+      "description": "Acting heating setpoint",
+      "units": "°F",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AI",
+      "instance": 9,
+      "name": "SA_Hum.Val",
+      "description": "SA Relative Humidity",
+      "units": "%",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AI",
+      "instance": 10,
+      "name": "EA_Hum.Val",
+      "description": "EA Relative Humidity",
+      "units": "%",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AI",
+      "instance": 11,
+      "name": "RA_Dewpoint",
+      "description": "Return air dewpoint",
+      "units": "°F",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AI",
+      "instance": 12,
+      "name": "OA_Dewpoint",
+      "description": "Outdoor air dewpoint",
+      "units": "°F",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AI",
+      "instance": 24,
+      "name": "RA_Flt_Press.Val",
+      "description": "RA Filter Pressure",
+      "units": "in. w.c.",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AI",
+      "instance": 25,
+      "name": "OA_Flt_Press.Val",
+      "description": "OA Filter Pressure",
+      "units": "in. w.c.",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AI",
+      "instance": 26,
+      "name": "SF_Command.Val",
+      "description": "Supply Fan Command (actual)",
+      "units": "%",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AI",
+      "instance": 27,
+      "name": "EF_Command.Val",
+      "description": "Exhaust Fan Command (actual)",
+      "units": "%",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AI",
+      "instance": 28,
+      "name": "CO2_Level.Val",
+      "description": "CO2 Level",
+      "units": "ppm",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AI",
+      "instance": 29,
+      "name": "VOC_Level.Val",
+      "description": "VOC Level",
+      "units": "ppm",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AI",
+      "instance": 30,
+      "name": "Space_Pressure.Val",
+      "description": "Space Pressure",
+      "units": "in. w.c.",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AI",
+      "instance": 31,
+      "name": "Duct_Press.Val",
+      "description": "Duct Pressure",
+      "units": "in. w.c.",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AI",
+      "instance": 32,
+      "name": "CA_Temp.Val",
+      "description": "CA Temperature (after tempering)",
+      "units": "°F",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AI",
+      "instance": 33,
+      "name": "Cooling_Command.Val",
+      "description": "Cooling Command",
+      "units": "%",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AI",
+      "instance": 34,
+      "name": "Cooling_LAT.Val",
+      "description": "Cooling coil leaving air temp, used for dehumidification",
+      "units": "°F",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AI",
+      "instance": 62,
+      "name": "HGRH_Command.Val",
+      "description": "Hot gas reheat valve command; units printed as F",
+      "units": "°F",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 32,
+      "name": "HGRH_Coil_LAT_Setp.Val",
+      "description": "Hot Gas Reheat Setpoint for conditioned air",
+      "units": "°F",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 34,
+      "name": "Heating_Command.Val",
+      "description": "Heating output command, 0-100 % (0-10 V); needs BV 74",
+      "units": "%",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 35,
+      "name": "RA_Flt_AlarmHigh",
+      "description": "RA Filter Alarm Level (retained)",
+      "units": "in. w.c.",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 36,
+      "name": "OA_Flt_AlarmHigh",
+      "description": "OA Filter Alarm Level (retained)",
+      "units": "in. w.c.",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 37,
+      "name": "SF_ConstSpeedSetP.Val",
+      "description": "SF Const Speed Setpoint (retained)",
+      "units": "%",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 38,
+      "name": "SF_FlowControlSetP.Val",
+      "description": "SF Flow Control Setpoint (retained)",
+      "units": "CFM",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 39,
+      "name": "SF_DuctStaticSetP.Val",
+      "description": "SF Duct Static Pressure Setpoint (retained)",
+      "units": "in. w.c.",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 40,
+      "name": "SF_RoomStaticSetP.Val",
+      "description": "SF Room Static Pressure Setpoint (retained)",
+      "units": "in. w.c.",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 41,
+      "name": "SF_CO2SetP.Val",
+      "description": "SF CO2 Setpoint (retained)",
+      "units": "ppm",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 42,
+      "name": "SF_VOCSetP.Val",
+      "description": "SF VOC Setpoint (retained)",
+      "units": "ppm",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 43,
+      "name": "EF_ConstSpeedSetP.Val",
+      "description": "EF Constant Speed Setpoint (retained)",
+      "units": "%",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 44,
+      "name": "EF_FlowControlSetP.Val",
+      "description": "EF Flow Control Setpoint (retained)",
+      "units": "CFM",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 45,
+      "name": "EF_SF_TrackingSetP.Val",
+      "description": "EF SF Tracking Setpoint (retained)",
+      "units": "%",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 46,
+      "name": "EF_ReturnStaticSetP.Val",
+      "description": "EF Return Static Setpoint (retained)",
+      "units": "in. w.c.",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 47,
+      "name": "CoolLockoutTemp",
+      "description": "OA Cooling Lockout Temperature (retained)",
+      "units": "°F",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 48,
+      "name": "HeatLockoutTemp",
+      "description": "OA Heating Lockout Temperature (retained)",
+      "units": "°F",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 50,
+      "name": "Econ_Temp_Diff",
+      "description": "Economizer Temperature Differential (retained)",
+      "units": "°F",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 51,
+      "name": "Economizer.Econ_Low_OA_Temp_Limit",
+      "description": "Economizer Low OA Temp Limit (retained)",
+      "units": "°F",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 52,
+      "name": "Economizer.Econ_Hysteresis",
+      "description": "Economizer Hysteresis (retained)",
+      "units": "Btu/lb",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 53,
+      "name": "BMS_CO2_Reading",
+      "description": "CO2 value written by the BMS instead of a wired sensor",
+      "units": "ppm",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 54,
+      "name": "BMS_Space_Press_Reading",
+      "description": "Doc labels it coil LAT setpoint for dehumidification (retained)",
+      "units": "°F",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 55,
+      "name": "Occ_HTG_Setp.Val",
+      "description": "Occupied Heating Setpoint (retained)",
+      "units": "°F",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 56,
+      "name": "Occ_CLG_Setp.Val",
+      "description": "Occupied Cooling Setpoint (retained)",
+      "units": "°F",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 58,
+      "name": "Economizer.Econ_Low_RA_Temp_Limit",
+      "description": "Economizer low RA temp limit (retained)",
+      "units": "°F",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 59,
+      "name": "SF_CO2FlowMinCO2.Val",
+      "description": "SF Flow: MinCO2 (retained)",
+      "units": "ppm",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 60,
+      "name": "SF_CO2FlowMaxCO2.Val",
+      "description": "SF Flow: Max CO2 (retained)",
+      "units": "ppm",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 61,
+      "name": "SF_CO2FlowMinFlow.Val",
+      "description": "SF Flow: Min Flow (retained)",
+      "units": "CFM",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 62,
+      "name": "SF_CO2FlowMaxFlow.Val",
+      "description": "SF Flow: Max Flow (retained)",
+      "units": "CFM",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 73,
+      "name": "Dehumid_Changeover_SetP.Val",
+      "description": "Dewpoint at which dehumidification starts",
+      "units": "°F",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 77,
+      "name": "Defrost_OA_SetP.Val",
+      "description": "Frost control OA Setpoint Low Limit (retained)",
+      "units": "°F",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 78,
+      "name": "Defrost_EA_Low_SetP.Val",
+      "description": "Frost control EA Setpoint Low Limit (retained)",
+      "units": "°F",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 79,
+      "name": "Defrost_EA_High_SetP.Val",
+      "description": "Frost control EA High Limit Setpoint (retained)",
+      "units": "°F",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 80,
+      "name": "BMS_SupplyFanCommand",
+      "description": "BMS direct supply fan command, 0-100 %, for cyclic writes",
+      "units": "%",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 81,
+      "name": "BMS_ExhaustFanCommand",
+      "description": "BMS direct exhaust fan command, 0-100 %, for cyclic writes",
+      "units": "%",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 82,
+      "name": "EF_Tracking_SFMode",
+      "description": "Exhaust fan speed in EF-only mode when tracking supply fan",
+      "units": "%",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 90,
+      "name": "SF_ConstSpeedSetP_Boost.val",
+      "description": "SF Constant Speed Setpoint in Boost Mode",
+      "units": "%",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 91,
+      "name": "EF_ConstSpeedSetP_Boost.val",
+      "description": "EF Constant Speed Setpoint in Boost Mode",
+      "units": "%",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 92,
+      "name": "SF_FlowControlSetP_Boost",
+      "description": "SF flow control setpoint in boost mode",
+      "units": "CFM",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 93,
+      "name": "EF_FlowControlSetP_Boost",
+      "description": "EF Flow Control Setpoint in Boost Mode",
+      "units": "CFM",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "BI",
+      "instance": 8,
+      "name": "OA_Damp.Val",
+      "description": "OA Damper Command",
+      "units": "",
+      "access": "R",
+      "states": "0=Closed; 1=Open"
+    },
+    {
+      "type": "BI",
+      "instance": 9,
+      "name": "RA_Damp.Val",
+      "description": "RA Damper Command",
+      "units": "",
+      "access": "R",
+      "states": "0=Closed; 1=Open"
+    },
+    {
+      "type": "BI",
+      "instance": 13,
+      "name": "Tempering_Mode.Val",
+      "description": "Tempering Mode",
+      "units": "",
+      "access": "R",
+      "states": "0=Heat; 1=Cool"
+    },
+    {
+      "type": "BI",
+      "instance": 14,
+      "name": "AlarmMng.AlrmRes",
+      "description": "Alarm Reset Status",
+      "units": "",
+      "access": "R",
+      "states": "0=No; 1=Yes"
+    },
+    {
+      "type": "BI",
+      "instance": 15,
+      "name": "SF_Status.Val",
+      "description": "SF Status from Current Sensor",
+      "units": "",
+      "access": "R",
+      "states": "0=Off; 1=On"
+    },
+    {
+      "type": "BI",
+      "instance": 16,
+      "name": "EF_Status.Val",
+      "description": "EF Status from Current Sensor",
+      "units": "",
+      "access": "R",
+      "states": "0=Off; 1=On"
+    },
+    {
+      "type": "BI",
+      "instance": 17,
+      "name": "Alarm_Out.Val",
+      "description": "Serious Alarm (Also a physical output)",
+      "units": "",
+      "access": "R",
+      "states": "0=OK; 1=Alarm"
+    },
+    {
+      "type": "BI",
+      "instance": 18,
+      "name": "Heating_Enable_1.Val",
+      "description": "Heating Stage 1",
+      "units": "",
+      "access": "R",
+      "states": "0=Off; 1=On"
+    },
+    {
+      "type": "BI",
+      "instance": 19,
+      "name": "Cooling_Stage_1.Val",
+      "description": "Cooling Stage 1",
+      "units": "",
+      "access": "R",
+      "states": "0=Off; 1=On"
+    },
+    {
+      "type": "BI",
+      "instance": 20,
+      "name": "Cooling_Stage_2.Val",
+      "description": "Cooling Stage 2",
+      "units": "",
+      "access": "R",
+      "states": "0=Off; 1=On"
+    },
+    {
+      "type": "BI",
+      "instance": 21,
+      "name": "UnitOn",
+      "description": "Unit On Status",
+      "units": "",
+      "access": "R",
+      "states": "0=Off; 1=On"
+    },
+    {
+      "type": "BI",
+      "instance": 22,
+      "name": "Al_SupplyFan.Active",
+      "description": "Supply Fan Start Alarm",
+      "units": "",
+      "access": "R",
+      "states": "0=OK; 1=Alarm"
+    },
+    {
+      "type": "BI",
+      "instance": 23,
+      "name": "Al_ExhaustFan.Active",
+      "description": "Exhaust Fan Start Alarm",
+      "units": "",
+      "access": "R",
+      "states": "0=OK; 1=Alarm"
+    },
+    {
+      "type": "BI",
+      "instance": 49,
+      "name": "Bypass_Damper.Val",
+      "description": "Bypass Damper Command",
+      "units": "",
+      "access": "R",
+      "states": "0=Close; 1=Open"
+    },
+    {
+      "type": "BI",
+      "instance": 50,
+      "name": "OfflineAlrm_CPCOE_1.Active",
+      "description": "Expansion Module is offline",
+      "units": "",
+      "access": "R",
+      "states": "0=OK; 1=Alarm"
+    },
+    {
+      "type": "BI",
+      "instance": 61,
+      "name": "DehumidMode_On",
+      "description": "Unit is in dehumidification mode",
+      "units": "",
+      "access": "R",
+      "states": "0=Off; 1=On"
+    },
+    {
+      "type": "BI",
+      "instance": 57,
+      "name": "Heating_Enable_2.Val",
+      "description": "Heating Stage 2",
+      "units": "",
+      "access": "R",
+      "states": "0=Off; 1=On"
+    },
+    {
+      "type": "BI",
+      "instance": 71,
+      "name": "BoostMode.val",
+      "description": "Boost Mode Status",
+      "units": "",
+      "access": "R",
+      "states": "0=Off; 1=On"
+    },
+    {
+      "type": "BI",
+      "instance": 72,
+      "name": "Any_Alarm_Out.Val",
+      "description": "Any Alarm is True Status",
+      "units": "",
+      "access": "R",
+      "states": "0=OK; 1=Alarm"
+    },
+    {
+      "type": "BI",
+      "instance": 500,
+      "name": "Al_retain.Active",
+      "description": "Too Many Writes to Retained Memory",
+      "units": "",
+      "access": "R",
+      "states": "0=OK; 1=Alarm"
+    },
+    {
+      "type": "BI",
+      "instance": 501,
+      "name": "Al_Err_retain_write.Active",
+      "description": "Too Many Writes to Retained Memory",
+      "units": "",
+      "access": "R",
+      "states": "0=OK; 1=Alarm"
+    },
+    {
+      "type": "BI",
+      "instance": 502,
+      "name": "Al_Device_Test.Active",
+      "description": "Unit Was Left In Device Test Mode",
+      "units": "",
+      "access": "R",
+      "states": "0=OK; 1=Alarm"
+    },
+    {
+      "type": "BI",
+      "instance": 503,
+      "name": "Al_BMS_Offline.Active",
+      "description": "BMS Is Offline",
+      "units": "",
+      "access": "R",
+      "states": "0=OK; 1=Alarm"
+    },
+    {
+      "type": "BI",
+      "instance": 504,
+      "name": "OfflineAlrm_CPCOE_1.Active",
+      "description": "Offline Alarm Expansion Module",
+      "units": "",
+      "access": "R",
+      "states": "0=OK; 1=Alarm"
+    },
+    {
+      "type": "BI",
+      "instance": 505,
+      "name": "CfgErrAlrm_CPCOE_1.Active",
+      "description": "Expansion Module Config Error",
+      "units": "",
+      "access": "R",
+      "states": "0=OK; 1=Alarm"
+    },
+    {
+      "type": "BI",
+      "instance": 508,
+      "name": "AI_Smoke.Active",
+      "description": "Smoke Alarm Input Engaged",
+      "units": "",
+      "access": "R",
+      "states": "0=OK; 1=Alarm"
+    },
+    {
+      "type": "BI",
+      "instance": 509,
+      "name": "AI_Freeze.Active",
+      "description": "Freezestat Alarm Input Engaged",
+      "units": "",
+      "access": "R",
+      "states": "0=OK; 1=Alarm"
+    },
+    {
+      "type": "BI",
+      "instance": 510,
+      "name": "Al_SupplyFan.Active",
+      "description": "Supply Fan Start Alarm",
+      "units": "",
+      "access": "R",
+      "states": "0=OK; 1=Alarm"
+    },
+    {
+      "type": "BI",
+      "instance": 511,
+      "name": "Al_ExhaustFan.Active",
+      "description": "Exhaust Fan Start Alarm",
+      "units": "",
+      "access": "R",
+      "states": "0=OK; 1=Alarm"
+    },
+    {
+      "type": "BI",
+      "instance": 512,
+      "name": "Al_SA_Airflow.Active",
+      "description": "Supply Airflow Out of Tolerance Alarm",
+      "units": "",
+      "access": "R",
+      "states": "0=OK; 1=Alarm"
+    },
+    {
+      "type": "BI",
+      "instance": 513,
+      "name": "Al_EA_Airflow.Active",
+      "description": "Exhaust Airflow Out of Tolerance Alarm",
+      "units": "",
+      "access": "R",
+      "states": "0=OK; 1=Alarm"
+    },
+    {
+      "type": "BI",
+      "instance": 514,
+      "name": "Al_SA_StaticPress.Active",
+      "description": "SA Static Pressure Level Alarm",
+      "units": "",
+      "access": "R",
+      "states": "0=OK; 1=Alarm"
+    },
+    {
+      "type": "BI",
+      "instance": 515,
+      "name": "Al_CO2.Active",
+      "description": "CO2 Level Alarm",
+      "units": "",
+      "access": "R",
+      "states": "0=OK; 1=Alarm"
+    },
+    {
+      "type": "BI",
+      "instance": 516,
+      "name": "Al_SupAir_Low_Temp_Warn.Active",
+      "description": "Supply Air Low Temperature Warning",
+      "units": "",
+      "access": "R",
+      "states": "0=OK; 1=Alarm"
+    },
+    {
+      "type": "BI",
+      "instance": 517,
+      "name": "Al_SupAir_Low_Temp_Alarm.Active",
+      "description": "Supply Air Low Temperature Alarm",
+      "units": "",
+      "access": "R",
+      "states": "0=OK; 1=Alarm"
+    },
+    {
+      "type": "BI",
+      "instance": 518,
+      "name": "Al_SupAir_Hi_Temp_Warn.Active",
+      "description": "Supply Air High Temperature Warning",
+      "units": "",
+      "access": "R",
+      "states": "0=OK; 1=Alarm"
+    },
+    {
+      "type": "BI",
+      "instance": 519,
+      "name": "Al_SupAir_Hi_Temp_Alarm.Active",
+      "description": "Supply Air High Temperature Alarm",
+      "units": "",
+      "access": "R",
+      "states": "0=OK; 1=Alarm"
+    },
+    {
+      "type": "BI",
+      "instance": 521,
+      "name": "Al_EA_StaticPress.Active",
+      "description": "EA Static Pressure Level Alarm",
+      "units": "",
+      "access": "R",
+      "states": "0=OK; 1=Alarm"
+    },
+    {
+      "type": "BI",
+      "instance": 530,
+      "name": "Al_OA_Temp_Prb.Active",
+      "description": "OA Temperature Sensor Open or Short",
+      "units": "",
+      "access": "R",
+      "states": "0=OK; 1=Alarm"
+    },
+    {
+      "type": "BI",
+      "instance": 531,
+      "name": "Al_OA_Hum_Prb.Active",
+      "description": "OA Relative Humidity Transmitter Out of Range",
+      "units": "",
+      "access": "R",
+      "states": "0=OK; 1=Alarm"
+    },
+    {
+      "type": "BI",
+      "instance": 532,
+      "name": "Al_RA_Temp_Prb.Active",
+      "description": "RA Temperature Sensor Open or Short",
+      "units": "",
+      "access": "R",
+      "states": "0=OK; 1=Alarm"
+    },
+    {
+      "type": "BI",
+      "instance": 533,
+      "name": "Al_RA_Hum_Prb.Active",
+      "description": "RA Relative Humidity Transmitter Out of Range",
+      "units": "",
+      "access": "R",
+      "states": "0=OK; 1=Alarm"
+    },
+    {
+      "type": "BI",
+      "instance": 534,
+      "name": "Al_SA_Temp_Prb.Active",
+      "description": "SA Temperature Sensor Open or Short",
+      "units": "",
+      "access": "R",
+      "states": "0=OK; 1=Alarm"
+    },
+    {
+      "type": "BI",
+      "instance": 535,
+      "name": "Al_EA_Temp_Prb.Active",
+      "description": "EA Temperature Sensor Open or Short",
+      "units": "",
+      "access": "R",
+      "states": "0=OK; 1=Alarm"
+    },
+    {
+      "type": "BI",
+      "instance": 536,
+      "name": "Al_OA_Flt_Press_Prb.Active",
+      "description": "OA Filter Pressure Transmitter Out of Range",
+      "units": "",
+      "access": "R",
+      "states": "0=OK; 1=Alarm"
+    },
+    {
+      "type": "BI",
+      "instance": 537,
+      "name": "Al_RA_Flt_Press_Prb.Active",
+      "description": "RA Filter Pressure Transmitter Out of Range",
+      "units": "",
+      "access": "R",
+      "states": "0=OK; 1=Alarm"
+    },
+    {
+      "type": "BI",
+      "instance": 538,
+      "name": "Al_OA_Flow_Rate_Prb.Active",
+      "description": "OA Flow Rate Pressure Transmitter Out of Range",
+      "units": "",
+      "access": "R",
+      "states": "0=OK; 1=Alarm"
+    },
+    {
+      "type": "BI",
+      "instance": 539,
+      "name": "Al_EA_Flow_Rate_Prb.Active",
+      "description": "EA Flow Rate Pressure Transmitter Out of Range",
+      "units": "",
+      "access": "R",
+      "states": "0=OK; 1=Alarm"
+    },
+    {
+      "type": "BI",
+      "instance": 540,
+      "name": "Al_CO2_Level_Prb.Active",
+      "description": "CO2 Level Transmitter Out of Range",
+      "units": "",
+      "access": "R",
+      "states": "0=OK; 1=Alarm"
+    },
+    {
+      "type": "BI",
+      "instance": 541,
+      "name": "Al_Duct_Press_Prb.Active",
+      "description": "Duct Pressure Transmitter Out of Range",
+      "units": "",
+      "access": "R",
+      "states": "0=OK; 1=Alarm"
+    },
+    {
+      "type": "BI",
+      "instance": 542,
+      "name": "Al_Supply_Temp_Prb.Active",
+      "description": "Conditioned Air (CA) Temperature Sensor Open or Short",
+      "units": "",
+      "access": "R",
+      "states": "0=OK; 1=Alarm"
+    },
+    {
+      "type": "BI",
+      "instance": 544,
+      "name": "Al_VOC_Level_Prb.Active",
+      "description": "VOC Probe Alarm",
+      "units": "",
+      "access": "R",
+      "states": "0=OK; 1=Alarm"
+    },
+    {
+      "type": "BI",
+      "instance": 545,
+      "name": "Al_Space_Press_Prb.Active",
+      "description": "Space Pressure Probe Alarm",
+      "units": "",
+      "access": "R",
+      "states": "0=OK; 1=Alarm"
+    },
+    {
+      "type": "BI",
+      "instance": 560,
+      "name": "Al_OA_Flt_Press.Active",
+      "description": "OA Filter Needs Change",
+      "units": "",
+      "access": "R",
+      "states": "0=OK; 1=Alarm"
+    },
+    {
+      "type": "BI",
+      "instance": 561,
+      "name": "Al_RA_Flt_Press.Active",
+      "description": "RA Filter Needs Change",
+      "units": "",
+      "access": "R",
+      "states": "0=OK; 1=Alarm"
+    },
+    {
+      "type": "BI",
+      "instance": 562,
+      "name": "Al_UnitLife.Active",
+      "description": "Unit Service Request",
+      "units": "",
+      "access": "R",
+      "states": "0=OK; 1=Alarm"
+    },
+    {
+      "type": "BI",
+      "instance": 564,
+      "name": "Al_SupplyFanLife.Active",
+      "description": "Supply Fan Service Request",
+      "units": "",
+      "access": "R",
+      "states": "0=OK; 1=Alarm"
+    },
+    {
+      "type": "BI",
+      "instance": 565,
+      "name": "Al_ExhaustFanLife.Active",
+      "description": "Exhaust Fan Service Request",
+      "units": "",
+      "access": "R",
+      "states": "0=OK; 1=Alarm"
+    },
+    {
+      "type": "BV",
+      "instance": 10,
+      "name": "OnOffUnitMng.BmsOnOff",
+      "description": "BMS On/Off Command",
+      "units": "",
+      "access": "W",
+      "states": "0=Off; 1=On"
+    },
+    {
+      "type": "BV",
+      "instance": 11,
+      "name": "OnOffUnitMng.BmsEfOnly",
+      "description": "BMS exhaust-fan-only command",
+      "units": "",
+      "access": "W",
+      "states": "0=Off; 1=On"
+    },
+    {
+      "type": "BV",
+      "instance": 12,
+      "name": "AlarmMng.AlrmResByBms",
+      "description": "Alarm Reset BMS Command",
+      "units": "",
+      "access": "W",
+      "states": "0=OK; 1=Reset"
+    },
+    {
+      "type": "BV",
+      "instance": 13,
+      "name": "One_Fan_Mode",
+      "description": "Fan that runs in single-fan mode",
+      "units": "",
+      "access": "W",
+      "states": "0=Exhaust Fan; 1=Supply Fan"
+    },
+    {
+      "type": "BV",
+      "instance": 60,
+      "name": "BMS_SetHeatCool",
+      "description": "BMS Set Heat/Cool Capability (retained)",
+      "units": "",
+      "access": "W",
+      "states": "0=No; 1=Allow"
+    },
+    {
+      "type": "BV",
+      "instance": 61,
+      "name": "BMS_HeatCoolMode",
+      "description": "BMS Heat/Cool Mode Setting (retained)",
+      "units": "",
+      "access": "W",
+      "states": "0=Heat; 1=Cool"
+    },
+    {
+      "type": "BV",
+      "instance": 74,
+      "name": "BMS_HW_Valve_Control",
+      "description": "BMS HW Valve Control",
+      "units": "",
+      "access": "W",
+      "states": "0=No; 1=Allow"
+    },
+    {
+      "type": "BV",
+      "instance": 75,
+      "name": "Heating_Enable_1.Val",
+      "description": "Heating Stage 1 BMS Enable",
+      "units": "",
+      "access": "W",
+      "states": "0=Off; 1=On"
+    },
+    {
+      "type": "MI",
+      "instance": 2,
+      "name": "SF_ControlType_BN",
+      "description": "Supply fan control type",
+      "units": "",
+      "access": "R",
+      "states": "0=Constant Speed; 1=Supply Airflow; 2=Duct Static; 3=Room Static; 4=CO2; 5=VOC; 6=CO2 Flow"
+    },
+    {
+      "type": "MI",
+      "instance": 3,
+      "name": "EF_ControlType_BN",
+      "description": "Exhaust fan control type",
+      "units": "",
+      "access": "R",
+      "states": "1=Constant Speed; 2=Exhaust Airflow; 3=SF Command Tracking; 4=SF Flow Tracking; 5=Return Static"
+    },
+    {
+      "type": "MI",
+      "instance": 4,
+      "name": "HTG_ControlType_BN",
+      "description": "Heating control type",
+      "units": "",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "MI",
+      "instance": 5,
+      "name": "CLG_ControlType_BN",
+      "description": "Cooling control type",
+      "units": "",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "MI",
+      "instance": 6,
+      "name": "Heating_SetPtType_BN",
+      "description": "Heating setpoint type",
+      "units": "",
+      "access": "R",
+      "states": "1=Adjust; 2=OA Reset"
+    },
+    {
+      "type": "MI",
+      "instance": 7,
+      "name": "UnitStatus_BN",
+      "description": "Unit status / reason the unit is off",
+      "units": "",
+      "access": "R",
+      "states": "1=Unit on; 2=Off by alarm; 3=Off by BMS; 4=Off by scheduler; 5=Off by digital input; 6=Off at keypad; 8=Exhaust fan only; 9=Supply fan only; 11=Cool locked out by BMS; 12=Heat locked out by BMS; 13=Device test (>1 h); 14=Sensor override (>24 h); 15=Off by CO2 level; 16=Frost control on"
+    },
+    {
+      "type": "MI",
+      "instance": 8,
+      "name": "Cooling_SetPtType_BN",
+      "description": "Cooling setpoint type",
+      "units": "",
+      "access": "R",
+      "states": ""
+    }
+  ]
+}

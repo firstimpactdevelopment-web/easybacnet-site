@@ -1,0 +1,3631 @@
+{
+  "manufacturer": "WaterFurnace",
+  "manufacturer_slug": "waterfurnace",
+  "model": "Aurora UPC, Dual Compressor Rooftop Unit with Economizer",
+  "model_slug": "aurora-upc-rooftop-economizer-dual-compressor",
+  "short_model": "Aurora UPC Dual Rooftop Economizer",
+  "aliases": [
+    "PL1250EW",
+    "Aurora UPC rooftop economizer",
+    "Aurora Universal Protocol Converter"
+  ],
+  "equipment_type": "Rooftop unit controller (water-source, with economizer)",
+  "applies_to": "WaterFurnace dual-compressor water-source rooftop units with an economizer, Aurora controls and the Aurora UPC.",
+  "summary": "BACnet objects of the Aurora UPC on a WaterFurnace dual-compressor rooftop unit with an air-side economizer, software version 1.01. Besides occupancy, setpoints and alarms it covers the economizer (outdoor and return air temperature and humidity, enthalpy, damper position), demand controlled ventilation, ECM blower and variable speed pump settings, with A/B points for each compressor circuit.",
+  "bacnet_transport": [
+    "BACnet MS/TP"
+  ],
+  "firmware": "UPC software version 1.01",
+  "default_device_instance": null,
+  "access_inferred": false,
+  "notes": [
+    "PL1250EW holds two separate tables, single and dual compressor; this file is the dual compressor table.",
+    "Object names are the sheet's reference names.",
+    "Many points are marked 'do not map' in the source and are listed only for completeness.",
+    "Alarm codes come from the alarm table printed for the dual-compressor rooftop; mode numbers from the dual column of the mode table.",
+    "Transport and network settings come from the Aurora UPC Application and Troubleshooting Guide (AG1568EW), which is written for the single-compressor water-to-air UPC."
+  ],
+  "source": {
+    "title": "UPC BACnet Points List For Single/Dual Compressor Rooftop Economizer",
+    "doc_number": "PL1250EW",
+    "revision_date": "2018-09",
+    "url": "https://www.waterfurnace.com/literature/aurora/PL1250EW.pdf"
+  },
+  "integration": {
+    "summary": "Keep BV 502 at External and command occupancy on MSV 500; the UPC holds the occupied, unoccupied and standby setpoints (AV 511-516) and runs the economizer itself. Read MSV 100 for the operating mode and AV 119 for the combined alarm code. BV 110-115 let the BAS send Y1, Y2, W, O, G and DH calls directly.",
+    "minimum_points": [
+      {
+        "ref": "MV 500",
+        "name": "occ_man_msv_c",
+        "why": "Occupied/unoccupied/temp occ/standby command"
+      },
+      {
+        "ref": "BV 502",
+        "name": "schedule_select_c",
+        "why": "Must be External for BAS occupancy commands"
+      },
+      {
+        "ref": "BV 101",
+        "name": "em_shutdown_c",
+        "why": "Network emergency shutdown"
+      },
+      {
+        "ref": "AV 511",
+        "name": "occ_clg_setpt_c",
+        "why": "Occupied cooling setpoint"
+      },
+      {
+        "ref": "AV 512",
+        "name": "occ_htg_setpt_c",
+        "why": "Occupied heating setpoint"
+      },
+      {
+        "ref": "BV 130",
+        "name": "alarm_reset_c",
+        "why": "Reset manual-reset alarms (On, then back to Off)"
+      },
+      {
+        "ref": "AV 500",
+        "name": "zone_temp",
+        "why": "Space temperature (sensor or BAS override)"
+      },
+      {
+        "ref": "MV 100",
+        "name": "mode_msv",
+        "why": "Current operating mode"
+      },
+      {
+        "ref": "AV 119",
+        "name": "alarm_enum",
+        "why": "Combined alarm code (see alarm table)"
+      }
+    ],
+    "enable": "BV 502 schedule_select_c picks the internal schedule (Mon-Fri 7:30-17:00 EST) or external BAS commands; External is the listed default. Occupancy commands go to MSV 500, or to AV 509 after BV 504 is set to AV; BV 506 is a separate binary BAS occupancy signal. BV 101 em_shutdown_c shuts the unit down and BV 105 load_shed_c sheds the compressors.",
+    "heartbeat": null,
+    "remote_sensors": "AV 502 zone_temp_ovrd_c replaces the zone sensor once BV 500 is set to BAS. Outdoor air temperature and humidity, and return air temperature and humidity, can come from the BAS on AV 606, 609, 614 and 617 when BV 609, 611, 613 and 615 are set to BAS. AV 602 (pressure) or AV 603 (elevation), chosen by BV 608, feed the enthalpy calculation. AV 504, 506 and 508 accept humidity, CO2 and VOC values.",
+    "setup": [
+      "Port 1a is the BAS port: EIA-485 for BACnet MS/TP (or N2), set by DIP switches, with baud 9600, 19.2k, 38.4k or 76.8k. It ships set to BACnet at 38,400 baud. (From AG1568EW, written for the single-compressor UPC.)",
+      "Port 1a can instead be jumpered for ARC156 (BACnet over ARCNET at 156 kbps). A LonWorks plug-in card uses port 1b and disables port 1a.",
+      "The MAC address is set on two rotary switches (tens and ones), 1 from the factory and 99 at most. The UPC only reads a new address after a power cycle.",
+      "The device instance is built from the network number and the MAC: network 7000 with MAC 12 gives 7012.",
+      "Wiring: 22 or 24 AWG shielded twisted pair, daisy-chained, polarity-sensitive (Net+, Net-, shield). About 30 devices and 2,000 ft per trunk; every MAC on a trunk must be unique."
+    ],
+    "gotchas": [
+      "BV 600 econ_on_c only matters when the economizer runs in slave mode (MSV 600 = 6).",
+      "Dip switch overrides only pass to the ABC while the dip switch override enable (BV 318 / BV 327) is on; record the physical switch settings first.",
+      "Alarm reset: command BV 130 On, then back to Off.",
+      "In the source, hp_hdw points are described as the LP input and lp_hdw points as the HP input; verify on site.",
+      "The alarm table lists the AV codes only; the MSV lockout point is marked 'do not map'."
+    ]
+  },
+  "points": [
+    {
+      "type": "AV",
+      "instance": 100,
+      "name": "active_setpt",
+      "description": "Set point that is controlling the call for the compressor",
+      "units": "°F",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 101,
+      "name": "neut_setpt",
+      "description": "Neutral air setpoint used by the economizer logic",
+      "units": "°F",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 102,
+      "name": "mode_av",
+      "description": "Current operating mode (numeric)",
+      "units": "",
+      "access": "R",
+      "states": "1=Standby; 2=Fan Only; 3=Cool Stage 1; 4=Cool Stage 2; 5=Hot Gas Reheat; 6=Heat Stage 1; 7=Heat Stage 2; 8=Emergency Heat; 9=Auxiliary Heat; 10=Emergency Shutdown; 11=Load Shed; 12=ABC A Lockout; 13=Demand Ventilation; 14=Economizer Mode; 15=ABC B Lockout; 16=Full Cool W/Economizer; 17=Low LAT Mode; 18=1/2 Capacity W/Lockout; 19=Full Lockout Condition; 20=Cool 1 W/Economizer"
+    },
+    {
+      "type": "AV",
+      "instance": 103,
+      "name": "man_ecm_speed_c",
+      "description": "Internal use; do not map to BAS (default 0)",
+      "units": "",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 104,
+      "name": "ecm_override",
+      "description": "Internal use; do not map to BAS",
+      "units": "",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 105,
+      "name": "man_vs_pump_a_c",
+      "description": "Internal use; do not map to BAS (default 0)",
+      "units": "%",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 106,
+      "name": "man_vs_pump_b_c",
+      "description": "Internal use; do not map to BAS (default 0)",
+      "units": "%",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 107,
+      "name": "man_damp_pos_c",
+      "description": "Internal use; do not map to BAS (default 0)",
+      "units": "%",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 108,
+      "name": "actual_damp_pos",
+      "description": "Current damper target position",
+      "units": "%",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 109,
+      "name": "fp1_setpt_a",
+      "description": "FP1 freeze detection limit (coax temp) for circuit A",
+      "units": "°F",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 110,
+      "name": "fp2_setpt_a",
+      "description": "FP2 freeze detection limit (air coil temp) for circuit A",
+      "units": "°F",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 111,
+      "name": "fp1_setpt_b",
+      "description": "FP1 freeze detection limit (coax temp) for circuit B",
+      "units": "°F",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 112,
+      "name": "fp2_setpt_b",
+      "description": "FP2 freeze detection limit (air coil temp) for circuit B",
+      "units": "°F",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 113,
+      "name": "filter_alm_hrs_c",
+      "description": "Filter alarm hours (default 1000)",
+      "units": "hr",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 114,
+      "name": "filter_hours",
+      "description": "Number of fan run hours since the last filter alarm reset",
+      "units": "hr",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 115,
+      "name": "lock_stat_reg_a",
+      "description": "Internal use; do not map to BAS",
+      "units": "",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 116,
+      "name": "alarm_enum_a",
+      "description": "ABC A alarm code (see alarm table)",
+      "units": "",
+      "access": "R",
+      "states": "0=Normal; 1=E1 Input fault; 2=E2 High pressure; 3=E3 Low pressure; 4=E4 Freeze detection FP2; 5=E5 Freeze detection FP1; 6=E6 Loss of charge; 7=E7 Condensate overflow; 8=E8 Over/under voltage; 9=E9 Airflow monitoring (future); 10=E10 Compressor monitoring; 11=E11 FP1 sensor error; 12=E12 Refrigeration monitoring (future); 13=E13 Non-critical AXB sensor error (future); 14=E14 Critical AXB sensor error (future); 15=E15 Hot water limit; 16=E16 Variable speed pump; 18=E18 Non-critical comm error; 19=E19 Critical comm error; 20=E20 UPC-ABC critical comm error; 30=E30 Zone sensor loss of comm; 101=E101 Faulty OAT sensor; 102=E102 Missing OAT sensor; 103=E103 Faulty OAH sensor; 104=E104 Missing OAH sensor; 105=E105 Faulty RAT sensor; 106=E106 Missing RAT sensor; 107=E107 Faulty RAH sensor; 108=E108 Missing RAH sensor; 121=E121 Blower support fault"
+    },
+    {
+      "type": "AV",
+      "instance": 117,
+      "name": "lock_stat_reg_b",
+      "description": "Internal use; do not map to BAS",
+      "units": "",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 118,
+      "name": "alarm_enum_b",
+      "description": "ABC B alarm code (see alarm table)",
+      "units": "",
+      "access": "R",
+      "states": "0=Normal; 1=E1 Input fault; 2=E2 High pressure; 3=E3 Low pressure; 4=E4 Freeze detection FP2; 5=E5 Freeze detection FP1; 6=E6 Loss of charge; 7=E7 Condensate overflow; 8=E8 Over/under voltage; 9=E9 Airflow monitoring (future); 10=E10 Compressor monitoring; 11=E11 FP1 sensor error; 12=E12 Refrigeration monitoring (future); 13=E13 Non-critical AXB sensor error (future); 14=E14 Critical AXB sensor error (future); 15=E15 Hot water limit; 16=E16 Variable speed pump; 18=E18 Non-critical comm error; 19=E19 Critical comm error; 20=E20 UPC-ABC critical comm error; 30=E30 Zone sensor loss of comm; 101=E101 Faulty OAT sensor; 102=E102 Missing OAT sensor; 103=E103 Faulty OAH sensor; 104=E104 Missing OAH sensor; 105=E105 Faulty RAT sensor; 106=E106 Missing RAT sensor; 107=E107 Faulty RAH sensor; 108=E108 Missing RAH sensor; 121=E121 Blower support fault"
+    },
+    {
+      "type": "AV",
+      "instance": 119,
+      "name": "alarm_enum",
+      "description": "Combined alarm code (see alarm table)",
+      "units": "",
+      "access": "R",
+      "states": "0=Normal; 1=E1 Input fault; 2=E2 High pressure; 3=E3 Low pressure; 4=E4 Freeze detection FP2; 5=E5 Freeze detection FP1; 6=E6 Loss of charge; 7=E7 Condensate overflow; 8=E8 Over/under voltage; 9=E9 Airflow monitoring (future); 10=E10 Compressor monitoring; 11=E11 FP1 sensor error; 12=E12 Refrigeration monitoring (future); 13=E13 Non-critical AXB sensor error (future); 14=E14 Critical AXB sensor error (future); 15=E15 Hot water limit; 16=E16 Variable speed pump; 18=E18 Non-critical comm error; 19=E19 Critical comm error; 20=E20 UPC-ABC critical comm error; 30=E30 Zone sensor loss of comm; 101=E101 Faulty OAT sensor; 102=E102 Missing OAT sensor; 103=E103 Faulty OAH sensor; 104=E104 Missing OAH sensor; 105=E105 Faulty RAT sensor; 106=E106 Missing RAT sensor; 107=E107 Faulty RAH sensor; 108=E108 Missing RAH sensor; 121=E121 Blower support fault"
+    },
+    {
+      "type": "AV",
+      "instance": 200,
+      "name": "ecm_speed_sw_a",
+      "description": "Current ECM target speed",
+      "units": "",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 201,
+      "name": "ecm_pwm_pct_a",
+      "description": "Current ECM PWM output percentage",
+      "units": "%",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 202,
+      "name": "vs_pump_spd_stat_a",
+      "description": "Current target % of the VS Pump output for circuit A",
+      "units": "%",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 203,
+      "name": "vs_pump_pct_stat_a",
+      "description": "Current operating % of the VS Pump output for circuit A",
+      "units": "%",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 204,
+      "name": "vs_pump_spd_stat_b",
+      "description": "Current target % of the VS Pump output for circuit B",
+      "units": "%",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 205,
+      "name": "vs_pump_pct_stat_b",
+      "description": "Current operating % of the VS Pump output for circuit B",
+      "units": "%",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 206,
+      "name": "coax_temp_stat_a",
+      "description": "Refrigerant temperature at the Coax, circuit A",
+      "units": "°F",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 207,
+      "name": "air_coil_temp_stat_a",
+      "description": "Refrigerant temperature at the air coil, circuit A",
+      "units": "°F",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 208,
+      "name": "coax_temp_stat_b",
+      "description": "Refrigerant temperature at the Coax, circuit B",
+      "units": "°F",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 209,
+      "name": "air_coil_temp_stat_b",
+      "description": "Refrigerant temperature at the air coil, circuit B",
+      "units": "°F",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 210,
+      "name": "lwt_stat_a",
+      "description": "Value of the LWT Input on circuit A",
+      "units": "°F",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 211,
+      "name": "ewt_stat_a",
+      "description": "Value of the EWT Input on circuit A",
+      "units": "°F",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 212,
+      "name": "water_flow_stat_a",
+      "description": "GPM flow rate of circuit A",
+      "units": "gpm",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 213,
+      "name": "loop_pres_stat_a",
+      "description": "Loop pressure for circuit A",
+      "units": "psi",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 214,
+      "name": "lat_stat",
+      "description": "Leaving air temperature that is connected to the AXB A",
+      "units": "°F",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 216,
+      "name": "suct_press_stat_a",
+      "description": "Suction pressure of circuit A",
+      "units": "psi",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 217,
+      "name": "disch_press_stat_a",
+      "description": "Discharge pressure of circuit A",
+      "units": "psi",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 218,
+      "name": "suct_temp_stat_a",
+      "description": "Suction temperature of circuit A",
+      "units": "°F",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 219,
+      "name": "disch_temp_stat_a",
+      "description": "Discharge temperature of circuit A",
+      "units": "°F",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 220,
+      "name": "liq_line_temp_stat_a",
+      "description": "Heating liquid line temperature for circuit A",
+      "units": "°F",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 221,
+      "name": "sat_evap_temp_stat_a",
+      "description": "Saturated evaporator temperature for circuit A",
+      "units": "°F",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 222,
+      "name": "cond_temp_stat_a",
+      "description": "Condenser temperature for circuit A",
+      "units": "°F",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 223,
+      "name": "est_line_voltage_stat_a",
+      "description": "Estimated line voltage at circuit A",
+      "units": "V",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 224,
+      "name": "control_voltage_stat_a",
+      "description": "Low voltage circuit value that is powering the ABC A",
+      "units": "V",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 225,
+      "name": "hot_wtr_temp_stat_a",
+      "description": "Hot water temperature input for circuit A",
+      "units": "°F",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 226,
+      "name": "univ_input_stat_a",
+      "description": "Raw count value of the circuit A universal input",
+      "units": "",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 227,
+      "name": "superheat_stat_a",
+      "description": "Superheat of circuit A",
+      "units": "°F",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 228,
+      "name": "htg_subcool_stat_a",
+      "description": "Subcooling calculation in the heating mode of circuit A",
+      "units": "°F",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 229,
+      "name": "clg_subcool_stat_a",
+      "description": "Subcooling calculation in the cooling mode of circuit A",
+      "units": "°F",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 230,
+      "name": "fan_current_stat_a",
+      "description": "Amp draw for the Fan output on circuit A",
+      "units": "A",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 231,
+      "name": "aux_current_stat_a",
+      "description": "Amp draw for the Auxiliary output on circuit A",
+      "units": "A",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 232,
+      "name": "comp_current_stat_a",
+      "description": "Compressor amps (L1 or L2), circuit A",
+      "units": "A",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 233,
+      "name": "comp1_current_stat_a",
+      "description": "Compressor amps (L1 or L2), circuit A",
+      "units": "A",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 234,
+      "name": "total_amps_stat_a",
+      "description": "Calculated total amp draw for circuit A",
+      "units": "A",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 235,
+      "name": "comp_power_stat_a",
+      "description": "Compressor power of circuit A",
+      "units": "W",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 236,
+      "name": "fan_power_stat_a",
+      "description": "Watt usage for Fan output on circuit A",
+      "units": "W",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 237,
+      "name": "aux_power_stat_a",
+      "description": "Watt usage for Auxiliary output on circuit A",
+      "units": "W",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 238,
+      "name": "total_power_stat_a",
+      "description": "Calculated total watt usage for circuit A",
+      "units": "W",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 239,
+      "name": "he_hr_stat_a",
+      "description": "Heat of rejection/extraction for circuit A",
+      "units": "Btu/hr",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 240,
+      "name": "total_cap_stat_a",
+      "description": "Calculated value for circuit A total capacity",
+      "units": "Btu/hr",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 241,
+      "name": "cop_stat_a",
+      "description": "Calculated COP of circuit A",
+      "units": "",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 242,
+      "name": "eer_stat_a",
+      "description": "EER calculation of circuit A",
+      "units": "",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 260,
+      "name": "lwt_stat_b",
+      "description": "Value of the LWT Input on circuit B",
+      "units": "°F",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 261,
+      "name": "ewt_stat_b",
+      "description": "Value of the EWT Input on circuit B",
+      "units": "°F",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 262,
+      "name": "water_flow_stat_b",
+      "description": "GPM flow rate of circuit B",
+      "units": "gpm",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 263,
+      "name": "loop_pres_stat_b",
+      "description": "Loop pressure for circuit B",
+      "units": "psi",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 264,
+      "name": "lat_stat_b",
+      "description": "Leaving air temperature input on the AXB",
+      "units": "°F",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 266,
+      "name": "suct_press_stat_b",
+      "description": "Suction pressure of circuit B",
+      "units": "psi",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 267,
+      "name": "disch_press_stat_b",
+      "description": "Discharge pressure of circuit B",
+      "units": "psi",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 268,
+      "name": "suct_temp_stat_b",
+      "description": "Suction temperature of circuit B",
+      "units": "°F",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 269,
+      "name": "disch_temp_stat_b",
+      "description": "Discharge temperature of circuit B",
+      "units": "°F",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 270,
+      "name": "liq_line_temp_stat_b",
+      "description": "Heating liquid line temperature for circuit B",
+      "units": "°F",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 271,
+      "name": "sat_evap_temp_stat_b",
+      "description": "Saturated evaporator temperature for circuit B",
+      "units": "°F",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 272,
+      "name": "cond_temp_stat_b",
+      "description": "Condenser temperature for circuit B",
+      "units": "°F",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 273,
+      "name": "est_line_voltage_stat_b",
+      "description": "Estimated line voltage at circuit B",
+      "units": "V",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 274,
+      "name": "control_voltage_stat_b",
+      "description": "Low voltage circuit value that is powering the ABC B",
+      "units": "V",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 275,
+      "name": "hot_wtr_temp_stat_b",
+      "description": "Hot water temperature input for circuit B",
+      "units": "°F",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 276,
+      "name": "univ_input_stat_b",
+      "description": "Raw count value of the circuit B universal input",
+      "units": "",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 277,
+      "name": "superheat_stat_b",
+      "description": "Superheat of circuit B",
+      "units": "°F",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 278,
+      "name": "htg_subcool_stat_b",
+      "description": "Subcooling calculation in the heating mode of circuit B",
+      "units": "°F",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 279,
+      "name": "clg_subcool_stat_b",
+      "description": "Subcooling calculation in the cooling mode of circuit B",
+      "units": "°F",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 280,
+      "name": "fan_current_stat_b",
+      "description": "Amp draw for the Fan output on circuit B",
+      "units": "A",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 281,
+      "name": "aux_current_stat_b",
+      "description": "Amp draw for the Auxiliary output on circuit B",
+      "units": "A",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 282,
+      "name": "comp_current_stat_b",
+      "description": "Compressor amps (L1 or L2), circuit B",
+      "units": "A",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 283,
+      "name": "comp1_current_stat_b",
+      "description": "Compressor amps (L1 or L2), circuit B",
+      "units": "A",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 284,
+      "name": "total_amps_stat_b",
+      "description": "Calculated total amp draw for circuit B",
+      "units": "A",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 285,
+      "name": "comp_power_stat_b",
+      "description": "Compressor power of circuit B",
+      "units": "W",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 286,
+      "name": "fan_power_stat_b",
+      "description": "Watt usage for Fan output on circuit B",
+      "units": "W",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 287,
+      "name": "aux_power_stat_b",
+      "description": "Watt usage for Auxiliary output on circuit B",
+      "units": "W",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 288,
+      "name": "total_power_stat_b",
+      "description": "Calculated total watt usage for circuit B",
+      "units": "W",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 289,
+      "name": "he_hr_stat_b",
+      "description": "Heat of rejection/extraction for circuit B",
+      "units": "Btu/hr",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 290,
+      "name": "total_cap_stat_b",
+      "description": "Calculated value for circuit B total capacity",
+      "units": "Btu/hr",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 291,
+      "name": "cop_stat_b",
+      "description": "Calculated COP of circuit B",
+      "units": "",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 292,
+      "name": "eer_stat_b",
+      "description": "EER calculation of circuit B",
+      "units": "",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 293,
+      "name": "he_hr_stat_combined",
+      "description": "Combined heat of extraction/rejection, both circuits",
+      "units": "Btu/hr",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 294,
+      "name": "total_cap_stat_combined",
+      "description": "Combined capacity of both circuits",
+      "units": "Btu/hr",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 295,
+      "name": "total_power_stat_combined",
+      "description": "Combined total power of both circuits",
+      "units": "W",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 301,
+      "name": "low_ecm_spd_c",
+      "description": "\u0001 setting\u0002 (default 3)",
+      "units": "",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 302,
+      "name": "med_ecm_spd_c",
+      "description": "\u0001 setting\u0002 (default 7)",
+      "units": "",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 303,
+      "name": "high_ecm_spd_c",
+      "description": "\u0001 setting\u0002 (default 11)",
+      "units": "",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 304,
+      "name": "aux_ht_ecm_spd_c",
+      "description": "\u0001 setting\u0002 (default 12)",
+      "units": "",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 305,
+      "name": "blwr_off_delay_c",
+      "description": "Blower off delay after the compressor stops (default 30)",
+      "units": "seconds",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 306,
+      "name": "clg_cfm_offset_av_c",
+      "description": "Passive dehumidification CFM offset, numeric (see MV 300) (default 4)",
+      "units": "",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 307,
+      "name": "occ_dehum_setpt_c",
+      "description": "Occupied dehumidification set point (default 53)",
+      "units": "%rh",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 308,
+      "name": "unocc_dehum_setpt_c",
+      "description": "Unoccupied dehumidification set point (default 75)",
+      "units": "%rh",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 309,
+      "name": "dehum_setpt",
+      "description": "Currently active dehumidification setpoint",
+      "units": "%rh",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 310,
+      "name": "dehum_diff_c",
+      "description": "Dehumidification differential, or deadband for operation (default 5)",
+      "units": "%rh",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 311,
+      "name": "vs_pump_min_spd_a_c",
+      "description": "\u0001 setting\u0002 (default 50)",
+      "units": "%",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 312,
+      "name": "vs_pump_max_spd_a_c",
+      "description": "\u0001 setting\u0002 (default 100)",
+      "units": "%",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 313,
+      "name": "pump_opt_a_c",
+      "description": "Selects the pump or loop option for circuit A (default 0)",
+      "units": "",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 314,
+      "name": "vs_pump_min_spd_b_c",
+      "description": "\u0001 setting\u0002 (default 50)",
+      "units": "%",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 315,
+      "name": "vs_pump_max_spd_b_c",
+      "description": "\u0001 setting\u0002 (default 100)",
+      "units": "%",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 316,
+      "name": "pump_opt_b_c",
+      "description": "Selects the pump or loop option for circuit B (default 0)",
+      "units": "",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 317,
+      "name": "flow_meter_a_c",
+      "description": "Selects the flow meter option for circuit A (default 0)",
+      "units": "",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 318,
+      "name": "flow_meter_b_c",
+      "description": "Selects the flow meter option for circuit B (default 0)",
+      "units": "",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 319,
+      "name": "dhw_setpt_a_c",
+      "description": "Hot water setpoint for circuit A (default 130)",
+      "units": "°F",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 320,
+      "name": "dhw_setpt_b_c",
+      "description": "Hot water setpoint for circuit B (default 130)",
+      "units": "°F",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 321,
+      "name": "energy_mon_a_c",
+      "description": "Selects the energy monitor option for circuit A (default 0)",
+      "units": "",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 322,
+      "name": "energy_mon_b_c",
+      "description": "Selects the energy monitor option for circuit B (default 0)",
+      "units": "",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 323,
+      "name": "acc1_delay_a_c",
+      "description": "Sets the time delay of the ACC-1 output on circuit A (default 90)",
+      "units": "seconds",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 324,
+      "name": "acc1_delay_b_c",
+      "description": "Sets the time delay of the ACC-1 output on circuit B (default 90)",
+      "units": "seconds",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 325,
+      "name": "measured_line_volts_c",
+      "description": "Calibrates the line voltage reading (default 230)",
+      "units": "V",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 326,
+      "name": "blower_config_c",
+      "description": "Blower configuration (default 9)",
+      "units": "",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 400,
+      "name": "fact_test_c",
+      "description": "Internal use; do not map to BAS (default 0)",
+      "units": "",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 401,
+      "name": "m409_cmd",
+      "description": "Internal use; do not map to BAS (default 0)",
+      "units": "",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 402,
+      "name": "m488_cmd",
+      "description": "Internal use; do not map to BAS (default 0)",
+      "units": "",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 403,
+      "name": "m417_cmd",
+      "description": "Internal use; do not map to BAS (default 0)",
+      "units": "",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 404,
+      "name": "m494_cmd",
+      "description": "Internal use; do not map to BAS (default 0)",
+      "units": "",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 405,
+      "name": "m421_cmd",
+      "description": "Internal use; do not map to BAS (default 0)",
+      "units": "",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 406,
+      "name": "m495_cmd",
+      "description": "Internal use; do not map to BAS (default 0)",
+      "units": "",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 407,
+      "name": "m425_cmd",
+      "description": "Internal use; do not map to BAS (default 0)",
+      "units": "",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 408,
+      "name": "m496_cmd",
+      "description": "Internal use; do not map to BAS (default 0)",
+      "units": "",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 409,
+      "name": "m429_cmd",
+      "description": "Internal use; do not map to BAS (default 0)",
+      "units": "",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 410,
+      "name": "m497_cmd",
+      "description": "Internal use; do not map to BAS (default 0)",
+      "units": "",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 411,
+      "name": "m433_cmd",
+      "description": "Internal use; do not map to BAS (default 0)",
+      "units": "",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 412,
+      "name": "m498_cmd",
+      "description": "Internal use; do not map to BAS (default 0)",
+      "units": "",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 413,
+      "name": "m441_cmd",
+      "description": "Internal use; do not map to BAS (default 0)",
+      "units": "",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 414,
+      "name": "m445_cmd",
+      "description": "Internal use; do not map to BAS (default 0)",
+      "units": "",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 415,
+      "name": "m500_cmd",
+      "description": "Internal use; do not map to BAS (default 0)",
+      "units": "",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 416,
+      "name": "m449_cmd",
+      "description": "Internal use; do not map to BAS (default 0)",
+      "units": "",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 417,
+      "name": "m501_cmd",
+      "description": "Internal use; do not map to BAS (default 0)",
+      "units": "",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 418,
+      "name": "m453_cmd",
+      "description": "Internal use; do not map to BAS (default 0)",
+      "units": "",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 420,
+      "name": "tstat_ovrd_c",
+      "description": "Internal use; do not map to BAS (default 0)",
+      "units": "",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 430,
+      "name": "abc_fw_rev_a",
+      "description": "Internal use; do not map to BAS",
+      "units": "",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 431,
+      "name": "sw_part_no_a",
+      "description": "Internal use; do not map to BAS",
+      "units": "",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 432,
+      "name": "abc_fw_beta_a",
+      "description": "Internal use; do not map to BAS",
+      "units": "",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 433,
+      "name": "abc_fw_rev_b",
+      "description": "Internal use; do not map to BAS",
+      "units": "",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 434,
+      "name": "sw_part_no_b",
+      "description": "Internal use; do not map to BAS",
+      "units": "",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 435,
+      "name": "abc_fw_beta_b",
+      "description": "Internal use; do not map to BAS",
+      "units": "",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 500,
+      "name": "zone_temp",
+      "description": "Zone temperature (sensor average or BAS override)",
+      "units": "°F",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 501,
+      "name": "zone_temp_adj_c",
+      "description": "Zone temperature calibration offset (default 0)",
+      "units": "°F",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 502,
+      "name": "zone_temp_ovrd_c",
+      "description": "BAS override of zone temperature (default 0)",
+      "units": "°F",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 503,
+      "name": "zone_hum",
+      "description": "Humidity value of the zone sensor",
+      "units": "%rh",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 504,
+      "name": "humidity_c",
+      "description": "BAS override of the space humidity value if desired (default 0)",
+      "units": "%rh",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 505,
+      "name": "co2_stat",
+      "description": "CO2 value",
+      "units": "ppm",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 506,
+      "name": "co2_cmd_c",
+      "description": "BAS-written CO2 value (default 0)",
+      "units": "ppm",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 507,
+      "name": "voc_stat",
+      "description": "VOC value",
+      "units": "ppm",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 508,
+      "name": "voc_cmd_c",
+      "description": "BAS-written VOC value (default 0)",
+      "units": "ppm",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 509,
+      "name": "occ_man_av_c",
+      "description": "Occupancy command (used when BV 504 = AV) (default 1)",
+      "units": "",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 510,
+      "name": "eff_occ_st",
+      "description": "Current occupancy status of the system",
+      "units": "",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 511,
+      "name": "occ_clg_setpt_c",
+      "description": "Occupied cooling set point",
+      "units": "°F",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 512,
+      "name": "occ_htg_setpt_c",
+      "description": "Occupied heating set point",
+      "units": "°F",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 513,
+      "name": "unocc_clg_setpt_c",
+      "description": "Unoccupied cooling set point",
+      "units": "°F",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 514,
+      "name": "unocc_htg_setpt_c",
+      "description": "Unoccupied heating set point",
+      "units": "°F",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 515,
+      "name": "standby_cool_setpt_c",
+      "description": "Standby cooling set point (default 76)",
+      "units": "°F",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 516,
+      "name": "standby_heat_setpt_c",
+      "description": "Standby heating set point (default 68)",
+      "units": "°F",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 517,
+      "name": "eff_clg_setpt_c",
+      "description": "Effective cooling set point",
+      "units": "°F",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 518,
+      "name": "eff_htg_setpt_c",
+      "description": "Effective heating set point",
+      "units": "°F",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 521,
+      "name": "setpt_diff_c",
+      "description": "Minimum temperature between the heating and cooling setpoints (default 2)",
+      "units": "°F",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 522,
+      "name": "setpt_span_c",
+      "description": "Space temperature set point span (default 5)",
+      "units": "°F",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 523,
+      "name": "temp_occ_time",
+      "description": "Amount of time left in temporary occupancy only while in Temp Occ",
+      "units": "m/sec",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 524,
+      "name": "occ_man_value",
+      "description": "Currently selected occupancy value",
+      "units": "",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 600,
+      "name": "econ_mode",
+      "description": "Currently active Economizer mode",
+      "units": "",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 601,
+      "name": "econ_damp_pos",
+      "description": "Current damper position determined by Economizer logic",
+      "units": "%",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 602,
+      "name": "atm_pres_c",
+      "description": "Atmospheric pressure from the BAS for enthalpy calculations (default 14.1)",
+      "units": "psi",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 603,
+      "name": "elev_feet_c",
+      "description": "Site elevation from the BAS for enthalpy calculations (default 1000)",
+      "units": "ft",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 604,
+      "name": "air_pres",
+      "description": "Current atmospheric pressure value being used for enthalpy calculations",
+      "units": "psi",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 605,
+      "name": "oat_adjust_c",
+      "description": "Calibration offset value for outdoor air temperature sensor (default 0)",
+      "units": "°F",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 606,
+      "name": "oat_override_c",
+      "description": "BAS value for outdoor air temperature (used when BV 609 = BAS) (default 0)",
+      "units": "°F",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 607,
+      "name": "oat_stat",
+      "description": "Current usable outdoor air temperature value",
+      "units": "°F",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 608,
+      "name": "oah_adjust_c",
+      "description": "Calibration offset value for outdoor air humidity sensor (default 0)",
+      "units": "%rh",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 609,
+      "name": "oah_override_c",
+      "description": "BAS value for outdoor air humidity (used when BV 611 = BAS) (default 0)",
+      "units": "%rh",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 610,
+      "name": "oah_stat",
+      "description": "Current usable outdoor air humidity value",
+      "units": "%rh",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 611,
+      "name": "out_enth",
+      "description": "Currently calculated outdoor air enthalpy value",
+      "units": "Btu/lb",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 612,
+      "name": "out_dew",
+      "description": "Currently calculated outdoor air dew point value",
+      "units": "°F",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 613,
+      "name": "rat_adjust_c",
+      "description": "Calibration offset value for return air temperature sensor (default 0)",
+      "units": "°F",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 614,
+      "name": "rat_override_c",
+      "description": "BAS value for return air temperature (used when BV 613 = BAS) (default 0)",
+      "units": "°F",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 615,
+      "name": "rat_stat",
+      "description": "Current usable return air temperature value",
+      "units": "°F",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 616,
+      "name": "rah_adjust_c",
+      "description": "Calibration offset value for return air humidity sensor (default 0)",
+      "units": "%rh",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 617,
+      "name": "rah_override_c",
+      "description": "BAS value for return air humidity (used when BV 615 = BAS) (default 0)",
+      "units": "%rh",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 618,
+      "name": "rah_stat",
+      "description": "Current usable return air humidity value",
+      "units": "%rh",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 619,
+      "name": "ret_enth",
+      "description": "Currently calculated return air enthalpy value",
+      "units": "Btu/lb",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 620,
+      "name": "ret_dew",
+      "description": "Currently calculated return air dew point value",
+      "units": "°F",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 630,
+      "name": "econ_av_c",
+      "description": "Economizer operating mode, numeric (default 5) (default 5)",
+      "units": "",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 631,
+      "name": "db_setpt_c",
+      "description": "Dry bulb set point for Economizer operation (default 63)",
+      "units": "°F",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 632,
+      "name": "db_limit_c",
+      "description": "Dry bulb limit for Economizer operation (default 75)",
+      "units": "°F",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 633,
+      "name": "db_diff_c",
+      "description": "Dry bulb differential for Economizer operation (default 2)",
+      "units": "°F",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 634,
+      "name": "enth_setpt_c",
+      "description": "Enthalpy set point for Economizer operation (default 24)",
+      "units": "Btu/lb",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 635,
+      "name": "enth_limit_c",
+      "description": "Enthalpy limit for Economizer operation (default 30)",
+      "units": "Btu/lb",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 636,
+      "name": "enth_diff_c",
+      "description": "Enthalpy differential for Economizer operation (default 2)",
+      "units": "Btu/lb",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 637,
+      "name": "ma_setpt_c",
+      "description": "Mixed air set point for Economizer operation (default 53)",
+      "units": "°F",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 638,
+      "name": "min_dmp_pos_c",
+      "description": "Minimum damper position for Economizer operation (default 30)",
+      "units": "%",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 639,
+      "name": "min_lat_lim_c",
+      "description": "Minimum leaving air temperature set point for Economizer operation (default 45)",
+      "units": "°F",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 640,
+      "name": "min_oat_clg_c",
+      "description": "Minimum outdoor air temperature for mechanical cooling operation (default 40)",
+      "units": "°F",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 641,
+      "name": "min_oat_vent_c",
+      "description": "Minimum outdoor temperature for ventilation operation (default 0)",
+      "units": "°F",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 642,
+      "name": "max_dcv_pos_c",
+      "description": "Maximum damper position for demand controlled ventilation (default 40)",
+      "units": "%",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 643,
+      "name": "low_dcv_val_c",
+      "description": "Lower DCV control value (at min/max damper position) (default 600)",
+      "units": "ppm",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 644,
+      "name": "high_dcv_val_c",
+      "description": "Upper DCV control value (at min/max damper position) (default 1200)",
+      "units": "ppm",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 645,
+      "name": "sam_time_c",
+      "description": "Outdoor air temperature sampling time for Economizer operation (default 60)",
+      "units": "seconds",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 646,
+      "name": "dmp_cool_c",
+      "description": "Minimum damper position allowed for mechanical cooling operation with the Economizer active (default 75)",
+      "units": "%",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 647,
+      "name": "comp_up_time_c",
+      "description": "Minimum time required for upstaging with Economizer operation (default 120)",
+      "units": "seconds",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 648,
+      "name": "comp_dn_time_c",
+      "description": "Maximum time required for upstaging with Economizer operation (default 120)",
+      "units": "seconds",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 649,
+      "name": "na_time_c",
+      "description": "Damper adjustment time during neutral air operation (default 60)",
+      "units": "seconds",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "BV",
+      "instance": 100,
+      "name": "fan_operation_c",
+      "description": "Selects either cycled or continuous operation of the fan (default Active)",
+      "units": "",
+      "access": "W",
+      "states": "Inactive=Cycled; Active=Continuous"
+    },
+    {
+      "type": "BV",
+      "instance": 101,
+      "name": "em_shutdown_c",
+      "description": "Network emergency shutdown command (default Inactive)",
+      "units": "",
+      "access": "W",
+      "states": "Inactive=Normal Operation; Active=Shutdown"
+    },
+    {
+      "type": "BV",
+      "instance": 102,
+      "name": "es_stat",
+      "description": "Emergency Shutdown status of System",
+      "units": "",
+      "access": "R",
+      "states": "Inactive=Normal; Active=Shutdown"
+    },
+    {
+      "type": "BV",
+      "instance": 103,
+      "name": "es_stat_a",
+      "description": "Emergency Shutdown status of ABC A",
+      "units": "",
+      "access": "R",
+      "states": "Inactive=Normal; Active=Shutdown"
+    },
+    {
+      "type": "BV",
+      "instance": 104,
+      "name": "es_stat_b",
+      "description": "Emergency Shutdown status of ABC B",
+      "units": "",
+      "access": "R",
+      "states": "Inactive=Normal; Active=Shutdown"
+    },
+    {
+      "type": "BV",
+      "instance": 105,
+      "name": "load_shed_c",
+      "description": "Issues a load shed command to the unit (default Inactive)",
+      "units": "",
+      "access": "W",
+      "states": "Inactive=Off; Active=On"
+    },
+    {
+      "type": "BV",
+      "instance": 106,
+      "name": "ls_stat_a",
+      "description": "Load Shed status of ABC A",
+      "units": "",
+      "access": "R",
+      "states": "Inactive=Normal; Active=Load Shed"
+    },
+    {
+      "type": "BV",
+      "instance": 107,
+      "name": "ls_stat_b",
+      "description": "Load Shed status of ABC B",
+      "units": "",
+      "access": "R",
+      "states": "Inactive=Normal; Active=Load Shed"
+    },
+    {
+      "type": "BV",
+      "instance": 108,
+      "name": "y1_dem",
+      "description": "Status of the Y1 demand calculated by the internal PID logic",
+      "units": "",
+      "access": "R",
+      "states": "Inactive=Off; Active=On"
+    },
+    {
+      "type": "BV",
+      "instance": 109,
+      "name": "y2_dem",
+      "description": "Status of the Y2 demand calculated by the internal PID logic",
+      "units": "",
+      "access": "R",
+      "states": "Inactive=Off; Active=On"
+    },
+    {
+      "type": "BV",
+      "instance": 110,
+      "name": "network_y1_c",
+      "description": "BAS Y1 call (default Inactive)",
+      "units": "",
+      "access": "W",
+      "states": "Inactive=Off; Active=On"
+    },
+    {
+      "type": "BV",
+      "instance": 111,
+      "name": "network_y2_c",
+      "description": "BAS Y2 call (default Inactive)",
+      "units": "",
+      "access": "W",
+      "states": "Inactive=Off; Active=On"
+    },
+    {
+      "type": "BV",
+      "instance": 112,
+      "name": "network_w_c",
+      "description": "BAS W call (default Inactive)",
+      "units": "",
+      "access": "W",
+      "states": "Inactive=Off; Active=On"
+    },
+    {
+      "type": "BV",
+      "instance": 113,
+      "name": "network_o_c",
+      "description": "BAS O call (default Inactive)",
+      "units": "",
+      "access": "W",
+      "states": "Inactive=Off; Active=On"
+    },
+    {
+      "type": "BV",
+      "instance": 114,
+      "name": "network_g_c",
+      "description": "BAS G call (default Inactive)",
+      "units": "",
+      "access": "W",
+      "states": "Inactive=Off; Active=On"
+    },
+    {
+      "type": "BV",
+      "instance": 115,
+      "name": "network_dh_c",
+      "description": "BAS DH call (default Inactive)",
+      "units": "",
+      "access": "W",
+      "states": "Inactive=Off; Active=On"
+    },
+    {
+      "type": "BV",
+      "instance": 116,
+      "name": "eh1_override_c",
+      "description": "Direct BAS control of the ABC A EH1 output (default Inactive)",
+      "units": "",
+      "access": "W",
+      "states": "Inactive=Off; Active=On"
+    },
+    {
+      "type": "BV",
+      "instance": 117,
+      "name": "eh2_override_c",
+      "description": "Direct BAS control of the ABC A EH2 output (default Inactive)",
+      "units": "",
+      "access": "W",
+      "states": "Inactive=Off; Active=On"
+    },
+    {
+      "type": "BV",
+      "instance": 118,
+      "name": "eh3_override_c",
+      "description": "Direct BAS control of the ABC B EH1 output (default Inactive)",
+      "units": "",
+      "access": "W",
+      "states": "Inactive=Off; Active=On"
+    },
+    {
+      "type": "BV",
+      "instance": 119,
+      "name": "eh4_override_c",
+      "description": "Direct BAS control of the ABC B EH2 output (default Inactive)",
+      "units": "",
+      "access": "W",
+      "states": "Inactive=Off; Active=On"
+    },
+    {
+      "type": "BV",
+      "instance": 120,
+      "name": "lead_lag_enable_c",
+      "description": "Compressor lead lag operation (default Active)",
+      "units": "",
+      "access": "W",
+      "states": "Inactive=Off; Active=On"
+    },
+    {
+      "type": "BV",
+      "instance": 121,
+      "name": "y1_cmd_stat",
+      "description": "Status of the ABC A Y1 call from the UPC",
+      "units": "",
+      "access": "R",
+      "states": "Inactive=Off; Active=On"
+    },
+    {
+      "type": "BV",
+      "instance": 122,
+      "name": "y2_cmd_stat",
+      "description": "Status of the ABC B Y1 call from the UPC",
+      "units": "",
+      "access": "R",
+      "states": "Inactive=Off; Active=On"
+    },
+    {
+      "type": "BV",
+      "instance": 123,
+      "name": "w_cmd_stat",
+      "description": "Status of the ABC W call from the UPC",
+      "units": "",
+      "access": "R",
+      "states": "Inactive=Off; Active=On"
+    },
+    {
+      "type": "BV",
+      "instance": 124,
+      "name": "o_cmd_stat",
+      "description": "Status of the ABC O call from the UPC",
+      "units": "",
+      "access": "R",
+      "states": "Inactive=Heating; Active=Cooling"
+    },
+    {
+      "type": "BV",
+      "instance": 125,
+      "name": "g_cmd_stat",
+      "description": "Status of the ABC G call from the UPC",
+      "units": "",
+      "access": "R",
+      "states": "Inactive=Off; Active=On"
+    },
+    {
+      "type": "BV",
+      "instance": 126,
+      "name": "dh_cmd_stat",
+      "description": "Status of the ABC DH call from the UPC",
+      "units": "",
+      "access": "R",
+      "states": "Inactive=Off; Active=On"
+    },
+    {
+      "type": "BV",
+      "instance": 127,
+      "name": "manual_ecm_c",
+      "description": "Internal use; do not map to BAS (default Inactive)",
+      "units": "",
+      "access": "W",
+      "states": "Inactive=Off; Active=On"
+    },
+    {
+      "type": "BV",
+      "instance": 128,
+      "name": "man_vs_pump_c",
+      "description": "Internal use; do not map to BAS (default Inactive)",
+      "units": "",
+      "access": "W",
+      "states": "Inactive=Off; Active=On"
+    },
+    {
+      "type": "BV",
+      "instance": 129,
+      "name": "man_damp_c",
+      "description": "Internal use; do not map to BAS (default Inactive)",
+      "units": "",
+      "access": "W",
+      "states": "Inactive=Off; Active=On"
+    },
+    {
+      "type": "BV",
+      "instance": 130,
+      "name": "alarm_reset_c",
+      "description": "Alarm reset: write On, then back to Off (default Inactive)",
+      "units": "",
+      "access": "W",
+      "states": "Inactive=Off; Active=On"
+    },
+    {
+      "type": "BV",
+      "instance": 131,
+      "name": "alarm_reset_stat",
+      "description": "Commanded status of the alarm reset command",
+      "units": "",
+      "access": "R",
+      "states": "Inactive=Off; Active=On"
+    },
+    {
+      "type": "BV",
+      "instance": 132,
+      "name": "abc_comm_flt_a",
+      "description": "Modbus link status between the ABC A and the UPC",
+      "units": "",
+      "access": "R",
+      "states": "Inactive=Normal Communication; Active=Communication Fault"
+    },
+    {
+      "type": "BV",
+      "instance": 133,
+      "name": "modbus_comm_a",
+      "description": "Modbus link status between the ABC A and the UPC",
+      "units": "",
+      "access": "R",
+      "states": "Inactive=Normal Communication; Active=Communication Fault"
+    },
+    {
+      "type": "BV",
+      "instance": 134,
+      "name": "abc_comm_flt_b",
+      "description": "Modbus link status between ABC B and the UPC",
+      "units": "",
+      "access": "R",
+      "states": "Inactive=Normal Communication; Active=Communication Fault"
+    },
+    {
+      "type": "BV",
+      "instance": 135,
+      "name": "modbus_comm_b",
+      "description": "Modbus link status between ABC B and the UPC",
+      "units": "",
+      "access": "R",
+      "states": "Inactive=Normal Communication; Active=Communication Fault"
+    },
+    {
+      "type": "BV",
+      "instance": 136,
+      "name": "fp1_fault_a",
+      "description": "Status of FP1 fault condition for circuit A",
+      "units": "",
+      "access": "R",
+      "states": "Inactive=Normal; Active=Fault"
+    },
+    {
+      "type": "BV",
+      "instance": 137,
+      "name": "fp1_fault_b",
+      "description": "Status of FP1 fault condition for circuit B",
+      "units": "",
+      "access": "R",
+      "states": "Inactive=Normal; Active=Fault"
+    },
+    {
+      "type": "BV",
+      "instance": 138,
+      "name": "filter_alm_reset_c",
+      "description": "Reset the dirty filter alarm after the filter has been changed (default Inactive)",
+      "units": "",
+      "access": "W",
+      "states": "Inactive=Off; Active=On"
+    },
+    {
+      "type": "BV",
+      "instance": 139,
+      "name": "dirty_filter_alarm",
+      "description": "Status of the dirty filter alarm",
+      "units": "",
+      "access": "R",
+      "states": "Inactive=Normal; Active=Change Filter"
+    },
+    {
+      "type": "BV",
+      "instance": 140,
+      "name": "cond_stat_a",
+      "description": "Status of the condensate input on ABC A",
+      "units": "",
+      "access": "R",
+      "states": "Inactive=Normal; Active=Alarm"
+    },
+    {
+      "type": "BV",
+      "instance": 141,
+      "name": "alarm_hdw_stat_a",
+      "description": "Status of the ABC A Alarm output",
+      "units": "",
+      "access": "R",
+      "states": "Inactive=Off; Active=On"
+    },
+    {
+      "type": "BV",
+      "instance": 142,
+      "name": "lock_hdw_stat_a",
+      "description": "Status of the ABC A Lockout output",
+      "units": "",
+      "access": "R",
+      "states": "Inactive=Normal; Active=Lockout"
+    },
+    {
+      "type": "BV",
+      "instance": 143,
+      "name": "lockout_stat_a",
+      "description": "Lockout status of the circuit A system",
+      "units": "",
+      "access": "R",
+      "states": "Inactive=Normal; Active=Alarm"
+    },
+    {
+      "type": "BV",
+      "instance": 144,
+      "name": "cond_stat_b",
+      "description": "Status of the condensate input on ABC B",
+      "units": "",
+      "access": "R",
+      "states": "Inactive=Normal; Active=Alarm"
+    },
+    {
+      "type": "BV",
+      "instance": 145,
+      "name": "alarm_hdw_stat_b",
+      "description": "Status of the ABC B Alarm output",
+      "units": "",
+      "access": "R",
+      "states": "Inactive=Off; Active=On"
+    },
+    {
+      "type": "BV",
+      "instance": 146,
+      "name": "lock_hdw_stat_b",
+      "description": "Status of the ABC B Lockout output",
+      "units": "",
+      "access": "R",
+      "states": "Inactive=Normal; Active=Lockout"
+    },
+    {
+      "type": "BV",
+      "instance": 147,
+      "name": "lockout_stat_b",
+      "description": "Lockout status of the circuit B system",
+      "units": "",
+      "access": "R",
+      "states": "Inactive=Normal; Active=Alarm"
+    },
+    {
+      "type": "BV",
+      "instance": 200,
+      "name": "comp_stat_a",
+      "description": "Status of the CC compressor output on ABC A",
+      "units": "",
+      "access": "R",
+      "states": "Inactive=Off; Active=On"
+    },
+    {
+      "type": "BV",
+      "instance": 201,
+      "name": "hi_comp_stat_a",
+      "description": "Status of the CC2 compressor output on ABC A",
+      "units": "",
+      "access": "R",
+      "states": "Inactive=Off; Active=On"
+    },
+    {
+      "type": "BV",
+      "instance": 202,
+      "name": "rev_vlv_stat_a",
+      "description": "Status of the reversing valve output on ABC A",
+      "units": "",
+      "access": "R",
+      "states": "Inactive=Heat; Active=Cool"
+    },
+    {
+      "type": "BV",
+      "instance": 203,
+      "name": "fan_stat_a",
+      "description": "Status of the Fan relay output on ABC A",
+      "units": "",
+      "access": "R",
+      "states": "Inactive=Off; Active=On"
+    },
+    {
+      "type": "BV",
+      "instance": 204,
+      "name": "eh1_stat_a",
+      "description": "Status of the EH1 output on ABC A",
+      "units": "",
+      "access": "R",
+      "states": "Inactive=Off; Active=On"
+    },
+    {
+      "type": "BV",
+      "instance": 205,
+      "name": "eh2_stat_a",
+      "description": "Status of the EH2 output on ABC A",
+      "units": "",
+      "access": "R",
+      "states": "Inactive=Off; Active=On"
+    },
+    {
+      "type": "BV",
+      "instance": 206,
+      "name": "acc1_stat_a",
+      "description": "Status of the ACC1 output on ABC A",
+      "units": "",
+      "access": "R",
+      "states": "Inactive=Off; Active=On"
+    },
+    {
+      "type": "BV",
+      "instance": 207,
+      "name": "comp_stat_b",
+      "description": "Status of the CC compressor output on ABC B",
+      "units": "",
+      "access": "R",
+      "states": "Inactive=Off; Active=On"
+    },
+    {
+      "type": "BV",
+      "instance": 208,
+      "name": "hi_comp_stat_b",
+      "description": "Status of the CC2 compressor output on ABC B",
+      "units": "",
+      "access": "R",
+      "states": "Inactive=Off; Active=On"
+    },
+    {
+      "type": "BV",
+      "instance": 209,
+      "name": "rev_vlv_stat_b",
+      "description": "Status of the reversing valve output on ABC B",
+      "units": "",
+      "access": "R",
+      "states": "Inactive=Heat; Active=Cool"
+    },
+    {
+      "type": "BV",
+      "instance": 210,
+      "name": "fan_stat_b",
+      "description": "Status of the Fan relay output on ABC B",
+      "units": "",
+      "access": "R",
+      "states": "Inactive=Off; Active=On"
+    },
+    {
+      "type": "BV",
+      "instance": 211,
+      "name": "eh1_stat_b",
+      "description": "Status of the EH1 output on ABC B",
+      "units": "",
+      "access": "R",
+      "states": "Inactive=Off; Active=On"
+    },
+    {
+      "type": "BV",
+      "instance": 212,
+      "name": "eh2_stat_b",
+      "description": "Status of the EH2 output on ABC B",
+      "units": "",
+      "access": "R",
+      "states": "Inactive=Off; Active=On"
+    },
+    {
+      "type": "BV",
+      "instance": 213,
+      "name": "acc1_stat_b",
+      "description": "Status of the ACC1 output on ABC B",
+      "units": "",
+      "access": "R",
+      "states": "Inactive=Off; Active=On"
+    },
+    {
+      "type": "BV",
+      "instance": 214,
+      "name": "fp1_lim_a",
+      "description": "FP1 limit temperature for ABC A",
+      "units": "",
+      "access": "R",
+      "states": "Inactive=15 Deg; Active=30 Deg"
+    },
+    {
+      "type": "BV",
+      "instance": 215,
+      "name": "fp2_lim_a",
+      "description": "FP2 limit temperature for ABC A",
+      "units": "",
+      "access": "R",
+      "states": "Inactive=15 Deg; Active=30 Deg"
+    },
+    {
+      "type": "BV",
+      "instance": 216,
+      "name": "rv_setup_a",
+      "description": "Reversing valve setup for ABC A",
+      "units": "",
+      "access": "R",
+      "states": "Inactive=Cooling; Active=Heating"
+    },
+    {
+      "type": "BV",
+      "instance": 217,
+      "name": "sw_2_4_a",
+      "description": "Position of SW2-4 on ABC A which configures the operation of ACC1",
+      "units": "",
+      "access": "R",
+      "states": "Inactive=Off; Active=On"
+    },
+    {
+      "type": "BV",
+      "instance": 218,
+      "name": "sw_2_5_a",
+      "description": "Position of SW2-5 on ABC A which configures the operation of ACC1",
+      "units": "",
+      "access": "R",
+      "states": "Inactive=Off; Active=On"
+    },
+    {
+      "type": "BV",
+      "instance": 219,
+      "name": "comp_cap_a",
+      "description": "Position of SW2-6 on ABC A",
+      "units": "",
+      "access": "R",
+      "states": "Inactive=Dual Capacity; Active=Single Capacity"
+    },
+    {
+      "type": "BV",
+      "instance": 220,
+      "name": "lockout_cfg_a",
+      "description": "Position of SW2-7 on ABC A",
+      "units": "",
+      "access": "R",
+      "states": "Inactive=Pulsed; Active=Continuous"
+    },
+    {
+      "type": "BV",
+      "instance": 221,
+      "name": "reheat_cfg_a",
+      "description": "Position of SW2-8 on ABC A",
+      "units": "",
+      "access": "R",
+      "states": "Inactive=Reheat; Active=Normal"
+    },
+    {
+      "type": "BV",
+      "instance": 222,
+      "name": "sw1_test_a",
+      "description": "Status of the SW1 test button on ABC A",
+      "units": "",
+      "access": "R",
+      "states": "Inactive=Off; Active=On"
+    },
+    {
+      "type": "BV",
+      "instance": 223,
+      "name": "fp1_lim_b",
+      "description": "FP1 limit temperature for ABC B",
+      "units": "",
+      "access": "R",
+      "states": "Inactive=15 Deg; Active=30 Deg"
+    },
+    {
+      "type": "BV",
+      "instance": 224,
+      "name": "fp2_lim_b",
+      "description": "FP2 limit temperature for ABC B",
+      "units": "",
+      "access": "R",
+      "states": "Inactive=15 Deg; Active=30 Deg"
+    },
+    {
+      "type": "BV",
+      "instance": 225,
+      "name": "rv_setup_b",
+      "description": "Reversing valve setup for ABC B",
+      "units": "",
+      "access": "R",
+      "states": "Inactive=Cooling; Active=Heating"
+    },
+    {
+      "type": "BV",
+      "instance": 226,
+      "name": "sw_2_4_b",
+      "description": "Position of SW2-4 on ABC B which configures the operation of ACC1",
+      "units": "",
+      "access": "R",
+      "states": "Inactive=Off; Active=On"
+    },
+    {
+      "type": "BV",
+      "instance": 227,
+      "name": "sw_2_5_b",
+      "description": "Position of SW2-5 on ABC B which configures the operation of ACC1",
+      "units": "",
+      "access": "R",
+      "states": "Inactive=Off; Active=On"
+    },
+    {
+      "type": "BV",
+      "instance": 228,
+      "name": "comp_cap_b",
+      "description": "Position of SW2-6 on ABC B",
+      "units": "",
+      "access": "R",
+      "states": "Inactive=Dual Capacity; Active=Single Capacity"
+    },
+    {
+      "type": "BV",
+      "instance": 229,
+      "name": "lockout_cfg_b",
+      "description": "Position of SW2-7 on ABC B",
+      "units": "",
+      "access": "R",
+      "states": "Inactive=Pulsed; Active=Continuous"
+    },
+    {
+      "type": "BV",
+      "instance": 230,
+      "name": "reheat_cfg_b",
+      "description": "Position of SW2-8 on ABC B",
+      "units": "",
+      "access": "R",
+      "states": "Inactive=Reheat; Active=Normal"
+    },
+    {
+      "type": "BV",
+      "instance": 231,
+      "name": "sw1_test_b",
+      "description": "Status of the SW1 test button on ABC B",
+      "units": "",
+      "access": "R",
+      "states": "Inactive=Off; Active=On"
+    },
+    {
+      "type": "BV",
+      "instance": 232,
+      "name": "y1_hdw_a",
+      "description": "Status of the physical Y1 input on ABC A",
+      "units": "",
+      "access": "R",
+      "states": "Inactive=Off; Active=On"
+    },
+    {
+      "type": "BV",
+      "instance": 233,
+      "name": "y2_hdw_a",
+      "description": "Status of the physical Y2 input on ABC A",
+      "units": "",
+      "access": "R",
+      "states": "Inactive=Off; Active=On"
+    },
+    {
+      "type": "BV",
+      "instance": 234,
+      "name": "w_hdw_a",
+      "description": "Status of the physical W input on ABC A",
+      "units": "",
+      "access": "R",
+      "states": "Inactive=Off; Active=On"
+    },
+    {
+      "type": "BV",
+      "instance": 235,
+      "name": "o_hdw_a",
+      "description": "Status of the physical O input on ABC A",
+      "units": "",
+      "access": "R",
+      "states": "Inactive=Off; Active=On"
+    },
+    {
+      "type": "BV",
+      "instance": 236,
+      "name": "g_hdw_a",
+      "description": "Status of the physical G input on ABC A",
+      "units": "",
+      "access": "R",
+      "states": "Inactive=Off; Active=On"
+    },
+    {
+      "type": "BV",
+      "instance": 237,
+      "name": "dh_hdw_a",
+      "description": "Status of the physical DH input on ABC A",
+      "units": "",
+      "access": "R",
+      "states": "Inactive=Off; Active=On"
+    },
+    {
+      "type": "BV",
+      "instance": 238,
+      "name": "hp_hdw_a",
+      "description": "Physical LP input on ABC A (as labelled in the source)",
+      "units": "",
+      "access": "R",
+      "states": "Inactive=Open; Active=Closed"
+    },
+    {
+      "type": "BV",
+      "instance": 239,
+      "name": "lp_hdw_a",
+      "description": "Physical HP input on ABC A (as labelled in the source)",
+      "units": "",
+      "access": "R",
+      "states": "Inactive=Open; Active=Closed"
+    },
+    {
+      "type": "BV",
+      "instance": 240,
+      "name": "ls_hdw_a",
+      "description": "Status of the physical LS input on ABC A",
+      "units": "",
+      "access": "R",
+      "states": "Inactive=Normal; Active=LoadShed"
+    },
+    {
+      "type": "BV",
+      "instance": 241,
+      "name": "es_hdw_a",
+      "description": "Status of the physical ES input on ABC A",
+      "units": "",
+      "access": "R",
+      "states": "Inactive=Normal; Active=Shutdown"
+    },
+    {
+      "type": "BV",
+      "instance": 242,
+      "name": "abc_test_mode_a",
+      "description": "Current status of the test mode for ABC A",
+      "units": "",
+      "access": "R",
+      "states": "Inactive=Off; Active=On"
+    },
+    {
+      "type": "BV",
+      "instance": 243,
+      "name": "y1_hdw_b",
+      "description": "Status of the physical Y1 input on ABC B",
+      "units": "",
+      "access": "R",
+      "states": "Inactive=Off; Active=On"
+    },
+    {
+      "type": "BV",
+      "instance": 244,
+      "name": "y2_hdw_b",
+      "description": "Status of the physical Y2 input on ABC B",
+      "units": "",
+      "access": "R",
+      "states": "Inactive=Off; Active=On"
+    },
+    {
+      "type": "BV",
+      "instance": 245,
+      "name": "w_hdw_b",
+      "description": "Status of the physical W input on ABC B",
+      "units": "",
+      "access": "R",
+      "states": "Inactive=Off; Active=On"
+    },
+    {
+      "type": "BV",
+      "instance": 246,
+      "name": "o_hdw_b",
+      "description": "Status of the physical O input on ABC B",
+      "units": "",
+      "access": "R",
+      "states": "Inactive=Off; Active=On"
+    },
+    {
+      "type": "BV",
+      "instance": 247,
+      "name": "g_hdw_b",
+      "description": "Status of the physical G input on ABC B",
+      "units": "",
+      "access": "R",
+      "states": "Inactive=Off; Active=On"
+    },
+    {
+      "type": "BV",
+      "instance": 248,
+      "name": "dh_hdw_b",
+      "description": "Status of the physical DH input on ABC B",
+      "units": "",
+      "access": "R",
+      "states": "Inactive=Off; Active=On"
+    },
+    {
+      "type": "BV",
+      "instance": 249,
+      "name": "hp_hdw_b",
+      "description": "Physical LP input on ABC B (as labelled in the source)",
+      "units": "",
+      "access": "R",
+      "states": "Inactive=Open; Active=Closed"
+    },
+    {
+      "type": "BV",
+      "instance": 250,
+      "name": "lp_hdw_b",
+      "description": "Physical HP input on ABC B (as labelled in the source)",
+      "units": "",
+      "access": "R",
+      "states": "Inactive=Open; Active=Closed"
+    },
+    {
+      "type": "BV",
+      "instance": 251,
+      "name": "ls_hdw_b",
+      "description": "Status of the physical LS input on ABC B",
+      "units": "",
+      "access": "R",
+      "states": "Inactive=Normal; Active=LoadShed"
+    },
+    {
+      "type": "BV",
+      "instance": 252,
+      "name": "es_hdw_b",
+      "description": "Status of the physical ES input on ABC B",
+      "units": "",
+      "access": "R",
+      "states": "Inactive=Normal; Active=Shutdown"
+    },
+    {
+      "type": "BV",
+      "instance": 253,
+      "name": "abc_test_mode_b",
+      "description": "Current status of the test mode for ABC B",
+      "units": "",
+      "access": "R",
+      "states": "Inactive=Off; Active=On"
+    },
+    {
+      "type": "BV",
+      "instance": 300,
+      "name": "ddc_enable_c",
+      "description": "Internal use; do not map to BAS (default Active)",
+      "units": "",
+      "access": "W",
+      "states": "Inactive=T-Stat; Active=UPC"
+    },
+    {
+      "type": "BV",
+      "instance": 301,
+      "name": "sys_comm",
+      "description": "Status of valid system communications with ABC controls",
+      "units": "",
+      "access": "R",
+      "states": "Inactive=Off; Active=On"
+    },
+    {
+      "type": "BV",
+      "instance": 302,
+      "name": "eh1_mode_c",
+      "description": "Operation for ABC A EH1 output (default Inactive)",
+      "units": "",
+      "access": "W",
+      "states": "Inactive=Aux_Heat; Active=Network_EH"
+    },
+    {
+      "type": "BV",
+      "instance": 303,
+      "name": "eh2_mode_c",
+      "description": "Operation for ABC A EH2 output (default Inactive)",
+      "units": "",
+      "access": "W",
+      "states": "Inactive=Aux_Heat; Active=Network_EH"
+    },
+    {
+      "type": "BV",
+      "instance": 304,
+      "name": "eh3_mode_c",
+      "description": "Operation for ABC B EH1 output (default Inactive)",
+      "units": "",
+      "access": "W",
+      "states": "Inactive=Aux_Heat; Active=Network_EH"
+    },
+    {
+      "type": "BV",
+      "instance": 305,
+      "name": "eh4_mode_c",
+      "description": "Operation for ABC B EH2 output (default Inactive)",
+      "units": "",
+      "access": "W",
+      "states": "Inactive=Aux_Heat; Active=Network_EH"
+    },
+    {
+      "type": "BV",
+      "instance": 306,
+      "name": "brine_select_c",
+      "description": "Water or anti-freeze, for performance calculations (default Inactive)",
+      "units": "",
+      "access": "W",
+      "states": "Inactive=Water; Active=Anti-Freeze"
+    },
+    {
+      "type": "BV",
+      "instance": 307,
+      "name": "dh_enable_c",
+      "description": "Enables/disables dehumidification (default Inactive)",
+      "units": "",
+      "access": "W",
+      "states": "Inactive=DH Disabled; Active=DH Enabled"
+    },
+    {
+      "type": "BV",
+      "instance": 308,
+      "name": "dhw_enable_a_c",
+      "description": "Enables/disables DHW operation on circuit A (default Inactive)",
+      "units": "",
+      "access": "W",
+      "states": "Inactive=Off; Active=On"
+    },
+    {
+      "type": "BV",
+      "instance": 309,
+      "name": "dhw_enable_b_c",
+      "description": "Enables/disables DHW operation on circuit B (default Inactive)",
+      "units": "",
+      "access": "W",
+      "states": "Inactive=Off; Active=On"
+    },
+    {
+      "type": "BV",
+      "instance": 310,
+      "name": "sw2_1_a_c",
+      "description": "Selects the position of SW2-1 on ABC A for override (default Active)",
+      "units": "",
+      "access": "W",
+      "states": "Inactive=15 Deg; Active=30 Deg"
+    },
+    {
+      "type": "BV",
+      "instance": 311,
+      "name": "sw2_2_a_c",
+      "description": "Selects the position of SW2-2 on ABC A for override (default Active)",
+      "units": "",
+      "access": "W",
+      "states": "Inactive=15 Deg; Active=30 Deg"
+    },
+    {
+      "type": "BV",
+      "instance": 312,
+      "name": "sw2_3_a_c",
+      "description": "Selects the position of SW2-3 on ABC A for override (default Active)",
+      "units": "",
+      "access": "W",
+      "states": "Inactive=Cooling; Active=Heating"
+    },
+    {
+      "type": "BV",
+      "instance": 313,
+      "name": "sw2_4_a_c",
+      "description": "Selects the position of SW2-4 on ABC A for override (default Active)",
+      "units": "",
+      "access": "W",
+      "states": "Inactive=Off; Active=On"
+    },
+    {
+      "type": "BV",
+      "instance": 314,
+      "name": "sw2_5_a_c",
+      "description": "Selects the position of SW2-5 on ABC A for override (default Active)",
+      "units": "",
+      "access": "W",
+      "states": "Inactive=Off; Active=On"
+    },
+    {
+      "type": "BV",
+      "instance": 315,
+      "name": "sw2_6_a_c",
+      "description": "Selects the position of SW2-6 on ABC A for override (default Active)",
+      "units": "",
+      "access": "W",
+      "states": "Inactive=Dual Capacity; Active=Single Capacity"
+    },
+    {
+      "type": "BV",
+      "instance": 316,
+      "name": "sw2_7_a_c",
+      "description": "Selects the position of SW2-7 on ABC A for override (default Active)",
+      "units": "",
+      "access": "W",
+      "states": "Inactive=Pulsed; Active=Continuous"
+    },
+    {
+      "type": "BV",
+      "instance": 317,
+      "name": "sw2-8_a_c",
+      "description": "Selects the position of SW2-8 on ABC A for override (default Active)",
+      "units": "",
+      "access": "W",
+      "states": "Inactive=Reheat; Active=Normal"
+    },
+    {
+      "type": "BV",
+      "instance": 318,
+      "name": "dip_sw_ovrd_ena_a_c",
+      "description": "Enables BAS dip switch overrides on ABC A (default Inactive)",
+      "units": "",
+      "access": "W",
+      "states": "Inactive=Off; Active=On"
+    },
+    {
+      "type": "BV",
+      "instance": 319,
+      "name": "sw2_1_b_c",
+      "description": "Selects the position of SW2-1 on ABC B for override (default Active)",
+      "units": "",
+      "access": "W",
+      "states": "Inactive=15 Deg; Active=30 Deg"
+    },
+    {
+      "type": "BV",
+      "instance": 320,
+      "name": "sw2_2_b_c",
+      "description": "Selects the position of SW2-2 on ABC B for override (default Active)",
+      "units": "",
+      "access": "W",
+      "states": "Inactive=15 Deg; Active=30 Deg"
+    },
+    {
+      "type": "BV",
+      "instance": 321,
+      "name": "sw2_3_b_c",
+      "description": "Selects the position of SW2-3 on ABC B for override (default Active)",
+      "units": "",
+      "access": "W",
+      "states": "Inactive=Cooling; Active=Heating"
+    },
+    {
+      "type": "BV",
+      "instance": 322,
+      "name": "sw2_4_b_c",
+      "description": "Selects the position of SW2-4 on ABC B for override (default Active)",
+      "units": "",
+      "access": "W",
+      "states": "Inactive=Off; Active=On"
+    },
+    {
+      "type": "BV",
+      "instance": 323,
+      "name": "sw2_5_b_c",
+      "description": "Selects the position of SW2-5 on ABC B for override (default Inactive)",
+      "units": "",
+      "access": "W",
+      "states": "Inactive=Off; Active=On"
+    },
+    {
+      "type": "BV",
+      "instance": 324,
+      "name": "sw2_6_b_c",
+      "description": "Selects the position of SW2-6 on ABC B for override (default Inactive)",
+      "units": "",
+      "access": "W",
+      "states": "Inactive=Dual Capacity; Active=Single Capacity"
+    },
+    {
+      "type": "BV",
+      "instance": 325,
+      "name": "sw2_7_b_c",
+      "description": "Selects the position of SW2-7 on ABC B for override (default Active)",
+      "units": "",
+      "access": "W",
+      "states": "Inactive=Pulsed; Active=Continuous"
+    },
+    {
+      "type": "BV",
+      "instance": 326,
+      "name": "sw2-8_b_c",
+      "description": "Selects the position of SW2-8 on ABC B for override (default Active)",
+      "units": "",
+      "access": "W",
+      "states": "Inactive=Reheat; Active=Normal"
+    },
+    {
+      "type": "BV",
+      "instance": 327,
+      "name": "dip_sw_ovrd_ena_b_c",
+      "description": "Enables BAS dip switch overrides on ABC B (default Inactive)",
+      "units": "",
+      "access": "W",
+      "states": "Inactive=Off; Active=On"
+    },
+    {
+      "type": "BV",
+      "instance": 330,
+      "name": "set_blwr_addr_c",
+      "description": "Internal use; do not map to BAS (default Inactive)",
+      "units": "",
+      "access": "W",
+      "states": "Inactive=Off; Active=On"
+    },
+    {
+      "type": "BV",
+      "instance": 331,
+      "name": "clr_blwr_addr_c",
+      "description": "Internal use; do not map to BAS (default Inactive)",
+      "units": "",
+      "access": "W",
+      "states": "Inactive=Off; Active=On"
+    },
+    {
+      "type": "BV",
+      "instance": 400,
+      "name": "test_mode_ena_c",
+      "description": "Internal use; do not map to BAS (default Inactive)",
+      "units": "",
+      "access": "W",
+      "states": "Inactive=Off; Active=On"
+    },
+    {
+      "type": "BV",
+      "instance": 401,
+      "name": "fact_test_ena_c",
+      "description": "Internal use; do not map to BAS (default Inactive)",
+      "units": "",
+      "access": "W",
+      "states": "Inactive=Off; Active=On"
+    },
+    {
+      "type": "BV",
+      "instance": 402,
+      "name": "clear_faults_c",
+      "description": "Internal use; do not map to BAS (default Inactive)",
+      "units": "",
+      "access": "W",
+      "states": "Inactive=Off; Active=On"
+    },
+    {
+      "type": "BV",
+      "instance": 403,
+      "name": "dev_enable_c",
+      "description": "Add communicating devices to the Aurora Control Boards (default Inactive)",
+      "units": "",
+      "access": "W",
+      "states": "Inactive=Off; Active=On"
+    },
+    {
+      "type": "BV",
+      "instance": 406,
+      "name": "axb_enable_a_c",
+      "description": "Internal use; do not map to BAS (default Active)",
+      "units": "",
+      "access": "W",
+      "states": "Inactive=Off; Active=On"
+    },
+    {
+      "type": "BV",
+      "instance": 407,
+      "name": "axb_enable_b_c",
+      "description": "Used along with BV:403 to add the AXB to ABC B (default Active)",
+      "units": "",
+      "access": "W",
+      "states": "Inactive=No AXB; Active=AXB Present"
+    },
+    {
+      "type": "BV",
+      "instance": 500,
+      "name": "temp_selector_c",
+      "description": "Selects between wall sensor and BAS for space temperature value (default Inactive)",
+      "units": "",
+      "access": "W",
+      "states": "Inactive=Sensor; Active=BAS"
+    },
+    {
+      "type": "BV",
+      "instance": 501,
+      "name": "valid_sensor",
+      "description": "Current status of having a valid space temperature value",
+      "units": "",
+      "access": "R",
+      "states": "Inactive=Off; Active=On"
+    },
+    {
+      "type": "BV",
+      "instance": 502,
+      "name": "schedule_select_c",
+      "description": "Selects between the internal or external schedule (default Active)",
+      "units": "",
+      "access": "W",
+      "states": "Inactive=Internal; Active=External"
+    },
+    {
+      "type": "BV",
+      "instance": 504,
+      "name": "occ_cmd_select_c",
+      "description": "Occupancy command selection between AV:509 & MSV:500 (default Inactive)",
+      "units": "",
+      "access": "W",
+      "states": "Inactive=MSV; Active=AV"
+    },
+    {
+      "type": "BV",
+      "instance": 505,
+      "name": "occ_sensor_enable_c",
+      "description": "Enables or disables occupancy sensor connected to ABC O input (default Inactive)",
+      "units": "",
+      "access": "W",
+      "states": "Inactive=Disabled; Active=Enabled"
+    },
+    {
+      "type": "BV",
+      "instance": 506,
+      "name": "occ_man_cmd_bv_c",
+      "description": "BAS occupancy signal (default Inactive)",
+      "units": "",
+      "access": "W",
+      "states": "Inactive=Off; Active=On"
+    },
+    {
+      "type": "BV",
+      "instance": 507,
+      "name": "temp_occ_c",
+      "description": "Enables or disables temporary occupancy at zone sensors (default Active)",
+      "units": "",
+      "access": "W",
+      "states": "Inactive=Enable; Active=Disable"
+    },
+    {
+      "type": "BV",
+      "instance": 508,
+      "name": "temp_occ_stat",
+      "description": "Temporary occupancy status",
+      "units": "",
+      "access": "R",
+      "states": "Inactive=Normal; Active=Temp Occ"
+    },
+    {
+      "type": "BV",
+      "instance": 509,
+      "name": "not_unoccupied",
+      "description": "Internal use; do not map to BAS",
+      "units": "",
+      "access": "R",
+      "states": "Inactive=Off; Active=On"
+    },
+    {
+      "type": "BV",
+      "instance": 510,
+      "name": "fan_occupied",
+      "description": "Internal use; do not map to BAS",
+      "units": "",
+      "access": "R",
+      "states": "Inactive=Off; Active=On"
+    },
+    {
+      "type": "BV",
+      "instance": 550,
+      "name": "archive_now_c",
+      "description": "Forces UPC to Archive the current system settings and database values (default Inactive)",
+      "units": "",
+      "access": "W",
+      "states": "Inactive=No; Active=Yes"
+    },
+    {
+      "type": "BV",
+      "instance": 600,
+      "name": "econ_on_c",
+      "description": "Economizer available, from the BAS (slave mode) (default Inactive)",
+      "units": "",
+      "access": "W",
+      "states": "Inactive=Off; Active=On"
+    },
+    {
+      "type": "BV",
+      "instance": 601,
+      "name": "econ_avail",
+      "description": "Current availability of Economizer for free cooling",
+      "units": "",
+      "access": "R",
+      "states": "Inactive=Not Avail; Active=Available"
+    },
+    {
+      "type": "BV",
+      "instance": 602,
+      "name": "lvt_status",
+      "description": "The low outdoor temperature ventilation logic is active",
+      "units": "",
+      "access": "R",
+      "states": "Inactive=Inactive; Active=Active"
+    },
+    {
+      "type": "BV",
+      "instance": 603,
+      "name": "dcv_status",
+      "description": "Demand controlled ventilation logic is active",
+      "units": "",
+      "access": "R",
+      "states": "Inactive=Inactive; Active=Active"
+    },
+    {
+      "type": "BV",
+      "instance": 604,
+      "name": "econ_stat",
+      "description": "Economizer operation is active",
+      "units": "",
+      "access": "R",
+      "states": "Inactive=Off; Active=On"
+    },
+    {
+      "type": "BV",
+      "instance": 605,
+      "name": "low_lat",
+      "description": "Low LAT logic is active",
+      "units": "",
+      "access": "R",
+      "states": "Inactive=Off; Active=On"
+    },
+    {
+      "type": "BV",
+      "instance": 606,
+      "name": "y1_demand",
+      "description": "Economizer logic is passing on a Y1 compressor demand",
+      "units": "",
+      "access": "R",
+      "states": "Inactive=Off; Active=On"
+    },
+    {
+      "type": "BV",
+      "instance": 607,
+      "name": "y2_demand",
+      "description": "Economizer logic is passing on a Y2 compressor demand",
+      "units": "",
+      "access": "R",
+      "states": "Inactive=Off; Active=On"
+    },
+    {
+      "type": "BV",
+      "instance": 608,
+      "name": "pres_select_c",
+      "description": "Selects between atmospheric pressure and elevation for enthalpy calculations (default Inactive)",
+      "units": "",
+      "access": "W",
+      "states": "Inactive=Pressure; Active=Elevation"
+    },
+    {
+      "type": "BV",
+      "instance": 609,
+      "name": "oat_select_c",
+      "description": "Selection value for OAT source (default Inactive)",
+      "units": "",
+      "access": "W",
+      "states": "Inactive=Sensor; Active=BAS"
+    },
+    {
+      "type": "BV",
+      "instance": 610,
+      "name": "oat_valid",
+      "description": "A valid OAT value is present",
+      "units": "",
+      "access": "R",
+      "states": "Inactive=Off; Active=On"
+    },
+    {
+      "type": "BV",
+      "instance": 611,
+      "name": "oah_select_c",
+      "description": "Selection value for OAH source (default Inactive)",
+      "units": "",
+      "access": "W",
+      "states": "Inactive=Sensor; Active=BAS"
+    },
+    {
+      "type": "BV",
+      "instance": 612,
+      "name": "oah_valid",
+      "description": "A valid OAH value is present",
+      "units": "",
+      "access": "R",
+      "states": "Inactive=Off; Active=On"
+    },
+    {
+      "type": "BV",
+      "instance": 613,
+      "name": "rat_select_c",
+      "description": "Selection value for RAT source (default Inactive)",
+      "units": "",
+      "access": "W",
+      "states": "Inactive=Sensor; Active=BAS"
+    },
+    {
+      "type": "BV",
+      "instance": 614,
+      "name": "rat_valid",
+      "description": "A valid RAT value is present",
+      "units": "",
+      "access": "R",
+      "states": "Inactive=Off; Active=On"
+    },
+    {
+      "type": "BV",
+      "instance": 615,
+      "name": "rah_select_c",
+      "description": "Selection value for RAH source (default Inactive)",
+      "units": "",
+      "access": "W",
+      "states": "Inactive=Sensor; Active=BAS"
+    },
+    {
+      "type": "BV",
+      "instance": 616,
+      "name": "rah_valid",
+      "description": "A valid RAH value is present",
+      "units": "",
+      "access": "R",
+      "states": "Inactive=Off; Active=On"
+    },
+    {
+      "type": "BV",
+      "instance": 620,
+      "name": "low_lat_pos_c",
+      "description": "Selects the minimum damper position for operation with low LAT conditions (default Active)",
+      "units": "",
+      "access": "W",
+      "states": "Inactive=Min Position; Active=Closed"
+    },
+    {
+      "type": "BV",
+      "instance": 621,
+      "name": "no_dem_econ_c",
+      "description": "Selects operation of the Economizer with no heating or cooling demand present (default Active)",
+      "units": "",
+      "access": "W",
+      "states": "Inactive=Min Position; Active=Neutral Air"
+    },
+    {
+      "type": "BV",
+      "instance": 622,
+      "name": "dem_ctrl_vent_c",
+      "description": "Enables or disables Demand Controlled Ventilation (default Inactive)",
+      "units": "",
+      "access": "W",
+      "states": "Inactive=Disabled; Active=Enabled"
+    },
+    {
+      "type": "BV",
+      "instance": 623,
+      "name": "dcv_variable_c",
+      "description": "Selects the control variable for Demand Controlled Ventilation (default Inactive)",
+      "units": "",
+      "access": "W",
+      "states": "Inactive=CO2; Active=VOC"
+    },
+    {
+      "type": "MV",
+      "instance": 100,
+      "name": "mode_msv",
+      "description": "Operating mode of the unit",
+      "units": "",
+      "access": "R",
+      "states": "1=Standby; 2=Fan Only; 3=Cool Stage 1; 4=Cool Stage 2; 5=Hot Gas Reheat; 6=Heat Stage 1; 7=Heat Stage 2; 8=Emergency Heat; 9=Auxiliary Heat; 10=Emergency Shutdown; 11=Load Shed; 12=ABC A Lockout; 13=Demand Ventilation; 14=Economizer Mode; 15=ABC B Lockout; 16=Full Cool W/Economizer; 17=Low LAT Mode; 18=1/2 Capacity W/Lockout; 19=Full Lockout Condition; 20=Cool 1 W/Economizer"
+    },
+    {
+      "type": "MV",
+      "instance": 300,
+      "name": "clg_cfm_offset_msv_c",
+      "description": "Dehumidification operation for ECM blower (default 4)",
+      "units": "",
+      "access": "W",
+      "states": "1=Htg CFM = Clg CFM; 2=-5% CFM Clg; 3=-10% CFM Clg; 4=-15% CFM Clg; 5=+5% CFM Clg"
+    },
+    {
+      "type": "MV",
+      "instance": 301,
+      "name": "phase_select_c",
+      "description": "Selects the supply power phase (default 1)",
+      "units": "",
+      "access": "W",
+      "states": "1=Single Phase; 2=Three Phase"
+    },
+    {
+      "type": "MV",
+      "instance": 302,
+      "name": "flow_meter_a_msv_c",
+      "description": "Flow meter option for circuit A (default 6)",
+      "units": "",
+      "access": "W",
+      "states": "1=None; 2=3/4 Inch; 3=1 inch; 4=2 inch; 5=2 1/2 Inch; 6=1 1/4 Inch"
+    },
+    {
+      "type": "MV",
+      "instance": 303,
+      "name": "flow_meter_b_msv_c",
+      "description": "Flow meter option for circuit B (default 6)",
+      "units": "",
+      "access": "W",
+      "states": "1=None; 2=3/4 Inch; 3=1 inch; 4=2 inch; 5=2 1/2 Inch; 6=1 1/4 Inch"
+    },
+    {
+      "type": "MV",
+      "instance": 500,
+      "name": "occ_man_msv_c",
+      "description": "System occupancy status (default 1)",
+      "units": "",
+      "access": "W",
+      "states": "1=Occupied; 2=Unoccupied; 3=Temp Occ; 4=Standby"
+    },
+    {
+      "type": "MV",
+      "instance": 501,
+      "name": "eff_occ_msv",
+      "description": "Current system occupancy status",
+      "units": "",
+      "access": "R",
+      "states": "1=Occupied; 2=Unoccupied; 3=Temp Occ; 4=Standby; 5=Occupancy Sensor"
+    },
+    {
+      "type": "MV",
+      "instance": 502,
+      "name": "lockout_enum_msv",
+      "description": "Internal use; do not map to BAS",
+      "units": "",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "MV",
+      "instance": 600,
+      "name": "econ_msv_c",
+      "description": "Economizer operating mode using multi state value (default 5)",
+      "units": "",
+      "access": "W",
+      "states": "1=Econ Off; 2=Fixed Temp; 3=Diff Temp; 4=Fixed Enthalpy; 5=Diff Enthalpy; 6=Slave Mode"
+    }
+  ]
+}
