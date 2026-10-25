@@ -1,0 +1,859 @@
+{
+ "manufacturer": "Systemair",
+ "manufacturer_slug": "systemair",
+ "model": "SYS GW IMS BAC(A) VRF BACnet gateway",
+ "model_slug": "sys-gw-ims-bac-a",
+ "aliases": [
+  "SYS GW IMS BAC(A)",
+  "SYS GW IMS BAC",
+  "IMMP-BAC(A)",
+  "IMMP-BAC",
+  "Systemair VRF BACnet gateway",
+  "SYS GW gateway"
+ ],
+ "equipment_type": "VRF BACnet IP gateway",
+ "applies_to": "Systemair SYSVRF indoor units, outdoor units and high-temperature hydro modules (HTHM) on the outdoor unit X/Y/E bus.",
+ "summary": "The SYS GW IMS BAC(A) gateway (IMMP-BAC(A) in the manual) links Systemair VRF systems to a BMS over BACnet IP. It has four RS-485 ports to the outdoor units' X/Y/E bus (up to 64 indoor units per port, 384 indoor and outdoor units in total) and one Ethernet port. Each indoor unit, outdoor unit and HTHM appears as its own BACnet device with fixed object instances, so one template per unit type covers the site. Indoor units take on/off, mode, fan speed, setpoint and swing commands; outdoor units are monitoring only.",
+ "bacnet_transport": [
+  "BACnet IP"
+ ],
+ "firmware": null,
+ "default_device_instance": null,
+ "access_inferred": false,
+ "notes": [
+  "Device instance per unit: indoor = network number × 10000 + port × 1000 + indoor address (0-63); outdoor = network number × 10000 + port × 1000 + 100 + outdoor address (0-31). Port 0-3; port 0 is the RS-485 port next to the Ethernet port. The manual gives no separate rule for HTHM units (AI 11 lists HTHM as indoor unit type 17).",
+  "The list holds three object sets: indoor unit devices, outdoor unit devices and HTHM devices. Instances repeat between indoor and outdoor devices (AI 1, AI 7-14, BI 2 and BV 1 mean different things).",
+  "Error code values (indoor AI 7, outdoor AI 8, HTHM AV 63): 0 = no error; then blocks of 20 per letter, 1-20 = A0-AF, AH, AL, AP, AU; 21-40 = b; 41-60 = C; 61-80 = E; 81-100 = F; 101-120 = H; 121-140 = L; 141-160 = J; 161-180 = n; 181-200 = P; 201-220 = r; 221-240 = t; 241-260 = U. The unit's service manual gives the meaning.",
+  "The manual's HTHM table prints AV 70 (EXV 1) twice; it is listed once here.",
+  "Not every indoor model supports every object; cooling-only systems do not support auto or heat modes."
+ ],
+ "source": {
+  "title": "Operation and Installation Manual - IMMP-BAC(A) Manual",
+  "doc_number": null,
+  "revision_date": null,
+  "url": "https://stepimassets.blob.core.windows.net/dsassetsprod/IOM_BACNET_GATEWAY_GB.PDF"
+ },
+ "integration": {
+  "summary": "Wire each RS-485 port to an outdoor unit's X/Y/E bus, set the gateway's IP address and a unique BACnet network number on its web page, restart it, then discover the per-unit BACnet devices. Map each indoor unit's on/off, mode, fan speed and setpoint commands plus room temperature and alarm. Outdoor unit devices are for monitoring; HTHM devices have their own heating and water-heating on/off commands and setpoints (BV 90/91, AV 50/51).",
+  "minimum_points": [
+   {
+    "ref": "BV 1",
+    "name": "On/Off Setting",
+    "why": "Start/stop indoor unit"
+   },
+   {
+    "ref": "MV 1",
+    "name": "Mode Setting",
+    "why": "Mode command (3 = cool, 4 = heat, 5 = auto)"
+   },
+   {
+    "ref": "AV 1",
+    "name": "Temperature Setting",
+    "why": "Setpoint command, 10-30 °C"
+   },
+   {
+    "ref": "MV 2",
+    "name": "Fan Speed Setting",
+    "why": "Fan speed command (8 = auto)"
+   },
+   {
+    "ref": "AI 1",
+    "name": "Room Temperature",
+    "why": "Indoor unit room temperature"
+   },
+   {
+    "ref": "BI 2",
+    "name": "Alarm Indication",
+    "why": "Indoor unit has an error code"
+   }
+  ],
+  "enable": "No enable point is documented. Writing BV 1 on starts the indoor unit with its last-used mode, fan speed and setpoint; if the unit was off when the gateway first came online it defaults to cooling at 24 °C, low fan. Locks (BV 4, BV 5, MV 3, MV 5) restrict local changes.",
+  "heartbeat": null,
+  "remote_sensors": null,
+  "setup": [
+   "Factory IP address 192.168.1.8; set the IP, BACnet network number, date and admin password from a web browser (default admin login is in the manual).",
+   "BACnet network number 2-254: each gateway needs a different one, not used by any other device; restart after changing it.",
+   "Device instance = network number × 10000 + port × 1000 + unit address (+ 100 for outdoor units).",
+   "The gateway must be on the same IP subnet as the BMS head end.",
+   "Power is 24 VAC; the gateway clips onto the supplied mounting rail.",
+   "The PICS page ticks only ISO 8802-3 (10BASE-T) as the data link, but the manual describes the Ethernet port as connecting to a BACnet/IP network."
+  ],
+  "gotchas": [
+   "Space commands at least 200 ms apart; commands sent faster can be lost.",
+   "Instances are not unique across unit types: indoor and outdoor devices reuse AI 1, AI 7-14, BI 2 and BV 1.",
+   "Fan speed value 9 (off) is status only; it cannot be written.",
+   "In auto mode the cooling setpoint (AV 2) must be at or above the heating setpoint (AV 3), or the gateway may change it to match.",
+   "Outdoor BV 1 Emergency Stop is read only.",
+   "All temperatures are in °C."
+  ]
+ },
+ "points": [
+  {
+   "type": "AI",
+   "instance": 1,
+   "name": "Room Temperature",
+   "description": "[Indoor unit] Room temperature",
+   "units": "°C",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "AI",
+   "instance": 7,
+   "name": "Malfunction Code",
+   "description": "[Indoor unit] Error code number",
+   "units": "",
+   "access": "R",
+   "states": "0=No error; 1-260=error code, see notes"
+  },
+  {
+   "type": "AI",
+   "instance": 8,
+   "name": "Outlet Air Temperature",
+   "description": "[Indoor unit] Outlet (discharge) air temperature",
+   "units": "°C",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "AI",
+   "instance": 9,
+   "name": "EXV Opening",
+   "description": "[Indoor unit] Electronic expansion valve opening",
+   "units": "",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "AI",
+   "instance": 10,
+   "name": "Software Version",
+   "description": "[Indoor unit] Software version",
+   "units": "",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "AI",
+   "instance": 11,
+   "name": "Indoor type",
+   "description": "[Indoor unit] Indoor unit type code",
+   "units": "",
+   "access": "R",
+   "states": "0=4-way cassette; 1=4-way cassette; 2=Wall-mounted; 3=Medium static duct; 4=Low static duct; 5=AHU; 6=High static duct; 7=Compact 4-way cassette; 8=Ceiling & floor; 9=Floor standing; 10=Floor standing; 11=Fresh air processing unit; 12=Inverter split AC; 13=HRV; 14=1-way cassette; 15=2-way cassette; 16=Console; 17=HTHM; 18=Fresh air processing unit; 20=Fresh air processing unit; 21=AHU kit (return air control); 22=Floor standing; 24=AHU kit (discharge air control)"
+  },
+  {
+   "type": "AI",
+   "instance": 12,
+   "name": "Indoor Horses",
+   "description": "[Indoor unit] Indoor unit capacity (horsepower)",
+   "units": "",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "AI",
+   "instance": 13,
+   "name": "T2A",
+   "description": "[Indoor unit] T2A temperature",
+   "units": "°C",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "AI",
+   "instance": 14,
+   "name": "T2B",
+   "description": "[Indoor unit] T2B temperature",
+   "units": "°C",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "BI",
+   "instance": 2,
+   "name": "Alarm Indication",
+   "description": "[Indoor unit] Error present",
+   "units": "",
+   "access": "R",
+   "states": "0=No error; 1=Error"
+  },
+  {
+   "type": "BV",
+   "instance": 1,
+   "name": "On/Off Setting",
+   "description": "[Indoor unit] On/off command",
+   "units": "",
+   "access": "W",
+   "states": "0=Off; 1=On"
+  },
+  {
+   "type": "BV",
+   "instance": 4,
+   "name": "Remote Control Lock Setting",
+   "description": "[Indoor unit] Wireless remote control lock",
+   "units": "",
+   "access": "W",
+   "states": "0=Unlocked; 1=Locked"
+  },
+  {
+   "type": "BV",
+   "instance": 5,
+   "name": "Controller Lock Setting",
+   "description": "[Indoor unit] Wired controller lock",
+   "units": "",
+   "access": "W",
+   "states": "0=Unlocked; 1=Locked"
+  },
+  {
+   "type": "MV",
+   "instance": 1,
+   "name": "Mode Setting",
+   "description": "[Indoor unit] Mode command (HRV units use the second state set)",
+   "units": "",
+   "access": "W",
+   "states": "VRF indoor unit: 1=Off; 2=Fan; 3=Cool; 4=Heat; 5=Auto; 6=Dry. HRV: 1=Off; 2=Free cool; 3=Heat exchange; 4=Bypass; 5=Auto"
+  },
+  {
+   "type": "MV",
+   "instance": 2,
+   "name": "Fan Speed Setting",
+   "description": "[Indoor unit] Fan speed command; 9 (off) is status only",
+   "units": "",
+   "access": "W",
+   "states": "1-7=Fan speed 1-7 (3-speed models: 1-2=Low; 3-4=Mid; 5-7=High); 8=Auto; 9=Fan off (read only)"
+  },
+  {
+   "type": "MV",
+   "instance": 3,
+   "name": "Mode Limit Setting",
+   "description": "[Indoor unit] Mode lock",
+   "units": "",
+   "access": "W",
+   "states": "1=Unlocked; 2=Cooling locked; 3=Heating locked"
+  },
+  {
+   "type": "MV",
+   "instance": 5,
+   "name": "Fan Lock/Unlock Setting",
+   "description": "[Indoor unit] Fan speed lock",
+   "units": "",
+   "access": "W",
+   "states": "1-7=Locked at speed 1-7 (3-speed models: 1-2=Low; 3-4=Mid; 5-7=High); 8=Unlocked"
+  },
+  {
+   "type": "AV",
+   "instance": 1,
+   "name": "Temperature Setting",
+   "description": "[Indoor unit] Setpoint, 10-30 °C",
+   "units": "°C",
+   "access": "W",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 2,
+   "name": "Dual Point (Cooling) Setting",
+   "description": "[Indoor unit] Auto mode cooling setpoint, 10-30 °C",
+   "units": "°C",
+   "access": "W",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 3,
+   "name": "Dual Point (Heating) Setting",
+   "description": "[Indoor unit] Auto mode heating setpoint, 10-30 °C",
+   "units": "°C",
+   "access": "W",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 4,
+   "name": "Cooling Temperature Limit Setting",
+   "description": "[Indoor unit] Lowest allowed cooling setpoint, 0 = unlocked",
+   "units": "°C",
+   "access": "W",
+   "states": "0=Unlocked; 17-30=Lower limit, °C"
+  },
+  {
+   "type": "AV",
+   "instance": 5,
+   "name": "Heating Temperature Limit Setting",
+   "description": "[Indoor unit] Highest allowed heating setpoint, 0 = unlocked",
+   "units": "°C",
+   "access": "W",
+   "states": "0=Unlocked; 17-30=Upper limit, °C"
+  },
+  {
+   "type": "AV",
+   "instance": 6,
+   "name": "Swing Setting",
+   "description": "[Indoor unit] Louver swing angle command",
+   "units": "",
+   "access": "W",
+   "states": "0=Keep current angle; 1-5=Swing angle 1-5; 6=Auto swing off; 7=Auto swing on"
+  },
+  {
+   "type": "MI",
+   "instance": 1,
+   "name": "Mode Status",
+   "description": "[Outdoor unit] Operating mode",
+   "units": "",
+   "access": "R",
+   "states": "1=Off; 2=Reserved; 3=Cooling; 4=Heating; 5=Forced cooling; 6=Master cooling; 7=Master heat; 8=Forced heat"
+  },
+  {
+   "type": "BI",
+   "instance": 1,
+   "name": "On/Off Status",
+   "description": "[Outdoor unit] Running status",
+   "units": "",
+   "access": "R",
+   "states": "0=Off; 1=On"
+  },
+  {
+   "type": "BI",
+   "instance": 2,
+   "name": "Alarm Indication",
+   "description": "[Outdoor unit] Error present",
+   "units": "",
+   "access": "R",
+   "states": "0=No error; 1=Error"
+  },
+  {
+   "type": "BI",
+   "instance": 3,
+   "name": "SV1",
+   "description": "[Outdoor unit] Solenoid valve SV1 state",
+   "units": "",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "BI",
+   "instance": 4,
+   "name": "SV2",
+   "description": "[Outdoor unit] Solenoid valve SV2 state",
+   "units": "",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "BI",
+   "instance": 5,
+   "name": "SV3",
+   "description": "[Outdoor unit] Solenoid valve SV3 state",
+   "units": "",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "BI",
+   "instance": 6,
+   "name": "SV4",
+   "description": "[Outdoor unit] Solenoid valve SV4 state",
+   "units": "",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "BI",
+   "instance": 7,
+   "name": "SV5",
+   "description": "[Outdoor unit] Solenoid valve SV5 state",
+   "units": "",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "BI",
+   "instance": 8,
+   "name": "SV6",
+   "description": "[Outdoor unit] Solenoid valve SV6 state",
+   "units": "",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "BI",
+   "instance": 9,
+   "name": "SV7",
+   "description": "[Outdoor unit] Solenoid valve SV7 state",
+   "units": "",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "BI",
+   "instance": 10,
+   "name": "SV8",
+   "description": "[Outdoor unit] Solenoid valve SV8 state",
+   "units": "",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "BI",
+   "instance": 11,
+   "name": "ST1",
+   "description": "[Outdoor unit] ST1 valve state",
+   "units": "",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "BI",
+   "instance": 12,
+   "name": "ST2",
+   "description": "[Outdoor unit] ST2 valve state",
+   "units": "",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "BI",
+   "instance": 13,
+   "name": "ST3",
+   "description": "[Outdoor unit] ST3 valve state",
+   "units": "",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "BI",
+   "instance": 14,
+   "name": "SV8B",
+   "description": "[Outdoor unit] Solenoid valve SV8B state",
+   "units": "",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "BI",
+   "instance": 15,
+   "name": "SV9",
+   "description": "[Outdoor unit] Solenoid valve SV9 state",
+   "units": "",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "BI",
+   "instance": 17,
+   "name": "HEATER 1",
+   "description": "[Outdoor unit] Heater 1 state",
+   "units": "",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "BI",
+   "instance": 18,
+   "name": "HEATER 2",
+   "description": "[Outdoor unit] Heater 2 state",
+   "units": "",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "AI",
+   "instance": 1,
+   "name": "Ambient Temperatue",
+   "description": "[Outdoor unit] Outdoor ambient temperature",
+   "units": "°C",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "AI",
+   "instance": 2,
+   "name": "Compressor 1 Freq",
+   "description": "[Outdoor unit] Compressor 1 frequency",
+   "units": "Hz",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "AI",
+   "instance": 3,
+   "name": "Compressor 2 Freq",
+   "description": "[Outdoor unit] Compressor 2 frequency",
+   "units": "Hz",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "AI",
+   "instance": 4,
+   "name": "Compressor 1 Discharge Temp",
+   "description": "[Outdoor unit] Compressor 1 discharge temperature",
+   "units": "°C",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "AI",
+   "instance": 5,
+   "name": "Compressor 2 Discharge Temp",
+   "description": "[Outdoor unit] Compressor 2 discharge temperature",
+   "units": "°C",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "AI",
+   "instance": 6,
+   "name": "High Pressure",
+   "description": "[Outdoor unit] Compressor high pressure",
+   "units": "bar",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "AI",
+   "instance": 7,
+   "name": "Low Pressure",
+   "description": "[Outdoor unit] Compressor low pressure",
+   "units": "bar",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "AI",
+   "instance": 8,
+   "name": "Malfunction Code",
+   "description": "[Outdoor unit] Error code number",
+   "units": "",
+   "access": "R",
+   "states": "0=No error; 1-260=error code, see notes"
+  },
+  {
+   "type": "AI",
+   "instance": 9,
+   "name": "Fan 1 Speed",
+   "description": "[Outdoor unit] Fan 1 speed",
+   "units": "",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "AI",
+   "instance": 10,
+   "name": "Fan 2 Speed",
+   "description": "[Outdoor unit] Fan 2 speed",
+   "units": "",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "AI",
+   "instance": 11,
+   "name": "T3",
+   "description": "[Outdoor unit] T3 temperature",
+   "units": "°C",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "AI",
+   "instance": 12,
+   "name": "T3B",
+   "description": "[Outdoor unit] T3B temperature (reserved)",
+   "units": "°C",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "AI",
+   "instance": 13,
+   "name": "Version",
+   "description": "[Outdoor unit] Software version",
+   "units": "",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "AI",
+   "instance": 14,
+   "name": "Outdoor type",
+   "description": "[Outdoor unit] Outdoor unit type code",
+   "units": "",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "AI",
+   "instance": 15,
+   "name": "Outdoor Horses",
+   "description": "[Outdoor unit] Outdoor unit capacity (horsepower)",
+   "units": "",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "AI",
+   "instance": 16,
+   "name": "Exv1 opening",
+   "description": "[Outdoor unit] Expansion valve 1 opening",
+   "units": "",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "AI",
+   "instance": 17,
+   "name": "Exv2 opening",
+   "description": "[Outdoor unit] Expansion valve 2 opening",
+   "units": "",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "AI",
+   "instance": 18,
+   "name": "Exv3 opening",
+   "description": "[Outdoor unit] Expansion valve 3 opening (reserved)",
+   "units": "",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "BV",
+   "instance": 1,
+   "name": "Emergency Stop",
+   "description": "[Outdoor unit] Emergency stop status (read only)",
+   "units": "",
+   "access": "R",
+   "states": "0=Emergency stop off; 1=Emergency stop on"
+  },
+  {
+   "type": "AV",
+   "instance": 50,
+   "name": "Water Heating Temperature Setting",
+   "description": "[HTHM unit] Water heating setpoint, 25-80 °C",
+   "units": "°C",
+   "access": "W",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 51,
+   "name": "Heating Temperature Setting",
+   "description": "[HTHM unit] Heating setpoint, 25-80 °C",
+   "units": "°C",
+   "access": "W",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 52,
+   "name": "Heating Temperature Lock",
+   "description": "[HTHM unit] Heating setpoint upper limit lock",
+   "units": "°C",
+   "access": "W",
+   "states": "0=Unlocked; 25-80=Upper limit, °C; 254=Not adjustable"
+  },
+  {
+   "type": "AV",
+   "instance": 53,
+   "name": "Water Heating Temperature Lock",
+   "description": "[HTHM unit] Water heating setpoint upper limit lock",
+   "units": "°C",
+   "access": "W",
+   "states": "0=Unlocked; 25-80=Upper limit, °C; 254=Not adjustable"
+  },
+  {
+   "type": "AV",
+   "instance": 60,
+   "name": "Water Inlet Temperature",
+   "description": "[HTHM unit] Water inlet temperature",
+   "units": "°C",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 61,
+   "name": "Water outlet Temperature",
+   "description": "[HTHM unit] Water outlet temperature",
+   "units": "°C",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 62,
+   "name": "Water Tank Temperature",
+   "description": "[HTHM unit] Water tank temperature",
+   "units": "°C",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 63,
+   "name": "Error Code",
+   "description": "[HTHM unit] Error code number",
+   "units": "",
+   "access": "R",
+   "states": "0=No error; 1-260=error code, see notes"
+  },
+  {
+   "type": "AV",
+   "instance": 64,
+   "name": "Tf",
+   "description": "[HTHM unit] Tf temperature",
+   "units": "°C",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 65,
+   "name": "T2A",
+   "description": "[HTHM unit] T2A temperature",
+   "units": "°C",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 66,
+   "name": "T7",
+   "description": "[HTHM unit] T7 temperature",
+   "units": "°C",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 67,
+   "name": "T7C",
+   "description": "[HTHM unit] T7C temperature",
+   "units": "°C",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 68,
+   "name": "Pe",
+   "description": "[HTHM unit] Pe pressure",
+   "units": "bar",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 69,
+   "name": "Pc",
+   "description": "[HTHM unit] Pc pressure",
+   "units": "bar",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 70,
+   "name": "EXV 1",
+   "description": "[HTHM unit] Expansion valve 1 opening",
+   "units": "",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 71,
+   "name": "EXV 2",
+   "description": "[HTHM unit] Expansion valve 2 opening",
+   "units": "",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 72,
+   "name": "Need",
+   "description": "[HTHM unit] HTHM demand",
+   "units": "",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 73,
+   "name": "Power",
+   "description": "[HTHM unit] Power",
+   "units": "",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 75,
+   "name": "Compressor Frequency",
+   "description": "[HTHM unit] Compressor frequency",
+   "units": "Hz",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 76,
+   "name": "Software Version",
+   "description": "[HTHM unit] Software version",
+   "units": "",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "MV",
+   "instance": 78,
+   "name": "Heating Lock",
+   "description": "[HTHM unit] Heating lock",
+   "units": "",
+   "access": "W",
+   "states": "1=Lock on; 2=Lock off; 3=Unlock"
+  },
+  {
+   "type": "MV",
+   "instance": 79,
+   "name": "Heating-water Lock",
+   "description": "[HTHM unit] Water heating lock",
+   "units": "",
+   "access": "W",
+   "states": "1=Lock on; 2=Lock off; 3=Unlock"
+  },
+  {
+   "type": "MI",
+   "instance": 56,
+   "name": "Current Mode",
+   "description": "[HTHM unit] Current mode",
+   "units": "",
+   "access": "R",
+   "states": "1=Off; 4=Heating; 6=Water heating"
+  },
+  {
+   "type": "BV",
+   "instance": 90,
+   "name": "Heating On/Off",
+   "description": "[HTHM unit] Heating on/off command",
+   "units": "",
+   "access": "W",
+   "states": "0=Off; 1=On"
+  },
+  {
+   "type": "BV",
+   "instance": 91,
+   "name": "Water Heating On/Off",
+   "description": "[HTHM unit] Water heating on/off command",
+   "units": "",
+   "access": "W",
+   "states": "0=Off; 1=On"
+  }
+ ],
+ "page": "https://easybacnet.com/bacnet-points-lists/systemair/sys-gw-ims-bac-a",
+ "note": "Re-typed from the manufacturer's public documentation (see source). Point availability varies by firmware and options; verify against the live device."
+}

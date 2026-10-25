@@ -1,0 +1,1094 @@
+{
+  "manufacturer": "Viconics",
+  "manufacturer_slug": "viconics",
+  "model": "VT7600 Series PIR-Ready Rooftop / Heat Pump Thermostats",
+  "model_slug": "vt7600-rooftop-heat-pump-thermostat",
+  "short_model": "VT7600 Rooftop / Heat Pump Thermostat",
+  "aliases": [
+    "VT7600",
+    "VT7605",
+    "VT7607",
+    "VT7652",
+    "VT7656",
+    "VT7657",
+    "VT7606",
+    "VT76xx"
+  ],
+  "equipment_type": "Networked room thermostat",
+  "applies_to": "Viconics VT76xx thermostats (with and without scheduling) for packaged rooftop units and heat pumps, including economizer, dehumidification and humidification models, with the BACnet MS/TP communication module.",
+  "summary": "Viconics VT76xx thermostats control single- and two-stage rooftop units and heat pumps and join a BACnet MS/TP trunk through a plug-in communication module. One object list covers all models; several instances hold a different object on different models (for example heat pump balance points versus discharge air limits). The thermostats do not support COV, so the BMS must poll them.",
+  "bacnet_transport": [
+    "BACnet MS/TP"
+  ],
+  "firmware": null,
+  "default_device_instance": "76000 + MAC",
+  "access_inferred": false,
+  "notes": [
+    "Viconics is a Schneider Electric brand; the guide is published on veris.com.",
+    "Object availability varies by model. The guide marks it in per-model check-mark columns, which are not reproduced here.",
+    "Some instances hold different objects on different models (AV 17, AV 82, AV 83, AV 95-101); both names are shown, joined with ' / '.",
+    "Supply Heat Lockout Status is BV 58 in the object table but BI 58 in the state table; BV 58 is used.",
+    "Room Humidity (AV 11) and the PI demand, economizer and humidifier outputs are read-only per the PICS notes, although the object table shows R,W for AV 11.",
+    "GRP group objects (bundles of related points) are listed as type Other."
+  ],
+  "source": {
+    "title": "PIR Ready VT76xx Series BACnet Integration Manual",
+    "doc_number": "028-6015 R2 (ITG-VT76xx-PIR-BAC-E02)",
+    "revision_date": "2011-01-23",
+    "url": "https://www.veris.com/ASSETS/DOCUMENTS/CMS/EN/Static_Documents/DownloadCenter/028-6015-R2-ITG-VT76xx-PIR-BAC-E02.pdf"
+  },
+  "integration": {
+    "summary": "Give each thermostat a MAC address from 0 to 127 (the factory 254 leaves BACnet off) and let it auto-baud. The BMS writes Occupancy Command (MV 12), the system mode for the unit type (MV 14 on rooftop units, MV 13 on heat pumps), Fan Mode (MV 15) and the setpoints, and reads Room Temperature (AV 7), Effective Occupancy (MV 34), the G/Y/W output status BIs and the alarms. Poll no faster than every 5 seconds, since there is no COV.",
+    "minimum_points": [
+      {
+        "ref": "MV 12",
+        "name": "Occupancy Command",
+        "why": "BMS occupancy: local, occupied or unoccupied"
+      },
+      {
+        "ref": "MV 14",
+        "name": "System Mode RTU",
+        "why": "Off / auto / cool / heat (rooftop models)"
+      },
+      {
+        "ref": "MV 13",
+        "name": "System Mode HP",
+        "why": "Off / auto / cool / heat / emergency (heat pump models)"
+      },
+      {
+        "ref": "MV 15",
+        "name": "Fan Mode",
+        "why": "Fan mode: on / auto / smart"
+      },
+      {
+        "ref": "AV 42",
+        "name": "Occupied Heat Setpoint",
+        "why": "Occupied heating setpoint"
+      },
+      {
+        "ref": "AV 43",
+        "name": "Occupied Cool Setpoint",
+        "why": "Occupied cooling setpoint"
+      },
+      {
+        "ref": "BI 25",
+        "name": "G Fan",
+        "why": "Fan (G) output state"
+      },
+      {
+        "ref": "MV 34",
+        "name": "Effective Occupancy",
+        "why": "Actual occupancy state"
+      },
+      {
+        "ref": "AV 7",
+        "name": "Room Temperature",
+        "why": "Space temperature used for control"
+      },
+      {
+        "ref": "BI 40",
+        "name": "Fan Lock Alarm",
+        "why": "Fan lock alarm (1 = on)"
+      }
+    ],
+    "enable": "There is no separate enable point. Occupancy Command (MV 12) selects local occupancy, occupied or unoccupied; the system mode (MV 14 or MV 13) and Fan Mode (MV 15) act directly.",
+    "heartbeat": "No heartbeat point. If the thermostat goes offline, the room temperature, outdoor temperature and occupancy values written over the network are released.",
+    "remote_sensors": "Room Temperature (AV 7) can be written only after Room Temp Override (BV 8) is set to Override. Outdoor Temperature (AV 9) has its own override (BV 10) and is one of the global values the guide shows a BMS sending to all thermostats.",
+    "setup": [
+      "Factory MAC address is 254, where BACnet communication is off; set it to 0-127 to join the trunk.",
+      "Baud rate auto-detects (9600, 19200, 38400, 76800) at power-up; after a network speed change the thermostat keeps the old rate for 10 minutes unless re-powered.",
+      "Default device ID is 76000 + MAC; default device name is the model number plus the MAC. Both are writable.",
+      "Vendor ID 140. Up to 64 Viconics devices per segment and 128 per network.",
+      "The guide suggests a 10000 ms APDU timeout and 3 retries on the supervisory controller to stop devices dropping offline."
+    ],
+    "gotchas": [
+      "No COV support: poll no faster than every 5 seconds and write from programs on change or in slow loops, not every scan.",
+      "Rooftop and heat pump models use different system mode objects (MV 14 and MV 13); map the one that exists.",
+      "The device has no Local_Time or Local_Date, so it does not claim time synchronization even though the network can set its clock.",
+      "Viconics recommends removing the configuration objects (GRP 46, 58, 69, 72, 76, 81, 87, 94) from the BMS after setup to cut polling."
+    ]
+  },
+  "points": [
+    {
+      "type": "AV",
+      "instance": 7,
+      "name": "Room Temperature",
+      "description": "Room temperature; writable only when BV 8 = Override",
+      "units": "°F",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "BV",
+      "instance": 8,
+      "name": "Room Temp Override",
+      "description": "Enables writing AV 7 from the network",
+      "units": "",
+      "access": "W",
+      "states": "0=Normal, 1=Override"
+    },
+    {
+      "type": "AV",
+      "instance": 9,
+      "name": "Outdoor Temperature",
+      "description": "Outdoor temperature; can be written from the BMS",
+      "units": "°F",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "BV",
+      "instance": 10,
+      "name": "Outdoor Temp Override",
+      "description": "",
+      "units": "",
+      "access": "W",
+      "states": "0=Normal, 1=Override"
+    },
+    {
+      "type": "AV",
+      "instance": 11,
+      "name": "Room Humidity",
+      "description": "Room relative humidity (humidity models)",
+      "units": "%",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "MV",
+      "instance": 12,
+      "name": "Occupancy Command",
+      "description": "",
+      "units": "",
+      "access": "W",
+      "states": "1=Local Occupancy, 2=Occupied, 3=Unoccupied"
+    },
+    {
+      "type": "BV",
+      "instance": 13,
+      "name": "Room Humidity Override",
+      "description": "",
+      "units": "",
+      "access": "W",
+      "states": "0=Normal, 1=Override"
+    },
+    {
+      "type": "MV",
+      "instance": 13,
+      "name": "System Mode HP",
+      "description": "System mode on heat pump models",
+      "units": "",
+      "access": "W",
+      "states": "1=Off, 2=Auto, 3=Cool, 4=Heat, 5=Emergency"
+    },
+    {
+      "type": "MV",
+      "instance": 14,
+      "name": "System Mode RTU",
+      "description": "System mode on rooftop unit models",
+      "units": "",
+      "access": "W",
+      "states": "1=Off, 2=Auto, 3=Cool, 4=Heat"
+    },
+    {
+      "type": "MV",
+      "instance": 15,
+      "name": "Fan Mode",
+      "description": "Default Smart",
+      "units": "",
+      "access": "W",
+      "states": "1=On, 2=Auto, 3=Smart"
+    },
+    {
+      "type": "AI",
+      "instance": 16,
+      "name": "Supply Temp",
+      "description": "Supply air temperature, if a sensor is fitted",
+      "units": "°F",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 17,
+      "name": "Supply RH / Water Temp.",
+      "description": "Supply RH (0-100 %) or water temperature (°F), by model",
+      "units": "",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "MV",
+      "instance": 18,
+      "name": "Keypad Lockout",
+      "description": "",
+      "units": "",
+      "access": "W",
+      "states": "1=Level 0, 2=Level 1, 3=Level 2"
+    },
+    {
+      "type": "Other",
+      "instance": 19,
+      "name": "Control Output",
+      "description": "Group object (bundle of related points) (printed GR 19)",
+      "units": "",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 20,
+      "name": "PI Heating Demand",
+      "description": "",
+      "units": "%",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 21,
+      "name": "PI Cooling Demand",
+      "description": "",
+      "units": "%",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 22,
+      "name": "Economizer Output",
+      "description": "Economizer models",
+      "units": "%",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AI",
+      "instance": 23,
+      "name": "AI1 Value",
+      "description": "Analog input 1, 0 to 10 VDC",
+      "units": "V",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "Other",
+      "instance": 23,
+      "name": "Controller Status",
+      "description": "Group object (bundle of related points)",
+      "units": "",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "BI",
+      "instance": 24,
+      "name": "AUX",
+      "description": "Auxiliary output status",
+      "units": "",
+      "access": "R",
+      "states": "0=Off, 1=On"
+    },
+    {
+      "type": "BI",
+      "instance": 25,
+      "name": "G Fan",
+      "description": "Fan (G) output status",
+      "units": "",
+      "access": "R",
+      "states": "0=Off, 1=On"
+    },
+    {
+      "type": "BI",
+      "instance": 26,
+      "name": "Y1 Cool",
+      "description": "Cooling stage 1 (Y1) output",
+      "units": "",
+      "access": "R",
+      "states": "0=Off, 1=On"
+    },
+    {
+      "type": "BI",
+      "instance": 27,
+      "name": "Y2 Cool",
+      "description": "Cooling stage 2 (Y2) output",
+      "units": "",
+      "access": "R",
+      "states": "0=Off, 1=On"
+    },
+    {
+      "type": "BI",
+      "instance": 28,
+      "name": "W1 Heat",
+      "description": "Heating stage 1 (W1) output",
+      "units": "",
+      "access": "R",
+      "states": "0=Off, 1=On"
+    },
+    {
+      "type": "BI",
+      "instance": 29,
+      "name": "W2 Heat",
+      "description": "Heating stage 2 (W2) output",
+      "units": "",
+      "access": "R",
+      "states": "0=Off, 1=On"
+    },
+    {
+      "type": "BI",
+      "instance": 30,
+      "name": "Reversing Valve",
+      "description": "Reversing valve output (heat pump models)",
+      "units": "",
+      "access": "R",
+      "states": "0=Off, 1=On"
+    },
+    {
+      "type": "BI",
+      "instance": 31,
+      "name": "DI 1 Status",
+      "description": "",
+      "units": "",
+      "access": "R",
+      "states": "0=Not Activated, 1=Activated"
+    },
+    {
+      "type": "BI",
+      "instance": 32,
+      "name": "DI 2 Status",
+      "description": "",
+      "units": "",
+      "access": "R",
+      "states": "0=Not Activated, 1=Activated"
+    },
+    {
+      "type": "BI",
+      "instance": 33,
+      "name": "Local Motion",
+      "description": "PIR motion detected",
+      "units": "",
+      "access": "R",
+      "states": "0=No Motion, 1=Motion"
+    },
+    {
+      "type": "MV",
+      "instance": 34,
+      "name": "Effective Occupancy",
+      "description": "",
+      "units": "",
+      "access": "R",
+      "states": "1=Occupied, 2=Unoccupied, 3=Temporary Occupied"
+    },
+    {
+      "type": "AV",
+      "instance": 35,
+      "name": "Analog Heat Output",
+      "description": "Modulating heat output (some models)",
+      "units": "%",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "Other",
+      "instance": 35,
+      "name": "Controller Alarms",
+      "description": "Group object (bundle of related points)",
+      "units": "",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "BI",
+      "instance": 36,
+      "name": "Frost Alarm",
+      "description": "",
+      "units": "",
+      "access": "R",
+      "states": "0=Off, 1=On"
+    },
+    {
+      "type": "BI",
+      "instance": 37,
+      "name": "Clock Alarm",
+      "description": "Scheduling models",
+      "units": "",
+      "access": "R",
+      "states": "0=Off, 1=On"
+    },
+    {
+      "type": "BI",
+      "instance": 38,
+      "name": "Filter Alarm",
+      "description": "",
+      "units": "",
+      "access": "R",
+      "states": "0=Off, 1=On"
+    },
+    {
+      "type": "BI",
+      "instance": 39,
+      "name": "Service Alarm",
+      "description": "",
+      "units": "",
+      "access": "R",
+      "states": "0=Off, 1=On"
+    },
+    {
+      "type": "BI",
+      "instance": 40,
+      "name": "Fan Lock Alarm",
+      "description": "",
+      "units": "",
+      "access": "R",
+      "states": "0=Off, 1=On"
+    },
+    {
+      "type": "Other",
+      "instance": 41,
+      "name": "Temperature Setpoints",
+      "description": "Group object (bundle of related points)",
+      "units": "",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 42,
+      "name": "Occupied Heat Setpoint",
+      "description": "Range 40 to 90 °F, default 72 °F.",
+      "units": "°F",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 43,
+      "name": "Occupied Cool Setpoint",
+      "description": "Range 54 to 100 °F, default 75 °F.",
+      "units": "°F",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 44,
+      "name": "Unoccupied Heat Setpoint",
+      "description": "Range 40 to 90 °F, default 62 °F.",
+      "units": "°F",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 45,
+      "name": "Unoccupied Cool Setpoint",
+      "description": "Range 54 to 100 °F, default 80 °F.",
+      "units": "°F",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "AI",
+      "instance": 46,
+      "name": "Fresh Air Level",
+      "description": "Range 0 to 20000 cfm",
+      "units": "cfm",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "Other",
+      "instance": 46,
+      "name": "General Options 1",
+      "description": "Group object (bundle of related points)",
+      "units": "",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "BV",
+      "instance": 47,
+      "name": "Temperature Scale",
+      "description": "",
+      "units": "",
+      "access": "W",
+      "states": "0=°C, 1=°F"
+    },
+    {
+      "type": "AV",
+      "instance": 48,
+      "name": "Heating Setpoint Limit",
+      "description": "Range 40 to 90 °F, default 90 °F.",
+      "units": "°F",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 49,
+      "name": "Cooling Setpoint Limit",
+      "description": "Range 54 to 100 °F, default 54 °F.",
+      "units": "°F",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 50,
+      "name": "Heating Lockout Temperature",
+      "description": "Range -15 to 120 °F, default 120 °F.",
+      "units": "°F",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 51,
+      "name": "Cooling Lockout Temperature",
+      "description": "Range -40 to 95 °F, default -40 °F.",
+      "units": "°F",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 52,
+      "name": "Deadband",
+      "description": "Range 2 to 4 °F, default 2 °F.",
+      "units": "°F",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "MV",
+      "instance": 53,
+      "name": "Heating CPH",
+      "description": "",
+      "units": "",
+      "access": "W",
+      "states": "1=3 CPH, 2=4 CPH, 3=5 CPH, 4=6 CPH, 5=7 CPH, 6=8 CPH"
+    },
+    {
+      "type": "MV",
+      "instance": 54,
+      "name": "Cooling CPH",
+      "description": "",
+      "units": "",
+      "access": "W",
+      "states": "1=3 CPH, 2=4 CPH"
+    },
+    {
+      "type": "BV",
+      "instance": 55,
+      "name": "Frost Protection",
+      "description": "",
+      "units": "",
+      "access": "W",
+      "states": "0=Off, 1=On"
+    },
+    {
+      "type": "BV",
+      "instance": 56,
+      "name": "Aux Contact",
+      "description": "",
+      "units": "",
+      "access": "W",
+      "states": "0=N.O., 1=N.C."
+    },
+    {
+      "type": "BV",
+      "instance": 57,
+      "name": "Menu Scroll",
+      "description": "",
+      "units": "",
+      "access": "W",
+      "states": "0=No Scroll, 1=Scroll Active"
+    },
+    {
+      "type": "BV",
+      "instance": 58,
+      "name": "Supply Heat Lockout Status",
+      "description": "Listed as BI 58 in the state table",
+      "units": "",
+      "access": "R",
+      "states": "0=Off, 1=On"
+    },
+    {
+      "type": "Other",
+      "instance": 58,
+      "name": "General Options 2",
+      "description": "Group object (bundle of related points)",
+      "units": "",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 59,
+      "name": "Password Value",
+      "description": "Range 0 to 1000",
+      "units": "",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 60,
+      "name": "Power-up Delay",
+      "description": "Range 10 to 120 s, default 10 s.",
+      "units": "s",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "MV",
+      "instance": 61,
+      "name": "Temporary Occ. Time",
+      "description": "Default 3 hours",
+      "units": "",
+      "access": "W",
+      "states": "1=0 hour ... 13=12 hours (1-hour steps)"
+    },
+    {
+      "type": "BV",
+      "instance": 62,
+      "name": "Fan Control",
+      "description": "",
+      "units": "",
+      "access": "W",
+      "states": "0=Off, 1=On"
+    },
+    {
+      "type": "MV",
+      "instance": 63,
+      "name": "Anticycle",
+      "description": "",
+      "units": "",
+      "access": "W",
+      "states": "1=0 minute, 2=1 minute, 3=2 minutes, 4=3 minutes, 5=4 minutes, 6=5 minutes"
+    },
+    {
+      "type": "BV",
+      "instance": 64,
+      "name": "Fan Purge Delay",
+      "description": "",
+      "units": "",
+      "access": "W",
+      "states": "0=Off, 1=On"
+    },
+    {
+      "type": "MV",
+      "instance": 65,
+      "name": "DI 1 Configuration",
+      "description": "",
+      "units": "",
+      "access": "W",
+      "states": "1=None, 2=RemNSB, 3=RemOVR, 4=Filter, 5=Service, 6=Fan lock"
+    },
+    {
+      "type": "MV",
+      "instance": 66,
+      "name": "DI 2 Configuration",
+      "description": "",
+      "units": "",
+      "access": "W",
+      "states": "1=None, 2=RemNSB, 3=RemOVR, 4=Filter, 5=Service, 6=Fan lock"
+    },
+    {
+      "type": "MV",
+      "instance": 67,
+      "name": "Proportional Band",
+      "description": "",
+      "units": "",
+      "access": "W",
+      "states": "1=2 °F, 2=3 °F, 3=4 °F, 4=5 °F, 5=6 °F, 6=7 °F, 7=8 °F"
+    },
+    {
+      "type": "AV",
+      "instance": 68,
+      "name": "Unoccupied Time",
+      "description": "Range 0.5 to 24 h, default 0.5 h.",
+      "units": "h",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "AI",
+      "instance": 69,
+      "name": "CO2 Level",
+      "description": "Range 0 to 2000 ppm",
+      "units": "ppm",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "Other",
+      "instance": 69,
+      "name": "With schedule Model Configuration Options",
+      "description": "Group object (bundle of related points)",
+      "units": "",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "BV",
+      "instance": 70,
+      "name": "Progressive Recovery",
+      "description": "Scheduling models",
+      "units": "",
+      "access": "W",
+      "states": "0=Off, 1=Active"
+    },
+    {
+      "type": "MV",
+      "instance": 71,
+      "name": "Event Display",
+      "description": "Scheduling models",
+      "units": "",
+      "access": "W",
+      "states": "1=2 Events, 2=4 Events"
+    },
+    {
+      "type": "Other",
+      "instance": 72,
+      "name": "Stages Configuration Options",
+      "description": "Group object (bundle of related points)",
+      "units": "",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "BI",
+      "instance": 72,
+      "name": "Discharge Air Alarm",
+      "description": "",
+      "units": "",
+      "access": "R",
+      "states": "0=Off, 1=On"
+    },
+    {
+      "type": "MV",
+      "instance": 73,
+      "name": "Heating Stages",
+      "description": "",
+      "units": "",
+      "access": "W",
+      "states": "1=Analog Heat, 2=1 Stage, 3=2 Stages"
+    },
+    {
+      "type": "MV",
+      "instance": 74,
+      "name": "Cooling Stages",
+      "description": "",
+      "units": "",
+      "access": "W",
+      "states": "1=1 Stage, 2=2 Stages"
+    },
+    {
+      "type": "MV",
+      "instance": 75,
+      "name": "Heatpump Stages",
+      "description": "",
+      "units": "",
+      "access": "W",
+      "states": "1=1 Stage, 2=2 Stages"
+    },
+    {
+      "type": "Other",
+      "instance": 76,
+      "name": "Economizer Model Configuration Options",
+      "description": "Group object (bundle of related points)",
+      "units": "",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 76,
+      "name": "Fresh Air Max Range",
+      "description": "Range 0 to 20000 cfm",
+      "units": "cfm",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 77,
+      "name": "Economizer Changeover Setpoint",
+      "description": "Range 14 to 70 °F, default 55 °F.",
+      "units": "°F",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 78,
+      "name": "Economizer Minimum Position",
+      "description": "Range 0 to 100 %, default 0 %.",
+      "units": "%",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "BV",
+      "instance": 79,
+      "name": "Mechanical Cooling Enabled",
+      "description": "",
+      "units": "",
+      "access": "W",
+      "states": "0=Off, 1=On"
+    },
+    {
+      "type": "AV",
+      "instance": 80,
+      "name": "Mixed Air Setpoint",
+      "description": "Range 50 to 90 °F, default 55 °F.",
+      "units": "°F",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "Other",
+      "instance": 81,
+      "name": "Heatpump Model Configuration Options",
+      "description": "Group object (bundle of related points)",
+      "units": "",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 81,
+      "name": "Economizer Max Position",
+      "description": "Range 0 to 100 %",
+      "units": "%",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 82,
+      "name": "High Balance Point / Discharge High Limit Setpoint",
+      "description": "Balance point 34-90 °F, or discharge high limit 70-150 °F, by model",
+      "units": "°F",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 83,
+      "name": "Low Balance Point / Discharge Low Limit Setpoint",
+      "description": "Balance point -40 to 30 °F, or discharge low limit 35-65 °F, by model",
+      "units": "°F",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "BV",
+      "instance": 84,
+      "name": "Comfort Mode",
+      "description": "",
+      "units": "",
+      "access": "W",
+      "states": "0=Comfort, 1=Economy"
+    },
+    {
+      "type": "BI",
+      "instance": 84,
+      "name": "High CO2 Alarm",
+      "description": "",
+      "units": "",
+      "access": "W",
+      "states": "0=Off, 1=On"
+    },
+    {
+      "type": "BV",
+      "instance": 85,
+      "name": "Reversing Valve Configuration",
+      "description": "Whether the reversing valve is energized in heating or cooling",
+      "units": "",
+      "access": "W",
+      "states": "0=Normally Cool Energized in Heating, 1=Normally Heat Energized in Cooling"
+    },
+    {
+      "type": "BV",
+      "instance": 86,
+      "name": "Compressor Interlock",
+      "description": "",
+      "units": "",
+      "access": "W",
+      "states": "0=Off, 1=On"
+    },
+    {
+      "type": "BI",
+      "instance": 86,
+      "name": "Fresh Air Alarm",
+      "description": "",
+      "units": "",
+      "access": "R",
+      "states": "0=Off, 1=On"
+    },
+    {
+      "type": "Other",
+      "instance": 87,
+      "name": "Dehumidification Model Configuration Options",
+      "description": "Group object (bundle of related points)",
+      "units": "",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "BV",
+      "instance": 88,
+      "name": "RH Display",
+      "description": "",
+      "units": "",
+      "access": "W",
+      "states": "0=Disabled, 1=Enabled"
+    },
+    {
+      "type": "AV",
+      "instance": 89,
+      "name": "Dehumidification RH Setpoint",
+      "description": "Range 30-95 % or 20-100 % by model, default 50 %",
+      "units": "%",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 90,
+      "name": "Dehumidification Hysterisys",
+      "description": "Range 2 to 20 %, default 5 %.",
+      "units": "%",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 91,
+      "name": "Dehumidification Low OA Lockout",
+      "description": "Range -40 to 122 °F, default 32 °F.",
+      "units": "°F",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "BV",
+      "instance": 92,
+      "name": "Dehumidification Lockout Functions",
+      "description": "",
+      "units": "",
+      "access": "W",
+      "states": "0=Disabled, 1=Enabled"
+    },
+    {
+      "type": "MV",
+      "instance": 92,
+      "name": "Dehumidification Lockout Functions",
+      "description": "",
+      "units": "",
+      "access": "W",
+      "states": "1=Disabled, 2=Restricted, 3=Enabled"
+    },
+    {
+      "type": "BI",
+      "instance": 93,
+      "name": "Dehumidification Output Status",
+      "description": "",
+      "units": "",
+      "access": "R",
+      "states": "0=Off, 1=On"
+    },
+    {
+      "type": "Other",
+      "instance": 94,
+      "name": "Humidification Model Configuration Options",
+      "description": "Group object (bundle of related points)",
+      "units": "",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "BV",
+      "instance": 94,
+      "name": "AI1 Config",
+      "description": "",
+      "units": "",
+      "access": "W",
+      "states": "0=None, 1=CO2"
+    },
+    {
+      "type": "AV",
+      "instance": 95,
+      "name": "Humidification RH Setpoint / Minimum Supply Heat Setpoint",
+      "description": "RH setpoint 10-90 % or minimum supply heat 50-72 °F, by model",
+      "units": "",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 96,
+      "name": "Eff Reset Humidification RH Spt / Supply Heat Lockout Temperature",
+      "description": "Effective RH setpoint (read-only) or supply heat lockout (°F), by model",
+      "units": "",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 97,
+      "name": "Humidification High Limit Spt / Supply PI Heat Demand",
+      "description": "RH high limit 50-90 % or supply heat demand (read-only, %), by model",
+      "units": "",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 98,
+      "name": "Low RH Setpoint / Minimum Fresh Air",
+      "description": "Low RH setpoint 10-90 % or minimum fresh air (cfm), by model",
+      "units": "",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 99,
+      "name": "Low Temp Reset RH Setpoint / Maximum Fresh Air",
+      "description": "Reset outdoor temp -40 to 15 °F or maximum fresh air (cfm), by model",
+      "units": "",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 100,
+      "name": "High Temp Reset RH Setpoint / Minimum CO2 Level",
+      "description": "Reset outdoor temp 20-55 °F or minimum CO2 0-2000 ppm, by model",
+      "units": "",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 101,
+      "name": "Humidifier Output / Maximum CO2 Level",
+      "description": "Humidifier output (read-only, %) or maximum CO2 (ppm), by model",
+      "units": "",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "SCH",
+      "instance": 102,
+      "name": "Local Schedule",
+      "description": "Internal weekly schedule (scheduling models)",
+      "units": "",
+      "access": "W",
+      "states": ""
+    }
+  ]
+}
