@@ -1,0 +1,1121 @@
+{
+ "manufacturer": "York",
+ "manufacturer_slug": "york",
+ "model": "YMC2 Magnetic-Bearing Centrifugal Chiller (SC-EQ)",
+ "model_slug": "ymc2-sc-eq",
+ "aliases": [
+  "YMC2",
+  "YORK YMC2",
+  "YMC²",
+  "SC-EQ",
+  "SC-EQUIP",
+  "SE-SCC1001-1"
+ ],
+ "equipment_type": "Water-cooled magnetic-bearing centrifugal chiller (via SC-EQ card)",
+ "applies_to": "YORK by Johnson Controls YMC2 oil-free, magnetic-bearing centrifugal chillers with a variable speed drive, fitted with the SC-EQ communication card.",
+ "summary": "The YMC2's SC-EQ card puts the chiller on a BACnet MS/TP trunk (or Modbus RTU / N2). Besides run/stop, the leaving chilled liquid setpoint and the input current limit, it exposes VSD input and output data, harmonic distortion, magnetic bearing (MBC) levitation and speed, VGD/PRV positions and the operation, fault and warning codes. Some points apply only to Mod A or Mod B chillers.",
+ "bacnet_transport": [
+  "BACnet MS/TP"
+ ],
+ "firmware": "SC-EQ software 4.2.0.20",
+ "default_device_instance": "5000 + MAC address",
+ "access_inferred": true,
+ "notes": [
+  "Points list for the SC-EQ (SC-EQUIP) communication card, which replaced the E-Link gateway. The list has no read/write column: the REM remote command/setpoint objects are treated as commandable and MV 65001 Units as writable; everything else as read-only.",
+  "In the PDF the names of MV 11-13 and AV 422-424 overprint the enum text; the mixed-up letters spell COOL SETP CTRL SOURCE, HEAT SETP CTRL SOURCE and CURR LIM CTRL SOURCE (plus AV), as in the YK list.",
+  "Operating hours and kWh are also split into Low and Offset AVs: total = Offset x 10,000 + Low.",
+  "Units shown are the IP units; with MV 65001 set to SI the card reports °C, kPa and so on.",
+  "Status-code MVs (operation, fault, warning, modified run, start inhibit, internal fault) are the printed code + 1, as the doc's status code tables say; the AV copies (AV 401 and up) carry the raw code. MVs with their own enum in the points table (Units, control sources) are shown as printed, from 0; BACnet multistate values start at 1, so the card may report the printed number + 1. Confirm by discovery.",
+  "Long fault and warning code tables are summarised in the MV states; the full text is in the source document."
+ ],
+ "source": {
+  "title": "YMC2 SC-EQ BAS Points List",
+  "doc_number": null,
+  "revision_date": "Rev 2.11, 2021-12-08",
+  "url": "https://docs.johnsoncontrols.com/chillers/api/khub/documents/5I6BffzkZybYzhNWLkSq1w/content"
+ },
+ "integration": {
+  "summary": "Wire the BAS to the SC-EQ J12 RS-485 port, set the MAC address on the DIP switch and let the card detect BACnet MS/TP. Write the remote run/stop, leaving chilled liquid setpoint and input current limit, then read motor run status, the operation code, leaving chilled liquid temperature, % FLA and the safety fault code. Check MV 5 and MV 10-13 to confirm the chiller is taking its commands from the BAS.",
+  "minimum_points": [
+   {
+    "ref": "BV 1",
+    "name": "REM RUN STOP CMD",
+    "why": "Remote run/stop (1 = run)"
+   },
+   {
+    "ref": "AV 1",
+    "name": "REM LEAVING CHL TEMP SP",
+    "why": "Remote leaving chilled liquid setpoint"
+   },
+   {
+    "ref": "AV 2",
+    "name": "REMOTE INPUT CURRENT SP",
+    "why": "Remote input current limit, %"
+   },
+   {
+    "ref": "MV 1",
+    "name": "UNIT OPERATION CODE",
+    "why": "Operating state (stopped, starting, running)"
+   },
+   {
+    "ref": "BV 5",
+    "name": "COMPR MOTOR STATUS",
+    "why": "Compressor motor running"
+   },
+   {
+    "ref": "MV 5",
+    "name": "UNIT CONTROL SOURCE",
+    "why": "Control source; ISN (BAS) for BMS control"
+   },
+   {
+    "ref": "AV 5",
+    "name": "LEAVING CH LIQ TEMP",
+    "why": "Leaving chilled liquid temperature"
+   },
+   {
+    "ref": "AV 29",
+    "name": "MOTOR CURRENT PCT FLA",
+    "why": "Motor current, % FLA (load indication)"
+   },
+   {
+    "ref": "MV 2",
+    "name": "UNIT SAFETY FAULT CODE",
+    "why": "Safety shutdown code (1 = none)"
+   },
+   {
+    "ref": "MV 3",
+    "name": "UNIT CYCLING FAULT CODE",
+    "why": "Cycling shutdown code (1 = none)"
+   }
+  ],
+  "enable": "BV 1 REM RUN STOP CMD (0 = Stop, 1 = Run) is the BAS run/stop, and the REM AVs are the remote setpoints. MV 5 Unit Control Source shows Local, ISN (BAS), Analog, Digital, Modem or Remote. MV 10 shows the run/stop source (Local, BAS, Hardwire) and MV 11-13 the cooling setpoint, heating setpoint and current limit sources (Local, BAS, 0-10 V, 4-20 mA, PWM); check they read BAS. The points list has no write-enable point and doesn't say how the source is chosen at the chiller panel.",
+  "heartbeat": null,
+  "remote_sensors": null,
+  "setup": [
+   "The BAS connects to the SC-EQ J12 port (RS-485: +, -, COM/REF, SHLD). The card detects BACnet MS/TP, Modbus RTU or N2 and the baud rate by itself; allow up to 120 seconds after power-up.",
+   "The MAC address (1-127) is set on DIP switch SW1 (switch 8 unused). Cycle the card's power after changing it.",
+   "The device instance defaults to 5000 + the MAC address (MAC 6 gives 5006). To use another number, set Device Instance Mode to Manual and enter the instance with the SC-AP / MAP tool, or write BV 65000 (mode) and AV 65000 (instance ID).",
+   "MV 65001 Units sets whether the BAS sees IP or SI values, independent of the chiller display; set it to match the chiller.",
+   "Turn the card's RS-485 end-of-line switches on only when it is at the end of the trunk."
+  ],
+  "gotchas": [
+   "The BAS port is RS-485 only (BACnet MS/TP, Modbus RTU or N2); the card has no BACnet IP port.",
+   "Points marked Mod A or Mod B only appear on that chiller generation.",
+   "Remote setpoints show as unreliable until the BAS has written them once.",
+   "The card only exposes points that apply to the detected chiller and its options. Replacing an E-Link leaves the old, non-applicable points offline in the BAS until you rediscover the device.",
+   "Code points come in pairs: the MV state is the code + 1, and the AV copy (AV 401 and up) carries the raw code."
+  ]
+ },
+ "points": [
+  {
+   "type": "AV",
+   "instance": 1,
+   "name": "REM LEAVING CHL TEMP SP",
+   "description": "Remote Leaving Chilled Liquid Setpoint",
+   "units": "°F",
+   "access": "C",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 2,
+   "name": "REMOTE INPUT CURRENT SP",
+   "description": "Remote Input Current Limit Setpoint",
+   "units": "%",
+   "access": "C",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 3,
+   "name": "REM HEATING SP",
+   "description": "Remote Heating Setpoint",
+   "units": "°F",
+   "access": "C",
+   "states": ""
+  },
+  {
+   "type": "BV",
+   "instance": 1,
+   "name": "REM RUN STOP CMD",
+   "description": "Remote Run/Stop",
+   "units": "",
+   "access": "C",
+   "states": "0=Stop, 1=Run"
+  },
+  {
+   "type": "MV",
+   "instance": 65001,
+   "name": "Units",
+   "description": "Unit system reported by the SC-EQ",
+   "units": "",
+   "access": "W",
+   "states": "0=IP (English), 1=SI (Metric)"
+  },
+  {
+   "type": "AV",
+   "instance": 5,
+   "name": "LEAVING CH LIQ TEMP",
+   "description": "Leaving Chilled Liquid Temperature",
+   "units": "°F",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 6,
+   "name": "ENTERING CH LIQ TEMP",
+   "description": "Entering Chilled Liquid Temperature",
+   "units": "°F",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 7,
+   "name": "LEAVING COND WATER TEMP",
+   "description": "Leaving Condenser Liquid Temperature",
+   "units": "°F",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 8,
+   "name": "ENTERING COND WATER TEMP",
+   "description": "Entering Condenser Liquid Temperature",
+   "units": "°F",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 9,
+   "name": "EVAPORATOR PRESSURE",
+   "description": "Evaporator Pressure",
+   "units": "PSIG",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 10,
+   "name": "CONDENSER PRESSURE",
+   "description": "Condenser Pressure",
+   "units": "PSIG",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 11,
+   "name": "DISCHARGE TEMP",
+   "description": "Discharge Temperature",
+   "units": "°F",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 12,
+   "name": "EVAP REFRIGERANT TEMP",
+   "description": "Evaporator Refrigerant Temperature (Evaporator Refrigerant Temperature enabled only)",
+   "units": "°F",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 13,
+   "name": "VSD PHASE A OUTPUT CURRENT",
+   "description": "VSD Phase A Output Current (RMS)",
+   "units": "Amps",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 14,
+   "name": "VSD PHASE B OUTPUT CURRENT",
+   "description": "VSD Phase B Output Current (RMS)",
+   "units": "Amps",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 15,
+   "name": "VSD PHASE C OUTPUT CURRENT",
+   "description": "VSD Phase C Output Current (RMS)",
+   "units": "Amps",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 17,
+   "name": "VSD RMS INPUT CURRENT L1",
+   "description": "VSD L1 Input Current (RMS)",
+   "units": "Amps",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 18,
+   "name": "VSD RMS INPUT CURRENT L2",
+   "description": "VSD L2 Input Current (RMS)",
+   "units": "Amps",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 19,
+   "name": "VSD RMS INPUT CURRENT L3",
+   "description": "VSD L3 Input Current (RMS)",
+   "units": "Amps",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 20,
+   "name": "LEAVING CH LIQ TEMP ACT SP",
+   "description": "Leaving Chilled Liquid Setpoint - Selected",
+   "units": "°F",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 21,
+   "name": "INPUT CURRENT LMT ACTIVE",
+   "description": "Active Input Current Limit",
+   "units": "%",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 22,
+   "name": "EVAP SATURATION TEMP",
+   "description": "Evaporator Saturation Temperature",
+   "units": "°F",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 23,
+   "name": "COND SATURATION TEMP",
+   "description": "Condenser Saturation Temperature",
+   "units": "°F",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 24,
+   "name": "INPUT CURRENT PCT FLA",
+   "description": "Input % Full Load Amps",
+   "units": "%",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 25,
+   "name": "COND REFRIGERANT LEVEL",
+   "description": "Condenser Refrigerant Level",
+   "units": "%",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 26,
+   "name": "OPERATING HOURS",
+   "description": "Operating Hours",
+   "units": "Hr",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 27,
+   "name": "NUMBER OF STARTS",
+   "description": "Number Of Starts",
+   "units": "",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 28,
+   "name": "HOT GAS BYPASS VLV CMD",
+   "description": "Hot Gas Bypass Command (Hot Gas Bypass enabled only)",
+   "units": "%",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 29,
+   "name": "MOTOR CURRENT PCT FLA",
+   "description": "Motor % Full Load Amps",
+   "units": "%",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "BV",
+   "instance": 5,
+   "name": "COMPR MOTOR STATUS",
+   "description": "Motor Run",
+   "units": "",
+   "access": "R",
+   "states": "0=Off, 1=On"
+  },
+  {
+   "type": "BV",
+   "instance": 6,
+   "name": "CH LIQ PUMP STAT",
+   "description": "Chilled Liquid Pump",
+   "units": "",
+   "access": "R",
+   "states": "0=Off, 1=On"
+  },
+  {
+   "type": "BV",
+   "instance": 7,
+   "name": "VSD COOLING SYS STAT",
+   "description": "VSD Cooling System",
+   "units": "",
+   "access": "R",
+   "states": "0=Off, 1=On"
+  },
+  {
+   "type": "BV",
+   "instance": 8,
+   "name": "RUN PERMISSIVE",
+   "description": "Run Permissive",
+   "units": "",
+   "access": "R",
+   "states": "0=Off, 1=On"
+  },
+  {
+   "type": "BV",
+   "instance": 9,
+   "name": "CH LIQ FLOW SWITCH STAT",
+   "description": "Chilled Liquid Flow Switch",
+   "units": "",
+   "access": "R",
+   "states": "0=Open, 1=Closed"
+  },
+  {
+   "type": "BV",
+   "instance": 10,
+   "name": "CND FLOW SWITCH STAT",
+   "description": "Condenser Liquid Flow Switch",
+   "units": "",
+   "access": "R",
+   "states": "0=Open, 1=Closed"
+  },
+  {
+   "type": "BV",
+   "instance": 11,
+   "name": "COND REF LEVEL CNTRL MODE",
+   "description": "Condenser Level Control Valve Mode",
+   "units": "",
+   "access": "R",
+   "states": "0=Auto, 1=Manual"
+  },
+  {
+   "type": "BV",
+   "instance": 12,
+   "name": "CND LIQ PUMP STAT",
+   "description": "Condenser Liquid Pump",
+   "units": "",
+   "access": "R",
+   "states": "0=Off, 1=On"
+  },
+  {
+   "type": "MV",
+   "instance": 1,
+   "name": "UNIT OPERATION CODE",
+   "description": "Unit Operation Code",
+   "units": "",
+   "access": "R",
+   "states": "1=Unit Stopped - Ready To Start, 2=Unit Stopped - Local Shutdown, 3=Unit Stopped - Remote Shutdown, 4=Unit Stopped - Warning Active, 5=Unit Stopped - Cycling Shutdown, 6=Unit Stopped - Safety Shutdown, 7=Unit Start Inhibit, 8=Unit Starting, 9=Unit Running - No Abnormal Condition, 10=Unit Running - Warning Active, 11=Unit Running - Soft Shutdown, 12=Unit Coastdown, 13=Unit Running - Modified Run, 14=Unit Stopped - Internal Shutdown, 16=Unit Running - Active Low Lift - No Abnormal Condition, 17=Unit Running - Active Low Lift - Warning Active, 18=Unit Running - Active Low Lift - Modified Run, 19=Unit Running - Passive Low Lift - No Abnormal Condition, 20=Unit Running - Passive Low Lift - Warning Active, 21=Unit Running - Passive Low Lift - Modified Run, 22=Unit Running - Cooling - No Abnormal Condition, 23=Unit Running - Cooling - Warning Active, 24=Unit Running - Cooling - Modified Run, 25=Unit Running - Heating - No Abnormal Condition, 26=Unit Running - Heating - Warning Active, 27=Unit Running - Heating - Modified Run, 28=Unit Running - Cooling & Heating - No Abnormal Condition, 29=Unit Running - Cooling & Heating - Warning Active, 30=Unit Running - Cooling & Heating - Modified Run"
+  },
+  {
+   "type": "AV",
+   "instance": 401,
+   "name": "UNIT OPERATION CODE AV",
+   "description": "Unit Operation Code, raw code (MV 1 shows code + 1)",
+   "units": "",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "MV",
+   "instance": 2,
+   "name": "UNIT SAFETY FAULT CODE",
+   "description": "Unit Safety Fault Code",
+   "units": "",
+   "access": "R",
+   "states": "1=No Safety Faults Present; other values (up to 164) are YMC2 Safety Fault Code table SC.2 codes plus 1 (133 codes listed in the source doc)"
+  },
+  {
+   "type": "AV",
+   "instance": 402,
+   "name": "UNIT SAFETY FAULT CODE AV",
+   "description": "Unit Safety Fault Code, raw code (MV 2 shows code + 1)",
+   "units": "",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "MV",
+   "instance": 3,
+   "name": "UNIT CYCLING FAULT CODE",
+   "description": "Unit Cycling Fault Code",
+   "units": "",
+   "access": "R",
+   "states": "1=No Cycling Faults Present; other values (up to 162) are YMC2 Cycling Fault Code table SC.3 codes plus 1 (111 codes listed in the source doc)"
+  },
+  {
+   "type": "AV",
+   "instance": 403,
+   "name": "UNIT CYCLING FAULT CODE AV",
+   "description": "Unit Cycling Fault Code, raw code (MV 3 shows code + 1)",
+   "units": "",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "MV",
+   "instance": 4,
+   "name": "UNIT WARNING CODE",
+   "description": "Unit Warning Code",
+   "units": "",
+   "access": "R",
+   "states": "1=No Warnings Present, 2=WARNING - REAL TIME CLOCK FAILURE, 3=WARNING - SETPOINT OVERRIDE, 4=WARNING - CONDENSER OR EVAPORATOR XDCR ERROR, 5=WARNING - EVAPORATOR - LOW PRESSURE LIMIT, 6=WARNING - CONDENSER - HIGH PRESSURE LIMIT, 8=WARNING - YEARLY SERVICE REQUIRED - CONTACT JCI, 9=WARNING - 3 YEAR SERVICE REQUIRED - CONTACT JCI, 10=WARNING - CONDENSER - HIGH SMALL TEMP DIFFERENCE, 11=WARNING - MBC - LOW AMPLIFIER RESISTANCE, 12=WARNING - MBC - HIGH AMPLIFIER RESISTANCE, 13=WARNING - MBC - LOW AMPLIFIER CURRENT, 14=WARNING - MBC - HIGH AMPLIFIER CURRENT, 15=WARNING - MBC - POSITION SENSOR ERROR, 16=WARNING - MBC - J BEARING SENSOR DISABLED, 17=WARNING - MBC - K BEARING SENSOR DISABLED, 18=WARNING - MBC - H BEARING SENSOR DISABLED, 21=WARNING – UPS – NOT CHARGING, 22=WARNING – UPS – LINE LOW BATTERY VOLTAGE, 23=WARNING – UPS – BATTERY NOT CONNECTED, 24=WARNING – UPS – CHECK BATTERY CONNECTION, 25=WARNING – UPS – BATTERY TEST FAILED, 26=WARNING - SALES ORDER - INVALID SERIAL NUMBER, 30=WARNING - SURGE PROTECTION - EXCESS SURGE LIMIT, 31=WARNING - EXCESS SURGE DETECTED, 35=WARNING - CONDENSER OR VGD SENSOR FAILURE, 36=WARNING - HARMONIC FILTER - INVALID MODEL, 37=WARNING - HARMONIC FILTER - OPERATION INHIBITED, 38=WARNING - HARMONIC FILTER - DATA LOSS, 40=WARNING - HARMONIC FILTER - NOT RUNNING, 41=WARNING - MOTOR - HIGH WINDING TEMPERATURE, 42=WARNING - MOTOR - HIGH ROTOR TEMPERATURE, 45=WARNING - VSD - INPUT VOLTAGE IMBALANCE, 46=WARNING - VSD - HIGH HX APPROACH TEMPERATURE, 49=WARNING - MBC - LANDING COUNTER HIGH, 56=WARNING – MBC – CHECKSUM CENTERING, 57=WARNING – MBC – DSP WATCHDOG, 58=WARNING – MBC – AMP WATCHDOG, 59=WARNING – MBC – INTERNAL ALARM, 60=WARNING – MBC – HIGH RADIAL OSCILLATOR VOLTAGE, 61=WARNING – MBC – HIGH AXIAL OSCILLATOR VOLTAGE, 66=WARNING - MBC - ROTATION MODE OFF, 67=WARNING - MOTOR - HIGH CURRENT LIMIT, 68=WARNING - MOTOR - HIGH HOUSING TEMPERATURE, 69=WARNING - VSD - DC BUS ACTIVE, 70=WARNING - LIQUID LEVEL SETPOINT NOT ACHIEVED, 71=WARNING - LOSS OF SUBCOOLER LIQUID SEAL"
+  },
+  {
+   "type": "AV",
+   "instance": 404,
+   "name": "UNIT WARNING CODE AV",
+   "description": "Unit Warning Code, raw code (MV 4 shows code + 1)",
+   "units": "",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "MV",
+   "instance": 5,
+   "name": "UNIT CONTROL SOURCE",
+   "description": "Unit Control Source",
+   "units": "",
+   "access": "R",
+   "states": "0=Local, 1=ISN (BAS), 2=Analog, 3=Digital, 4=Modem, 5=Remote"
+  },
+  {
+   "type": "AV",
+   "instance": 405,
+   "name": "UNIT CONTROL SOURCE AV",
+   "description": "Unit Control Source, same codes as MV 5",
+   "units": "",
+   "access": "R",
+   "states": "0=Local, 1=ISN (BAS), 2=Analog, 3=Digital, 4=Modem, 5=Remote"
+  },
+  {
+   "type": "MV",
+   "instance": 6,
+   "name": "UNIT MODIFIED RUN CODE",
+   "description": "Unit Modified Run Code",
+   "units": "",
+   "access": "R",
+   "states": "1=No Modified Run Conditions Present, 2=VSD - DC BUS ACTIVE, 3=MOTOR - HIGH CURRENT LIMIT, 5=VSD - INPUT PULLDOWN LIMIT, 6=VSD - HIGH INPUT CURRENT LIMIT"
+  },
+  {
+   "type": "AV",
+   "instance": 406,
+   "name": "UNIT MODIFIED RUN CODE AV",
+   "description": "Unit Modified Run Code, raw code (MV 6 shows code + 1)",
+   "units": "",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "MV",
+   "instance": 7,
+   "name": "UNIT START INHIBIT CODE",
+   "description": "Unit Start Inhibit Code",
+   "units": "",
+   "access": "R",
+   "states": "1=No Start Inhibits Present, 2=ANTI-RECYCLE, 4=VGD STROKE NOT CALIBRATED, 5=VGD FEEDBACK NOT CALIBRATED, 6=MBC - BEARING CALIBRATION IN PROGRESS, 7=MBC - BEARING CLEARANCE CHECK IN PROGRESS, 8=VSD - INITIALIZATION IN PROGRESS, 11=PRV NOT CALIBRATED, 13=VGD NOT CALIBRATED, 14=LINE VOLTAGE NOT SET, 15=LINE FREQUENCY NOT SET, 16=MBC - INITIALIZATION IN PROGRESS"
+  },
+  {
+   "type": "AV",
+   "instance": 407,
+   "name": "UNIT START INHIBIT CODE AV",
+   "description": "Unit Start Inhibit Code, raw code (MV 7 shows code + 1)",
+   "units": "",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "MV",
+   "instance": 8,
+   "name": "UNIT INTERNAL FAULT CODE",
+   "description": "Unit Internal Fault Code",
+   "units": "",
+   "access": "R",
+   "states": "1=No Internal Faults Present, 2=INTERNAL ERROR - NO TIMER HANDLES AVAILABLE, 3=WATCHDOG - SOFTWARE REBOOT, 4=INTERNAL ERROR - CANNOT CREATE TASK, 5=INTERNAL ERROR - CANNOT REGISTER CONTROL, 6=INTERNAL ERROR - INVALID BRAM"
+  },
+  {
+   "type": "AV",
+   "instance": 408,
+   "name": "UNIT INTERNAL FAULT CODE AV",
+   "description": "Unit Internal Fault Code, raw code (MV 8 shows code + 1)",
+   "units": "",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 30,
+   "name": "VGD CONTROL STATE",
+   "description": "VGD Control State (Mod A Chillers only)",
+   "units": "",
+   "access": "R",
+   "states": "0=[Unused], 1=Probing or Capacity Control, 2=Stall Reacting, 3=Stall Waiting, 4=Surge Reacting, 5=Surge Waiting, 6=Sensor Override, 7=[Unused], 8=PRV Position Override"
+  },
+  {
+   "type": "AV",
+   "instance": 31,
+   "name": "VGD STALL COUNT",
+   "description": "VGD Stall Count (Mod A Chillers only)",
+   "units": "",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 32,
+   "name": "ACTIVE ANTI SURGE MIN FREQ",
+   "description": "Active Anti-Surge Minimum Frequency",
+   "units": "Hz",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 34,
+   "name": "VSD OUTPUT VOLTAGE",
+   "description": "VSD Output Voltage",
+   "units": "Volts",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 35,
+   "name": "VSD INPUT POWER",
+   "description": "VSD Input Power",
+   "units": "kW",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 36,
+   "name": "VSD INPUT KWH",
+   "description": "VSD Input Kilowatt Hours",
+   "units": "kWh",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 37,
+   "name": "VSD DC BUS VOLTAGE",
+   "description": "VSD DC Bus Voltage",
+   "units": "Volts",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 38,
+   "name": "VSD INPUT VOLTAGE L1",
+   "description": "VSD L1 Input Voltage (RMS)",
+   "units": "Volts",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 39,
+   "name": "SURGE COUNT",
+   "description": "Surge Count",
+   "units": "",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 40,
+   "name": "VSD OUTPUT FREQUENCY",
+   "description": "VSD Output Frequency",
+   "units": "Hz",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 41,
+   "name": "VSD INPUT VOLTAGE L2",
+   "description": "VSD L2 Input Voltage (RMS)",
+   "units": "Volts",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 42,
+   "name": "VSD INPUT VOLTAGE L3",
+   "description": "VSD L3 Input Voltage (RMS)",
+   "units": "Volts",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 43,
+   "name": "COND LVL CTRL VLV CMD",
+   "description": "Condenser Level Control Valve Command",
+   "units": "%",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "BV",
+   "instance": 26,
+   "name": "MBC LEVITATION MODE",
+   "description": "MBC Levitation Mode",
+   "units": "",
+   "access": "R",
+   "states": "0=Off, 1=On"
+  },
+  {
+   "type": "BV",
+   "instance": 27,
+   "name": "MBC ROTATION MODE",
+   "description": "MBC Rotation Mode",
+   "units": "",
+   "access": "R",
+   "states": "0=Off, 1=On"
+  },
+  {
+   "type": "AV",
+   "instance": 48,
+   "name": "MOTOR HOUSING TEMP",
+   "description": "Motor Housing Temp",
+   "units": "°F",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 107,
+   "name": "MOTOR COOLING VALVE CMD",
+   "description": "Motor Cooling Valve Command (Mod A FAB comp & Mod B chillers)",
+   "units": "%",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 108,
+   "name": "VSD INTERNAL AMBIENT TEMP 2",
+   "description": "VSD Internal Ambient Temperature 2",
+   "units": "°F",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 109,
+   "name": "MTR WINDING AVG TEMP",
+   "description": "Average Motor Winding Temperature",
+   "units": "°F",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 110,
+   "name": "VSD INTERNAL AMBIENT TEMP 1",
+   "description": "VSD Internal Ambient Temperature 1",
+   "units": "°F",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 111,
+   "name": "VGD POSITION",
+   "description": "VGD Position",
+   "units": "%",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 112,
+   "name": "PRE ROTATION VANES POS",
+   "description": "Pre Rotation Vanes (PRV) Position (Mod A chiller FAA comp only)",
+   "units": "%",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 113,
+   "name": "COND REFRIGERANT LEVEL SP",
+   "description": "Condenser Active Level Setpoint",
+   "units": "%",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 114,
+   "name": "DROP LEG REFRIG TEMP",
+   "description": "Drop Leg Refrigerant Temperature",
+   "units": "°F",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 115,
+   "name": "VSD L1 VOLTAGE THD",
+   "description": "VSD L1 Voltage Total Harmonic Distortion",
+   "units": "%",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 116,
+   "name": "VSD L2 VOLTAGE THD",
+   "description": "VSD L2 Voltage Total Harmonic Distortion",
+   "units": "%",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 117,
+   "name": "VSD L3 VOLTAGE THD",
+   "description": "VSD L3 Voltage Total Harmonic Distortion",
+   "units": "%",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 118,
+   "name": "VSD L1 INPUT CURRENT TDD",
+   "description": "VSD L1 Input Current Total Demand Distortion",
+   "units": "%",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 119,
+   "name": "VSD L2 INPUT CURRENT TDD",
+   "description": "VSD L2 Input Current Total Demand Distortion",
+   "units": "%",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 120,
+   "name": "VSD L3 INPUT CURRENT TDD",
+   "description": "VSD L3 Input Current Total Demand Distortion",
+   "units": "%",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 121,
+   "name": "INPUT KWH LO",
+   "description": "Input Kilowatt Hours Low",
+   "units": "",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 122,
+   "name": "INPUT KWH OFFSET",
+   "description": "Input Kilowatt Hours Offset",
+   "units": "",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 123,
+   "name": "OPERATING HOURS LO",
+   "description": "Operating Hours Low",
+   "units": "",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 124,
+   "name": "OPERATING HOURS OFFSET",
+   "description": "Operating Hours Offset",
+   "units": "",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 125,
+   "name": "MBC MOTOR SPEED",
+   "description": "MBC Motor Speed",
+   "units": "Hz",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 126,
+   "name": "MBC LANDING COUNTER",
+   "description": "MBC Landing Counter (Mod A chillers only)",
+   "units": "",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 127,
+   "name": "ACTIVE MIN PRV POS",
+   "description": "Active Minimum PRV Position (Mod A chiller FAA comp only)",
+   "units": "%",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 137,
+   "name": "UPS BATTERY VOLTAGE",
+   "description": "UPS Battery Voltage (Mod B Chillers only)",
+   "units": "Volts",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 138,
+   "name": "VSD PH A REC BASEPLATE TEMP",
+   "description": "VSD Phase A Rectifier Baseplate Temperature",
+   "units": "°F",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 139,
+   "name": "VSD PH B REC BASEPLATE TEMP",
+   "description": "VSD Phase B Rectifier Baseplate Temperature",
+   "units": "°F",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 140,
+   "name": "VSD PH C REC BASEPLATE TEMP",
+   "description": "VSD Phase C Rectifier Baseplate Temperature",
+   "units": "°F",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 141,
+   "name": "VSD PH A INV BASEPLATE TEMP",
+   "description": "VSD Phase A Inverter Baseplate Temperature",
+   "units": "°F",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 142,
+   "name": "VSD PH B INV BASEPLATE TEMP",
+   "description": "VSD Phase B Inverter Baseplate Temperature",
+   "units": "°F",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 143,
+   "name": "VSD PH C INV BASEPLATE TEMP",
+   "description": "VSD Phase C Inverter Baseplate Temperature",
+   "units": "°F",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 144,
+   "name": "EVAP SMALL TEMP DIFF",
+   "description": "Evaporator Small Temp Difference",
+   "units": "°F (diff)",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 145,
+   "name": "COND SMALL TEMP DIFF",
+   "description": "Condenser Small Temp Difference",
+   "units": "°F (diff)",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 146,
+   "name": "DISCHARGE SUPERHEAT",
+   "description": "Discharge Superheat",
+   "units": "°F (diff)",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 147,
+   "name": "SUBCOOLLER EFFECTIVENESS",
+   "description": "Subcooler Effectiveness",
+   "units": "",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 148,
+   "name": "SUBCOOLING TEMP",
+   "description": "Subcooling Temperature",
+   "units": "°F (diff)",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 149,
+   "name": "DELTA P DIV P",
+   "description": "Delta P / P",
+   "units": "",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 150,
+   "name": "HEAD PRESSURE",
+   "description": "Head Pressure",
+   "units": "PSID",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "MV",
+   "instance": 10,
+   "name": "RUN STOP CTRL SOURCE",
+   "description": "Run/Stop Control Source",
+   "units": "",
+   "access": "R",
+   "states": "0=Local, 1=BAS, 2=Hardwire"
+  },
+  {
+   "type": "AV",
+   "instance": 421,
+   "name": "RUN STOP CTRL SOURCE AV",
+   "description": "Run/Stop Control Source, same codes as MV 10",
+   "units": "",
+   "access": "R",
+   "states": "0=Local, 1=BAS, 2=Hardwire"
+  },
+  {
+   "type": "MV",
+   "instance": 11,
+   "name": "COOL SETP CTRL SOURCE",
+   "description": "Cooling Setp Control Source",
+   "units": "",
+   "access": "R",
+   "states": "0=Local, 1=BAS, 2=0-10 Volts, 3=4-20 mA, 4=PWM"
+  },
+  {
+   "type": "AV",
+   "instance": 422,
+   "name": "COOL SETP CTRL SOURCE AV",
+   "description": "Cooling Setp Control Source, same codes as MV 11",
+   "units": "",
+   "access": "R",
+   "states": "0=Local, 1=BAS, 2=0-10 Volts, 3=4-20 mA, 4=PWM"
+  },
+  {
+   "type": "MV",
+   "instance": 12,
+   "name": "HEAT SETP CTRL SOURCE",
+   "description": "Heating Setp Control Source",
+   "units": "",
+   "access": "R",
+   "states": "0=Local, 1=BAS, 2=0-10 Volts, 3=4-20 mA, 4=PWM"
+  },
+  {
+   "type": "AV",
+   "instance": 423,
+   "name": "HEAT SETP CTRL SOURCE AV",
+   "description": "Heating Setp Control Source, same codes as MV 12",
+   "units": "",
+   "access": "R",
+   "states": "0=Local, 1=BAS, 2=0-10 Volts, 3=4-20 mA, 4=PWM"
+  },
+  {
+   "type": "MV",
+   "instance": 13,
+   "name": "CURR LIM CTRL SOURCE",
+   "description": "Current Limit Control Source",
+   "units": "",
+   "access": "R",
+   "states": "0=Local, 1=BAS, 2=0-10 Volts, 3=4-20 mA, 4=PWM"
+  },
+  {
+   "type": "AV",
+   "instance": 424,
+   "name": "CURR LIM CTRL SOURCE AV",
+   "description": "Current Limit Control Source, same codes as MV 13",
+   "units": "",
+   "access": "R",
+   "states": "0=Local, 1=BAS, 2=0-10 Volts, 3=4-20 mA, 4=PWM"
+  }
+ ],
+ "page": "https://easybacnet.com/bacnet-points-lists/york/ymc2-sc-eq",
+ "note": "Re-typed from the manufacturer's public documentation (see source). Point availability varies by firmware and options; verify against the live device."
+}

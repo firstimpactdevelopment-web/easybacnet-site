@@ -1,0 +1,830 @@
+{
+  "manufacturer": "Carrier",
+  "manufacturer_slug": "carrier",
+  "model": "Fan Coil Open",
+  "model_slug": "fan-coil-open",
+  "aliases": [
+    "Fan Coil Open",
+    "OPN-FC",
+    "Carrier Fan Coil controller",
+    "11-808-540-01"
+  ],
+  "equipment_type": "Fan coil unit controller",
+  "applies_to": "Carrier fan coil units fitted with the Fan Coil Open (OPN-FC) multi-protocol controller.",
+  "summary": "The Fan Coil (OPN-FC) controller ships as an integrated part of Carrier packaged fan coil units. DIP switches and the communications selector choose BACnet MS/TP (the default), BACnet ARC156, Modbus or N2, and a LonWorks option card is available. The default device instance is 16101 followed by the two-digit rotary address. Points cover setpoints, space and supply temperatures, fan speed and valve outputs, 2-pipe changeover, alarms and the 'system' points a BAS writes in place of local sensors.",
+  "bacnet_transport": [
+    "BACnet MS/TP",
+    "BACnet ARC156"
+  ],
+  "firmware": null,
+  "default_device_instance": "16101xx (xx = rotary switch address)",
+  "access_inferred": false,
+  "notes": [
+    "System points (system_spt, system_rh, system_iaq, system_oat, system_water_temp, system_stpt_adj) must be written at BACnet priority 16 and no more than once per minute; -999 means no network value.",
+    "The guide's generic system-point table also lists system_oaq (AV:1908), oae (BV:1901), press_override (BV:1906) and fire_shutdown (BV:1907). They are not in the Fan Coil points list, so they are left out here.",
+    "The points list gives BAS On/Off (keypad_ovrde) as MSV:1, while the system-point table in the same guide shows msv:1001 as on other Open controllers. Check which instance the controller exposes.",
+    "Defaults in the points list differ from the sequence text for Fan On Delay (10 s vs 30 s), Fan Off Delay (90 s vs 120 s) and Power Fail Restart Delay (5 s vs 60 s); check on the controller.",
+    "Occ Override Delay (AV:9028) is listed twice in the source; it is kept once here. Several display names in the source are just 'Setpoint'; the object name tells you which one.",
+    "Each point also has a Modbus register in the same table; only the BACnet side is captured here."
+  ],
+  "source": {
+    "title": "Fan Coil Integration Guide (Appendix A: Fan Coil Network Points List)",
+    "doc_number": "11-808-540-01",
+    "revision_date": "2022-07-21",
+    "url": "https://www.shareddocs.com/hvac/docs/1000/Public/0E/11-808-540-01.pdf"
+  },
+  "integration": {
+    "summary": "Set the Fan Coil Open for BACnet MS/TP with its DIP switches and rotary address. Disable the local Occupancy Schedules so the BAS can command occupancy through keypad_ovrde, then write setpoints directly. Space temperature, humidity, CO2, OAT and 2-pipe water temperature from the BMS go into the system_* points at priority 16 and have to be refreshed within each point's window.",
+    "minimum_points": [
+      {
+        "ref": "MV 1",
+        "name": "keypad_ovrde",
+        "why": "BAS occupancy command: occupied/unoccupied"
+      },
+      {
+        "ref": "BV 9001",
+        "name": "shutdown",
+        "why": "Network shutdown command"
+      },
+      {
+        "ref": "AV 3001",
+        "name": "occ_cl_stpt",
+        "why": "Occupied cooling setpoint"
+      },
+      {
+        "ref": "AV 3002",
+        "name": "occ_ht_stpt",
+        "why": "Occupied heating setpoint"
+      },
+      {
+        "ref": "MV 2002",
+        "name": "run_status",
+        "why": "Current system mode"
+      },
+      {
+        "ref": "BV 2008",
+        "name": "occ_status",
+        "why": "Confirms occupied/unoccupied"
+      },
+      {
+        "ref": "AV 2007",
+        "name": "space_temp",
+        "why": "Space temperature the unit controls to"
+      },
+      {
+        "ref": "AV 1008",
+        "name": "sa_temp",
+        "why": "Supply air temperature"
+      },
+      {
+        "ref": "BV 7008",
+        "name": "sfan_fail_alarm",
+        "why": "Supply fan failure alarm"
+      },
+      {
+        "ref": "BV 7028",
+        "name": "overflow_alarm",
+        "why": "Condensate overflow alarm; stops the fan"
+      }
+    ],
+    "enable": "The unit runs occupied 24/7 until a schedule or the BAS takes over. Disable Occupancy Schedules (Configuration > Unit Configuration) so the BAS can control it, then write BAS On/Off keypad_ovrde (MSV:1 in the points list): 1=Inactive, 2=Occupied, 3=Unoccupied. Shutdown (BV:9001) stops the unit from the network. Cool Enable (BV:1011) and Heat Enable (BV:1012) lock out cooling or heating.",
+    "heartbeat": "No general heartbeat. Each system point is only used while it is refreshed within its window: space temperature 1 min / 5 min, RH and CO2 5 min / 10 min, OAT and water temperature 5 min / 60 min.",
+    "remote_sensors": "Write system_spt (AV:1902), system_rh (AV:1904), system_iaq (AV:1903), system_oat (AV:1901), system_water_temp (AV:1905) and system_stpt_adj (AV:1913) at BACnet priority 16, no more than once a minute. A network value overrides the local sensor while it is refreshed in time. system_water_temp sets the 2-pipe changeover mode and takes priority over the local changeover sensor. The controller clears a system point after processing it, so read the matching control point instead (space_temp, space_rh, iaq, oa_temp, chgovr_mode) at least 30 s after the write.",
+    "setup": [
+      "MS/TP MAC address is set on the rotary switches (tens and ones); valid 1-99. The address is read only at power-up.",
+      "Default device instance is 16101xx (xx = rotary address); it can be changed with an Equipment Touch.",
+      "Baud is set on DIP 1-2 (9600/19.2k/38.4k/76.8k); 76.8k is the default; 8N1 fixed. DIP 3 and 4 both Off = BACnet MS/TP.",
+      "Set the communications selector to EIA-485; switch changes only take effect after a power cycle.",
+      "Max Masters defaults to 127 and Max Info Frames to 10 (adjustable via Equipment Touch). The controller counts as a full load on the MS/TP bus."
+    ],
+    "gotchas": [
+      "System points must be written at priority 16; writes at any other priority are ignored.",
+      "Never write a system point more than once per minute (60 s).",
+      "Only controllers set as MS/TP masters answer Who-Is.",
+      "The guide says the unit accepts three network demand-limit levels, but cool_demand_level (AV:9006) and heat_demand_level (AV:9036) are listed read-only.",
+      "Some points only apply with certain options (2-pipe changeover, electric heat, DCV damper, reheat, humidity sensor, linkage)."
+    ]
+  },
+  "points": [
+    {
+      "type": "AV",
+      "instance": 9002,
+      "name": "oat_cl_lockout",
+      "description": "Cooling Lockout Temperature (default 45)",
+      "units": "°F",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 2025,
+      "name": "clg_output",
+      "description": "Cooling Output",
+      "units": "%",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 2022,
+      "name": "oa_dpr_pos",
+      "description": "Damper Output",
+      "units": "%",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 3005,
+      "name": "eff_cl_stpt",
+      "description": "Effective Cool Setpoint",
+      "units": "°F",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 3006,
+      "name": "eff_ht_stpt",
+      "description": "Effective Heat Setpoint",
+      "units": "°F",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 2019,
+      "name": "filter_service_hrs",
+      "description": "Filter Service Alarm Timer (default 600)",
+      "units": "hr",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 9003,
+      "name": "oat_ht_lockout",
+      "description": "Heating Lockout Temperature (default 65)",
+      "units": "°F",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 2026,
+      "name": "htg_output",
+      "description": "Heating Output",
+      "units": "%",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 3011,
+      "name": "occ_dehum_stpt",
+      "description": "Occ Relative Humidity Setpoint (default 60)",
+      "units": "%rh",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 9026,
+      "name": "optm_start",
+      "description": "Optimal Start (default 1)",
+      "units": "hr",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 2016,
+      "name": "ovrde_time",
+      "description": "Override Time Remaining",
+      "units": "min",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 9007,
+      "name": "start_delay",
+      "description": "Power Fail Restart Delay (default 5)",
+      "units": "seconds",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 1010,
+      "name": "ra_temp",
+      "description": "Return Air Temperature",
+      "units": "°F",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 1003,
+      "name": "oa_temp",
+      "description": "Outdoor Air Temperature",
+      "units": "°F",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 3001,
+      "name": "occ_cl_stpt",
+      "description": "Occupied cool setpoint",
+      "units": "°F",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 1006,
+      "name": "stpt_adj",
+      "description": "Setpoint Adjustment",
+      "units": "°F",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 9015,
+      "name": "stpt_adj_range",
+      "description": "Setpoint Adjustment Range (default 5)",
+      "units": "°F",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 1011,
+      "name": "space_rh",
+      "description": "Space Relative Humidity",
+      "units": "%rh",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 2007,
+      "name": "space_temp",
+      "description": "Space Temperature - Prime Variable",
+      "units": "°F",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 1901,
+      "name": "system_oat",
+      "description": "System Outdoor Air Temperature (default -999)",
+      "units": "°F",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 1913,
+      "name": "system_stpt_adj",
+      "description": "System Setpoint Adjustment (default -999)",
+      "units": "°F",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 1903,
+      "name": "system_iaq",
+      "description": "System Space AQ (default -999)",
+      "units": "",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 1904,
+      "name": "system_rh",
+      "description": "System Space RH (default -999)",
+      "units": "%",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 1902,
+      "name": "system_spt",
+      "description": "System Space Temperature (default -999)",
+      "units": "°F",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 1905,
+      "name": "system_water_temp",
+      "description": "System Water Temperature (default -999)",
+      "units": "°F",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 3012,
+      "name": "unocc_dehum_stpt",
+      "description": "Unocc Relative Humidity Setpoint (default 95)",
+      "units": "%rh",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "BV",
+      "instance": 1014,
+      "name": "chgovr_mode",
+      "description": "Changeover Mode",
+      "units": "",
+      "access": "R",
+      "states": "0=Off; 1=On"
+    },
+    {
+      "type": "BV",
+      "instance": 7028,
+      "name": "overflow_alarm",
+      "description": "Condensate Overflow",
+      "units": "",
+      "access": "R",
+      "states": "0=Normal; 1=Alarm"
+    },
+    {
+      "type": "BV",
+      "instance": 1011,
+      "name": "cl_enable",
+      "description": "Cool Enable (default Enable)",
+      "units": "",
+      "access": "W",
+      "states": "0=Disable; 1=Enable"
+    },
+    {
+      "type": "BV",
+      "instance": 2006,
+      "name": "dehum_status",
+      "description": "Dehumidification",
+      "units": "",
+      "access": "R",
+      "states": "0=Inactive; 1=Active"
+    },
+    {
+      "type": "BV",
+      "instance": 7017,
+      "name": "filter_alarm",
+      "description": "Filter",
+      "units": "",
+      "access": "R",
+      "states": "0=Normal; 1=Alarm"
+    },
+    {
+      "type": "BV",
+      "instance": 7007,
+      "name": "fire_alarm",
+      "description": "Fire / Smoke Shutdown",
+      "units": "",
+      "access": "R",
+      "states": "0=Normal; 1=Alarm"
+    },
+    {
+      "type": "BV",
+      "instance": 1012,
+      "name": "ht_enable",
+      "description": "Heat Enable (default Enable)",
+      "units": "",
+      "access": "W",
+      "states": "0=Disable; 1=Enable"
+    },
+    {
+      "type": "BV",
+      "instance": 7011,
+      "name": "spt_hi_alarm",
+      "description": "High Space Temperature",
+      "units": "",
+      "access": "R",
+      "states": "0=Normal; 1=Alarm"
+    },
+    {
+      "type": "BV",
+      "instance": 7005,
+      "name": "iaq_alarm",
+      "description": "Indoor Air Quality",
+      "units": "",
+      "access": "R",
+      "states": "0=Normal; 1=Alarm"
+    },
+    {
+      "type": "BV",
+      "instance": 7012,
+      "name": "spt_lo_alarm",
+      "description": "Low Space Temperature",
+      "units": "",
+      "access": "R",
+      "states": "0=Normal; 1=Alarm"
+    },
+    {
+      "type": "BV",
+      "instance": 2008,
+      "name": "occ_status",
+      "description": "Occupancy Status",
+      "units": "",
+      "access": "R",
+      "states": "0=Unoccupied; 1=Occupied"
+    },
+    {
+      "type": "BV",
+      "instance": 1015,
+      "name": "reht_enable",
+      "description": "Reheat Enable (default Disable)",
+      "units": "",
+      "access": "W",
+      "states": "0=Disable; 1=Enable"
+    },
+    {
+      "type": "BV",
+      "instance": 7517,
+      "name": "filter_rntm_clr",
+      "description": "Reset Filter Alarm (default Inactive)",
+      "units": "",
+      "access": "W",
+      "states": "0=Off; 1=On"
+    },
+    {
+      "type": "BV",
+      "instance": 7035,
+      "name": "rat_alarm",
+      "description": "Return Air Temperature",
+      "units": "",
+      "access": "R",
+      "states": "0=Normal; 1=Alarm"
+    },
+    {
+      "type": "BV",
+      "instance": 1013,
+      "name": "stpt_adj_enable",
+      "description": "Setpoint Adjustment (default Enable)",
+      "units": "",
+      "access": "W",
+      "states": "0=Disable; 1=Enable"
+    },
+    {
+      "type": "BV",
+      "instance": 9001,
+      "name": "shutdown",
+      "description": "Shutdown (default Inactive)",
+      "units": "",
+      "access": "W",
+      "states": "0=Inactive; 1=Active"
+    },
+    {
+      "type": "BV",
+      "instance": 7018,
+      "name": "sprh_hi_alarm",
+      "description": "Space Relative Humidity",
+      "units": "",
+      "access": "R",
+      "states": "0=Normal; 1=Alarm"
+    },
+    {
+      "type": "BV",
+      "instance": 7004,
+      "name": "sat_alarm",
+      "description": "Supply Air Temperature",
+      "units": "",
+      "access": "R",
+      "states": "0=Normal; 1=Alarm"
+    },
+    {
+      "type": "BV",
+      "instance": 7008,
+      "name": "sfan_fail_alarm",
+      "description": "Supply Fan Failure",
+      "units": "",
+      "access": "R",
+      "states": "0=Normal; 1=Alarm"
+    },
+    {
+      "type": "MV",
+      "instance": 2004,
+      "name": "fan_run",
+      "description": "Fan / Speed",
+      "units": "",
+      "access": "R",
+      "states": "1=Off; 2=Low; 3=Med; 4=High; 5=On"
+    },
+    {
+      "type": "MV",
+      "instance": 2009,
+      "name": "start_type",
+      "description": "Optimal Start Type (default 2)",
+      "units": "",
+      "access": "W",
+      "states": "1=None; 2=Temp Compensated; 3=Learning Adaptive"
+    },
+    {
+      "type": "MV",
+      "instance": 2002,
+      "name": "run_status",
+      "description": "System Mode",
+      "units": "",
+      "access": "R",
+      "states": "1=Off; 2=Fan Only; 3=Economize; 4=Cooling; 5=Heating; 6=Cont Fan; 7=Test; 8=Start Delay; 9=Temper SAT; 10=Fire Shutdown; 11=Shutdown; 12=IAQ Override; 13=Dehumidify"
+    },
+    {
+      "type": "AV",
+      "instance": 3002,
+      "name": "occ_ht_stpt",
+      "description": "Occupied heat setpoint",
+      "units": "°F",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 3003,
+      "name": "unocc_cl_stpt",
+      "description": "Unoccupied cool setpoint",
+      "units": "°F",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 3004,
+      "name": "unocc_ht_stpt",
+      "description": "Unoccupied heat setpoint",
+      "units": "°F",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 4005,
+      "name": "econ_min",
+      "description": "Vent Dmpr Pos / DCV Min Pos (default 20)",
+      "units": "%",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 1009,
+      "name": "iaq",
+      "description": "Indoor Air Quality CO2 (ppm)",
+      "units": "ppm",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "BV",
+      "instance": 7037,
+      "name": "llt_alarm",
+      "description": "Freezestat",
+      "units": "",
+      "access": "R",
+      "states": "0=Normal; 1=Alarm"
+    },
+    {
+      "type": "BV",
+      "instance": 7001,
+      "name": "spt_fail",
+      "description": "Space Temp Sensor",
+      "units": "",
+      "access": "R",
+      "states": "0=Normal; 1=Alarm"
+    },
+    {
+      "type": "BV",
+      "instance": 7029,
+      "name": "oat_fail",
+      "description": "Outdoor Air Temp Sensor",
+      "units": "",
+      "access": "R",
+      "states": "0=Normal; 1=Alarm"
+    },
+    {
+      "type": "AV",
+      "instance": 9028,
+      "name": "occ_ovr_delay",
+      "description": "Occ Override Delay (default 15)",
+      "units": "min",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "BV",
+      "instance": 1016,
+      "name": "fan_cycle",
+      "description": "Unoccupied Fan Cycling (default Enable)",
+      "units": "",
+      "access": "W",
+      "states": "0=Disable; 1=Enable"
+    },
+    {
+      "type": "AV",
+      "instance": 1008,
+      "name": "sa_temp",
+      "description": "Supply Air Temperature",
+      "units": "°F",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "BV",
+      "instance": 7033,
+      "name": "link_therm_fail",
+      "description": "Thermostat Linkage",
+      "units": "",
+      "access": "R",
+      "states": "0=Normal; 1=Alarm"
+    },
+    {
+      "type": "AV",
+      "instance": 83004,
+      "name": "sat_ht_max",
+      "description": "Maximum Heating SAT (default 110)",
+      "units": "°F",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 83003,
+      "name": "sat_cl_min",
+      "description": "Minimum Cooling SAT (default 50)",
+      "units": "°F",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "MV",
+      "instance": 2005,
+      "name": "link_ahu_mode",
+      "description": "Air Source Mode",
+      "units": "",
+      "access": "R",
+      "states": "1=Off; 2=Warmup; 3=Heat; 4=Cooling; 5=Freecool; 6=Pressure; 7=Evac; 8=Vent"
+    },
+    {
+      "type": "MV",
+      "instance": 2003,
+      "name": "spt_status",
+      "description": "Space Temp Source",
+      "units": "",
+      "access": "R",
+      "states": "1=Sensor Failure; 2=SPT Sensor; 3=RAT / T55; 4=Network; 5=Airside Linkage; 6=Locked Value; 7=T-Stat Linkage; 8=ZS Sensor"
+    },
+    {
+      "type": "BV",
+      "instance": 7051,
+      "name": "zst_sensor_fail",
+      "description": "ZS Temp Sensor",
+      "units": "",
+      "access": "R",
+      "states": "0=Normal; 1=Alarm"
+    },
+    {
+      "type": "AV",
+      "instance": 9006,
+      "name": "cool_demand_level",
+      "description": "System Cooling Demand Level",
+      "units": "",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 9036,
+      "name": "heat_demand_level",
+      "description": "System Heating Demand Level",
+      "units": "",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 2608,
+      "name": "link_sat",
+      "description": "Air Source Supply Air Temp",
+      "units": "°F",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "BV",
+      "instance": 7030,
+      "name": "air_linkage_fail",
+      "description": "Airside Linkage",
+      "units": "",
+      "access": "R",
+      "states": "0=Normal; 1=Alarm"
+    },
+    {
+      "type": "AV",
+      "instance": 9024,
+      "name": "fan_delay_off",
+      "description": "Fan Off Delay (default 90)",
+      "units": "seconds",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "BV",
+      "instance": 7034,
+      "name": "chgovr_fail",
+      "description": "Changeover Sensor",
+      "units": "",
+      "access": "R",
+      "states": "0=Normal; 1=Alarm"
+    },
+    {
+      "type": "BV",
+      "instance": 2009,
+      "name": "frz_status",
+      "description": "Freezestat",
+      "units": "",
+      "access": "R",
+      "states": "0=Normal; 1=Alarm"
+    },
+    {
+      "type": "AV",
+      "instance": 2015,
+      "name": "filter_rntm",
+      "description": "Filter Runtime",
+      "units": "hr",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "BV",
+      "instance": 2601,
+      "name": "a_link_status",
+      "description": "Airside Linkage",
+      "units": "",
+      "access": "R",
+      "states": "0=Not Active; 1=Active"
+    },
+    {
+      "type": "AV",
+      "instance": 9025,
+      "name": "fan_delay_on",
+      "description": "Fan On Delay (default 10)",
+      "units": "seconds",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "BV",
+      "instance": 7032,
+      "name": "spt_sensor_fail",
+      "description": "SPT Sensor",
+      "units": "",
+      "access": "R",
+      "states": "0=Normal; 1=Alarm"
+    },
+    {
+      "type": "MV",
+      "instance": 1,
+      "name": "keypad_ovrde",
+      "description": "BAS On / Off (default 1)",
+      "units": "",
+      "access": "W",
+      "states": "1=Inactive; 2=Occupied; 3=Unoccupied"
+    },
+    {
+      "type": "BV",
+      "instance": 2801,
+      "name": "t_link_status",
+      "description": "Thermostat Linkage",
+      "units": "",
+      "access": "R",
+      "states": "0=Not Active; 1=Active"
+    },
+    {
+      "type": "BV",
+      "instance": 1003,
+      "name": "sfan_status",
+      "description": "Supply Fan Status",
+      "units": "",
+      "access": "R",
+      "states": "0=Off; 1=On"
+    },
+    {
+      "type": "BV",
+      "instance": 7055,
+      "name": "zs_config_fail",
+      "description": "ZS Sensor Configuration",
+      "units": "",
+      "access": "R",
+      "states": "0=Normal; 1=Alarm"
+    }
+  ]
+}

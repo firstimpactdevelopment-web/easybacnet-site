@@ -1,0 +1,1992 @@
+{
+  "manufacturer": "Daikin Applied",
+  "manufacturer_slug": "daikin-applied",
+  "model": "EWWD-VZ water-cooled screw chiller (Daikin Applied Europe)",
+  "model_slug": "ewwd-vz-bacnet",
+  "aliases": [
+    "EWWD VZ",
+    "EWWH-VZ",
+    "EWWS-VZ",
+    "EWWD(H)(S)_VZ",
+    "Adam",
+    "D-EIGOC00101"
+  ],
+  "equipment_type": "Water-cooled screw chiller controller",
+  "applies_to": "Daikin Applied Europe EWWD-VZ, EWWH-VZ and EWWS-VZ water-cooled inverter screw chillers (MicroTech, software \"Adam\").",
+  "summary": "The European EWWD/EWWH/EWWS VZ water-cooled screw chillers use a MicroTech controller running the \"Adam\" software. BACnet IP or BACnet MS/TP is added with a plug-in POL908 or POL904 module, or on MicroTech 4 as an onboard software option. The list covers unit enable, mode and network setpoints, evaporator and condenser water temperatures, per-circuit refrigerant data, compressor VFD values and a large set of individual alarm BVs, plus warning/problem/fault index and code AVs.",
+  "bacnet_transport": [
+    "BACnet IP",
+    "BACnet MS/TP"
+  ],
+  "firmware": null,
+  "default_device_instance": 1,
+  "access_inferred": false,
+  "notes": [
+    "This is the Daikin Applied Europe guide; it is a different object list from the US MicroTech chiller documents.",
+    "The guide covers MicroTech III and MicroTech 4 controllers with one object list.",
+    "Object names use dots (e.g. C1.Comp1.Starts) and are kept as printed.",
+    "Access \"W Prio 8\" in the guide is shown as C; plain \"W\" is shown as W.",
+    "One MV row printed with name and instance \"MISSING\" (a second measurement-unit setpoint) is left out. BV 904 is printed for both Unit.OFFRestartBoardOffline and Unit.OFFMarineBoardOffline; the second is listed without an instance.",
+    "Default device instance 1 applies to BACnet IP; on the MS/TP module it is derived from the production number."
+  ],
+  "source": {
+    "title": "BAS Integration guide - BACnet protocol (EWWD(H)(S)_VZ)",
+    "doc_number": "D-EIGOC00101-22_02EN_VZ",
+    "revision_date": "2022",
+    "url": "https://www.daikinapplied.eu/hubfs/portale-documentale/D_EIGOC00101_22_02EN_VZ.pdf"
+  },
+  "integration": {
+    "summary": "Select network control at the unit (CtrlSource BI 3 then reads Network), enable the chiller with UnitEnableStp, and write the mode, cool setpoint and capacity limit at priority 8. Monitor unit status, leaving water temperature, the alarm output and the fault code.",
+    "minimum_points": [
+      {
+        "ref": "BV 2",
+        "name": "UnitEnableStp",
+        "why": "Network enable/disable of the chiller"
+      },
+      {
+        "ref": "MV 3",
+        "name": "UnitModeSetpointNetwork",
+        "why": "Ice / cool / heat / pursuit mode command"
+      },
+      {
+        "ref": "AV 4",
+        "name": "NetworkCoolTempSetpoint",
+        "why": "Leaving water cool setpoint from the BMS"
+      },
+      {
+        "ref": "AV 3",
+        "name": "NetworkCapacityLimitSetpoint",
+        "why": "Capacity limit from the BMS"
+      },
+      {
+        "ref": "BV 8",
+        "name": "ClearAlarm",
+        "why": "Clear alarms from the network"
+      },
+      {
+        "ref": "BI 3",
+        "name": "CtrlSource",
+        "why": "Shows whether network control is active"
+      },
+      {
+        "ref": "MV 1",
+        "name": "UnitStatus",
+        "why": "Chiller run state"
+      },
+      {
+        "ref": "AI 2",
+        "name": "EvapLvgWTemp",
+        "why": "Leaving chilled water temperature"
+      },
+      {
+        "ref": "BI 10",
+        "name": "AlarmOutput",
+        "why": "Any active alarm"
+      },
+      {
+        "ref": "AV 905",
+        "name": "AVFaultAlarmCode",
+        "why": "Active fault alarm code"
+      }
+    ],
+    "enable": "CtrlSource (BI 3) reads 0 = Network / 1 = Local and is read-only over BACnet, so network control has to be selected at the unit; the guide does not describe that step. With network control active the BMS writes UnitEnableStp (BV 2) = Enable, then the mode (MV 3) and network setpoints.",
+    "heartbeat": null,
+    "remote_sensors": null,
+    "setup": [
+      "BACnet IP comes from the POL908 module or, on MicroTech 4, the onboard BACnet IP software option (enabled under Commissioning > Configuration > Software Options with an unlock password).",
+      "BACnet MS/TP comes from the POL904 module or the onboard BACnet MS/TP software option.",
+      "BACnet IP defaults: device instance 1, UDP port 47808, DHCP off; set Apply Changes = Yes after editing, which restarts the controller.",
+      "BACnet MS/TP module defaults: MAC address 24, 38400 baud, Max Master 127, Max Info Frames 1; the device instance is derived from the production number and date code. Cycle power after changing the address.",
+      "EDE files are regenerated each time the BACnet server starts and can be downloaded by FTP from the POL908; re-export them after any configuration change."
+    ],
+    "gotchas": [
+      "The guide marks the enable, alarm-reset, mode and main network setpoint objects as written at priority 8 (access C here); write them at priority 8.",
+      "Compressor start counters and run-hour AVs are marked writable; don't write them from the BMS.",
+      "Alarms come as Warning, Problem and Fault index/code AVs (900-905); decode them with the alarm code table in section 5.1 of the guide.",
+      "MV 4 Units selects metric or English units for the BACnet values; set it once, not cyclically."
+    ]
+  },
+  "points": [
+    {
+      "type": "BI",
+      "instance": 3,
+      "name": "CtrlSource",
+      "description": "Unit - Control Source",
+      "units": "",
+      "access": "R",
+      "states": "0=Network, 1=Local"
+    },
+    {
+      "type": "BI",
+      "instance": 7,
+      "name": "EnableOutput",
+      "description": "Unit - Enabled State",
+      "units": "",
+      "access": "R",
+      "states": "0=Disabled, 1=Enabled"
+    },
+    {
+      "type": "BI",
+      "instance": 5,
+      "name": "RunEnabled",
+      "description": "Unit - Run Allowed",
+      "units": "",
+      "access": "R",
+      "states": "0=Off, 1=RunAllowed"
+    },
+    {
+      "type": "BI",
+      "instance": 6,
+      "name": "UnitLimited",
+      "description": "Unit - Capacity Limited",
+      "units": "",
+      "access": "R",
+      "states": "0=NotLimited, 1=Limited"
+    },
+    {
+      "type": "BI",
+      "instance": 10,
+      "name": "AlarmOutput",
+      "description": "Unit - Alarm Output",
+      "units": "",
+      "access": "R",
+      "states": "0=NoAlarm, 1=Alarm"
+    },
+    {
+      "type": "BI",
+      "instance": 2,
+      "name": "EvapWFlowState",
+      "description": "Evaporator - Water Flow State",
+      "units": "",
+      "access": "R",
+      "states": "0=NoFlow, 1=Flow"
+    },
+    {
+      "type": "BI",
+      "instance": 1,
+      "name": "CondWFlowState",
+      "description": "Condenser - Water Flow State",
+      "units": "",
+      "access": "R",
+      "states": "0=NoFlow, 1=Flow"
+    },
+    {
+      "type": "BI",
+      "instance": 4,
+      "name": "UnitOnOff",
+      "description": "Unit - Operating State",
+      "units": "",
+      "access": "R",
+      "states": "0=Off, 1=On"
+    },
+    {
+      "type": "BV",
+      "instance": 2,
+      "name": "UnitEnableStp",
+      "description": "Unit - Enable Setpoint",
+      "units": "",
+      "access": "C",
+      "states": "0=Disable, 1=Enable"
+    },
+    {
+      "type": "BV",
+      "instance": 8,
+      "name": "ClearAlarm",
+      "description": "Unit - Alarm Reset Setpoint",
+      "units": "",
+      "access": "C",
+      "states": "0=None, 1=ClearAlarm"
+    },
+    {
+      "type": "MV",
+      "instance": 2,
+      "name": "ActMode",
+      "description": "Unit - Active Operation Mode",
+      "units": "",
+      "access": "R",
+      "states": "1=Ice, 2=Cool, 3=Heat, 4=Pursuit"
+    },
+    {
+      "type": "AV",
+      "instance": 5,
+      "name": "ActTempStp",
+      "description": "Unit - Active Temperature Setpoint",
+      "units": "°C",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 2,
+      "name": "ActCapacity",
+      "description": "Unit - Actual Capacity",
+      "units": "%",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 1,
+      "name": "ActCapacityLim",
+      "description": "Unit - Active Capacity Limit",
+      "units": "%",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "MV",
+      "instance": 1,
+      "name": "UnitStatus",
+      "description": "Unit - Status",
+      "units": "",
+      "access": "R",
+      "states": "1=Off, 2=Start, 3=Run, 4=PreShutdown, 5=Service"
+    },
+    {
+      "type": "AI",
+      "instance": 1,
+      "name": "EvapEntWTemp",
+      "description": "Evaporator Entering Water Temperature",
+      "units": "°C",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AI",
+      "instance": 2,
+      "name": "EvapLvgWTemp",
+      "description": "Evaporator Leaving Water Temperature",
+      "units": "°C",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AI",
+      "instance": 3,
+      "name": "CondEntWTemp",
+      "description": "Condenser Entering Water Temperature",
+      "units": "°C",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AI",
+      "instance": 4,
+      "name": "CondLvgWTemp",
+      "description": "Condenser Leaving Water Temperature",
+      "units": "°C",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AI",
+      "instance": 993,
+      "name": "AvgCurrent",
+      "description": "Unit - Average Current",
+      "units": "A",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 992,
+      "name": "AvgVoltage",
+      "description": "Unit - Average Voltage",
+      "units": "V",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 994,
+      "name": "ActPower",
+      "description": "Unit - Active Power",
+      "units": "kW",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 902,
+      "name": "AVWarningAlarm",
+      "description": "Unit Alarm - Warning Index",
+      "units": "",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 900,
+      "name": "AVProblemAlarm",
+      "description": "Unit Alarm - Problem Index",
+      "units": "",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 901,
+      "name": "AVFaultAlarm",
+      "description": "Unit Alarm - Fault Index",
+      "units": "",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 903,
+      "name": "AVWarningAlarmCode",
+      "description": "Unit Alarm - Warning Code",
+      "units": "",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 904,
+      "name": "AVProblemAlarmCode",
+      "description": "Unit Alarm - Problem Code",
+      "units": "",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 905,
+      "name": "AVFaultAlarmCode",
+      "description": "Unit Alarm - Fault Code",
+      "units": "",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "MV",
+      "instance": 3,
+      "name": "UnitModeSetpointNetwork",
+      "description": "Unit - Operation Mode Setpoint",
+      "units": "",
+      "access": "C",
+      "states": "1=Ice, 2=Cool, 3=Heat, 4=Pursuit"
+    },
+    {
+      "type": "AV",
+      "instance": 3,
+      "name": "NetworkCapacityLimitSetpoint",
+      "description": "Unit - Capacity Limit Setpoint",
+      "units": "%",
+      "access": "C",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 7,
+      "name": "NetworkIceTempSetpoint",
+      "description": "Unit - Ice Temperature Setpoint",
+      "units": "°C",
+      "access": "C",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 4,
+      "name": "NetworkCoolTempSetpoint",
+      "description": "Unit - Cool Temperature Setpoint",
+      "units": "°C",
+      "access": "C",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 6,
+      "name": "NetworkHeatTempSetpoint",
+      "description": "Unit - Heat Temperature Setpoint",
+      "units": "°C",
+      "access": "C",
+      "states": ""
+    },
+    {
+      "type": "MV",
+      "instance": 4,
+      "name": "Units",
+      "description": "Unit - BACnet Measurement unit setpoint",
+      "units": "",
+      "access": "W",
+      "states": "1=Metric, 2=English"
+    },
+    {
+      "type": "AI",
+      "instance": 99,
+      "name": "C1.CondRefPressure",
+      "description": "Circuit 1 - Condenser Refrigerant Pressure",
+      "units": "kPa",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 34,
+      "name": "C1.CondSatRefTemp",
+      "description": "Circuit 1 - Condeser Saturated Temperature",
+      "units": "°C",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AI",
+      "instance": 141,
+      "name": "C1.EvapRefPressure",
+      "description": "Circuit 1 - Evaporator Refrigerant Pressure",
+      "units": "kPa",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 68,
+      "name": "C1.EvapSatRefTemp",
+      "description": "Circuit 1 - Evaporator Saturated Temperature",
+      "units": "°C",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AI",
+      "instance": 100,
+      "name": "C2.CondRefPressure",
+      "description": "Circuit 2 - Condenser Refrigerant Pressure",
+      "units": "kPa",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 35,
+      "name": "C2.CondSatRefTemp",
+      "description": "Circuit 2 - Condeser Saturated Temperature",
+      "units": "°C",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AI",
+      "instance": 142,
+      "name": "C2.EvapRefPressure",
+      "description": "Circuit 2 - Evaporator Refrigerant Pressure",
+      "units": "kPa",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 69,
+      "name": "C2.EvapSatRefTemp",
+      "description": "Circuit 2 - Evaporator Saturated Temperature",
+      "units": "°C",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "MV",
+      "instance": 51,
+      "name": "C1.ShutdownAlm",
+      "description": "Circuit 1 - Shutdown Alarm",
+      "units": "",
+      "access": "R",
+      "states": "1=NoAlarm, 2=Alarm"
+    },
+    {
+      "type": "MV",
+      "instance": 52,
+      "name": "C2.ShutdownAlm",
+      "description": "Circuit 2 - Shutdown Alarm",
+      "units": "",
+      "access": "R",
+      "states": "1=NoAlarm, 2=Alarm"
+    },
+    {
+      "type": "AI",
+      "instance": 105,
+      "name": "C1.Comp1.SuctTemp",
+      "description": "Circ 1 Compressor 1 - Suction Temperature",
+      "units": "°C",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AI",
+      "instance": 63,
+      "name": "C1.Comp1.DischTemp",
+      "description": "Circ 1 Compressor 1 - Discharge Temperature",
+      "units": "°C",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 8,
+      "name": "C1.Comp1.RLAPercent",
+      "description": "Circ 1 Compressor 1 - RLA Percentage",
+      "units": "%",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AI",
+      "instance": 9,
+      "name": "C1.Comp1.Current",
+      "description": "Circ 1 Compressor 1 - Current",
+      "units": "A",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AI",
+      "instance": 27,
+      "name": "C1.Comp1.Voltage",
+      "description": "Circ 1 Compressor 1 - Voltage",
+      "units": "V",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AI",
+      "instance": 45,
+      "name": "C1.Comp1.Power",
+      "description": "Circ 1 Compressor 1 - Power",
+      "units": "kW",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 92,
+      "name": "C1.Comp1.Starts",
+      "description": "Circ 1 Compressor 1 - Number of Starts",
+      "units": "",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 74,
+      "name": "C1.Comp1.RunHours",
+      "description": "Circ 1 Compressor 1 - Number of Running Hours",
+      "units": "h",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "AI",
+      "instance": 108,
+      "name": "C2.Comp1.SuctTemp",
+      "description": "Circ 2 Compressor 1 - Suction Temperature",
+      "units": "°C",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AI",
+      "instance": 66,
+      "name": "C2.Comp1.DischTemp",
+      "description": "Circ 2 Compressor 1 - Discharge Temperature",
+      "units": "°C",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 11,
+      "name": "C2.Comp1.RLAPercent",
+      "description": "Circ 2 Compressor 1 - RLA Percentage",
+      "units": "%",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AI",
+      "instance": 12,
+      "name": "C2.Comp1.Current",
+      "description": "Circ 2 Compressor 1 - Current",
+      "units": "A",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AI",
+      "instance": 30,
+      "name": "C2.Comp1.Voltage",
+      "description": "Circ 2 Compressor 1 - Voltage",
+      "units": "V",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AI",
+      "instance": 47,
+      "name": "C2.Comp1.Power",
+      "description": "Circ 2 Compressor 1 - Power",
+      "units": "kW",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 95,
+      "name": "C2.Comp1.Starts",
+      "description": "Circ 2 Compressor 1 - Number of Starts",
+      "units": "",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 77,
+      "name": "C2.Comp1.Hours",
+      "description": "Circ 2 Compressor 1 - Number of Running Hours",
+      "units": "h",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 260,
+      "name": "ThermCapacity",
+      "description": "Performance - Unit Thermal Capacity",
+      "units": "kW",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 262,
+      "name": "ElectPower",
+      "description": "Performance - Unit Power Input",
+      "units": "kW",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 264,
+      "name": "EER",
+      "description": "Performance - Unit Efficiency",
+      "units": "",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 265,
+      "name": "integralEER",
+      "description": "Performance - Unit Integrated Efficiency",
+      "units": "",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 261,
+      "name": "ThermEnergy",
+      "description": "Performance - Unit Thermal Energy",
+      "units": "MWh",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 263,
+      "name": "ElectEnergy",
+      "description": "Performance - Unit Electrical Energy",
+      "units": "MWh",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 110,
+      "name": "CondPump1.RunHrs",
+      "description": "Condenser Pump 1 - Number of Running Hours",
+      "units": "h",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "BI",
+      "instance": 11,
+      "name": "CondPump1.Status",
+      "description": "Condenser Pump 1 - Operating State",
+      "units": "",
+      "access": "R",
+      "states": "0=OffRequest, 1=OnRequest"
+    },
+    {
+      "type": "AV",
+      "instance": 111,
+      "name": "CondPump2.RunHrs",
+      "description": "Condenser Pump 2 - Number of Running Hours",
+      "units": "h",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "BI",
+      "instance": 12,
+      "name": "CondPump2.Status",
+      "description": "Condenser Pump 2 - Operating State",
+      "units": "",
+      "access": "R",
+      "states": "0=OffRequest, 1=OnRequest"
+    },
+    {
+      "type": "AV",
+      "instance": 112,
+      "name": "EvapPump1.RunHours",
+      "description": "Evaporator Pump 1 - Number of Running Hours",
+      "units": "h",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "BI",
+      "instance": 8,
+      "name": "EvapPump1.State",
+      "description": "Evaporator Pump 1 - Operating State",
+      "units": "",
+      "access": "R",
+      "states": "0=OffRequest, 1=OnRequest"
+    },
+    {
+      "type": "AV",
+      "instance": 113,
+      "name": "EvapPump2.RunHours",
+      "description": "Evaporator Pump 2 - Number of Running Hours",
+      "units": "h",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "BI",
+      "instance": 9,
+      "name": "EvapPump2.State",
+      "description": "Evaporator Pump 2 - Operating State",
+      "units": "",
+      "access": "R",
+      "states": "0=OffRequest, 1=OnRequest"
+    },
+    {
+      "type": "MV",
+      "instance": 317,
+      "name": "UnitModel",
+      "description": "Unit - Model",
+      "units": "",
+      "access": "R",
+      "states": "1=Centrifugal, 2=Water Cooled, 3=Air Cooled, 4=HeatPump, 5=Reserved, 6=Reserved, 7=Reserved, 8=Reserved, 9=Other"
+    },
+    {
+      "type": "BV",
+      "instance": 500,
+      "name": "Unit.OFFCndEntWTempFail",
+      "description": "Unit Alarm - Condenser Entering Temperature Sensor Fault",
+      "units": "",
+      "access": "R",
+      "states": "0=NoAlarm, 1=Alarm"
+    },
+    {
+      "type": "BV",
+      "instance": 917,
+      "name": "Unit.OFFEvapEntWTempFail",
+      "description": "Unit Alarm - Evaporator Entering Temperature Sensor Fault",
+      "units": "",
+      "access": "R",
+      "states": "0=NoAlarm, 1=Alarm"
+    },
+    {
+      "type": "BV",
+      "instance": 503,
+      "name": "Unit.OFFCndLvgWTempFail",
+      "description": "Unit Alarm - Condenser Leaving Temperature Sensor Fault",
+      "units": "",
+      "access": "R",
+      "states": "0=NoAlarm, 1=Alarm"
+    },
+    {
+      "type": "BV",
+      "instance": 512,
+      "name": "BadSetpointResetInput",
+      "description": "Unit Warning - Setpoint Reset Input Out of Range",
+      "units": "",
+      "access": "R",
+      "states": "0=NoAlarm, 1=Alarm"
+    },
+    {
+      "type": "BV",
+      "instance": 513,
+      "name": "BadDemandLimitInput",
+      "description": "Unit Warning - Demand Limit Input Out of Range",
+      "units": "",
+      "access": "R",
+      "states": "0=NoAlarm, 1=Alarm"
+    },
+    {
+      "type": "BV",
+      "instance": 529,
+      "name": "C1.InhibitPwrLoss",
+      "description": "Circuit 1 Warning - Power Loss while Compressor Running",
+      "units": "",
+      "access": "R",
+      "states": "0=NoAlarm, 1=Alarm"
+    },
+    {
+      "type": "BV",
+      "instance": 530,
+      "name": "C2.InhibitPwrLoss",
+      "description": "Circuit 2 Warning - Power Loss while Compressor Running",
+      "units": "",
+      "access": "R",
+      "states": "0=NoAlarm, 1=Alarm"
+    },
+    {
+      "type": "AI",
+      "instance": 535,
+      "name": "C1.InhibitCondPresHi",
+      "description": "Circuit 1 Warning - Inhibition for Condenser High Pressure",
+      "units": "kPa",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AI",
+      "instance": 536,
+      "name": "C2.InhibitCondPresHi",
+      "description": "Circuit 2 Warning - Inhibition for Condenser High Pressure",
+      "units": "kPa",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AI",
+      "instance": 540,
+      "name": "C1.UnloadCondPresHi",
+      "description": "Circuit 1 Warning - Unload for Condenser High Pressure",
+      "units": "kPa",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AI",
+      "instance": 541,
+      "name": "C2.UnloadCondPresHi",
+      "description": "Circuit 2 Warning - Unload for Condenser High Pressure",
+      "units": "kPa",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AI",
+      "instance": 556,
+      "name": "C1.InhibitEvapPresLow",
+      "description": "Circuit 1 Warning - Inhibition for Evaporator Low Pressure",
+      "units": "kPa",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AI",
+      "instance": 557,
+      "name": "C2.InhibitEvapPresLow",
+      "description": "Circuit 2 Warning - Inhibition for Evaporator Low Pressure",
+      "units": "kPa",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AI",
+      "instance": 561,
+      "name": "C1.UnloadEvapPresLow",
+      "description": "Circuit 1 Warning - Unload for Evaporator Low Pressure",
+      "units": "kPa",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AI",
+      "instance": 562,
+      "name": "C2.UnloadEvapPresLow",
+      "description": "Circuit 2 Warning - Unload for Evaporator Low Pressure",
+      "units": "kPa",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AI",
+      "instance": 565,
+      "name": "C1.Comp1.UnloadCurrentHi",
+      "description": "Circ 1 Comp 1 Warning - Unload for High Current",
+      "units": "A",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AI",
+      "instance": 567,
+      "name": "C2.Comp1.UnloadCurrentHi",
+      "description": "Circ 2 Comp 1 Warning - Unload for High Current",
+      "units": "A",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "BV",
+      "instance": 548,
+      "name": "CondPump1.Fault",
+      "description": "Condenser Pump 1 - Fault",
+      "units": "",
+      "access": "R",
+      "states": "0=NoAlarm, 1=Alarm"
+    },
+    {
+      "type": "BV",
+      "instance": 549,
+      "name": "CondPump2.Fault",
+      "description": "Condenser Pump 2 - Fault",
+      "units": "",
+      "access": "R",
+      "states": "0=NoAlarm, 1=Alarm"
+    },
+    {
+      "type": "BV",
+      "instance": 575,
+      "name": "EvapPump1.Fault",
+      "description": "Evaporator Pump 1 - Fault",
+      "units": "",
+      "access": "R",
+      "states": "0=NoAlarm, 1=Alarm"
+    },
+    {
+      "type": "BV",
+      "instance": 576,
+      "name": "EvapPump2.Fault",
+      "description": "Evaporator Pump 2 - Fault",
+      "units": "",
+      "access": "R",
+      "states": "0=NoAlarm, 1=Alarm"
+    },
+    {
+      "type": "BV",
+      "instance": 599,
+      "name": "C1.Comp1.OFFPresRatioLow",
+      "description": "Circ 1 Comp 1 Alarm - Low Pressure Ratio",
+      "units": "",
+      "access": "R",
+      "states": "0=NoAlarm, 1=Alarm"
+    },
+    {
+      "type": "BV",
+      "instance": 601,
+      "name": "C2.Comp1.OFFPresRatioLow",
+      "description": "Circ 2 Comp 1 Alarm - Low Pressure Ratio",
+      "units": "",
+      "access": "R",
+      "states": "0=NoAlarm, 1=Alarm"
+    },
+    {
+      "type": "BV",
+      "instance": 606,
+      "name": "C1.Comp1.OFFCurrentHi",
+      "description": "Circ 1 Comp 1 Alarm - High Motor Current",
+      "units": "",
+      "access": "R",
+      "states": "0=NoAlarm, 1=Alarm"
+    },
+    {
+      "type": "BV",
+      "instance": 608,
+      "name": "C2.Comp1.OFFCurrentHi",
+      "description": "Circ 2 Comp 1 Alarm - High Motor Current",
+      "units": "",
+      "access": "R",
+      "states": "0=NoAlarm, 1=Alarm"
+    },
+    {
+      "type": "BV",
+      "instance": 637,
+      "name": "C1.Comp1.OFFMotorTempHi",
+      "description": "Circ 1 Comp 1 Alarm - High Motor Temperature",
+      "units": "",
+      "access": "R",
+      "states": "0=NoAlarm, 1=Alarm"
+    },
+    {
+      "type": "BV",
+      "instance": 639,
+      "name": "C2.Comp1.OFFMotorTempHi",
+      "description": "Circ 2 Comp 1 Alarm - High Motor Temperature",
+      "units": "",
+      "access": "R",
+      "states": "0=NoAlarm, 1=Alarm"
+    },
+    {
+      "type": "BV",
+      "instance": 668,
+      "name": "C1.OFFCondPresFail",
+      "description": "Circuit 1 Alarm - Condenser Pressure Sensor Fault",
+      "units": "",
+      "access": "R",
+      "states": "0=NoAlarm, 1=Alarm"
+    },
+    {
+      "type": "BV",
+      "instance": 670,
+      "name": "C2.OFFCondPresFail",
+      "description": "Circuit 2 Alarm - Condenser Pressure Sensor Fault",
+      "units": "",
+      "access": "R",
+      "states": "0=NoAlarm, 1=Alarm"
+    },
+    {
+      "type": "BV",
+      "instance": 989,
+      "name": "Unit.OFFCondLvgWTempLow",
+      "description": "Unit Alarm - Condenser Water Freeze",
+      "units": "",
+      "access": "R",
+      "states": "0=NoAlarm, 1=Alarm"
+    },
+    {
+      "type": "BV",
+      "instance": 674,
+      "name": "Unit.OFFCondFlowLoss",
+      "description": "Unit Alarm - Condenser Water Flow Loss",
+      "units": "",
+      "access": "R",
+      "states": "0=NoAlarm, 1=Alarm"
+    },
+    {
+      "type": "BV",
+      "instance": 676,
+      "name": "C1.OFFCondPresHi",
+      "description": "Circuit 1 Alarm - Condenser High Pressure",
+      "units": "",
+      "access": "R",
+      "states": "0=NoAlarm, 1=Alarm"
+    },
+    {
+      "type": "BV",
+      "instance": 678,
+      "name": "C2.OFFCondPresHi",
+      "description": "Circuit 2 Alarm - Condenser High Pressure",
+      "units": "",
+      "access": "R",
+      "states": "0=NoAlarm, 1=Alarm"
+    },
+    {
+      "type": "BV",
+      "instance": 688,
+      "name": "C1.OFFDischTempFail",
+      "description": "Circuit 1 Alarm - Discharge Temperature Sensor Fault",
+      "units": "",
+      "access": "R",
+      "states": "0=NoAlarm, 1=Alarm"
+    },
+    {
+      "type": "BV",
+      "instance": 690,
+      "name": "C2.OFFDischTempFail",
+      "description": "Circuit 2 Alarm - Discharge Temperature Sensor Fault",
+      "units": "",
+      "access": "R",
+      "states": "0=NoAlarm, 1=Alarm"
+    },
+    {
+      "type": "BV",
+      "instance": 694,
+      "name": "C1.Comp1.OFFDischTempHi",
+      "description": "Circ 1 Comp 1 Alarm - High Discharge Temperature",
+      "units": "",
+      "access": "R",
+      "states": "0=NoAlarm, 1=Alarm"
+    },
+    {
+      "type": "BV",
+      "instance": 696,
+      "name": "C2.Comp1.OFFDischTempHi",
+      "description": "Circ 2 Comp 1 Alarm - High Discharge Temperature",
+      "units": "",
+      "access": "R",
+      "states": "0=NoAlarm, 1=Alarm"
+    },
+    {
+      "type": "BV",
+      "instance": 701,
+      "name": "Unit.OFFEvapFlowLoss",
+      "description": "Unit Alarm - Evaporator Water Flow Loss",
+      "units": "",
+      "access": "R",
+      "states": "0=NoAlarm, 1=Alarm"
+    },
+    {
+      "type": "BV",
+      "instance": 702,
+      "name": "Unit.OFFEvapLvgWTempLow",
+      "description": "Unit Alarm - Evaporator Water Freeze",
+      "units": "",
+      "access": "R",
+      "states": "0=NoAlarm, 1=Alarm"
+    },
+    {
+      "type": "BV",
+      "instance": 704,
+      "name": "C1.OFFEvapPresLow",
+      "description": "Circuit 1 Alarm - Evaporator Pressure Low",
+      "units": "",
+      "access": "R",
+      "states": "0=NoAlarm, 1=Alarm"
+    },
+    {
+      "type": "BV",
+      "instance": 706,
+      "name": "C2.OFFEvapPresLow",
+      "description": "Circuit 2 Alarm - Evaporator Pressure Low",
+      "units": "",
+      "access": "R",
+      "states": "0=NoAlarm, 1=Alarm"
+    },
+    {
+      "type": "BV",
+      "instance": 711,
+      "name": "C1.OFFEvapPresFail",
+      "description": "Circuit 1 Alarm - Evaporator Pressure Sensor Failure",
+      "units": "",
+      "access": "R",
+      "states": "0=NoAlarm, 1=Alarm"
+    },
+    {
+      "type": "BV",
+      "instance": 713,
+      "name": "C2.OFFEvapPresFail",
+      "description": "Circuit 2 Alarm - Evaporator Pressure Sensor Failure",
+      "units": "",
+      "access": "R",
+      "states": "0=NoAlarm, 1=Alarm"
+    },
+    {
+      "type": "BV",
+      "instance": 742,
+      "name": "C1.OFFRestartsAlm",
+      "description": "Circuit 1 Alarm - Too many restart",
+      "units": "",
+      "access": "R",
+      "states": "0=NoAlarm, 1=Alarm"
+    },
+    {
+      "type": "BV",
+      "instance": 744,
+      "name": "C2.OFFRestartsAlm",
+      "description": "Circuit 2 Alarm - Too many restart",
+      "units": "",
+      "access": "R",
+      "states": "0=NoAlarm, 1=Alarm"
+    },
+    {
+      "type": "BV",
+      "instance": 748,
+      "name": "Unit.OFFEvapLvgWTempFail",
+      "description": "Unit Alarm - Evaporator Leaving Temperature Sensor Fault",
+      "units": "",
+      "access": "R",
+      "states": "0=NoAlarm, 1=Alarm"
+    },
+    {
+      "type": "BV",
+      "instance": 760,
+      "name": "C1.OFFMechPressHi",
+      "description": "Circuit 1 Alarm - Mechanical High Pressure",
+      "units": "",
+      "access": "R",
+      "states": "0=NoAlarm, 1=Alarm"
+    },
+    {
+      "type": "BV",
+      "instance": 762,
+      "name": "C2.OFFMechPressHi",
+      "description": "Circuit 2 Alarm - Mechanical High Pressure",
+      "units": "",
+      "access": "R",
+      "states": "0=NoAlarm, 1=Alarm"
+    },
+    {
+      "type": "BV",
+      "instance": 790,
+      "name": "C1.OFFOilLevelLow",
+      "description": "Circuit 1 Alarm - Oil Level Low",
+      "units": "",
+      "access": "R",
+      "states": "0=NoAlarm, 1=Alarm"
+    },
+    {
+      "type": "BV",
+      "instance": 792,
+      "name": "C2.OFFOilLevelLow",
+      "description": "Circuit 2 Alarm - Oil Level Low",
+      "units": "",
+      "access": "R",
+      "states": "0=NoAlarm, 1=Alarm"
+    },
+    {
+      "type": "BV",
+      "instance": 796,
+      "name": "C1.OFFOilFilterPresHi",
+      "description": "Circuit 1 Alarm - Oil Filter High Pressure",
+      "units": "",
+      "access": "R",
+      "states": "0=NoAlarm, 1=Alarm"
+    },
+    {
+      "type": "BV",
+      "instance": 798,
+      "name": "C2.OFFOilFilterPresHi",
+      "description": "Circuit 2 Alarm - Oil Filter High Pressure",
+      "units": "",
+      "access": "R",
+      "states": "0=NoAlarm, 1=Alarm"
+    },
+    {
+      "type": "BV",
+      "instance": 802,
+      "name": "C1.OFFOilPresFail",
+      "description": "Circuit 1 Alarm - Oil Pressure Sensor Failure",
+      "units": "",
+      "access": "R",
+      "states": "0=NoAlarm, 1=Alarm"
+    },
+    {
+      "type": "BV",
+      "instance": 804,
+      "name": "C2.OFFOilPresFail",
+      "description": "Circuit 2 Alarm - Oil Pressure Sensor Failure",
+      "units": "",
+      "access": "R",
+      "states": "0=NoAlarm, 1=Alarm"
+    },
+    {
+      "type": "BV",
+      "instance": 735,
+      "name": "C1.OFFLiquidTsenf",
+      "description": "Circuit 1 Alarm - Liquid Temperature Sensor Failure",
+      "units": "",
+      "access": "R",
+      "states": "0=NoAlarm, 1=Alarm"
+    },
+    {
+      "type": "BV",
+      "instance": 737,
+      "name": "C2.OFFLiquidTsenf",
+      "description": "Circuit 2 Alarm - Liquid Temperature Sensor Failure",
+      "units": "",
+      "access": "R",
+      "states": "0=NoAlarm, 1=Alarm"
+    },
+    {
+      "type": "BV",
+      "instance": 820,
+      "name": "Unit.OFFPhaseVoltage",
+      "description": "Unit Alarm - Phase Voltage",
+      "units": "",
+      "access": "R",
+      "states": "0=NoAlarm, 1=Alarm"
+    },
+    {
+      "type": "BV",
+      "instance": 821,
+      "name": "C1.Comp1.OFFStarterFault",
+      "description": "Circ 1 Comp 1 Alarm - Starter Fault",
+      "units": "",
+      "access": "R",
+      "states": "0=NoAlarm, 1=Alarm"
+    },
+    {
+      "type": "BV",
+      "instance": 823,
+      "name": "C2.Comp1.OFFStarterFault",
+      "description": "Circ 2 Comp 1 Alarm - Starter Fault",
+      "units": "",
+      "access": "R",
+      "states": "0=NoAlarm, 1=Alarm"
+    },
+    {
+      "type": "BV",
+      "instance": 978,
+      "name": "C1.OFFOverVoltage",
+      "description": "Circuit 1 Alarm - OverVoltage",
+      "units": "",
+      "access": "R",
+      "states": "0=NoAlarm, 1=Alarm"
+    },
+    {
+      "type": "BV",
+      "instance": 982,
+      "name": "C2.OFFOverVoltage",
+      "description": "Circuit 2 Alarm - OverVoltage",
+      "units": "",
+      "access": "R",
+      "states": "0=NoAlarm, 1=Alarm"
+    },
+    {
+      "type": "BV",
+      "instance": 979,
+      "name": "C1.OFFUnderVoltage",
+      "description": "Circuit 1 Alarm - UnderVoltage",
+      "units": "",
+      "access": "R",
+      "states": "0=NoAlarm, 1=Alarm"
+    },
+    {
+      "type": "BV",
+      "instance": 981,
+      "name": "C2.OFFUnderVoltage",
+      "description": "Circuit 2 Alarm - UnderVoltage",
+      "units": "",
+      "access": "R",
+      "states": "0=NoAlarm, 1=Alarm"
+    },
+    {
+      "type": "BV",
+      "instance": 857,
+      "name": "C1.Comp1.OFFSuctTempFail",
+      "description": "Circ 1 Comp 1 Alarm - Suction Temperature Sensor Fault",
+      "units": "",
+      "access": "R",
+      "states": "0=NoAlarm, 1=Alarm"
+    },
+    {
+      "type": "BV",
+      "instance": 859,
+      "name": "C2.Comp1.OFFSuctTempSen",
+      "description": "Circ 2 Comp 1 Alarm - Suction Temperature Sensor Fault",
+      "units": "",
+      "access": "R",
+      "states": "0=NoAlarm, 1=Alarm"
+    },
+    {
+      "type": "BV",
+      "instance": 911,
+      "name": "C1.OFFNoPressStart",
+      "description": "Circuit 1 Alarm - No Pressure at Start",
+      "units": "",
+      "access": "R",
+      "states": "0=NoAlarm, 1=Alarm"
+    },
+    {
+      "type": "BV",
+      "instance": 912,
+      "name": "C2.OFFNoPressStart",
+      "description": "Circuit 2 Alarm - No Pressure at Start",
+      "units": "",
+      "access": "R",
+      "states": "0=NoAlarm, 1=Alarm"
+    },
+    {
+      "type": "BV",
+      "instance": 876,
+      "name": "C1.OFFMechPresLow",
+      "description": "Circuit 1 Alarm - Mechanical Low Pressure",
+      "units": "",
+      "access": "R",
+      "states": "0=NoAlarm, 1=Alarm"
+    },
+    {
+      "type": "BV",
+      "instance": 878,
+      "name": "C2.OFFMechPresLow",
+      "description": "Circuit 2 Alarm - Mechanical Low Pressure",
+      "units": "",
+      "access": "R",
+      "states": "0=NoAlarm, 1=Alarm"
+    },
+    {
+      "type": "BV",
+      "instance": 723,
+      "name": "C1.OFFBoardOffline",
+      "description": "Controller Alarm - Circuit 1 Board Offline",
+      "units": "",
+      "access": "R",
+      "states": "0=NoAlarm, 1=Alarm"
+    },
+    {
+      "type": "BV",
+      "instance": 724,
+      "name": "C2.OFFBoardOffline",
+      "description": "Controller Alarm - Circuit 2 Board Offline",
+      "units": "",
+      "access": "R",
+      "states": "0=NoAlarm, 1=Alarm"
+    },
+    {
+      "type": "BV",
+      "instance": 726,
+      "name": "C1.OFFEXVBoardOffline",
+      "description": "Controller Alarm - Expansion Valve 1 Board Offline",
+      "units": "",
+      "access": "R",
+      "states": "0=NoAlarm, 1=Alarm"
+    },
+    {
+      "type": "BV",
+      "instance": 727,
+      "name": "C2.OFFEXVBoardOffline",
+      "description": "Controller Alarm - Expansion Valve 2 Board Offline",
+      "units": "",
+      "access": "R",
+      "states": "0=NoAlarm, 1=Alarm"
+    },
+    {
+      "type": "BV",
+      "instance": 729,
+      "name": "C2.OFFCompBoardOffline",
+      "description": "Controller Alarm - Compressor 1 Board Offline",
+      "units": "",
+      "access": "R",
+      "states": "0=NoAlarm, 1=Alarm"
+    },
+    {
+      "type": "BV",
+      "instance": 730,
+      "name": "C2.OFFCompBoardOffline",
+      "description": "Controller Alarm - Compressor 2 Board Offline",
+      "units": "",
+      "access": "R",
+      "states": "0=NoAlarm, 1=Alarm"
+    },
+    {
+      "type": "BV",
+      "instance": 899,
+      "name": "C1.Comp1.OFFMotorTempFail",
+      "description": "Circ 1 Comp1 Alarm - Motor Temperature Sesnor Fault",
+      "units": "",
+      "access": "R",
+      "states": "0=NoAlarm, 1=Alarm"
+    },
+    {
+      "type": "BV",
+      "instance": 901,
+      "name": "C2.Comp1.OFFMotorTempFail",
+      "description": "Circ 2 Comp1 Alarm - Motor Temperature Sesnor Fault",
+      "units": "",
+      "access": "R",
+      "states": "0=NoAlarm, 1=Alarm"
+    },
+    {
+      "type": "BV",
+      "instance": 515,
+      "name": "Unit.PowerRestore",
+      "description": "Unit - Power Restore",
+      "units": "",
+      "access": "R",
+      "states": "0=NoAlarm, 1=Alarm"
+    },
+    {
+      "type": "BV",
+      "instance": 516,
+      "name": "C1.FailPumpdown",
+      "description": "Circuit 1 Alarm - Pumpdown Failure",
+      "units": "",
+      "access": "R",
+      "states": "0=NoAlarm, 1=Alarm"
+    },
+    {
+      "type": "BV",
+      "instance": 517,
+      "name": "C2.FailPumpdown",
+      "description": "Circuit 2 Alarm - Pumpdown Failure",
+      "units": "",
+      "access": "R",
+      "states": "0=NoAlarm, 1=Alarm"
+    },
+    {
+      "type": "BV",
+      "instance": 924,
+      "name": "Unit.ExternalEvent",
+      "description": "Unit Alarm - External Event",
+      "units": "",
+      "access": "R",
+      "states": "0=NoAlarm, 1=Alarm"
+    },
+    {
+      "type": "BV",
+      "instance": 905,
+      "name": "C1.OFFNoPresChgAtStart",
+      "description": "Circuit 1 Alarm - No Pressure change at Start",
+      "units": "",
+      "access": "R",
+      "states": "0=NoAlarm, 1=Alarm"
+    },
+    {
+      "type": "BV",
+      "instance": 906,
+      "name": "C2.OFFNoPresChgAtStart",
+      "description": "Circuit 2 Alarm - No Pressure change at Start",
+      "units": "",
+      "access": "R",
+      "states": "0=NoAlarm, 1=Alarm"
+    },
+    {
+      "type": "BV",
+      "instance": 926,
+      "name": "C1OFFPhaseVoltage",
+      "description": "Circuit 1 Alarm - Pahse Voltage",
+      "units": "",
+      "access": "R",
+      "states": "0=NoAlarm, 1=Alarm"
+    },
+    {
+      "type": "BV",
+      "instance": 927,
+      "name": "C2OFFPhaseVoltage",
+      "description": "Circuit 2 Alarm - Pahse Voltage",
+      "units": "",
+      "access": "R",
+      "states": "0=NoAlarm, 1=Alarm"
+    },
+    {
+      "type": "BV",
+      "instance": 886,
+      "name": "C1.Comp1.OFFVfdFault",
+      "description": "Circ 1 Compr 1 Alarm - VFD Fault",
+      "units": "",
+      "access": "R",
+      "states": "0=NoAlarm, 1=Alarm"
+    },
+    {
+      "type": "BV",
+      "instance": 888,
+      "name": "C2.Comp1.OFFVfdFault",
+      "description": "Circ 2 Compr 1 Alarm - VFD Fault",
+      "units": "",
+      "access": "R",
+      "states": "0=NoAlarm, 1=Alarm"
+    },
+    {
+      "type": "BV",
+      "instance": 942,
+      "name": "C1.Comp1.OFFVfdTempHi",
+      "description": "Circ 1 Compr 1 Alarm - VFD High Temperature",
+      "units": "",
+      "access": "R",
+      "states": "0=NoAlarm, 1=Alarm"
+    },
+    {
+      "type": "BV",
+      "instance": 944,
+      "name": "C2.Comp1.OFFVfdTempHi",
+      "description": "Circ 2 Compr 1 Alarm - VFD High Temperature",
+      "units": "",
+      "access": "R",
+      "states": "0=NoAlarm, 1=Alarm"
+    },
+    {
+      "type": "BV",
+      "instance": 948,
+      "name": "C1.Comp1.OFFVfdCommFail",
+      "description": "Circ 1 Compr 1 Alarm - VFD Communication Failure",
+      "units": "",
+      "access": "R",
+      "states": "0=NoAlarm, 1=Alarm"
+    },
+    {
+      "type": "BV",
+      "instance": 950,
+      "name": "C2.Comp1.OFFVfdCommFail",
+      "description": "Circ 2 Compr 1 Alarm - VFD Communication Failure",
+      "units": "",
+      "access": "R",
+      "states": "0=NoAlarm, 1=Alarm"
+    },
+    {
+      "type": "AI",
+      "instance": 578,
+      "name": "C1.Comp1.HoldAmpsHi",
+      "description": "Circ 1 Comp 1 Warning - Inhibition for High Current Absorption",
+      "units": "",
+      "access": "R",
+      "states": "0=NoAlarm, 1=Alarm"
+    },
+    {
+      "type": "AI",
+      "instance": 580,
+      "name": "C2.Comp1.HoldAmpsHi",
+      "description": "Circ 2 Comp 1 Warning - Inhibition for High Current Absorption",
+      "units": "",
+      "access": "R",
+      "states": "0=NoAlarm, 1=Alarm"
+    },
+    {
+      "type": "BV",
+      "instance": 921,
+      "name": "EmergencyStopAlarm",
+      "description": "Unit Alarm - Emergency Stop Switch",
+      "units": "",
+      "access": "R",
+      "states": "0=NoAlarm, 1=Alarm"
+    },
+    {
+      "type": "BV",
+      "instance": 922,
+      "name": "EvapWTempInverted",
+      "description": "Unit Alarm - Evaporator Temperature Sensors Inverted",
+      "units": "",
+      "access": "R",
+      "states": "0=NoAlarm, 1=Alarm"
+    },
+    {
+      "type": "BV",
+      "instance": 923,
+      "name": "Unit.OFFExternalAlarm",
+      "description": "Unit Alarm - External Alarm",
+      "units": "",
+      "access": "R",
+      "states": "0=NoAlarm, 1=Alarm"
+    },
+    {
+      "type": "BV",
+      "instance": 961,
+      "name": "C1.Comp1.DischSHeatLow",
+      "description": "Circ 1 Compr 1 Problem - Low Discharge Superheat",
+      "units": "",
+      "access": "R",
+      "states": "0=NoAlarm, 1=Alarm"
+    },
+    {
+      "type": "BV",
+      "instance": 963,
+      "name": "C2.Comp1.DischSHeatLow",
+      "description": "Circ 2 Compr 1 Problem - Low Discharge Superheat",
+      "units": "",
+      "access": "R",
+      "states": "0=NoAlarm, 1=Alarm"
+    },
+    {
+      "type": "BV",
+      "instance": 918,
+      "name": "BadCurrentLimitInput",
+      "description": "Unit Warning - Curennt Limit Input Out Of Range",
+      "units": "",
+      "access": "R",
+      "states": "0=NoAlarm, 1=Alarm"
+    },
+    {
+      "type": "BV",
+      "instance": 830,
+      "name": "C1.OFFVFDCardTempHi",
+      "description": "Circuit 1 Alarm - VFD Card High Temperature",
+      "units": "",
+      "access": "R",
+      "states": "0=NoAlarm, 1=Alarm"
+    },
+    {
+      "type": "BV",
+      "instance": 831,
+      "name": "C2.OFFVFDCardTempHi",
+      "description": "Circuit 2 Alarm - VFD Card High Temperature",
+      "units": "",
+      "access": "R",
+      "states": "0=NoAlarm, 1=Alarm"
+    },
+    {
+      "type": "BV",
+      "instance": 988,
+      "name": "LeakAlarm",
+      "description": "Unit Warning - Gas Leakage",
+      "units": "",
+      "access": "R",
+      "states": "0=NoAlarm, 1=Alarm"
+    },
+    {
+      "type": "BV",
+      "instance": 980,
+      "name": "EnergyMtrCommFail",
+      "description": "Controller Alarm - Energy Meter Communication Failure",
+      "units": "",
+      "access": "R",
+      "states": "0=NoAlarm, 1=Alarm"
+    },
+    {
+      "type": "BV",
+      "instance": 904,
+      "name": "Unit.OFFRestartBoardOffline",
+      "description": "Controller Alarm - Rapid Restart Board Offline",
+      "units": "",
+      "access": "R",
+      "states": "0=NoAlarm, 1=Alarm"
+    },
+    {
+      "type": "BV",
+      "instance": null,
+      "name": "Unit.OFFMarineBoardOffline",
+      "description": "Controller Alarm - Marine Board Offline (guide repeats instance 904)",
+      "units": "",
+      "access": "R",
+      "states": "0=NoAlarm, 1=Alarm"
+    },
+    {
+      "type": "AV",
+      "instance": 1800,
+      "name": "C2.Comp1.ActCapacity",
+      "description": "Circ 2 Compressor 1 - Actual Capacity",
+      "units": "%",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "MV",
+      "instance": 440,
+      "name": "C2.Comp1.OffAutoStp",
+      "description": "Circ 2 Compressor 1 - OffAuto Setpoint",
+      "units": "",
+      "access": "W",
+      "states": "1=Off, 2=Auto"
+    },
+    {
+      "type": "BV",
+      "instance": 1802,
+      "name": "C2.Comp1.FullLoadSta",
+      "description": "Circ 2 Compressor 1 - Full Load State",
+      "units": "",
+      "access": "R",
+      "states": "0=Normal, 1=Full Load"
+    },
+    {
+      "type": "AV",
+      "instance": 148,
+      "name": "C2.Comp1.VfdOutput",
+      "description": "Circ 2 Compressor 1 - VFD Output",
+      "units": "%",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AI",
+      "instance": 166,
+      "name": "C2.Comp1.OilFeedPress",
+      "description": "Circ 2 Compressor 1 - Oil Feed Pressure",
+      "units": "kPa",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "MV",
+      "instance": 1811,
+      "name": "C2.Comp1.OilLevelSta",
+      "description": "Circ 2 Compressor 1 - Oil Level State",
+      "units": "",
+      "access": "R",
+      "states": "1=Off, 2=On"
+    },
+    {
+      "type": "BV",
+      "instance": 441,
+      "name": "C2.Comp1.State",
+      "description": "Circ 2 Compressor 1 - Operating State",
+      "units": "",
+      "access": "R",
+      "states": "0=Off, 1=On"
+    },
+    {
+      "type": "AV",
+      "instance": 1840,
+      "name": "C1.Comp1.ActCapacity",
+      "description": "Circ 1 Compressor 1 - Actual Capacity",
+      "units": "%",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "MV",
+      "instance": 430,
+      "name": "C1.Comp1.OffAutoStp",
+      "description": "Circ 1 Compressor 1 - OffAuto Setpoint",
+      "units": "",
+      "access": "W",
+      "states": "1=Off, 2=Auto"
+    },
+    {
+      "type": "BV",
+      "instance": 1842,
+      "name": "C1.Comp1.FullLoadSta",
+      "description": "Circ 1 Compressor 1 - Full Load State",
+      "units": "",
+      "access": "R",
+      "states": "0=Normal, 1=Full Load"
+    },
+    {
+      "type": "AV",
+      "instance": 1845,
+      "name": "C1.Comp1.ActSpeed",
+      "description": "Circ 1 Compressor 1 - VFD Output",
+      "units": "Hz",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AI",
+      "instance": 165,
+      "name": "C1.Comp1.OilFeedPress",
+      "description": "Circ 1 Compressor 1 - Oil Feed Pressure",
+      "units": "kPa",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "MV",
+      "instance": 1851,
+      "name": "C1.Comp1.OilLevelSta",
+      "description": "Circ 1 Compressor 1 - Oil Level State",
+      "units": "",
+      "access": "R",
+      "states": "1=Off, 2=On"
+    },
+    {
+      "type": "BV",
+      "instance": 431,
+      "name": "C1.Comp1.State",
+      "description": "Circ 1 Compressor 1 - Operating State",
+      "units": "",
+      "access": "R",
+      "states": "0=Off, 1=On"
+    },
+    {
+      "type": "MV",
+      "instance": 1854,
+      "name": "RefrigType",
+      "description": "Unit - Refrigerant type",
+      "units": "",
+      "access": "R",
+      "states": "1=R22, 2=R134a, 3=R407c, 4=R410a, 5=R1234ze, 6=resv3, 7=R513a"
+    },
+    {
+      "type": "AV",
+      "instance": 1855,
+      "name": "NrCircuits",
+      "description": "Unit - Number of Circuits",
+      "units": "",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 1857,
+      "name": "UnitTons",
+      "description": "Unit - Number of Tons",
+      "units": "kW",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 1896,
+      "name": "C2.EvapSuperheatStpVal",
+      "description": "Circuit 2 - Evaporator Superheat Active Setpoint",
+      "units": "dK",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 1897,
+      "name": "C1.EvapSuperheatStpVal",
+      "description": "Circuit 1 - Evaporator Superheat Active Setpoint",
+      "units": "dK",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 1898,
+      "name": "C2.EvapSuperheat",
+      "description": "Circuit 2 - Evaporator Superheat Temperature",
+      "units": "dK",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 1899,
+      "name": "C1.EvapSuperheat",
+      "description": "Circuit 1 - Evaporator Superheat Temperature",
+      "units": "dK",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 990,
+      "name": "ActEnergy",
+      "description": "Unit - Active Energy",
+      "units": "kWh",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 991,
+      "name": "PowerFactor",
+      "description": "Unit - Power Factor",
+      "units": "",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 208,
+      "name": "C2.ExpValvePos",
+      "description": "Circuit 2 - Expansion Valve Position",
+      "units": "%",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 210,
+      "name": "C2.CondApproach",
+      "description": "Circuit 2 - Condenser Approach Temperature",
+      "units": "dK",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 211,
+      "name": "C2.EvapApproach",
+      "description": "Circuit 2 - Evaporator Approach Temperature",
+      "units": "dK",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 168,
+      "name": "C1.ExpValvePos",
+      "description": "Circuit 1 - Expansion Valve Position",
+      "units": "%",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 170,
+      "name": "C1.CondApproach",
+      "description": "Circuit 1 - Condenser Approach Temperature",
+      "units": "dK",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 171,
+      "name": "C1.EvapApproach",
+      "description": "Circuit 1 - Evaporator Approach Temperature",
+      "units": "dK",
+      "access": "R",
+      "states": ""
+    }
+  ]
+}

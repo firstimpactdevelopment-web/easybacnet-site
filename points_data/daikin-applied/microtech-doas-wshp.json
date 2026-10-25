@@ -1,0 +1,1236 @@
+{
+  "manufacturer": "Daikin Applied",
+  "manufacturer_slug": "daikin-applied",
+  "model": "MicroTech DOAS WSHP Unit Controller",
+  "model_slug": "microtech-doas-wshp",
+  "aliases": [
+    "SmartSource DOAS",
+    "DOAS water source heat pump",
+    "MTUC_DOAS WSHP",
+    "ED 19118"
+  ],
+  "equipment_type": "Water source heat pump DOAS controller",
+  "applies_to": "Daikin SmartSource DOAS water source heat pumps with the MicroTech unit controller and its on-board BACnet MS/TP port.",
+  "summary": "The MicroTech controller on SmartSource DOAS water source heat pumps has BACnet MS/TP built in (LonWorks needs an add-on module and is not listed here). Objects cover space, water, discharge, leaving coil, refrigerant and outdoor readings, outdoor-air changeover, leaving coil, reheat and dewpoint setpoints, duct and building static pressure, compressor timers and run hours, network inputs for space and outdoor temperature, humidity, CO2, entering water temperature, fan speed and DAT reset, occupancy commands, unit state and alarms. The physical binary inputs and outputs are listed as BI 1-8 and BO 1-14.",
+  "bacnet_transport": [
+    "BACnet MS/TP"
+  ],
+  "firmware": "Application v01.01.00 (PICS)",
+  "default_device_instance": "3101120 (System Minimum Instance 3101000 + MAC 120)",
+  "access_inferred": false,
+  "notes": [
+    "BACnet MS/TP only; the same guide also covers an optional LonWorks module, which is not listed here.",
+    "BI 1-8 and BO 1-14 are named with the configurable parameter names that the I/O parameter tables list against each BI/BO instance (BI 4 is unused); the tables give no access, so read-only is shown. Several outputs can be reassigned at the keypad or in ServiceTools.",
+    "Network inputs return to the invalid value 32767 (Null) after a controller power-up or reset.",
+    "Configuration (cp...) and other non-volatile objects have a limited write life; non-volatile values are saved every 20 minutes.",
+    "Current Alarm (MV 11), Previous Alarm (MV 5) and Unit Status - In Alarm (MV 24) return alarm numbers 1-45 from the guide's alarm table.",
+    "Dehumidification Enable (MV 16), Application Mode (MV 17) and Occupancy Sensor (MV 9) are described as network inputs but printed read-only (R) in the guide."
+  ],
+  "source": {
+    "title": "MicroTech DOAS WSHP Unit Controller Protocol Information (BACnet MS/TP, LonWorks)",
+    "doc_number": "ED 19118",
+    "revision_date": "2021-06",
+    "url": "https://tahoeweb.daikinapplied.com/api/general/DownloadDocumentByName/media/MicroTech%20DOAS%20WSHP%20Unit%20Controller%20Protocol%20Tech-Sheet%20Daikin%20ED%2019118.pdf/"
+  },
+  "integration": {
+    "summary": "Give the controller a unique MAC address and device instance, then command occupancy with the override or schedule input and allow the compressors with Compressor Enable. Adjust the leaving coil cooling and discharge heating setpoints if the BMS owns them, and read Unit State, discharge air temperature and Current Alarm. Network inputs are cleared by a controller reset.",
+    "minimum_points": [
+      {
+        "ref": "MV 7",
+        "name": "OccManCmd",
+        "why": "Occupancy override from the BMS"
+      },
+      {
+        "ref": "MV 8",
+        "name": "OccSchedule",
+        "why": "Occupancy schedule command (Occ/Unocc/Standby)"
+      },
+      {
+        "ref": "MV 1",
+        "name": "NetComprEnable",
+        "why": "Compressor enable (Null = enabled)"
+      },
+      {
+        "ref": "AV 4",
+        "name": "LCTClgSetpt",
+        "why": "Leaving coil temperature setpoint in cooling"
+      },
+      {
+        "ref": "AV 5",
+        "name": "cpDAHtgSetpt",
+        "why": "Discharge air temperature setpoint in heating"
+      },
+      {
+        "ref": "BV 1",
+        "name": "ClearAlarm",
+        "why": "Clear the current alarm"
+      },
+      {
+        "ref": "MV 10",
+        "name": "UnitState",
+        "why": "Current operating state"
+      },
+      {
+        "ref": "AI 4",
+        "name": "DAT",
+        "why": "Discharge air temperature"
+      },
+      {
+        "ref": "MV 11",
+        "name": "CurrentAlarm",
+        "why": "Highest-priority active alarm"
+      }
+    ],
+    "enable": "No local/remote switch is described. Network inputs take effect when written: Network Occupancy Override Input (MV 7) overrides the current occupancy, Network Occupancy Schedule Input (MV 8) commands the scheduled mode, and Compressor Enable (MV 1) disables compressor heating and cooling (Null = enabled). Network values override local settings and revert to their defaults after a controller reset.",
+    "heartbeat": "No BACnet heartbeat. Receive Heartbeat is a LonWorks-only setting. BACnet network inputs stay in place until the controller powers up or resets, then return to the invalid value 32767.",
+    "remote_sensors": "Network Space Temperature Input (AV 18) feeds the effective space temperature (AV 22). Network inputs also exist for outdoor temperature (AV 45), outdoor and space humidity (AV 48, AV 50), space CO2 (AV 52), entering water temperature (AV 113), duct static pressure setpoint (AV 160), fan speed (AV 115, used when Fan Control Type MV 23 is Network) and discharge air temperature reset (AV 148). The local sensor value is used when the network value is not provided.",
+    "setup": [
+      "Defaults: MAC address 120 (AV 411), device instance 3101120 = System Minimum Instance (AV 412, default 3101000) + MAC, 38400 baud, Max Master 127, device name DevName.",
+      "MS/TP baud (9600, 19200, 38400 or 76800) is set from the LUI keypad or ServiceTools; speeds above 38400 need tested wiring.",
+      "BACnet is on board; only LonWorks needs an add-on communication module."
+    ],
+    "gotchas": [
+      "Configuration (cp...) and other non-volatile objects have a limited write life; do not write them cyclically.",
+      "Network inputs return to 32767 (Null) after a controller reset, so the BMS must restore them.",
+      "Some analog objects only hold whole numbers; fractional writes are rounded.",
+      "MV 16 and MV 17 are described as network commands but printed read-only; test writes on the unit before relying on them. MV 17 states follow the range column (6 = Null); the description lists 6 = HtCl and 7 = Null.",
+      "Over BACnet, Current Alarm (MV 11) reads 1 when no alarm is active (LonWorks uses 0)."
+    ]
+  },
+  "points": [
+    {
+      "type": "AI",
+      "instance": 1,
+      "name": "LocalSpaceTemp",
+      "description": "Local Space Temperature",
+      "units": "°F",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AI",
+      "instance": 2,
+      "name": "LWT",
+      "description": "Leaving Water Temperature",
+      "units": "°F",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AI",
+      "instance": 3,
+      "name": "LocalEWT",
+      "description": "Entering Water Temperature",
+      "units": "°F",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AI",
+      "instance": 4,
+      "name": "DAT",
+      "description": "Discharge Air Temperature",
+      "units": "°F",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AI",
+      "instance": 5,
+      "name": "LocalSetptAdj",
+      "description": "Local Setpoint Adjust",
+      "units": "°F",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AI",
+      "instance": 6,
+      "name": "SuctRefTemp",
+      "description": "Suction Refrigerant Temperature",
+      "units": "°F",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AI",
+      "instance": 7,
+      "name": "LCT",
+      "description": "Leaving Coil Temperature",
+      "units": "°F",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AI",
+      "instance": 8,
+      "name": "Brownout",
+      "description": "Brownout Detection",
+      "units": "counts",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AI",
+      "instance": 9,
+      "name": "OutdoorTemp",
+      "description": "Outdoor Air Temperature",
+      "units": "°F",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AI",
+      "instance": 10,
+      "name": "LocalOutdoorRH",
+      "description": "Outdoor Relative Humidity",
+      "units": "%",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AI",
+      "instance": 11,
+      "name": "LocalIndoorRH",
+      "description": "Indoor Relative Humidity",
+      "units": "%",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AI",
+      "instance": 12,
+      "name": "LocaSpaceCO2",
+      "description": "Space CO2",
+      "units": "ppm",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AI",
+      "instance": 20,
+      "name": "BldgStatPress",
+      "description": "Building Static Pressure",
+      "units": "inWC",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AI",
+      "instance": 22,
+      "name": "DischRefTemp",
+      "description": "Discharge Refrigerant Temperature",
+      "units": "°F",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AI",
+      "instance": 25,
+      "name": "RefSuctionP",
+      "description": "Suction Refrigerant Pressure",
+      "units": "psi",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AI",
+      "instance": 26,
+      "name": "RefDischP",
+      "description": "Discharge Refrigerant Pressure",
+      "units": "psi",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AI",
+      "instance": 28,
+      "name": "LocalAIReset",
+      "description": "Analog Input Reset",
+      "units": "V",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 2,
+      "name": "OATClgSetpt",
+      "description": "Outdoor Air Temperature Cooling Setpoint",
+      "units": "°F",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 4,
+      "name": "LCTClgSetpt",
+      "description": "Leaving Coil Temperature Cooling Setpoint",
+      "units": "°F",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 5,
+      "name": "cpDAHtgSetpt",
+      "description": "Discharge Air Temperature Heating Setpoint",
+      "units": "°F",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 6,
+      "name": "DuctStatPress",
+      "description": "Duct Static Pressure",
+      "units": "inWC",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 7,
+      "name": "cpDuctStaticSP",
+      "description": "Duct Static Pressure Setpoint",
+      "units": "inWC",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 160,
+      "name": "niDuctStaticP",
+      "description": "Network Duct Static Pressure Setpoint",
+      "units": "inWC",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 8,
+      "name": "BldgStaticSP",
+      "description": "Building Static Pressure Setpoint",
+      "units": "inWC",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 159,
+      "name": "niBldgStatP",
+      "description": "Network Buildng Static Pressure Setpoint",
+      "units": "inWC",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 9,
+      "name": "cpBrownoutRef",
+      "description": "Brownout Reference Setpoint",
+      "units": "counts",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 10,
+      "name": "OATHtgSetpt",
+      "description": "Outdoor Air Temperature Heating Setpoint",
+      "units": "°F",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 12,
+      "name": "cpLowTempProt",
+      "description": "Suction Refrigerant Temperature Low Setpoint",
+      "units": "°F",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 13,
+      "name": "cpLowTempProtGL",
+      "description": "Suction Refrigerant Temperature Low Glycol",
+      "units": "°F",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 151,
+      "name": "nciLowTempProtDiff",
+      "description": "Suction Refrigerant Temperature Low Limit Differential",
+      "units": "°F",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 15,
+      "name": "cpMinCompOffTmr",
+      "description": "Compressor Minimum Off Time",
+      "units": "s",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 16,
+      "name": "cpMinCompOnTmr",
+      "description": "Compressor Minimum On Time",
+      "units": "s",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 18,
+      "name": "NetworkSpaceTemp",
+      "description": "Network Space Temperature Input",
+      "units": "°F",
+      "access": "C",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 20,
+      "name": "Dewpoint",
+      "description": "Dewpoint",
+      "units": "°F",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 22,
+      "name": "EffectSpaceTemp",
+      "description": "Effective Space Temperature Input",
+      "units": "°F",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 30,
+      "name": "LowEWTSptGly",
+      "description": "Entering Water Temperature Heating Lockout - Glycol",
+      "units": "°F",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 31,
+      "name": "LowEWTSptWtr",
+      "description": "Entering Water Temperature Heating Lockout - Water",
+      "units": "°F",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 39,
+      "name": "cpBypassTime",
+      "description": "Local Bypass Time",
+      "units": "min",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 40,
+      "name": "Comp1RunHours",
+      "description": "Compressor 1 Run Time",
+      "units": "h",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 41,
+      "name": "Comp2RunHours",
+      "description": "Compressor 2 Run Time",
+      "units": "h",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 42,
+      "name": "OAFlow",
+      "description": "Outdoor Airflow",
+      "units": "CFM",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 44,
+      "name": "EffectOutdoorTemp",
+      "description": "Effective Outdoor Air Temperature",
+      "units": "°F",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 45,
+      "name": "NetworkOutdoorTemp",
+      "description": "Network Outdoor Air Temperature Input",
+      "units": "°F",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 46,
+      "name": "FanRunHoursTenths",
+      "description": "Fan Run Time",
+      "units": "h",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 47,
+      "name": "EffectOutdoorRH",
+      "description": "Effective Outdoor Humidity",
+      "units": "%",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 48,
+      "name": "NetworkOutdoorRH",
+      "description": "Network Outdoor Humidity Input",
+      "units": "%",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 49,
+      "name": "EffectSpaceRH",
+      "description": "Effective Space Humidity",
+      "units": "%",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 50,
+      "name": "NetworkSpaceRH",
+      "description": "Network Space Humidity",
+      "units": "%",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 51,
+      "name": "EffectSpaceCO2",
+      "description": "Effective Space CO2",
+      "units": "ppm",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 52,
+      "name": "NetworkSpaceCO2",
+      "description": "Network Space CO2 Input",
+      "units": "ppm",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 53,
+      "name": "DATSetpt",
+      "description": "Effective Discharge Temperature Setpoint",
+      "units": "°F",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 57,
+      "name": "EffectEWT",
+      "description": "Effective Entering Water Temperature",
+      "units": "°F",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 58,
+      "name": "EffLCTSetpt",
+      "description": "Effective Leaving Coil Temperature Setpoint",
+      "units": "°F",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 110,
+      "name": "LCTLowLim",
+      "description": "Leaving Coil Temperature Low Limit",
+      "units": "°F",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 111,
+      "name": "DATHighLim",
+      "description": "Discharge Air Temperature High",
+      "units": "°F",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 113,
+      "name": "NetworkEWT",
+      "description": "Network Entering Water Temperature Input",
+      "units": "°F",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 115,
+      "name": "NetworkFanSpeedCmd",
+      "description": "Network Fan Speed Command",
+      "units": "%",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 116,
+      "name": "cpFanOnDelayTmr",
+      "description": "Fan On Delay Timer",
+      "units": "s",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 117,
+      "name": "MinFanOnTime",
+      "description": "Minimum Fan On Time",
+      "units": "s",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 125,
+      "name": "Elevation",
+      "description": "Elevation",
+      "units": "ft",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 126,
+      "name": "OATHiLkSetpt",
+      "description": "Outdoor Air Temperature High Lockout Setpoint",
+      "units": "°F",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 127,
+      "name": "OATLoLkSetpt",
+      "description": "Outdoor Air Temperature Low Lockout Setpoint",
+      "units": "°F",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 128,
+      "name": "SuctSatTemp",
+      "description": "Saturated Suction Refrigerant Temperature (Teg)",
+      "units": "°F",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 129,
+      "name": "FilterChgHrsSP",
+      "description": "Filter Change Hours Setpoint",
+      "units": "h",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 130,
+      "name": "FilterChgHrs",
+      "description": "Filter Change Hours Timer",
+      "units": "h",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 134,
+      "name": "DischSatTemp",
+      "description": "Saturated Discharge Refrigerant Temperature (Tc)",
+      "units": "°F",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 135,
+      "name": "cpACFM",
+      "description": "PWM Constant Speed Fan Airflow",
+      "units": "CFM",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 145,
+      "name": "ReheatDATSP",
+      "description": "Discharge Air Temperature Reheat Setpoint",
+      "units": "°F",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 146,
+      "name": "DewpointSetpt",
+      "description": "Dewpoint Setpoint",
+      "units": "°F",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 158,
+      "name": "LocalAiDatReset",
+      "description": "Discharge Air Temperature Reset",
+      "units": "V",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 148,
+      "name": "NetworkDATReset",
+      "description": "Network Discharge Temperature Reset Input",
+      "units": "°F",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 149,
+      "name": "ClgMinDATRst",
+      "description": "Minimum Cooling Discharge Air Temperature Reset Setpoint",
+      "units": "°F",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 150,
+      "name": "HtgMaxDATRst",
+      "description": "Maximum Heating Discharge Air Temperature Reset Setpoint",
+      "units": "°F",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 152,
+      "name": "UnitStatusPriHeat",
+      "description": "Unit Status - Primary Heating Output",
+      "units": "%",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 153,
+      "name": "UnitStatusCool",
+      "description": "Unit Status - Cooling Output",
+      "units": "%",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 154,
+      "name": "UnitStatusFan",
+      "description": "Unit Status - Fan Output",
+      "units": "%",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 155,
+      "name": "UnitStatusSecHeat",
+      "description": "Unit Status - Secondary Heating Output",
+      "units": "%",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 156,
+      "name": "Comp1Starts",
+      "description": "Compressor 1 Starts",
+      "units": "",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 157,
+      "name": "Comp2Starts",
+      "description": "Compressor 2 Starts",
+      "units": "",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 411,
+      "name": "MacAddress",
+      "description": "BACnet MS/TP MAC Address",
+      "units": "",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 412,
+      "name": "SystemMinInstance",
+      "description": "Device Instance Number",
+      "units": "",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "BV",
+      "instance": 1,
+      "name": "ClearAlarm",
+      "description": "Clear Alarm",
+      "units": "",
+      "access": "W",
+      "states": "0=None, 1=Clear"
+    },
+    {
+      "type": "BV",
+      "instance": 3,
+      "name": "ResetFilter",
+      "description": "Reset Filter",
+      "units": "",
+      "access": "W",
+      "states": "0=None, 1=Clear"
+    },
+    {
+      "type": "MI",
+      "instance": 1,
+      "name": "CondOverFlow",
+      "description": "Condensate Overflow Status",
+      "units": "",
+      "access": "R",
+      "states": "1=Dry, 2=Wet, 3=Null"
+    },
+    {
+      "type": "MV",
+      "instance": 1,
+      "name": "NetComprEnable",
+      "description": "Compressor Enable",
+      "units": "",
+      "access": "W",
+      "states": "1=Disable, 2=Enable, 3=Null"
+    },
+    {
+      "type": "MV",
+      "instance": 3,
+      "name": "NetTimeRst",
+      "description": "Run Timer Reset",
+      "units": "",
+      "access": "W",
+      "states": "0=None, 1=RstCmp1, 2=RstCmp2, 3=RstFan, 4=All"
+    },
+    {
+      "type": "MV",
+      "instance": 4,
+      "name": "UnitStatusMode",
+      "description": "Unit Status Mode",
+      "units": "",
+      "access": "R",
+      "states": "0=Heat, 1=Cool, 2=PreCool, 3=Off, 4=FanOnly, 5=Dehum, 6=Calibrate, 7=Auto"
+    },
+    {
+      "type": "MV",
+      "instance": 5,
+      "name": "Previous Alarm",
+      "description": "Previous Alarm",
+      "units": "",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "MV",
+      "instance": 6,
+      "name": "EffectOccup",
+      "description": "Effective Occupancy",
+      "units": "",
+      "access": "R",
+      "states": "1=Occ, 2=Unocc, 3=Bypass, 4=Standby, 5=Null"
+    },
+    {
+      "type": "MV",
+      "instance": 7,
+      "name": "OccManCmd",
+      "description": "Network Occupancy Override Input",
+      "units": "",
+      "access": "W",
+      "states": "1=Occ, 2=Unocc, 3=Bypass, 4=Standby, 5=Null"
+    },
+    {
+      "type": "MV",
+      "instance": 8,
+      "name": "OccSchedule",
+      "description": "Network Occupancy Schedule Input",
+      "units": "",
+      "access": "W",
+      "states": "1=Occ, 2=Unocc, 3=Standby, 4=Null"
+    },
+    {
+      "type": "MV",
+      "instance": 9,
+      "name": "OccSensor",
+      "description": "Occupancy Sensor",
+      "units": "",
+      "access": "R",
+      "states": "1=Occ, 2=Unocc, 3=Null"
+    },
+    {
+      "type": "MV",
+      "instance": 10,
+      "name": "UnitState",
+      "description": "Unit State",
+      "units": "",
+      "access": "R",
+      "states": "1=Powerup, 2=Initialize, 3=Calibration, 4=Off, 5=Start, 6=FanOnly, 7=Prepare_Cool, 8=Cooling, 9=Prepare_Dehum, 10=Dehum, 11=Prepare_Heat, 12=Heating, 13=Defrost, 14=Alarm, 15=AlarmOff, 16=Comp_Shutdown, 17=Immediate_Shutdown, 18=Vacuum"
+    },
+    {
+      "type": "MV",
+      "instance": 11,
+      "name": "CurrentAlarm",
+      "description": "Current Alarm",
+      "units": "",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "MV",
+      "instance": 13,
+      "name": "PumpRequest",
+      "description": "Pump Request Output",
+      "units": "",
+      "access": "R",
+      "states": "1=Inactive, 2=Active"
+    },
+    {
+      "type": "MV",
+      "instance": 16,
+      "name": "ncpDehumEnable",
+      "description": "Dehumidification Enable",
+      "units": "",
+      "access": "R",
+      "states": "1=Disabled, 2=Enabled, 3=Null"
+    },
+    {
+      "type": "MV",
+      "instance": 17,
+      "name": "NetApplicMode",
+      "description": "Application Mode",
+      "units": "",
+      "access": "R",
+      "states": "1=Auto, 2=Off, 3=FanOnly, 4=Heat, 5=Cool, 6=Null"
+    },
+    {
+      "type": "MV",
+      "instance": 19,
+      "name": "SetpointMethod",
+      "description": "Cooling Setpoint Method",
+      "units": "",
+      "access": "W",
+      "states": "1=Economy, 2=Precision, 3=Dehum"
+    },
+    {
+      "type": "MV",
+      "instance": 20,
+      "name": "EffectHeatCool",
+      "description": "Effective Heat/Cool",
+      "units": "",
+      "access": "R",
+      "states": "1=Auto, 2=Off, 3=FanOnly, 4=Heat, 5=Cool, 6=Dehum, 7=Invalid"
+    },
+    {
+      "type": "MV",
+      "instance": 21,
+      "name": "OALockoutEn",
+      "description": "Outdoor Air Lockout Enable",
+      "units": "",
+      "access": "W",
+      "states": "1=Disable, 2=Enable"
+    },
+    {
+      "type": "MV",
+      "instance": 22,
+      "name": "FilterChgHrsEn",
+      "description": "Filter Change Hours Enable",
+      "units": "",
+      "access": "W",
+      "states": "1=Disable, 2=Enable"
+    },
+    {
+      "type": "MV",
+      "instance": 23,
+      "name": "FanCtrlMethod",
+      "description": "Fan Control Type",
+      "units": "",
+      "access": "W",
+      "states": "1=Const, 2=DSP, 3=BSP, 4=CO2, 5=AI_Reset, 6=Network"
+    },
+    {
+      "type": "MV",
+      "instance": 24,
+      "name": "UnitStatusAlarm",
+      "description": "Unit Status - In Alarm",
+      "units": "",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "MV",
+      "instance": 25,
+      "name": "TrendRate",
+      "description": "Trend Rate",
+      "units": "",
+      "access": "W",
+      "states": "1=None, 2=OccChange, 3=1Minute, 4=10Min, 5=Hourly, 6=Daily"
+    },
+    {
+      "type": "BI",
+      "instance": 1,
+      "name": "biHighPressure",
+      "description": "High pressure switch input (BI-1, 24 VAC)",
+      "units": "",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "BI",
+      "instance": 2,
+      "name": "biFreezeStat",
+      "description": "Freeze stat input (BI-2, 24 VAC)",
+      "units": "",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "BI",
+      "instance": 3,
+      "name": "biLoPress-PM",
+      "description": "Phase monitor / low pressure input (BI-3, 24 VAC)",
+      "units": "",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "BI",
+      "instance": 4,
+      "name": "BI-4",
+      "description": "Spare input BI-4, not used",
+      "units": "",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "BI",
+      "instance": 5,
+      "name": "biDirtyFilter",
+      "description": "Dirty filter switch (BI-5, dry contact)",
+      "units": "",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "BI",
+      "instance": 6,
+      "name": "biERFbk",
+      "description": "Energy recovery feedback switch (BI-6, dry contact)",
+      "units": "",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "BI",
+      "instance": 7,
+      "name": "biUnoccupied",
+      "description": "Unoccupied input from room sensor (BI-7, 24 VAC)",
+      "units": "",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "BI",
+      "instance": 8,
+      "name": "biShutdown",
+      "description": "Emergency shutdown input (BI-8, dry contact)",
+      "units": "",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "BO",
+      "instance": 1,
+      "name": "boFanOutput",
+      "description": "Fan enable output (DO1)",
+      "units": "",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "BO",
+      "instance": 2,
+      "name": "boCCHeat1",
+      "description": "Crankcase heater output (DO2)",
+      "units": "",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "BO",
+      "instance": 3,
+      "name": "bo3",
+      "description": "Configurable output DO3 (default None)",
+      "units": "",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "BO",
+      "instance": 4,
+      "name": "boReversingValve",
+      "description": "Reversing valve output (DO4, not used)",
+      "units": "",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "BO",
+      "instance": 5,
+      "name": "boFaultOut",
+      "description": "Fault output (DO5)",
+      "units": "",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "BO",
+      "instance": 6,
+      "name": "boEREnable",
+      "description": "Energy recovery enable output (DO6)",
+      "units": "",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "BO",
+      "instance": 7,
+      "name": "boOADamper",
+      "description": "Outside air damper output (DO7)",
+      "units": "",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "BO",
+      "instance": 8,
+      "name": "boPump",
+      "description": "Water loop pump request / isolation valve (DO8)",
+      "units": "",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "BO",
+      "instance": 9,
+      "name": "boC1Low",
+      "description": "Compressor 1 low stage (DO9)",
+      "units": "",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "BO",
+      "instance": 10,
+      "name": "boC1High",
+      "description": "Compressor 1 high stage (DO10)",
+      "units": "",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "BO",
+      "instance": 11,
+      "name": "boC2Low",
+      "description": "Compressor 2 low stage (DO11)",
+      "units": "",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "BO",
+      "instance": 12,
+      "name": "boC2High",
+      "description": "Compressor 2 high stage (DO12)",
+      "units": "",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "BO",
+      "instance": 13,
+      "name": "boPreheat",
+      "description": "Preheat output (DO13, configurable)",
+      "units": "",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "BO",
+      "instance": 14,
+      "name": "bo14_Virtual",
+      "description": "Configurable virtual output DO14 (default None)",
+      "units": "",
+      "access": "R",
+      "states": ""
+    }
+  ]
+}

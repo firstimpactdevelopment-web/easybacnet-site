@@ -1,0 +1,818 @@
+{
+  "manufacturer": "York",
+  "manufacturer_slug": "york",
+  "model": "YVWH / YVWE / YGWH Water-Cooled Screw (SC-EQ)",
+  "model_slug": "yvwh-yvwe-ygwh-sc-eq",
+  "aliases": [
+    "YORK YVWH",
+    "YVWH-200",
+    "YORK YVWE",
+    "YORK YGWH",
+    "SC-EQ",
+    "water-to-water screw heat pump"
+  ],
+  "equipment_type": "Water-cooled screw chiller / water-to-water heat pump (via SC-EQ card)",
+  "applies_to": "YORK YVWH and YGWH water-to-water screw heat pumps and YVWE water-cooled screw chillers fitted with the SC-EQ communication card.",
+  "summary": "YORK by Johnson Controls YVWH, YVWE and YGWH water-cooled screw units share one SC-EQ list on BACnet MS/TP (or Modbus RTU / N2). A Read/Write block holds start/stop, run mode (cool, ice storage, heat pump, remote), leaving water setpoints per mode and over-current percentages per mode. Read points cover water temperatures, pressures, per-system motor and VSD values, and bit-coded digital I/O and fault words.",
+  "bacnet_transport": [
+    "BACnet MS/TP"
+  ],
+  "firmware": "SC-EQ software 3.5.0.11",
+  "default_device_instance": "5000 + MAC address",
+  "access_inferred": false,
+  "notes": [
+    "Access comes from the sheet's Read/Write and Read sections.",
+    "Several AVs are bit-coded words (digital inputs/outputs and faults); the states list the bits. The sheet only gives bit tables written for system 1, so AV 57-59 have none.",
+    "All MV enums are printed in the points table (the sheet has no add-1 note). Multistate states with their own enum in the points table are shown as printed, from 0. BACnet multistate values start at 1, so the device may report the printed number + 1; confirm by discovery (read the state text).",
+    "Units shown are the IP units; with MV 65001 set to SI on the SC-EQ the card reports °C, kPa and so on.",
+    "System 2 points apply to dual-compressor units."
+  ],
+  "source": {
+    "title": "YVWH YVWE YGWH SC-EQ BAS Points List",
+    "doc_number": null,
+    "revision_date": "Rev 1.0, 2021-03-15",
+    "url": "https://docs.johnsoncontrols.com/chillers/api/khub/documents/TWAOtmjMD~xxMBlTMLA2QQ/content"
+  },
+  "integration": {
+    "summary": "Select the run mode with MV 1, start/stop with BV 1, and write the setpoint for the active mode (AV 1 cooling, AV 3 heat pump). MV 2 shows whether the unit is under local, remote or communication control. Read leaving water temperatures, % FLA and VSD run status, and alarm on BV 2.",
+    "minimum_points": [
+      {
+        "ref": "BV 1",
+        "name": "START|STOP",
+        "why": "Start/stop command (1 = start)"
+      },
+      {
+        "ref": "MV 1",
+        "name": "RUN MODE",
+        "why": "Mode: cool, ice storage, heat pump, remote"
+      },
+      {
+        "ref": "AV 1",
+        "name": "LEAVING CHILLED LIQUID SETPOINT AC",
+        "why": "Leaving chilled liquid setpoint, cooling mode"
+      },
+      {
+        "ref": "AV 3",
+        "name": "LEAVING HEAT LIQUID SETPOINT HP",
+        "why": "Leaving hot liquid setpoint, heat pump mode"
+      },
+      {
+        "ref": "AV 21",
+        "name": "OVER CURRENT PERCENT AC",
+        "why": "Over-current setting, %, cooling mode (no detail in sheet)"
+      },
+      {
+        "ref": "MV 2",
+        "name": "CONTROL MODE",
+        "why": "Control mode: local, remote or communication"
+      },
+      {
+        "ref": "MV 3",
+        "name": "SYS 1 VSD RUN STATUS",
+        "why": "Compressor 1 VSD running, stopped or fault"
+      },
+      {
+        "ref": "AV 9",
+        "name": "LEAVING CHILLED LIQUID TEMPERATURE",
+        "why": "Leaving chilled liquid temperature"
+      },
+      {
+        "ref": "AV 24",
+        "name": "SYS 1 PERCENT FLA",
+        "why": "Compressor 1 current, % FLA"
+      },
+      {
+        "ref": "BV 2",
+        "name": "FAULT",
+        "why": "Unit fault (1 = fault)"
+      }
+    ],
+    "enable": "MV 2 reports the control mode (local, remote, communication). The sheet does not say how to select it and gives no write-enable point.",
+    "heartbeat": null,
+    "remote_sensors": null,
+    "setup": [
+      "The BAS connects to the SC-EQ J12 port (RS-485: +, -, COM/REF, SHLD). The card detects BACnet MS/TP, Modbus RTU or N2 and the baud rate by itself; allow up to 120 seconds after power-up.",
+      "The MAC address (1-127) is set on DIP switch SW1 (switch 8 unused). Cycle the card's power after changing it.",
+      "The device instance defaults to 5000 + the MAC address (MAC 6 gives 5006). To use another number, set Device Instance Mode to Manual and enter the instance with the SC-AP / MAP tool, or write BV 65000 (mode) and AV 65000 (instance ID).",
+      "MV 65001 Units sets whether the BAS sees IP or SI values, independent of the chiller display; set it to match the chiller."
+    ],
+    "gotchas": [
+      "The remote (commandable) setpoints read as unreliable until the BAS writes them the first time.",
+      "The SC-EQ only exposes the points that apply to the chiller it detects; if it replaces an E-Link, re-discover the device so old non-applicable points don't sit offline.",
+      "Leaving water setpoints are per mode (AC, ICS, HP, HTHP) and over-current percentages per mode (AC, ICS, HP); write the ones for the mode selected in MV 1."
+    ]
+  },
+  "points": [
+    {
+      "type": "BV",
+      "instance": 1,
+      "name": "START|STOP",
+      "description": "Start/Stop",
+      "units": "",
+      "access": "W",
+      "states": "0=Stop, 1=Start"
+    },
+    {
+      "type": "MV",
+      "instance": 1,
+      "name": "RUN MODE",
+      "description": "Run Mode",
+      "units": "",
+      "access": "W",
+      "states": "0=Cool, 1=ice storage, 2=heat pump, 3=remote"
+    },
+    {
+      "type": "AV",
+      "instance": 1,
+      "name": "LEAVING CHILLED LIQUID SETPOINT AC",
+      "description": "Leaving chilled liquid setpoint, cooling (AC) mode",
+      "units": "°F",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 2,
+      "name": "LEAVING CHILLED LIQUID SETPOINT ICS",
+      "description": "Leaving chilled liquid setpoint, ice storage (ICS) mode",
+      "units": "°F",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 3,
+      "name": "LEAVING HEAT LIQUID SETPOINT HP",
+      "description": "Leaving hot liquid setpoint, heat pump (HP) mode",
+      "units": "°F",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 4,
+      "name": "LEAVING HEAT LIQUID SETPOINT HTHP",
+      "description": "Leaving hot liquid setpoint, high-temperature heat pump mode",
+      "units": "°F",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 21,
+      "name": "OVER CURRENT PERCENT AC",
+      "description": "Over current percent, cooling (AC) mode",
+      "units": "%",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 22,
+      "name": "OVER CURRENT PERCENT ICS",
+      "description": "Over current percent, ice storage (ICS) mode",
+      "units": "%",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 23,
+      "name": "OVER CURRENT PERCENT HP",
+      "description": "Over current percent, heat pump (HP) mode",
+      "units": "%",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "BV",
+      "instance": 2,
+      "name": "FAULT",
+      "description": "Fault",
+      "units": "",
+      "access": "R",
+      "states": "0=no fault, 1=fault exist"
+    },
+    {
+      "type": "BV",
+      "instance": 3,
+      "name": "TIME LIMITATION",
+      "description": "Time Limitation",
+      "units": "",
+      "access": "R",
+      "states": "0=no time limitation, 1=time limitation"
+    },
+    {
+      "type": "BV",
+      "instance": 4,
+      "name": "PREHEAT",
+      "description": "Preheat",
+      "units": "",
+      "access": "R",
+      "states": "0=no preheat, 1=preheat"
+    },
+    {
+      "type": "MV",
+      "instance": 2,
+      "name": "CONTROL MODE",
+      "description": "Control Mode",
+      "units": "",
+      "access": "R",
+      "states": "0=local, 1=remote, 2=communication"
+    },
+    {
+      "type": "AV",
+      "instance": 5,
+      "name": "SYS 1 DIGITAL OUTPUT",
+      "description": "System 1 digital outputs, bit-coded",
+      "units": "",
+      "access": "R",
+      "states": "Bit 0=Liquid Pump, Bit 1=Compressor Y Contact, Bit 2=Compressor Δ Contact, Bit 3=Oil Heater, Bit 4=Hot Gas Bypass, Bit 5=Alarm, Bit 6=Liquid Injection Oil Cooling, Bit 7=DO18, Bit 8=Unit Running, Bit 9=Oil Supply Circuit, Bit 12=Slide Stop Load, Bit 13=Slide Stop Unload, Bit 14=Slide Valve Load, Bit 15=Slide Valve Unload (1=on)"
+    },
+    {
+      "type": "AV",
+      "instance": 6,
+      "name": "SYS 1 DIGITAL INPUT",
+      "description": "System 1 digital inputs, bit-coded",
+      "units": "",
+      "access": "R",
+      "states": "Bit 0=Chilled Liquid Flow Switch, Bit 1=Mode Switch, Bit 2=High Pressure Switch, Bit 3=Low Oil Level Switch, Bit 4=Motor Internal Protect, Bit 5=External Interlock/Power Protect, Bit 6=Starter Running Feedback, Bit 7=Remote Switch, Bit 8=EM Stop, Bit 9=Starter Fault Feedback, Bit 10=Condenser Liquid Flow Switch (1=closed)"
+    },
+    {
+      "type": "AV",
+      "instance": 7,
+      "name": "LEAVING CONDENSER LIQUID TEMPERATURE",
+      "description": "Leaving Condenser Liquid Temperature",
+      "units": "°F",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 8,
+      "name": "RETURN CONDENSER LIQUID TEMPERATURE",
+      "description": "Return Condenser Liquid Temperature",
+      "units": "°F",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 9,
+      "name": "LEAVING CHILLED LIQUID TEMPERATURE",
+      "description": "Leaving Chilled Liquid Temperature",
+      "units": "°F",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 10,
+      "name": "RETURN CHILLED LIQUID TEMPERATURE",
+      "description": "Return Chilled Liquid Temperature",
+      "units": "°F",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 11,
+      "name": "SYS 1 DISCHARGE TEMPERATURE",
+      "description": "Sys 1 Discharge Temperature",
+      "units": "°F",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 12,
+      "name": "EVAPORATOR PRESSURE",
+      "description": "Evaporator Pressure",
+      "units": "PSIG",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 13,
+      "name": "CONDENSER PRESSURE",
+      "description": "Condenser Pressure",
+      "units": "PSIG",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 14,
+      "name": "SYS 1 OIL PRESSURE",
+      "description": "Sys 1 Oil Pressure",
+      "units": "PSIG",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 15,
+      "name": "SYS 1 MOTOR CURRENT",
+      "description": "Sys 1 Motor Current",
+      "units": "Amps",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 16,
+      "name": "SYS 1 DIGITAL INPUT FAULT",
+      "description": "System 1 digital input faults, bit-coded",
+      "units": "",
+      "access": "R",
+      "states": "Bit 0=Cycling Stop-Chilled Liquid Flow Switch Open, Bit 1=Cycling Stop-Condenser Liquid Flow Switch Open, Bit 2=Safety Fault-SYS1 High Pressure Contact Open, Bit 3=Safety Fault-Low Level Switch Open, Bit 4=Safety Fault-SYS1 Compressor Motor Protection, Bit 5=Safety Fault-External Interlock Protection, Bit 6=Safety Fault-SYS1 Compressor Start Fail, Bit 7=Safety Fault-Emergency Stop Pressed, Bit 8=Start Inhibit-Oil Heat Over 5 Hour Before Start, Bit 9=Safety Fault-Evaporator Smart Freeze Protection (1=fault)"
+    },
+    {
+      "type": "AV",
+      "instance": 17,
+      "name": "SYS 1 ANALOG INPUT FAULT",
+      "description": "System 1 analog input (sensor) faults, bit-coded",
+      "units": "",
+      "access": "R",
+      "states": "Bit 0=Safety Fault-Leaving Condenser Temp. Sensor Fault, Bit 1=Safety Fault-Return Condenser Temp. Sensor Fault, Bit 2=Safety Fault-Leaving Chilled Sensor Fault, Bit 3=Safety Fault-Return Chilled Temp. Sensor Fault, Bit 4=Safety Fault-SYS1 Discharge Temp. Sensor Fault, Bit 10=Safety Fault-Leaving Hot Liquid Temp. Sensor Fault, Bit 11=Safety Fault-Return Hot Liquid Temp. Sensor Fault, Bit 12=Safety Fault-Evaporator Pressure Out Of Range Fault, Bit 13=Safety Fault-Condenser Pressure Sensor Fault, Bit 14=Safety Fault-SYS1 Oil Pressure Sensor Fault (1=fault)"
+    },
+    {
+      "type": "AV",
+      "instance": 18,
+      "name": "SYS 1 FAULT",
+      "description": "System 1 faults, bit-coded",
+      "units": "",
+      "access": "R",
+      "states": "Bit 0=Safety Fault-Condenser High Pressure, Bit 1=Safety Fault-Evaporator Low Pressure, Bit 2=Safety Fault-SYS1 Discharge High Temp., Bit 3=Safety Fault-SYS1 Compressor Over Current, Bit 4=Safety Fault-SYS1 Compressor Low Current, Bit 5=Cycling Stop-Leaving Condenser High Temperature, Bit 6=Cycling Stop-Leaving Chilled Liquid Low Temperature, Bit 7=Safety Fault-SYS1 Oil Low Diff. Pressure, Bit 8=Safety Fault-SYS1 Oil Clogged Filter, Bit 9=Cycling Stop-SYS1 Anti-Recycle, Bit 10=Cycling Stop-Leaving Hot Liquid High Temperature, Bit 11=Safety Fault-SYS1 Oil Supply Fail, Bit 12=Safety Fault-SYS1 Discharge Low Superheat, Bit 13=Safety Fault-SYS1 Motor High Temperature, Bit 14=Cycling Stop-SYS1 Discharge High Temp. (1=fault)"
+    },
+    {
+      "type": "AV",
+      "instance": 19,
+      "name": "WATER PUMP WORK HOURS",
+      "description": "Water Pump Work Hours",
+      "units": "Hours",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 20,
+      "name": "SYS 1 COMPRESSOR WORK HOURS",
+      "description": "Sys 1 Compressor Work Hours",
+      "units": "Hours",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 24,
+      "name": "SYS 1 PERCENT FLA",
+      "description": "Sys 1 Percent FLA",
+      "units": "%",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 25,
+      "name": "EVAPORATOR SATURATION TEMPERATURE",
+      "description": "Evaporator Saturation Temperature",
+      "units": "°F",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 26,
+      "name": "CONDENSER SATURATION TEMPERATURE",
+      "description": "Condenser Saturation Temperature",
+      "units": "°F",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 27,
+      "name": "DISCHARGE SUPERHEAT",
+      "description": "Sys 1 Discharge Superheat",
+      "units": "°F (diff)",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 28,
+      "name": "SYS 1 MOTOR TEMPERATURE A",
+      "description": "Sys 1 Motor Temperature A",
+      "units": "°F",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 29,
+      "name": "SYS 1 MOTOR TEMPERATURE B",
+      "description": "Sys 1 Motor Temperature B",
+      "units": "°F",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 30,
+      "name": "SYS 1 MOTOR TEMPERATURE C",
+      "description": "Sys 1 Motor Temperature C",
+      "units": "°F",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 31,
+      "name": "LIQUID LEVEL",
+      "description": "Liquid Level",
+      "units": "%",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 32,
+      "name": "LEVEL CONTROL AO",
+      "description": "Level Control AO",
+      "units": "%",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 33,
+      "name": "LEVEL SETPOINT",
+      "description": "Level Setpoint",
+      "units": "%",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 34,
+      "name": "LEVEL CONTROL PB",
+      "description": "Level Control Pb",
+      "units": "%",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 35,
+      "name": "LEVEL CONTROL TN",
+      "description": "Level Control Tn",
+      "units": "Sec",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 36,
+      "name": "LEVEL CONTROL PERIOD",
+      "description": "Level Control Period",
+      "units": "Sec",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "MV",
+      "instance": 3,
+      "name": "SYS 1 VSD RUN STATUS",
+      "description": "Sys 1 VSD Run Status",
+      "units": "",
+      "access": "R",
+      "states": "0=No Communication, 1=Forward Running, 2=Reverse Running, 3=Stopped, 4=Tuned, 5=Fault"
+    },
+    {
+      "type": "AV",
+      "instance": 38,
+      "name": "SYS 1 FREQUENCY COMMAND",
+      "description": "Sys 1 VSD Frequency Command",
+      "units": "Hz",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 39,
+      "name": "SYS 1 VSD FREQUENCY RUNNING",
+      "description": "Sys 1 VSD Frequency Running",
+      "units": "Hz",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 40,
+      "name": "SYS 1 VSD BUS VOLTAGE",
+      "description": "Sys 1 VSD BUS Voltage",
+      "units": "Volts",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 41,
+      "name": "SYS 1 VSD OUTPUT VOLTAGE",
+      "description": "Sys 1 VSD Output Voltage",
+      "units": "Volts",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 42,
+      "name": "SYS 1 VSD OUTPUT CURRENT",
+      "description": "Sys 1 VSD Output Current",
+      "units": "Amps",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 43,
+      "name": "SYS 1 VSD OUTPUT POWER",
+      "description": "Sys 1 VSD Output Power",
+      "units": "kW",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 44,
+      "name": "SYS 1 VSD HEATSINK TEMPERATURE",
+      "description": "Sys 1 VSD Heatsink Temperature",
+      "units": "°F",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 45,
+      "name": "SYS 1 VSD FAULT CODE",
+      "description": "Sys 1 VSD Fault Code",
+      "units": "",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 46,
+      "name": "SYS 1 FAIL RATE",
+      "description": "Sys 1 Fail Rate",
+      "units": "%",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 47,
+      "name": "VSD COMMAND PERIOD",
+      "description": "VSD Command Period",
+      "units": "Sec",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 48,
+      "name": "VSD PB",
+      "description": "VSD Pb",
+      "units": "%",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 49,
+      "name": "VSD TN",
+      "description": "VSD Tn",
+      "units": "Sec",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 50,
+      "name": "SYS 2 DIGITAL OUTPUT",
+      "description": "System 2 digital outputs, bit-coded",
+      "units": "",
+      "access": "R",
+      "states": "Bit 1=Compressor Y Contact, Bit 2=Compressor Δ Contact, Bit 6=Liquid Injection Oil Cooling, Bit 9=Oil Supply Circuit, Bit 12=Slide Stop Load, Bit 13=Slide Stop Unload, Bit 14=Slide Valve Load, Bit 15=Slide Valve Unload (1=on)"
+    },
+    {
+      "type": "AV",
+      "instance": 51,
+      "name": "SYS 2 DIGITAL INPUT",
+      "description": "System 2 digital inputs, bit-coded",
+      "units": "",
+      "access": "R",
+      "states": "Bit 2=High Pressure Switch, Bit 4=Motor Internal Protect, Bit 6=Starter Running Feedback, Bit 9=Starter Fault Feedback (1=closed)"
+    },
+    {
+      "type": "AV",
+      "instance": 52,
+      "name": "SYS 2 DISCHARGE TEMPERATURE",
+      "description": "Sys 2 Discharge Temperature",
+      "units": "°F",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 55,
+      "name": "SYS 2 OIL PRESSURE",
+      "description": "Sys 2 Oil Pressure",
+      "units": "PSIG",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 56,
+      "name": "SYS 2 MOTOR CURRENT",
+      "description": "Sys 2 Motor Current",
+      "units": "Amps",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 57,
+      "name": "SYS 2 DIGITAL INPUT FAULT",
+      "description": "System 2 digital input faults, bit-coded",
+      "units": "",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 58,
+      "name": "SYS 2 ANALOG INPUT FAULT",
+      "description": "System 2 analog input faults, bit-coded",
+      "units": "",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 59,
+      "name": "SYS 2 FAULT",
+      "description": "System 2 faults, bit-coded",
+      "units": "",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 60,
+      "name": "SYS 2 COMPRESSOR WORK HOURS",
+      "description": "Sys 2 Compressor Work Hours",
+      "units": "Hours",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 61,
+      "name": "SYS 2 PERCENT FLA",
+      "description": "Sys 2 Percent FLA",
+      "units": "%",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 62,
+      "name": "SYS 2 DISCHARGE SUPERHEAT",
+      "description": "Sys 2 Discharge Superheat",
+      "units": "°F (diff)",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 63,
+      "name": "SYS 2 MOTOR TEMPERATURE A",
+      "description": "Sys 2 Motor Temperature A",
+      "units": "°F",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 64,
+      "name": "SYS 2 MOTOR TEMPERATURE B",
+      "description": "Sys 2 Motor Temperature B",
+      "units": "°F",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 65,
+      "name": "SYS 2 MOTOR TEMPERATURE C",
+      "description": "Sys 2 Motor Temperature C",
+      "units": "°F",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "MV",
+      "instance": 4,
+      "name": "SYS 2 VSD RUN STATUS",
+      "description": "Sys 2 VSD Run Status",
+      "units": "",
+      "access": "R",
+      "states": "0=No Communication, 1=Forward Running, 2=Reverse Running, 3=Stopped, 4=Tuned, 5=Fault"
+    },
+    {
+      "type": "AV",
+      "instance": 67,
+      "name": "SYS 2 VSD FREQUENCY COMMAND",
+      "description": "Sys 2 VSD Frequency Command",
+      "units": "Hz",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 68,
+      "name": "SYS 2 VSD FREQUENCY RUNNING",
+      "description": "Sys 2 VSD Frequency Running",
+      "units": "Hz",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 69,
+      "name": "SYS 2 VSD BUS VOLTAGE",
+      "description": "Sys 2 VSD BUS Voltage",
+      "units": "Volts",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 70,
+      "name": "SYS 2 VSD OUTPUT VOLTAGE",
+      "description": "Sys 2 VSD Output Voltage",
+      "units": "Volts",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 71,
+      "name": "SYS 2 VSD OUTPUT CURRENT",
+      "description": "Sys 2 VSD Output Current",
+      "units": "Amps",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 72,
+      "name": "SYS 2 VSD OUTPUT POWER",
+      "description": "Sys 2 VSD Output Power",
+      "units": "kW",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 73,
+      "name": "SYS 2 VSD HEATSINK TEMPERATURE",
+      "description": "Sys 2 VSD Heatsink Temperature",
+      "units": "°F",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 74,
+      "name": "SYS 2 VSD FAULT CODE",
+      "description": "Sys 2 VSD Fault Code",
+      "units": "",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 75,
+      "name": "SYS 2 FAIL RATE",
+      "description": "Sys 2 Fail Rate",
+      "units": "%",
+      "access": "R",
+      "states": ""
+    }
+  ]
+}

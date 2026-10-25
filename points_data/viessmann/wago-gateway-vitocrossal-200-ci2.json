@@ -1,0 +1,1271 @@
+{
+  "manufacturer": "Viessmann",
+  "manufacturer_slug": "viessmann",
+  "model": "Vitocrossal 200 CI2 (WAGO Automation Gateway)",
+  "model_slug": "wago-gateway-vitocrossal-200-ci2",
+  "aliases": [
+    "Vitocrossal 200",
+    "Vitocrossal CI2",
+    "Viessmann WAGO gateway",
+    "WAGO Automation Gateway BACnet/IP",
+    "6178 508"
+  ],
+  "equipment_type": "Boiler BACnet IP gateway",
+  "applies_to": "Viessmann Vitocrossal 200 CI2 boilers connected to a WAGO Automation Gateway BACnet IP, as a single boiler or in a cascade.",
+  "summary": "Viessmann connects the Vitocrossal 200 CI2 to a BMS through a WAGO Automation Gateway that talks CAN to the boiler and exposes BACnet IP objects. The list covers external demand and operating-program commands for the boiler, DHW and four heating circuits, temperatures, burner modulation and hours, a second burner and O2 values, cascade sequence positions, fault codes and energy and gas statistics. Points must be selected in the gateway before they appear on BACnet.",
+  "bacnet_transport": [
+    "BACnet IP"
+  ],
+  "firmware": null,
+  "default_device_instance": null,
+  "access_inferred": false,
+  "notes": [
+    "Applies to the WAGO Automation Gateway BACnet IP sold by Viessmann; the boiler connects to the gateway over CAN.",
+    "Only the BACnet IP objects are listed; the same document also gives Modbus TCP/RTU registers.",
+    "Temperatures follow the gateway's metric/imperial setting; the list gives ranges in both °F and °C.",
+    "Multistate states are shown as numbered in the list (from 0).",
+    "The list says the today gas counters (AI 36, AI 42) count in steps of 0.1 m³.",
+    "The list also has burner 2 and O2 probe points (AI 113-119, BI 16) and a hydraulic flap state (BI 15); the document does not say which boilers report them."
+  ],
+  "integration": {
+    "summary": "Select the needed points in the gateway's web visualization and save, then set Heartbeat Monitoring. The BMS writes MV 3 for the heating program plus AV 2 (supply temperature) or AV 1 (modulation), and keeps rewriting MV 1 with 3 every 10 s so the boiler accepts them. Read flame, supply temperature, modulation, the fault flag and fault codes, and watch BI 1 for the gateway-to-boiler link.",
+    "minimum_points": [
+      {
+        "ref": "MV 3",
+        "name": "Boiler operating program: Target",
+        "why": "Heating program: internal, modulation, supply temp, locked"
+      },
+      {
+        "ref": "AV 2",
+        "name": "Target supply temperature",
+        "why": "Boiler supply temperature setpoint"
+      },
+      {
+        "ref": "AV 1",
+        "name": "Burner modulation, target value",
+        "why": "Burner modulation command, 0-100 %; single boiler only"
+      },
+      {
+        "ref": "MV 1",
+        "name": "External demand",
+        "why": "Write 3 (BACnet) every 10 s or BMS setpoints drop"
+      },
+      {
+        "ref": "BI 2",
+        "name": "Burner",
+        "why": "Flame status; list prints 0 = On, 1 = Off"
+      },
+      {
+        "ref": "AI 1",
+        "name": "Supply temperature",
+        "why": "Boiler supply water temperature"
+      },
+      {
+        "ref": "AI 7",
+        "name": "Burner modulation",
+        "why": "Actual burner modulation, %"
+      },
+      {
+        "ref": "BI 5",
+        "name": "Faults",
+        "why": "Any boiler fault present"
+      },
+      {
+        "ref": "AI 14",
+        "name": "Fault number 1",
+        "why": "First active fault code"
+      },
+      {
+        "ref": "BI 1",
+        "name": "Connection to the boiler",
+        "why": "Gateway-to-boiler link; 0 = no connection"
+      }
+    ],
+    "enable": "The BMS writes setpoints through the gateway's writable values: MV 3 picks the heating-mode program (internal value, target modulation, target supply temperature, target supply temperature exclusive, locked), AV 2 is the supply temperature target and AV 1 the modulation target. DHW uses MV 2 and AV 3; heating circuits 1-4 use MV 4-7 and AV 4-7. The boiler only accepts these while MV 1 External demand is written from the BMS (see heartbeat).",
+    "heartbeat": "With Heartbeat Monitoring enabled (the gateway default, set in Project Settings), the BMS must write MV 1 External demand with 3 (BACnet) at least every 10 s. The gateway passes it to the boiler and resets MV 1 to 1; if the writes stop, the boiler goes back to its internal setpoints. With monitoring disabled MV 1 must still be written once, and the boiler keeps the last BMS setpoints after a communication loss.",
+    "remote_sensors": null,
+    "setup": [
+      "The gateway (WAGO PFC200 750-8212, BACnet IP, B-BC profile) ships with IP address 192.168.1.17; change it in Web-Based Management at https://<gateway-ip>/wbm.",
+      "No data points are published by default: in the web visualization (https://<gateway-ip>/webvisu/webvisu.htm) run Show data points, select the points the BMS needs, then save the project or the selection is lost on reboot.",
+      "The device instance, location and description are changed with the free WAGO BACnet Configurator; the device object name defaults to the gateway MAC address. The manual does not state a default instance.",
+      "Metric or imperial units and the data point language are chosen in Project Settings.",
+      "Cascaded devices mode handles up to eight boilers (CAN device IDs 70 for the master, 71-77 for the others); the master's objects use instances 1-1000 and each further boiler adds 1000."
+    ],
+    "gotchas": [
+      "The commissioning manual says to write 3 to MV 1 for BACnet, and that the gateway resets MV 1 to 1 after passing each write to the boiler. The point list numbers MV 1's states from 0 and lists BACnet as state 2.",
+      "When the gateway loses the CAN link to the boiler, the objects' Reliability changes to unreliable_other and their values stop updating.",
+      "BI 2 Burner is listed as 0 = On, 1 = Off, the opposite of BI 16 Flame burner 2 (0 = Off, 1 = On); confirm on site.",
+      "Once a configuration has been stored with the WAGO BACnet Configurator, point selection in the web visualization is greyed out; reset BACnet to factory settings to change it.",
+      "Command and setpoint points are not available on lag boilers in a cascade; the list marks which points apply to a single boiler, a cascade control unit and a lag boiler."
+    ]
+  },
+  "source": {
+    "title": "WAGO Gateway Data Points - Communication to a building management system (Vitocrossal 200 CI2)",
+    "doc_number": "6178 508-05",
+    "revision_date": "01/2025",
+    "url": "https://www.viessmann-us.com/content/dam/public-brands/ca/pdfs/doc/wago/wago_gateway_vitocrossal_tdm.pdf/_jcr_content/renditions/original./wago_gateway_vitocrossal_tdm.pdf"
+  },
+  "points": [
+    {
+      "type": "AV",
+      "instance": 1,
+      "name": "Burner modulation, target value",
+      "description": "BMS burner modulation target (single boiler only)",
+      "units": "%",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 2,
+      "name": "Target supply temperature",
+      "description": "BMS boiler supply temperature target",
+      "units": "°F/°C",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 3,
+      "name": "Target DHW temp.",
+      "description": "BMS domestic hot water temperature target",
+      "units": "°F/°C",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 4,
+      "name": "Heating circuit 1: Target temp.",
+      "description": "Heating circuit 1: BMS supply or room temperature target",
+      "units": "°F/°C",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 5,
+      "name": "Heating circuit 2: Target temp.",
+      "description": "Heating circuit 2: BMS supply or room temperature target",
+      "units": "°F/°C",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 6,
+      "name": "Heating circuit 3: Target temp.",
+      "description": "Heating circuit 3: BMS supply or room temperature target",
+      "units": "°F/°C",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 7,
+      "name": "Heating circuit 4: Target temp.",
+      "description": "Heating circuit 4: BMS supply or room temperature target",
+      "units": "°F/°C",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "MV",
+      "instance": 1,
+      "name": "External demand",
+      "description": "Requesting system / BMS heartbeat; see heartbeat notes",
+      "units": "",
+      "access": "W",
+      "states": "0=External demand: No connection, 1=DIO module connection is being established, 2=BACnet connection is being established, 3=KNX connection is being established, 4=Modbus connection is being established, 5=EEBus connection is being established, 6=Plug connection is being established"
+    },
+    {
+      "type": "MV",
+      "instance": 2,
+      "name": "Domestic hot water operating program: Target",
+      "description": "BMS operating program for DHW heating",
+      "units": "",
+      "access": "W",
+      "states": "0=Internal target value, 1=OFF, 2=ON, 3=Target supply temperature, 4=Target boiler modulation"
+    },
+    {
+      "type": "MV",
+      "instance": 3,
+      "name": "Boiler operating program: Target",
+      "description": "BMS operating program for heating mode",
+      "units": "",
+      "access": "W",
+      "states": "0=Internal target value, 1=Target boiler modulation, 2=Target supply temperature, 3=Target supply temperature exclusive, 4=Locked"
+    },
+    {
+      "type": "MV",
+      "instance": 4,
+      "name": "Heating circuit 1 target",
+      "description": "Heating circuit 1: BMS operating program",
+      "units": "",
+      "access": "W",
+      "states": "0=None, 1=Off, 2=Reduced, 3=Normal, 4=Comfort, 5=Target supply temperature, 6=Target room temperature"
+    },
+    {
+      "type": "MV",
+      "instance": 5,
+      "name": "Heating circuit 2 target",
+      "description": "Heating circuit 2: BMS operating program",
+      "units": "",
+      "access": "W",
+      "states": "0=None, 1=Off, 2=Reduced, 3=Normal, 4=Comfort, 5=Target supply temperature, 6=Target room temperature"
+    },
+    {
+      "type": "MV",
+      "instance": 6,
+      "name": "Heating circuit 3 target",
+      "description": "Heating circuit 3: BMS operating program",
+      "units": "",
+      "access": "W",
+      "states": "0=None, 1=Off, 2=Reduced, 3=Normal, 4=Comfort, 5=Target supply temperature, 6=Target room temperature"
+    },
+    {
+      "type": "MV",
+      "instance": 7,
+      "name": "Heating circuit 4 target",
+      "description": "Heating circuit 4: BMS operating program",
+      "units": "",
+      "access": "W",
+      "states": "0=None, 1=Off, 2=Reduced, 3=Normal, 4=Comfort, 5=Target supply temperature, 6=Target room temperature"
+    },
+    {
+      "type": "BV",
+      "instance": 1,
+      "name": "Acknowledge maintenance",
+      "description": "Acknowledge the maintenance message",
+      "units": "",
+      "access": "W",
+      "states": "0=No, 1=Yes"
+    },
+    {
+      "type": "AI",
+      "instance": 1,
+      "name": "Supply temperature",
+      "description": "Primary circuit supply temperature after the boiler",
+      "units": "°F/°C",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AI",
+      "instance": 2,
+      "name": "Outside temperature",
+      "description": "Outdoor temperature",
+      "units": "°F/°C",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AI",
+      "instance": 4,
+      "name": "Flue gas temperature",
+      "description": "Flue gas temperature at the chimney inlet",
+      "units": "°F/°C",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AI",
+      "instance": 5,
+      "name": "Primary circuit pump, target speed",
+      "description": "Primary circuit pump target speed",
+      "units": "%",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AI",
+      "instance": 6,
+      "name": "Thermal output",
+      "description": "Current thermal output",
+      "units": "kW",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AI",
+      "instance": 7,
+      "name": "Burner modulation",
+      "description": "Actual burner modulation",
+      "units": "%",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AI",
+      "instance": 8,
+      "name": "Burner hours run",
+      "description": "Boiler total hours run",
+      "units": "h",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AI",
+      "instance": 9,
+      "name": "Burner runtime",
+      "description": "Boiler operating hours",
+      "units": "h",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AI",
+      "instance": 10,
+      "name": "Burner starts",
+      "description": "Boiler total burner starts",
+      "units": "",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AI",
+      "instance": 11,
+      "name": "DHW temperature",
+      "description": "Actual DHW tank temperature",
+      "units": "°F/°C",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AI",
+      "instance": 12,
+      "name": "Hot water temperature status: Target domestic hot water temperature",
+      "description": "Target DHW tank temperature",
+      "units": "°F/°C",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AI",
+      "instance": 13,
+      "name": "Maintenance number",
+      "description": "Maintenance code",
+      "units": "",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AI",
+      "instance": 14,
+      "name": "Fault number 1",
+      "description": "Fault code 1 (see boiler service instructions)",
+      "units": "",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AI",
+      "instance": 15,
+      "name": "Fault number 2",
+      "description": "Fault code 2 (see boiler service instructions)",
+      "units": "",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AI",
+      "instance": 16,
+      "name": "Fault number 3",
+      "description": "Fault code 3 (see boiler service instructions)",
+      "units": "",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AI",
+      "instance": 17,
+      "name": "Fault number 4",
+      "description": "Fault code 4 (see boiler service instructions)",
+      "units": "",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AI",
+      "instance": 18,
+      "name": "Fault number 5",
+      "description": "Fault code 5 (see boiler service instructions)",
+      "units": "",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AI",
+      "instance": 19,
+      "name": "Fault number 6",
+      "description": "Fault code 6 (see boiler service instructions)",
+      "units": "",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AI",
+      "instance": 20,
+      "name": "Fault number 7",
+      "description": "Fault code 7 (see boiler service instructions)",
+      "units": "",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AI",
+      "instance": 21,
+      "name": "Fault number 8",
+      "description": "Fault code 8 (see boiler service instructions)",
+      "units": "",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AI",
+      "instance": 22,
+      "name": "Fault number 9",
+      "description": "Fault code 9 (see boiler service instructions)",
+      "units": "",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AI",
+      "instance": 23,
+      "name": "Fault number 10",
+      "description": "Fault code 10 (see boiler service instructions)",
+      "units": "",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AI",
+      "instance": 24,
+      "name": "Heating energy consumption: Today",
+      "description": "Heating electrical energy use, today",
+      "units": "kWh",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AI",
+      "instance": 25,
+      "name": "Electrical energy consumption of heating system: The last 7 days",
+      "description": "Heating electrical energy use, last 7 days",
+      "units": "kWh",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AI",
+      "instance": 26,
+      "name": "Electrical energy consumption of heating system: The current month",
+      "description": "Heating electrical energy use, current month",
+      "units": "kWh",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AI",
+      "instance": 27,
+      "name": "Electrical energy consumption of heating system: The last month",
+      "description": "Heating electrical energy use, last month",
+      "units": "kWh",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AI",
+      "instance": 28,
+      "name": "Electrical energy consumption of heating system: The current year",
+      "description": "Heating electrical energy use, current year",
+      "units": "kWh",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AI",
+      "instance": 29,
+      "name": "Electrical energy consumption of heating system: The last year",
+      "description": "Heating electrical energy use, last year",
+      "units": "kWh",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AI",
+      "instance": 30,
+      "name": "DHW energy consumption: Today",
+      "description": "DHW electrical energy use, today",
+      "units": "kWh",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AI",
+      "instance": 31,
+      "name": "Electrical energy consumption of DHW: The last 7 days",
+      "description": "DHW electrical energy use, last 7 days",
+      "units": "kWh",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AI",
+      "instance": 32,
+      "name": "Electrical energy consumption of DHW heating: The current month",
+      "description": "DHW electrical energy use, current month",
+      "units": "kWh",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AI",
+      "instance": 33,
+      "name": "Electrical energy consumption of the DHW heating: The last month",
+      "description": "DHW electrical energy use, last month",
+      "units": "kWh",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AI",
+      "instance": 34,
+      "name": "Electrical energy consumption of DHW heating: The current year",
+      "description": "DHW electrical energy use, current year",
+      "units": "kWh",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AI",
+      "instance": 35,
+      "name": "Electrical energy consumption of the DHW heating: The last year",
+      "description": "DHW electrical energy use, last year",
+      "units": "kWh",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AI",
+      "instance": 36,
+      "name": "Heating gas consumption: Today",
+      "description": "Heating gas use, today",
+      "units": "m³",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AI",
+      "instance": 37,
+      "name": "Gas consumption of heating system: The last 7 days",
+      "description": "Heating gas use, last 7 days",
+      "units": "m³",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AI",
+      "instance": 38,
+      "name": "Gas consumption of heating system: The current month",
+      "description": "Heating gas use, current month",
+      "units": "m³",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AI",
+      "instance": 39,
+      "name": "Gas consumption of heating system: The last month",
+      "description": "Heating gas use, last month",
+      "units": "m³",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AI",
+      "instance": 40,
+      "name": "Gas consumption of heating system: The current year",
+      "description": "Heating gas use, current year",
+      "units": "m³",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AI",
+      "instance": 41,
+      "name": "Gas consumption of heating system: The last year",
+      "description": "Heating gas use, last year",
+      "units": "m³",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AI",
+      "instance": 42,
+      "name": "DHW gas consumption: Today",
+      "description": "DHW gas use, today",
+      "units": "m³",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AI",
+      "instance": 43,
+      "name": "Gas consumption of DHW: The last 7 days",
+      "description": "DHW gas use, last 7 days",
+      "units": "m³",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AI",
+      "instance": 44,
+      "name": "Gas consumption of DHW: The current month",
+      "description": "DHW gas use, current month",
+      "units": "m³",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AI",
+      "instance": 45,
+      "name": "Gas consumption of DHW: The last month",
+      "description": "DHW gas use, last month",
+      "units": "m³",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AI",
+      "instance": 46,
+      "name": "Gas consumption of DHW: The current year",
+      "description": "DHW gas use, current year",
+      "units": "m³",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AI",
+      "instance": 47,
+      "name": "Gas consumption of DHW: The last year",
+      "description": "DHW gas use, last year",
+      "units": "m³",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AI",
+      "instance": 81,
+      "name": "Heating circuit 1: Target temperature",
+      "description": "Heating circuit 1: target supply or room temperature",
+      "units": "°F/°C",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AI",
+      "instance": 82,
+      "name": "Heating circuit 1: Supply temperature",
+      "description": "Heating circuit 1: actual supply temperature",
+      "units": "°F/°C",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AI",
+      "instance": 83,
+      "name": "Heating circuit 2: Target temperature",
+      "description": "Heating circuit 2: target supply or room temperature",
+      "units": "°F/°C",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AI",
+      "instance": 84,
+      "name": "Heating circuit 2: Supply temperature",
+      "description": "Heating circuit 2: actual supply temperature",
+      "units": "°F/°C",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AI",
+      "instance": 85,
+      "name": "Heating circuit 3: Target temperature",
+      "description": "Heating circuit 3: target supply or room temperature",
+      "units": "°F/°C",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AI",
+      "instance": 86,
+      "name": "Heating circuit 3: Supply temperature",
+      "description": "Heating circuit 3: actual supply temperature",
+      "units": "°F/°C",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AI",
+      "instance": 87,
+      "name": "Heating circuit 4: Target temperature",
+      "description": "Heating circuit 4: target supply or room temperature",
+      "units": "°F/°C",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AI",
+      "instance": 88,
+      "name": "Heating circuit 4: Supply temperature",
+      "description": "Heating circuit 4: actual supply temperature",
+      "units": "°F/°C",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AI",
+      "instance": 89,
+      "name": "Boiler target modulation value",
+      "description": "Target burner modulation",
+      "units": "%",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AI",
+      "instance": 90,
+      "name": "Heating circuit 1: Room temperature",
+      "description": "Heating circuit 1: room temperature sensor",
+      "units": "°F/°C",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AI",
+      "instance": 91,
+      "name": "Heating circuit 2: Room temperature",
+      "description": "Heating circuit 2: room temperature sensor",
+      "units": "°F/°C",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AI",
+      "instance": 92,
+      "name": "Heating circuit 3: Room temperature",
+      "description": "Heating circuit 3: room temperature sensor",
+      "units": "°F/°C",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AI",
+      "instance": 93,
+      "name": "Heating circuit 4: Room temperature",
+      "description": "Heating circuit 4: room temperature sensor",
+      "units": "°F/°C",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AI",
+      "instance": 94,
+      "name": "Low loss header: Supply temperature",
+      "description": "Low loss header supply temperature",
+      "units": "°F/°C",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AI",
+      "instance": 95,
+      "name": "Temperature demand",
+      "description": "Temperature demand on the boiler",
+      "units": "°F/°C",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AI",
+      "instance": 96,
+      "name": "Modulation demand",
+      "description": "Modulation demand on the boiler",
+      "units": "%",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AI",
+      "instance": 97,
+      "name": "Boiler: Boiler 1 sequence",
+      "description": "Cascade switch-on/off position of boiler 1",
+      "units": "",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AI",
+      "instance": 98,
+      "name": "Boiler: Boiler 2 sequence",
+      "description": "Cascade switch-on/off position of boiler 2",
+      "units": "",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AI",
+      "instance": 99,
+      "name": "Boiler: Boiler 3 sequence",
+      "description": "Cascade switch-on/off position of boiler 3",
+      "units": "",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AI",
+      "instance": 100,
+      "name": "Boiler: Boiler 4 sequence",
+      "description": "Cascade switch-on/off position of boiler 4",
+      "units": "",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AI",
+      "instance": 101,
+      "name": "Boiler: Boiler 5 sequence",
+      "description": "Cascade switch-on/off position of boiler 5",
+      "units": "",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AI",
+      "instance": 102,
+      "name": "Boiler: Boiler 6 sequence",
+      "description": "Cascade switch-on/off position of boiler 6",
+      "units": "",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AI",
+      "instance": 103,
+      "name": "Boiler: Boiler 7 sequence",
+      "description": "Cascade switch-on/off position of boiler 7",
+      "units": "",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AI",
+      "instance": 104,
+      "name": "Boiler: Boiler 8 sequence",
+      "description": "Cascade switch-on/off position of boiler 8",
+      "units": "",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AI",
+      "instance": 105,
+      "name": "Boiler: Boiler 9 sequence",
+      "description": "Cascade switch-on/off position of boiler 9",
+      "units": "",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AI",
+      "instance": 106,
+      "name": "Boiler: Boiler 10 sequence",
+      "description": "Cascade switch-on/off position of boiler 10",
+      "units": "",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AI",
+      "instance": 107,
+      "name": "Boiler: Boiler 11 sequence",
+      "description": "Cascade switch-on/off position of boiler 11",
+      "units": "",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AI",
+      "instance": 108,
+      "name": "Boiler: Boiler 12 sequence",
+      "description": "Cascade switch-on/off position of boiler 12",
+      "units": "",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AI",
+      "instance": 109,
+      "name": "Boiler: Boiler 13 sequence",
+      "description": "Cascade switch-on/off position of boiler 13",
+      "units": "",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AI",
+      "instance": 110,
+      "name": "Boiler: Boiler 14 sequence",
+      "description": "Cascade switch-on/off position of boiler 14",
+      "units": "",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AI",
+      "instance": 111,
+      "name": "Boiler: Boiler 15 sequence",
+      "description": "Cascade switch-on/off position of boiler 15",
+      "units": "",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AI",
+      "instance": 112,
+      "name": "Boiler: Boiler 16 sequence",
+      "description": "Cascade switch-on/off position of boiler 16",
+      "units": "",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AI",
+      "instance": 113,
+      "name": "O2 value of burner 1",
+      "description": "Burner 1 O2 probe value (diagnostics)",
+      "units": "%",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AI",
+      "instance": 114,
+      "name": "Target O2 value, burner 1",
+      "description": "Burner 1 target O2 value (diagnostics)",
+      "units": "%",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AI",
+      "instance": 115,
+      "name": "Modulation burner 2",
+      "description": "Burner 2 actual modulation",
+      "units": "%",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AI",
+      "instance": 116,
+      "name": "Burner runtime, burner 2",
+      "description": "Burner 2 operating hours",
+      "units": "h",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AI",
+      "instance": 117,
+      "name": "Starts burner 2",
+      "description": "Burner 2 starts",
+      "units": "",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AI",
+      "instance": 118,
+      "name": "O2 value of burner 2",
+      "description": "Burner 2 O2 probe value (diagnostics)",
+      "units": "%",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AI",
+      "instance": 119,
+      "name": "Target O2 value, burner 2",
+      "description": "Burner 2 target O2 value (diagnostics)",
+      "units": "%",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "BI",
+      "instance": 1,
+      "name": "Connection to the boiler",
+      "description": "CAN link between gateway and boiler",
+      "units": "",
+      "access": "R",
+      "states": "0=No connection, 1=Connection active"
+    },
+    {
+      "type": "BI",
+      "instance": 2,
+      "name": "Burner",
+      "description": "Burner flame on/off",
+      "units": "",
+      "access": "R",
+      "states": "0=On, 1=Off"
+    },
+    {
+      "type": "BI",
+      "instance": 3,
+      "name": "DHW pump",
+      "description": "DHW tank charging pump on/off",
+      "units": "",
+      "access": "R",
+      "states": "0=OFF, 1=ON"
+    },
+    {
+      "type": "BI",
+      "instance": 4,
+      "name": "Service messages",
+      "description": "Maintenance message present",
+      "units": "",
+      "access": "R",
+      "states": "0=No maintenance message present, 1=Maintenance message present"
+    },
+    {
+      "type": "BI",
+      "instance": 5,
+      "name": "Faults",
+      "description": "Fault present",
+      "units": "",
+      "access": "R",
+      "states": "0=No fault present, 1=Fault present"
+    },
+    {
+      "type": "BI",
+      "instance": 6,
+      "name": "Heating circuit pump HC1",
+      "description": "Heating circuit 1 pump on/off",
+      "units": "",
+      "access": "R",
+      "states": "0=OFF, 1=ON"
+    },
+    {
+      "type": "BI",
+      "instance": 7,
+      "name": "Heating circuit pump HC2",
+      "description": "Heating circuit 2 pump on/off",
+      "units": "",
+      "access": "R",
+      "states": "0=OFF, 1=ON"
+    },
+    {
+      "type": "BI",
+      "instance": 8,
+      "name": "Heating circuit pump HC3",
+      "description": "Heating circuit 3 pump on/off",
+      "units": "",
+      "access": "R",
+      "states": "0=OFF, 1=ON"
+    },
+    {
+      "type": "BI",
+      "instance": 9,
+      "name": "Heating circuit pump HC4",
+      "description": "Heating circuit 4 pump on/off",
+      "units": "",
+      "access": "R",
+      "states": "0=OFF, 1=ON"
+    },
+    {
+      "type": "BI",
+      "instance": 10,
+      "name": "Heating zone 1: Demand",
+      "description": "Heating zone 1 call for heat",
+      "units": "",
+      "access": "R",
+      "states": "0=Off, 1=On"
+    },
+    {
+      "type": "BI",
+      "instance": 11,
+      "name": "Heating zone 2: Demand",
+      "description": "Heating zone 2 call for heat",
+      "units": "",
+      "access": "R",
+      "states": "0=Off, 1=On"
+    },
+    {
+      "type": "BI",
+      "instance": 12,
+      "name": "Heating zone 3: Demand",
+      "description": "Heating zone 3 call for heat",
+      "units": "",
+      "access": "R",
+      "states": "0=Off, 1=On"
+    },
+    {
+      "type": "BI",
+      "instance": 13,
+      "name": "Units not available in the cascade",
+      "description": "Unit not available in the cascade",
+      "units": "",
+      "access": "R",
+      "states": "0=No, 1=Yes"
+    },
+    {
+      "type": "BI",
+      "instance": 14,
+      "name": "Boiler circuit pump",
+      "description": "Primary / boiler circuit pump on/off",
+      "units": "",
+      "access": "R",
+      "states": "0=Off, 1=On"
+    },
+    {
+      "type": "BI",
+      "instance": 15,
+      "name": "Hydraulic flap state",
+      "description": "Hydraulic flap open/closed",
+      "units": "",
+      "access": "R",
+      "states": "0=Closed, 1=Open"
+    },
+    {
+      "type": "BI",
+      "instance": 16,
+      "name": "Flame burner 2",
+      "description": "Burner 2 flame on/off",
+      "units": "",
+      "access": "R",
+      "states": "0=Off, 1=ON"
+    },
+    {
+      "type": "MI",
+      "instance": 1,
+      "name": "External demand: Status",
+      "description": "Status of the external demand connection",
+      "units": "",
+      "access": "R",
+      "states": "0=External demand: No connection, 1=DIO module connection is being established, 2=BACnet connection is being established, 3=KNX connection is being established, 4=Modbus connection is being established, 5=EEBus connection is being established, 6=Plug connection is being established"
+    },
+    {
+      "type": "MI",
+      "instance": 2,
+      "name": "Domestic hot water operating program: Actual",
+      "description": "DHW heating operating program in use",
+      "units": "",
+      "access": "R",
+      "states": "0=Internal target value, 1=OFF, 2=ON, 3=Target supply temperature, 4=Target boiler modulation"
+    },
+    {
+      "type": "MI",
+      "instance": 3,
+      "name": "Boiler operating program: Actual",
+      "description": "Heating mode operating program in use",
+      "units": "",
+      "access": "R",
+      "states": "0=Internal target value, 1=Target boiler modulation, 2=Target supply temperature, 3=Target supply temperature exclusive, 4=Locked"
+    },
+    {
+      "type": "MI",
+      "instance": 4,
+      "name": "Heating circuit 1 actual",
+      "description": "Heating circuit 1: operating program in use",
+      "units": "",
+      "access": "R",
+      "states": "0=None, 1=Off, 2=Reduced, 3=Normal, 4=Comfort, 5=Target supply temperature, 6=Target room temperature"
+    },
+    {
+      "type": "MI",
+      "instance": 5,
+      "name": "Heating circuit 2 actual",
+      "description": "Heating circuit 2: operating program in use",
+      "units": "",
+      "access": "R",
+      "states": "0=None, 1=Off, 2=Reduced, 3=Normal, 4=Comfort, 5=Target supply temperature, 6=Target room temperature"
+    },
+    {
+      "type": "MI",
+      "instance": 6,
+      "name": "Heating circuit 3 actual",
+      "description": "Heating circuit 3: operating program in use",
+      "units": "",
+      "access": "R",
+      "states": "0=None, 1=Off, 2=Reduced, 3=Normal, 4=Comfort, 5=Target supply temperature, 6=Target room temperature"
+    },
+    {
+      "type": "MI",
+      "instance": 7,
+      "name": "Heating circuit 4 actual",
+      "description": "Heating circuit 4: operating program in use",
+      "units": "",
+      "access": "R",
+      "states": "0=None, 1=Off, 2=Reduced, 3=Normal, 4=Comfort, 5=Target supply temperature, 6=Target room temperature"
+    },
+    {
+      "type": "MI",
+      "instance": 8,
+      "name": "Domestic hot water status",
+      "description": "DHW heating status",
+      "units": "",
+      "access": "R",
+      "states": "0=OFF, 1=DHW only, 2=DHW and heating, 3=Emissions test mode WW, 4=Test mode, 5=External target temperature, 6=External target modulation, 7=Hygiene function, 8=Solar operation, FF=Automatic"
+    },
+    {
+      "type": "MI",
+      "instance": 10,
+      "name": "Heating zone 1: Heating zone pump",
+      "description": "Heating zone 1 pump state",
+      "units": "",
+      "access": "R",
+      "states": "0=Off, 1=On, 2=Short circuit/lead break"
+    },
+    {
+      "type": "MI",
+      "instance": 11,
+      "name": "Heating zone 2: Heating zone pump",
+      "description": "Heating zone 2 pump state",
+      "units": "",
+      "access": "R",
+      "states": "0=Off, 1=On, 2=Short circuit/lead break"
+    },
+    {
+      "type": "MI",
+      "instance": 12,
+      "name": "Heating zone 3: Heating zone pump",
+      "description": "Heating zone 3 pump state",
+      "units": "",
+      "access": "R",
+      "states": "0=Off, 1=On, 2=Short circuit/lead break"
+    },
+    {
+      "type": "MI",
+      "instance": 13,
+      "name": "Type of demand",
+      "description": "Kind of demand on the boiler",
+      "units": "",
+      "access": "R",
+      "states": "0=None, 1=Temperature demand, 2=Modulation demand"
+    },
+    {
+      "type": "MI",
+      "instance": 14,
+      "name": "Thermostat switching state",
+      "description": "Thermostat switching state (plug 96)",
+      "units": "",
+      "access": "R",
+      "states": "0=Off, 1=On, 2=Short circuit/lead break"
+    }
+  ]
+}

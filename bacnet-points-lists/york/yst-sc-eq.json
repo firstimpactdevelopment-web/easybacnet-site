@@ -1,0 +1,773 @@
+{
+ "manufacturer": "York",
+ "manufacturer_slug": "york",
+ "model": "YST Steam Turbine Chiller (SC-EQ)",
+ "model_slug": "yst-sc-eq",
+ "aliases": [
+  "YORK YST",
+  "YST chiller",
+  "steam turbine drive chiller",
+  "SC-EQ",
+  "SE-SCC1001-1"
+ ],
+ "equipment_type": "Steam-turbine-driven centrifugal chiller (via SC-EQ card)",
+ "applies_to": "YORK YST steam-turbine-driven centrifugal chillers fitted with the SC-EQ communication card.",
+ "summary": "YORK by Johnson Controls YST chillers drive a centrifugal compressor with a steam turbine. The SC-EQ communication card exposes them on BACnet MS/TP (or Modbus RTU / N2). Remote commands are run/stop, leaving chilled water setpoint and a turbine horsepower limit; the rest is read-only: chiller and turbine temperatures, pressures, speed, steam flow, bearing and hotwell values, contact states, and multistate status and fault codes.",
+ "bacnet_transport": [
+  "BACnet MS/TP"
+ ],
+ "firmware": "SC-EQ software 4.2.0.20",
+ "default_device_instance": "5000 + MAC address",
+ "access_inferred": true,
+ "notes": [
+  "Access is inferred: the sheet has no read/write column. The remote block (AV 1-2, BV 1) is treated as commandable and MV 65001 as writable; everything else as read-only.",
+  "Status-code MVs (operation, fault, warning, modified run, start inhibit, internal fault) are the printed code + 1, as the doc's status code tables say. MVs with their own enum in the points table (Units, control sources) are shown as printed, from 0; BACnet multistate values start at 1, so the card may report the printed number + 1. Confirm by discovery.",
+  "Units shown are the IP units; with MV 65001 set to SI the card reports °C, kPa and so on.",
+  "Spare objects in the sheet (AV 3-4, AV 42, BV 2-4, BV 21, BV 25, MV 10) have no name and are left out."
+ ],
+ "source": {
+  "title": "YST SC-EQ BAS Points List",
+  "doc_number": null,
+  "revision_date": "Rev 1.2, 2021-12-08",
+  "url": "https://docs.johnsoncontrols.com/chillers/api/khub/documents/xdkEW8x~Tlf_XJgFpLpcbA/content"
+ },
+ "integration": {
+  "summary": "Run and stop it with BV 1, write the leaving chilled water setpoint (AV 1) and the turbine horsepower limit (AV 2). Read MV 1 and MV 6 for chiller and turbine state, the leaving water temperature and PRV position, and MV 2/MV 3 for safety and cycling shutdowns.",
+  "minimum_points": [
+   {
+    "ref": "BV 1",
+    "name": "REM RUN STOP CMD",
+    "why": "Remote run/stop (1 = run)"
+   },
+   {
+    "ref": "AV 1",
+    "name": "REM LEAVING CHW TEMP SP",
+    "why": "Remote leaving chilled water setpoint"
+   },
+   {
+    "ref": "AV 2",
+    "name": "TURBINE HP LIMIT SP",
+    "why": "Turbine horsepower limit, % (demand limit)"
+   },
+   {
+    "ref": "MV 1",
+    "name": "UNIT OPERATION CODE",
+    "why": "Operating state (stopped, starting, running)"
+   },
+   {
+    "ref": "MV 6",
+    "name": "TURBINE STATUS CODE",
+    "why": "Turbine state (slow roll, running, cooldown)"
+   },
+   {
+    "ref": "MV 5",
+    "name": "UNIT CONTROL SOURCE",
+    "why": "Control source; ISN (BAS) for BMS control"
+   },
+   {
+    "ref": "AV 5",
+    "name": "LEAVING CHW TEMP",
+    "why": "Leaving chilled water temperature"
+   },
+   {
+    "ref": "AV 20",
+    "name": "COMPRESSOR PRV POSITION",
+    "why": "Pre-rotation vane position, % (load)"
+   },
+   {
+    "ref": "MV 2",
+    "name": "UNIT SAFETY FAULT CODE",
+    "why": "Safety shutdown code (1 = none)"
+   },
+   {
+    "ref": "MV 3",
+    "name": "UNIT CYCLING FAULT CODE",
+    "why": "Cycling shutdown code (1 = none)"
+   }
+  ],
+  "enable": "BV 1 REM RUN STOP CMD (0 = Stop, 1 = Run) is the BAS run/stop, and AV 1-2 are the remote setpoints. MV 5 Unit Control Source shows Local, ISN, Analog, Digital or Modem, and BV 20 shows the remote-mode ready-to-start contacts. The points list has no write-enable point and doesn't say how the source is chosen at the chiller panel.",
+  "heartbeat": null,
+  "remote_sensors": null,
+  "setup": [
+   "The BAS connects to the SC-EQ J12 port (RS-485: +, -, COM/REF, SHLD). The card detects BACnet MS/TP, Modbus RTU or N2 and the baud rate by itself; allow up to 120 seconds after power-up.",
+   "The MAC address (1-127) is set on DIP switch SW1 (switch 8 unused). Cycle the card's power after changing it.",
+   "The device instance defaults to 5000 + the MAC address (MAC 6 gives 5006). To use another number, set Device Instance Mode to Manual and enter the instance with the SC-AP / MAP tool, or write BV 65000 (mode) and AV 65000 (instance ID).",
+   "MV 65001 Units sets whether the BAS sees IP or SI values, independent of the chiller display; set it to match the chiller."
+  ],
+  "gotchas": [
+   "The remote (commandable) setpoints read as unreliable until the BAS writes them the first time.",
+   "The SC-EQ only exposes the points that apply to the chiller it detects; if it replaces an E-Link, re-discover the device so old non-applicable points don't sit offline.",
+   "A start goes through turbine slow roll and ramp-up; watch MV 6 rather than expecting the chiller to load right after BV 1."
+  ]
+ },
+ "points": [
+  {
+   "type": "AV",
+   "instance": 1,
+   "name": "REM LEAVING CHW TEMP SP",
+   "description": "Remote Leaving Chilled Liquid Setpoint",
+   "units": "°F",
+   "access": "C",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 2,
+   "name": "TURBINE HP LIMIT SP",
+   "description": "Turbine Horsepower Limit Setpoint",
+   "units": "%",
+   "access": "C",
+   "states": ""
+  },
+  {
+   "type": "BV",
+   "instance": 1,
+   "name": "REM RUN STOP CMD",
+   "description": "Remote Run/Stop",
+   "units": "",
+   "access": "C",
+   "states": "0=Stop, 1=Run"
+  },
+  {
+   "type": "MV",
+   "instance": 65001,
+   "name": "Units",
+   "description": "Unit system reported by the SC-EQ",
+   "units": "",
+   "access": "W",
+   "states": "0=IP (English), 1=SI (Metric)"
+  },
+  {
+   "type": "AV",
+   "instance": 5,
+   "name": "LEAVING CHW TEMP",
+   "description": "Leaving Chilled Liquid Temperature",
+   "units": "°F",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 6,
+   "name": "ENTERING CHW TEMP",
+   "description": "Return Chilled Liquid Temperature",
+   "units": "°F",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 7,
+   "name": "EVAPORATOR PRESSURE",
+   "description": "Evaporator Pressure",
+   "units": "PSIG",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 8,
+   "name": "CONDENSER PRESSURE",
+   "description": "Condenser Pressure",
+   "units": "PSIG",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 9,
+   "name": "COMPR OIL COMP DIF PRESS",
+   "description": "Compressor Oil Pressure",
+   "units": "PSIG",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 10,
+   "name": "ENTERING COND WATER TEMP",
+   "description": "Entering Condenser Liquid Temperature",
+   "units": "°F",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 11,
+   "name": "LEAVING COND WATER TEMP",
+   "description": "Leaving Condenser Liquid Temperature",
+   "units": "°F",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 12,
+   "name": "TURBINE INLET STEAM TEMP",
+   "description": "Turbine Inlet Steam Temperature",
+   "units": "°F",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 13,
+   "name": "TURBINE INLET STEAM PRES",
+   "description": "Turbine Inlet Steam Pressure",
+   "units": "PSIG",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 14,
+   "name": "TURBINE SUPPLY OIL TEMP",
+   "description": "Turbine Supply Oil Temperature",
+   "units": "°F",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 15,
+   "name": "TURBINE SUPPLY OIL PRESS",
+   "description": "Turbine Supply Oil Pressure",
+   "units": "PSIG",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 16,
+   "name": "TURBINE 1ST STG STM PRES",
+   "description": "Turbine First Stage Steam Pressure",
+   "units": "PSIG",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 17,
+   "name": "TURBINE SPEED",
+   "description": "Turbine Speed",
+   "units": "RPM",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 18,
+   "name": "TURBINE EXHAUST STM PRES",
+   "description": "Turbine Exhaust Steam Pressure",
+   "units": "PSIA",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 19,
+   "name": "LEAVING CHW TEMP ACT SP",
+   "description": "Leaving Chilled Liquid Temperature Setpoint - Local",
+   "units": "°F",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 20,
+   "name": "COMPRESSOR PRV POSITION",
+   "description": "Compressor PRV Position",
+   "units": "%",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 21,
+   "name": "EVAP SATURATION TEMP",
+   "description": "Chiller Evaporator Saturation Temperature",
+   "units": "°F",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 22,
+   "name": "COND SATURATION TEMP",
+   "description": "Chiller Condenser Saturation Temperature",
+   "units": "°F",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 23,
+   "name": "DISCHARGE TEMP",
+   "description": "Compressor Discharge Temperature",
+   "units": "°F",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 24,
+   "name": "OIL SUMP TEMPERATURE",
+   "description": "Compressor Sump Oil Temperature",
+   "units": "°F",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 25,
+   "name": "SUBCOOLER REFRIG LEVEL",
+   "description": "Subcooler Refrigerant Level",
+   "units": "%",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 26,
+   "name": "ACCUM OPERATING HOURS",
+   "description": "Accumulated Operating Hours",
+   "units": "Hr",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 27,
+   "name": "ACCUM SYSTEM STARTS",
+   "description": "Accumulated System Starts",
+   "units": "",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 28,
+   "name": "OIL SUMP PRESSURE",
+   "description": "Compressor Sump Oil Transducer Pressure",
+   "units": "PSIG",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 29,
+   "name": "OIL PUMP PRESSURE",
+   "description": "Compressor Pump Oil Transducer Pressure",
+   "units": "PSIG",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "BV",
+   "instance": 5,
+   "name": "PANEL ROCKER SW RUN",
+   "description": "Panel Rocker Switch - Run",
+   "units": "",
+   "access": "R",
+   "states": "0=Off, 1=On"
+  },
+  {
+   "type": "BV",
+   "instance": 6,
+   "name": "PANEL ROCKER SW STOP",
+   "description": "Panel Rocker Switch - Stop / Reset",
+   "units": "",
+   "access": "R",
+   "states": "0=Off, 1=On"
+  },
+  {
+   "type": "BV",
+   "instance": 7,
+   "name": "CHW LIQ PUMP STAT",
+   "description": "Chilled Liquid Pump Start Contacts",
+   "units": "",
+   "access": "R",
+   "states": "0=Off, 1=On"
+  },
+  {
+   "type": "BV",
+   "instance": 8,
+   "name": "COND LIQ PUMP STAT",
+   "description": "Condenser Liquid Pump Start Contacts",
+   "units": "",
+   "access": "R",
+   "states": "0=Off, 1=On"
+  },
+  {
+   "type": "BV",
+   "instance": 9,
+   "name": "CHW FLOW SWITCH STAT",
+   "description": "Chilled Liquid Flow Switch Contacts",
+   "units": "",
+   "access": "R",
+   "states": "0=Off, 1=On"
+  },
+  {
+   "type": "BV",
+   "instance": 10,
+   "name": "COND LIQ FLOW SW STAT",
+   "description": "Condenser Liquid Flow Switch Contacts",
+   "units": "",
+   "access": "R",
+   "states": "0=Off, 1=On"
+  },
+  {
+   "type": "BV",
+   "instance": 11,
+   "name": "COND REFRIG HI PRESS CO",
+   "description": "Condenser Refrigerant High Pressure Cutout",
+   "units": "",
+   "access": "R",
+   "states": "0=Off, 1=On"
+  },
+  {
+   "type": "BV",
+   "instance": 12,
+   "name": "COMP OIL HEATER CONT",
+   "description": "Compressor Oil Heater Contactor",
+   "units": "",
+   "access": "R",
+   "states": "0=Off, 1=On"
+  },
+  {
+   "type": "BV",
+   "instance": 13,
+   "name": "COMP OIL RETURN SOL VLV",
+   "description": "Compressor Oil Return Solenoid Valve",
+   "units": "",
+   "access": "R",
+   "states": "0=Open, 1=Closed"
+  },
+  {
+   "type": "BV",
+   "instance": 14,
+   "name": "COMP OIL COOLER W SOL VL",
+   "description": "Compressor Oil Cooler Water Solenoid Valve",
+   "units": "",
+   "access": "R",
+   "states": "0=Open, 1=Closed"
+  },
+  {
+   "type": "BV",
+   "instance": 15,
+   "name": "COMP VAR SPD OIL PMP RUN",
+   "description": "Compressor Variable Speed Oil Pump Run Contacts",
+   "units": "",
+   "access": "R",
+   "states": "0=Off, 1=On"
+  },
+  {
+   "type": "BV",
+   "instance": 16,
+   "name": "COMP VAR SPD OIL PMP AUX",
+   "description": "Compressor variable-speed oil pump auxiliary contacts",
+   "units": "",
+   "access": "R",
+   "states": "0=Off, 1=On"
+  },
+  {
+   "type": "BV",
+   "instance": 17,
+   "name": "COMPR LIQ INJ SOL VLV",
+   "description": "Compressor Liquid Injection Solenoid Valve",
+   "units": "",
+   "access": "R",
+   "states": "0=Open, 1=Closed"
+  },
+  {
+   "type": "BV",
+   "instance": 18,
+   "name": "COMPR HS THRUST SOL",
+   "description": "Compressor High Speed Thrust Solenoid",
+   "units": "",
+   "access": "R",
+   "states": "0=Open, 1=Closed"
+  },
+  {
+   "type": "BV",
+   "instance": 19,
+   "name": "CLOSED LIMIT SWITCH",
+   "description": "Closed Limit Switch",
+   "units": "",
+   "access": "R",
+   "states": "0=Off, 1=On"
+  },
+  {
+   "type": "BV",
+   "instance": 20,
+   "name": "REM MODE READY TO START",
+   "description": "Remote Mode Ready To Start Contacts",
+   "units": "",
+   "access": "R",
+   "states": "0=Off, 1=On"
+  },
+  {
+   "type": "BV",
+   "instance": 22,
+   "name": "TURBINE ROTATING CONT",
+   "description": "Turbine Rotating Contacts",
+   "units": "",
+   "access": "R",
+   "states": "0=Off, 1=On"
+  },
+  {
+   "type": "BV",
+   "instance": 23,
+   "name": "TURBINE TRIP SOL VLV",
+   "description": "Turbine Trip Solenoid Valve",
+   "units": "",
+   "access": "R",
+   "states": "0=Open, 1=Closed"
+  },
+  {
+   "type": "BV",
+   "instance": 24,
+   "name": "TURBINE TRIP VLV CLO LS",
+   "description": "Turbine Trip Valve Closed Limit Switch",
+   "units": "",
+   "access": "R",
+   "states": "0=Off, 1=On"
+  },
+  {
+   "type": "MV",
+   "instance": 1,
+   "name": "UNIT OPERATION CODE",
+   "description": "Unit Operation Code",
+   "units": "",
+   "access": "R",
+   "states": "1=Unit Stopped - Ready To Start, 2=Unit Stopped - Local Shutdown, 3=Unit Stopped -Remote Shutdown, 4=Unit Stopped Warning Active, 5=Unit Stopped - Cycling Shutdown, 6=Unit Stopped - Safety Shutdown, 7=Unit Start Inhibit, 8=Unit Starting, 9=Unit Running - No Abnormal Condition, 10=Unit Running - Warning Active, 11=Unit Running - Chiller Unload Before Shutdown, 12=Unit Coastdown / Lockout Delay, 13=Unit Stopped - Turbine Cooldown, 14=Unit Stopped - Internal Shutdown"
+  },
+  {
+   "type": "MV",
+   "instance": 2,
+   "name": "UNIT SAFETY FAULT CODE",
+   "description": "Unit Safety Shutdown Code",
+   "units": "",
+   "access": "R",
+   "states": "1=No Malfunction, 2=Evaporator - Low Pressure, 3=Evaporator - Transducer Or Leaving Liquid Probe, 4=Evaporator - Transducer Or Temperature Sensor, 5=Evaporator - Low Temperature, 6=Evaporator - Low Pressure - Smart Freeze, 7=Condenser - High Pressure Contacts Open, 8=Condenser - High Pressure, 9=Condenser - Pressure Transducer Out Of Range, 10=Auxiliary Safety - Contacts Closed, 11=Control Panel - Power Failure (Manual Restart), 12=Discharge - Low Temperature, 13=Discharge - High Temperature, 14=Compressor Oil - High Temperature, 15=Compressor Oil - Low Differential Pressure, 16=Compressor Oil - High Differential Pressure, 17=Compressor Oil - Pump Press Xdcr Out Of Range, 18=Compressor Oil - Sump Press Xdcr Out Of Range, 19=Compressor Oil - High Pressure, 20=Compressor Oil - Differential Pressure Calibration, 22=Oil - Variable Speed Pump - Setpoint Not Achieved, 23=Thrust Bearing - Proximity Probe Clearance - Fwd, 24=Thrust Bearing - Proximity Probe Clearance - Rev, 25=Thrust Bearing - Proximity Probe Uncalibrated, 26=Thrust Bearing - Proximity Probe Out Of Range, 27=Thrust Bearing - Limit Switch, 29=Turbine - Low Oil Pressure, 31=Turbine - High Oil Temperature, 33=Turbine - Governor End Bearing High Temperature, 34=Turbine - Shaft End Bearing High Temperature, 35=Turbine - Governor End Vibration, 36=Turbine - Shaft End Vibration, 37=Turbine - High Inlet Steam Pressure, 38=Turbine - High Exhaust Steam Pressure, 39=Turbine - Hotwell Low Level, 40=Turbine - Hotwell High Level - Analog, 41=Turbine - Hotwell Pump Failure, 42=Turbine - Vacuum Seal Failure, 43=Turbine - Vacuum Pump Failure, 44=Turbine - High Vacuum Pressure, 45=Turbine - Underspeed While Starting, 46=Turbine - Underspeed While Running, 47=Turbine - Steam Supply Valve Malfunction, 48=Turbine - Overspeed, 49=Turbine - Mechanical Overspeed Test Failure, 50=Turbine - Underspeed Dip While Starting, 51=Turbine - Underspeed Dip While Running, 52=Turbine - Excessive Slow Roll, 53=Turbine - Mechanical Trip, 54=Turbine - Excessive Start Delay, 55=Turbine - Shaft Bearing Temperature Out Of Range, 56=Turbine - Oil Temperature Out Of Range, 57=Turbine - Oil Pressure Out Of Range, 58=Turbine - Hotwell High Level - Digital, 59=MPU Failure, 60=Slow Roll Overspeed, 61=Turbine - Governor End Horizontal Vibration, 62=Turbine - Governor End Vertical Vibration, 63=Turbine - Shaft End Horizontal Vibration, 64=Turbine - Governor End Vertical Vibration, 65=Turbine - Govr End Horiz Vibration Out of Range, 66=Turbine - Gov End Vert Vibration Out of Range, 67=Turbine - Shaft End Horiz Vibration Out of Range, 68=Turbine - Gov End Vert Vibration Out of Range, 69=Compressor - Horiz Vibration Out of Range, 70=Compressor - Vertical Vibration Out of Range, 71=Safety Shutdown- Steam Supply Out of Range"
+  },
+  {
+   "type": "MV",
+   "instance": 3,
+   "name": "UNIT CYCLING FAULT CODE",
+   "description": "Unit Cycling Shutdown Code",
+   "units": "",
+   "access": "R",
+   "states": "1=No Malfunction, 3=Remote Cycling, 4=Low Compressr Oil Differential Temperature, 5=Low Compressr Sump Oil Temperature, 6=Control Panel - Power Fail (Autostart), 7=Evaporator - Low Chilled Liquid Temperature, 8=Evaporator - Flow Switch Open, 9=Chiller Condenser - Flow Switch Open, 10=Control Panel - Schedule Shutdown, 11=Proximity Probe - Low Supply Voltage, 12=Oil - Variable Speed Pump - Drive Contacts Open, 13=Expansion I/O Serial Communications"
+  },
+  {
+   "type": "MV",
+   "instance": 4,
+   "name": "UNIT WARNING FAULT CODE",
+   "description": "Unit Alarm / Warning Code",
+   "units": "",
+   "access": "R",
+   "states": "1=No Malfunction, 2=Real-Time Clock Failure, 3=Setpoint Override, 5=Condenser Or Evaporator Transducer Error, 6=Evaporator - Low Pressure Limit, 7=Consenser - High Pressure Limit, 8=Condenser Transducer Error, 9=Freeze Threat From Operating Chiller, 10=Refrigerant Level Out Of Range, 11=Seal Lubrication In Process, 12=Standby Lube - Low Oil Pressure, 14=Turbine - High Condensate Level, 15=Turbine - Oil Low Pressure, 16=Turbine - Auxiliary Oil Low Pressure, 17=Turbine - Oil High Temperature, 19=Turbine - Auxiliary Oil Pump Overrun, 20=Turbine - Speed Sensor Differential, 21=Turbine - Governor End Bearing High Temperature, 22=Turbine - Shaft End Bearing High Temperature, 23=Turbine - Governor End Vibration, 24=Turbine - Shaft End Vibration, 25=Turbine - Inlet Steam High Pressure, 26=Turbine - Exhaust Steam High Pressure, 27=Turbine - Hotwell Low Level, 28=Turbine - Hotwell High Level, 29=Turbine - Hotwell Lead Pump, 30=Turbine - Vacuum Lead Seal, 31=Turbine - Vacuum Lead Pump, 32=Turbine - Vacuum High Pressure, 33=Turbine - High Condensate Drain Level, 34=Mechanical Overspeed Test in Progress, 35=Vacuum Pump Overrrun, 36=Turbine - Governor End Horizontal Vibration, 37=Turbine - Governor End Vertical Vibration, 38=Turbine - Shaft End Horizontal Vibration, 39=Turbine - Governor End Vertical Vibration, 40=Evaporator Low pressure Override, 41=Condenser High pressure Override, 42=Turbine Power Limiter Override, 43=Auto Capacity Control Unavailable, 44=Condenser or VGD sensor Failure, 45=Conditions Override VGD"
+  },
+  {
+   "type": "MV",
+   "instance": 5,
+   "name": "UNIT CONTROL SOURCE",
+   "description": "Unit Control Source",
+   "units": "",
+   "access": "R",
+   "states": "0=Local, 1=ISN, 2=Analog, 3=Digital, 4=Modem"
+  },
+  {
+   "type": "MV",
+   "instance": 6,
+   "name": "TURBINE STATUS CODE",
+   "description": "Turbine Status Code",
+   "units": "",
+   "access": "R",
+   "states": "1=Stopped, 2=System Starting, 3=Ready to Begin Slow Roll (Manual), 4=Waiting for Steam Flow (Manual) / System Starting (Auto) / Slow Rolling, 5=Turbine Idling - High Exhaust Pressure, 6=Ready to Run (Manual), 7=Ready to Run (Auto) / Ramping to Rated Speed, 8=Stabilizing, 9=Running, 10=Unloading Before Shutdown, 11=Compressor Shutdown; Turbine Cooldown"
+  },
+  {
+   "type": "MV",
+   "instance": 7,
+   "name": "UNIT MODIF RUN FLT CODE",
+   "description": "Unit Modified Run Fault Code",
+   "units": "",
+   "access": "R",
+   "states": "1=No Modified Run Conditions Present, 2=Leaving Chilled Liquid Control, 3=Vanes Closing Before Shutdown, 4=Slide Valve Unloading before Shutdown, 5=Seal Lube in Process"
+  },
+  {
+   "type": "MV",
+   "instance": 8,
+   "name": "UNIT INHIBIT FAULT CODE",
+   "description": "Unit Inhibit Fault Code",
+   "units": "",
+   "access": "R",
+   "states": "1=No Start Inhibits Present, 2=Vane Motor Switch Open, 3=Turbine Vibration Sensor Fault, 4=Vanes Uncalibrated, 5=Compressor Vibration Sensor Fault"
+  },
+  {
+   "type": "MV",
+   "instance": 9,
+   "name": "UNIT INTERNAL FAULT CODE",
+   "description": "Unit Internal Fault Code",
+   "units": "",
+   "access": "R",
+   "states": "1=No Internal Faults Present, 2=Internal Error- No timer Handles Available, 3=Watchdog- Software Reboot, 4=Internal Error- Cannot create Task"
+  },
+  {
+   "type": "AV",
+   "instance": 30,
+   "name": "THRUST BEARING PROX POS",
+   "description": "High Speed Thrust Bearing Proximity Position",
+   "units": "",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 31,
+   "name": "THRUST BEARING PROX REF",
+   "description": "High Speed Thrust Bearing Proximity Reference",
+   "units": "",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 32,
+   "name": "TURBINE GOV END BRG TEMP",
+   "description": "Turbine Governor End Bearing Temperature",
+   "units": "°F",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 33,
+   "name": "TURBINE SHF END BRG TEMP",
+   "description": "Turbine Shaft End Bearing Temperature",
+   "units": "°F",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 34,
+   "name": "HOTWELL CONDENSATE LVL",
+   "description": "Hotwell Condensate Level",
+   "units": "%",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 35,
+   "name": "EVAP REFRIG LIQ TEMP",
+   "description": "Evaporator Refrigerant Liquid Temperature",
+   "units": "°F",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 36,
+   "name": "COND REFRIG LIQ TEMP",
+   "description": "Condenser Refrigerant Liquid Temperature",
+   "units": "°F",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 37,
+   "name": "CHILL LIQ FLOW SENSOR",
+   "description": "Chilled Liquid Flow Sensor",
+   "units": "GPM",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 38,
+   "name": "COND LIQ FLOW SENSOR",
+   "description": "Condenser Liquid Flow Sensor",
+   "units": "GPM",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 39,
+   "name": "STEAM FLOW SENSOR",
+   "description": "Steam Flow Sensor",
+   "units": "Lb/Hr",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 40,
+   "name": "HOTGAS BYPASS VLV POS",
+   "description": "Hotgas Bypass Valve Position",
+   "units": "%",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 41,
+   "name": "GOVERNOR VLV POS",
+   "description": "Governor Valve Position",
+   "units": "%",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 43,
+   "name": "SLOW ROLL TIME REMAINING",
+   "description": "Slow Roll Time Remaining",
+   "units": "Min",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "BV",
+   "instance": 26,
+   "name": "TURBINE AUX OIL PMP CONT",
+   "description": "Turbine Auxiliary Oil Pump Contactor",
+   "units": "",
+   "access": "R",
+   "states": "0=Off, 1=On"
+  },
+  {
+   "type": "BV",
+   "instance": 27,
+   "name": "TURBINE AUX OIL PMP CONA",
+   "description": "Turbine auxiliary oil pump contactor auxiliary contact",
+   "units": "",
+   "access": "R",
+   "states": "0=Open, 1=Closed"
+  },
+  {
+   "type": "BV",
+   "instance": 28,
+   "name": "TURBINE OIL CLRW SOL VLV",
+   "description": "Turbine Oil Cooler Water Solenoid Valve",
+   "units": "",
+   "access": "R",
+   "states": "0=Off, 1=On"
+  },
+  {
+   "type": "BV",
+   "instance": 29,
+   "name": "ALARM HORN",
+   "description": "Alarm Horn",
+   "units": "",
+   "access": "R",
+   "states": "0=Off, 1=On"
+  }
+ ],
+ "page": "https://easybacnet.com/bacnet-points-lists/york/yst-sc-eq",
+ "note": "Re-typed from the manufacturer's public documentation (see source). Point availability varies by firmware and options; verify against the live device."
+}

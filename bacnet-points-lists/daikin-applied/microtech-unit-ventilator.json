@@ -1,0 +1,1792 @@
+{
+ "manufacturer": "Daikin Applied",
+ "manufacturer_slug": "daikin-applied",
+ "model": "MicroTech Unit Ventilator Controller",
+ "model_slug": "microtech-unit-ventilator",
+ "aliases": [
+  "MicroTech UV",
+  "MTUC_UV",
+  "Daikin unit ventilator",
+  "ED 19110"
+ ],
+ "equipment_type": "Unit ventilator controller (classroom air handler)",
+ "applies_to": "Daikin Applied unit ventilators with the MicroTech UV unit controller and its on-board BACnet MS/TP port.",
+ "summary": "The MicroTech UV controller has BACnet MS/TP built in (LonWorks needs an add-on module and is not listed here). Objects cover local and network space, water, discharge and outdoor readings, occupancy setpoints and differentials, compressor, valve, damper, economizer and electric heat tuning, PI loop gains, network inputs for space temperature, setpoint, humidity, CO2 and fan speed, occupancy, application mode and emergency commands, unit state and the current alarm. Many objects only apply to certain unit configurations (compressor, hydronic, electric heat, economizer).",
+ "bacnet_transport": [
+  "BACnet MS/TP"
+ ],
+ "firmware": "Application 1.05.00 (PICS)",
+ "default_device_instance": "3101120 (System Minimum Instance 3101000 + MAC 120)",
+ "access_inferred": false,
+ "notes": [
+  "BACnet MS/TP only; the same guide also covers an optional LonWorks module, which is not listed here.",
+  "Network overrides return to their default (Null/invalid 32767) after a controller reset, so the BMS must write them again.",
+  "Points stored in non-volatile memory (setpoints, differentials, gains, enables) have a limited write life; non-volatile values are saved every 20 minutes.",
+  "Some AIs and AVs pass whole numbers only; a fractional write is rounded to the nearest integer.",
+  "Current Alarm (MV 2) returns the alarm number; the alarm list is in the Alarms section of the guide."
+ ],
+ "source": {
+  "title": "MicroTech Unit Ventilator Unit Controller Protocol Information (BACnet MS/TP, LonWorks)",
+  "doc_number": "ED 19110-6",
+  "revision_date": "2022-03",
+  "url": "https://tahoeweb.daikinapplied.com/api/general/DownloadDocumentByName/media/MicroTech%20UV%20Unit%20Controller%20Protocol%20Information%20ED%2019110-6.pdf/"
+ },
+ "integration": {
+  "summary": "Give the controller a unique MAC address and device instance, then command occupancy, application mode and, if the BMS owns it, the network setpoint. Read Unit State, the effective space temperature and Current Alarm. Network overrides are cleared by a controller reset, so the BMS has to rewrite them.",
+  "minimum_points": [
+   {
+    "ref": "MV 7",
+    "name": "OccManCmd",
+    "why": "Occupancy override from the BMS"
+   },
+   {
+    "ref": "MV 8",
+    "name": "OccSchedule",
+    "why": "Occupancy schedule command (Occ/Unocc/Standby)"
+   },
+   {
+    "ref": "MV 21",
+    "name": "EmergOverride",
+    "why": "Emergency mode (Normal/Shutdown/Purge/Fire...)"
+   },
+   {
+    "ref": "MV 17",
+    "name": "NetworkApplicMode",
+    "why": "Application mode (Auto/Heat/Cool/Off/Fan_Only/Dehumid)"
+   },
+   {
+    "ref": "AV 19",
+    "name": "NetworkSetpoint",
+    "why": "Network reference setpoint"
+   },
+   {
+    "ref": "BV 1",
+    "name": "ClearAlarm",
+    "why": "Clear the current alarm"
+   },
+   {
+    "ref": "MV 42",
+    "name": "UnitState",
+    "why": "Current operating state"
+   },
+   {
+    "ref": "AV 22",
+    "name": "EffectSpaceTemp",
+    "why": "Space temperature used for control"
+   },
+   {
+    "ref": "AV 38",
+    "name": "FanSpeed",
+    "why": "Fan speed output, 0-100 %"
+   },
+   {
+    "ref": "MV 2",
+    "name": "CurrentAlarm",
+    "why": "Highest-priority active alarm"
+   }
+  ],
+  "enable": "No local/remote switch is described. Network inputs take effect when written: Occupancy Override Input (MV 7) overrides the other occupancy inputs, Occupancy Scheduler Input (MV 8) sets the scheduled mode, Application Mode (MV 17) limits heating/cooling/dehumidification, Emergency Override (MV 21) forces an emergency mode, and Compressor Enable (MV 1) permits compressor operation (Null = enabled). All of these revert to their defaults after a controller reset.",
+  "heartbeat": "No BACnet heartbeat. Receive Heartbeat is a LonWorks-only setting. BACnet network overrides stay in place until the controller resets, then revert to their defaults.",
+  "remote_sensors": "Network Space Temperature Input (AV 18) replaces the local sensor when valid; Effective Space Temperature (AV 22) shows the value in use. Network Temperature Setpoint Input (AV 19) sets the reference setpoint and AV 35 offsets it; AV 129-132 shift the occupied and standby setpoints. Network inputs also exist for outdoor temperature (AV 45), outdoor and space humidity (AV 48, AV 50), space CO2 (AV 52), entering water temperature (AV 113), minimum OA damper position (AV 70) and fan speed (AV 115).",
+  "setup": [
+   "Defaults: MAC address 120 (AV 411), device instance 3101120 = System Minimum Instance (AV 412, default 3101000) + MAC, 38400 baud, Max Master 127.",
+   "MS/TP baud (9600, 19200, 38400 or 76800) is set from the LUI keypad or ServiceTools; speeds above 38400 need tested wiring.",
+   "Device name defaults to MTUC_UV-3101120 and can be set from the BAS, ServiceTools or the keypad.",
+   "Set Max Master to the highest MS/TP master address on the segment to cut token traffic."
+  ],
+  "gotchas": [
+   "Non-volatile objects (setpoints, differentials, PI gains, enables) have a limited write life; do not write them cyclically.",
+   "Network overrides revert to default (Null or 32767) after a controller reset, so the BMS must restore them.",
+   "Some analog objects only hold whole numbers; fractional writes are rounded.",
+   "Setpoint Method (MV 44) selects Easy or Advanced setpoint calculation; Advanced is the default and recommended.",
+   "Over BACnet, Current Alarm (MV 2) reads 1 when no alarm is active (LonWorks uses 0)."
+  ]
+ },
+ "points": [
+  {
+   "type": "AI",
+   "instance": 1,
+   "name": "LocalSpaceTemp",
+   "description": "Local Space Temperature",
+   "units": "°F",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "AI",
+   "instance": 2,
+   "name": "LWT",
+   "description": "Leaving Water Temperature",
+   "units": "°F",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "AI",
+   "instance": 3,
+   "name": "EWT",
+   "description": "Entering Water Temperature",
+   "units": "°F",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "AI",
+   "instance": 4,
+   "name": "DischAirTemp",
+   "description": "Discharge Air Temperature",
+   "units": "°F",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "AI",
+   "instance": 5,
+   "name": "LocalSetpt",
+   "description": "Local Setpoint Adjust Output",
+   "units": "°F",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "AI",
+   "instance": 6,
+   "name": "Comp1SuctTemp",
+   "description": "Indoor Coil Temperature",
+   "units": "°F",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "AI",
+   "instance": 8,
+   "name": "LineVoltage",
+   "description": "Brownout Detection",
+   "units": "counts",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "AI",
+   "instance": 9,
+   "name": "OutdoorTemp",
+   "description": "Outdoor Air Temperature",
+   "units": "°F",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "AI",
+   "instance": 10,
+   "name": "OutdoorRH",
+   "description": "Outdoor Relative Humidity",
+   "units": "%",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "AI",
+   "instance": 11,
+   "name": "IndoorRH",
+   "description": "Indoor Relative Humidity",
+   "units": "%",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "AI",
+   "instance": 12,
+   "name": "SpaceCO2",
+   "description": "Space CO2",
+   "units": "ppm",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "AI",
+   "instance": 13,
+   "name": "ReturnAirTemp",
+   "description": "Return Air Temperature",
+   "units": "°F",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 1,
+   "name": "Occupied_Cool_Setpt",
+   "description": "Occupied Cooling Setpoint",
+   "units": "°F",
+   "access": "W",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 2,
+   "name": "Standby_Cool_Setpt",
+   "description": "Standby Cooling Setpoint",
+   "units": "°F",
+   "access": "W",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 3,
+   "name": "Unoccupied_Cool_Setpt",
+   "description": "Unoccupied Cooling Setpoint",
+   "units": "°F",
+   "access": "W",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 4,
+   "name": "Occupied_Heat_Setpt",
+   "description": "Occupied Heating Setpoint",
+   "units": "°F",
+   "access": "W",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 5,
+   "name": "Standby_Heat_Setpt",
+   "description": "Standby Heating Setpoint",
+   "units": "°F",
+   "access": "W",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 6,
+   "name": "Unoccupied_Heat_Setpt",
+   "description": "Unoccupied Heating Setpoint",
+   "units": "°F",
+   "access": "W",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 7,
+   "name": "BypassTime",
+   "description": "Local Bypass Time Setpoint",
+   "units": "min",
+   "access": "W",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 9,
+   "name": "BrownoutRef",
+   "description": "Brownout Reference Setpoint",
+   "units": "counts",
+   "access": "W",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 10,
+   "name": "OccDiff",
+   "description": "Occupied Setpoint Differential",
+   "units": "°F",
+   "access": "W",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 12,
+   "name": "LowTempProt",
+   "description": "Low Suction Line Temperature Protection Setpoint",
+   "units": "°F",
+   "access": "W",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 13,
+   "name": "LowTmpProtDif",
+   "description": "Low Suction Temperature Protection Differential",
+   "units": "°F",
+   "access": "W",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 15,
+   "name": "MinCompOffTmr",
+   "description": "Compressor Minimum Off Timer",
+   "units": "s",
+   "access": "W",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 16,
+   "name": "MinCompOnTmr",
+   "description": "Compressor Minimum On Timer",
+   "units": "s",
+   "access": "W",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 17,
+   "name": "UnoccDiff",
+   "description": "Unoccupied Setpoint Differential",
+   "units": "°F",
+   "access": "W",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 18,
+   "name": "NetworkSpaceTemp",
+   "description": "Network Space Temperature Input",
+   "units": "°F",
+   "access": "C",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 19,
+   "name": "NetworkSetpoint",
+   "description": "Network Temperature Setpoint Input",
+   "units": "°F",
+   "access": "C",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 22,
+   "name": "EffectSpaceTemp",
+   "description": "Effective Space Temperature",
+   "units": "°F",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 23,
+   "name": "EffectSetpt",
+   "description": "Effective Setpoint",
+   "units": "°F",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 24,
+   "name": "SetptShift",
+   "description": "Temperature Setpoint Shift",
+   "units": "°F",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 35,
+   "name": "SetptOffset",
+   "description": "Temperature Setpoint Offset",
+   "units": "°F",
+   "access": "C",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 114,
+   "name": "ControlTemp",
+   "description": "Control Temperature",
+   "units": "°F",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 38,
+   "name": "FanSpeed",
+   "description": "Fan Speed",
+   "units": "%",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 40,
+   "name": "CompRunHoursTenths",
+   "description": "Compressor Run Time",
+   "units": "h",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 44,
+   "name": "EffectOutdoorTemp",
+   "description": "Effective Outdoor Air Temperature",
+   "units": "°F",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 45,
+   "name": "NetworkOutdoorTemp",
+   "description": "Network Outdoor Air Temperature Input",
+   "units": "°F",
+   "access": "W",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 46,
+   "name": "FanRunHoursTenths",
+   "description": "Fan Run Time",
+   "units": "h",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 47,
+   "name": "EffectOutdoorRH",
+   "description": "Effective Outdoor Humidity",
+   "units": "%",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 48,
+   "name": "NetworkOutdoorRH",
+   "description": "Network Outdoor Humidity Input",
+   "units": "%",
+   "access": "W",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 49,
+   "name": "EffectSpaceRH",
+   "description": "Effective Space Humidity",
+   "units": "%",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 50,
+   "name": "NetworkSpaceRH",
+   "description": "Network Space Humidity Input",
+   "units": "%",
+   "access": "W",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 51,
+   "name": "EffectSpaceCO2",
+   "description": "Effective Space CO2",
+   "units": "ppm",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 52,
+   "name": "NetworkSpaceCO2",
+   "description": "Network Space CO2 Input",
+   "units": "ppm",
+   "access": "W",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 53,
+   "name": "DATSetpt",
+   "description": "Discharge Air Temperature Setpoint",
+   "units": "°F",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 118,
+   "name": "DischargeAirTemp",
+   "description": "Discharge Air Temperature",
+   "units": "°F",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 54,
+   "name": "NetworkDATClgSetpt",
+   "description": "Network Discharge Temperature Cooling Setpoint Input",
+   "units": "°F",
+   "access": "W",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 119,
+   "name": "DATClgSetpt",
+   "description": "Discharge Air Temperature Cooling Setpoint",
+   "units": "°F",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 55,
+   "name": "NetworkDATHtgSetpt",
+   "description": "Network Discharge Temperature Heating Setpoint Input",
+   "units": "°F",
+   "access": "W",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 120,
+   "name": "DATHtgSetpt",
+   "description": "Discharge Air Temperature Heating Setpoint",
+   "units": "°F",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 56,
+   "name": "OADamper",
+   "description": "Outdoor Air Damper Position",
+   "units": "%",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 113,
+   "name": "NetworkEWT",
+   "description": "Entering Water Temperature Input",
+   "units": "°F",
+   "access": "W",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 57,
+   "name": "EffectEWT",
+   "description": "Effective Entering Water Temperature",
+   "units": "°F",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 58,
+   "name": "FBDamper",
+   "description": "Face and Bypass Damper Position",
+   "units": "%",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 59,
+   "name": "HotWater",
+   "description": "Modulating Hot Water Valve Position",
+   "units": "%",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 60,
+   "name": "ColdWater",
+   "description": "Modulating Cold Water Valve Position",
+   "units": "%",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 61,
+   "name": "OAMinPos",
+   "description": "OAD Minimum Position",
+   "units": "%",
+   "access": "W",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 62,
+   "name": "OAMinPosMedSpeed",
+   "description": "OAD Minimum Position Medium Speed",
+   "units": "%",
+   "access": "W",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 63,
+   "name": "OAMinPosLowSpeed",
+   "description": "OAD Minimum Position Low Speed",
+   "units": "%",
+   "access": "W",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 64,
+   "name": "SpaceCO2Lim",
+   "description": "Space CO2 Limit",
+   "units": "ppm",
+   "access": "W",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 65,
+   "name": "EconOADiffSetpt",
+   "description": "Economizer Outdoor Differential Setpoint",
+   "units": "°F",
+   "access": "W",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 66,
+   "name": "EconDBDiff",
+   "description": "Economizer Dry Bulb Temperature Differential",
+   "units": "°F",
+   "access": "W",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 67,
+   "name": "EconEnthSetpt",
+   "description": "Economizer Enthalpy Setpoint",
+   "units": "BTU/lb",
+   "access": "W",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 68,
+   "name": "EconEnthDiff",
+   "description": "Economizer IA/OA Enthalpy Differential",
+   "units": "BTU/lb",
+   "access": "W",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 69,
+   "name": "SpaceRHSetpt",
+   "description": "Space Humidity Setpoint",
+   "units": "%",
+   "access": "W",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 70,
+   "name": "NetworkOAMinPos",
+   "description": "Network Minimum Outdoor Air Damper Position",
+   "units": "%",
+   "access": "W",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 71,
+   "name": "Setpoint",
+   "description": "Setpoint",
+   "units": "°F",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 115,
+   "name": "NetworkFanSpeed",
+   "description": "Network Fan Speed Input",
+   "units": "%",
+   "access": "W",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 116,
+   "name": "AuxHeatOnDiff",
+   "description": "Auxiliary Heat On Differential",
+   "units": "°F",
+   "access": "W",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 117,
+   "name": "AuxHeatOffDiff",
+   "description": "Auxiliary Heat Off Differential",
+   "units": "°F",
+   "access": "W",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 121,
+   "name": "ASHPDefrostTime",
+   "description": "Air Source Heat Pump Defrost Time",
+   "units": "min",
+   "access": "W",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 122,
+   "name": "LWTemp",
+   "description": "Leaving Water Temperature",
+   "units": "°F",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 123,
+   "name": "LuiSetptOffset",
+   "description": "Keypad Setpoint Offset",
+   "units": "°F",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 124,
+   "name": "OALockoutSetpt",
+   "description": "Outdoor Air Lockout Setpoint",
+   "units": "°F",
+   "access": "W",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 125,
+   "name": "OutdoorEnthalpy",
+   "description": "Outdoor Enthalpy",
+   "units": "BTU/lb",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 126,
+   "name": "IndoorEnthalpy",
+   "description": "Indoor Enthalpy",
+   "units": "BTU/lb",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 127,
+   "name": "OATSP",
+   "description": "Economizer Outdoor Temperature Setpoint",
+   "units": "°F",
+   "access": "W",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 128,
+   "name": "EmergHtgSetpt",
+   "description": "Emergency Heating Setpoint",
+   "units": "°F",
+   "access": "W",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 129,
+   "name": "OccCoolSetptShift",
+   "description": "Network Occupied Cooling Setpoint Shift Input",
+   "units": "°F",
+   "access": "W",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 130,
+   "name": "StandbyCoolSetptShift",
+   "description": "Network Standby Cooling Setpoint Shift Input",
+   "units": "°F",
+   "access": "W",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 131,
+   "name": "OccHeatSetptShift",
+   "description": "Network Occupied Heating Setpoint Shift Input",
+   "units": "°F",
+   "access": "W",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 132,
+   "name": "StandbyHeatSetptShift",
+   "description": "Network Standby Heating Setpoint Shift Input",
+   "units": "°F",
+   "access": "W",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 133,
+   "name": "ExhStartPos",
+   "description": "Exhaust Fan Outdoor Air Damper Setpoint Position",
+   "units": "%",
+   "access": "W",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 134,
+   "name": "FilterChangeHours",
+   "description": "Filter Change Hours",
+   "units": "h",
+   "access": "W",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 135,
+   "name": "FanChgsPerHour",
+   "description": "Fan Changer Per Hour",
+   "units": "",
+   "access": "W",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 136,
+   "name": "DisAirMechLowLim",
+   "description": "Mechanical Cooling Discharge Air Temperature Low Limit",
+   "units": "°F",
+   "access": "W",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 137,
+   "name": "DisAirHighLim",
+   "description": "Discharge Air Temperature High Limit",
+   "units": "°F",
+   "access": "W",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 138,
+   "name": "ComprMtrValveTime",
+   "description": "Motorized Isolation Valve Time Delay",
+   "units": "s",
+   "access": "W",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 139,
+   "name": "FanOffDelay",
+   "description": "Space Fan Off Delay",
+   "units": "s",
+   "access": "W",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 140,
+   "name": "CompClgOATLockoutSetpt",
+   "description": "Compressor Cooling Outdoor Air Temperature Lockout",
+   "units": "°F",
+   "access": "W",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 141,
+   "name": "ComprHtgOATLock",
+   "description": "Compressor Heating Outdoor Air Temperature Lockout",
+   "units": "°F",
+   "access": "W",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 142,
+   "name": "CompHtgEWTLock",
+   "description": "Compressor Heating Entering Water Temperature Lockout",
+   "units": "°F",
+   "access": "W",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 143,
+   "name": "AirTemperingDiff",
+   "description": "Air Tempering Differential",
+   "units": "°F",
+   "access": "W",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 144,
+   "name": "SourceTempDiff",
+   "description": "Entering Water Temperature Differential",
+   "units": "°F",
+   "access": "W",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 145,
+   "name": "OAMinPosExhaust",
+   "description": "OAD Minimum Position - Exhaust Interlock",
+   "units": "%",
+   "access": "W",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 146,
+   "name": "EOCLowOASetpt",
+   "description": "End of Cycle Low Outdoor Air Setpoint",
+   "units": "°F",
+   "access": "W",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 147,
+   "name": "IACoilDXTemp",
+   "description": "Indoor Air/DX Coil Temperature",
+   "units": "°F",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 148,
+   "name": "OACoilDXTemp",
+   "description": "Outdoor Air/DX Coil Temperature",
+   "units": "°F",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 149,
+   "name": "BreakPointAutoLow",
+   "description": "Fan Speed Low Break Point",
+   "units": "%",
+   "access": "W",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 150,
+   "name": "BreakPointAutoMedium",
+   "description": "Fan Speed Medium Break Point",
+   "units": "%",
+   "access": "W",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 151,
+   "name": "BreakpointAutoHigh",
+   "description": "Fan Speed High Break Point",
+   "units": "%",
+   "access": "W",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 152,
+   "name": "BreakpointAutoDiff",
+   "description": "Fan Speed Break Point Differential",
+   "units": "%",
+   "access": "W",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 153,
+   "name": "DATCoolSetpt",
+   "description": "Discharge Air Temperature Cooling Setpoint",
+   "units": "°F",
+   "access": "W",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 154,
+   "name": "DATHeatSetpt",
+   "description": "Discharge Air Temperature Heating Setpoint",
+   "units": "°F",
+   "access": "W",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 155,
+   "name": "PWMLowFan",
+   "description": "PWM Fan Low Speed",
+   "units": "%",
+   "access": "W",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 156,
+   "name": "PWMMediumFan",
+   "description": "PWM Fan Medium Speed",
+   "units": "%",
+   "access": "W",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 157,
+   "name": "PWMHighFan",
+   "description": "PWM Fan High Speed",
+   "units": "%",
+   "access": "W",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 158,
+   "name": "EwFlowTimer",
+   "description": "Entering Water Flow Timer",
+   "units": "s",
+   "access": "W",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 159,
+   "name": "RAT",
+   "description": "Return Air Temperature Setpoint",
+   "units": "°F",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 160,
+   "name": "OutdoorCoilTemp",
+   "description": "Outdoor Coil Temperature",
+   "units": "°F",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 72,
+   "name": "SZVavPropGain",
+   "description": "Single-zone VAV PI loop proportional gain",
+   "units": "",
+   "access": "W",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 73,
+   "name": "SZVavIntegGain",
+   "description": "Single-zone VAV PI loop integral gain",
+   "units": "",
+   "access": "W",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 74,
+   "name": "SZVavMinFan",
+   "description": "Minimum Fan Output",
+   "units": "%",
+   "access": "W",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 75,
+   "name": "SZVavMaxFan",
+   "description": "Maximum Fan Output",
+   "units": "%",
+   "access": "W",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 76,
+   "name": "SZVavMaxDeltaTemp",
+   "description": "Maximum Temperature Differential",
+   "units": "°F",
+   "access": "W",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 77,
+   "name": "SZVavFanSpeedPI",
+   "description": "Fan Speed Output",
+   "units": "%",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 78,
+   "name": "ClgPropGain",
+   "description": "Cooling PI loop proportional gain",
+   "units": "",
+   "access": "W",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 79,
+   "name": "ClgIntegGain",
+   "description": "Cooling PI loop integral gain",
+   "units": "",
+   "access": "W",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 80,
+   "name": "ClgMinPos",
+   "description": "Minimum Cooling Position",
+   "units": "%",
+   "access": "W",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 81,
+   "name": "ClgMaxDeltaTemp",
+   "description": "Maximum Cooling Temperature Differential",
+   "units": "°F",
+   "access": "W",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 82,
+   "name": "ClgMaxPos",
+   "description": "Maximum Cooling Position",
+   "units": "%",
+   "access": "W",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 83,
+   "name": "ColdWaterPI",
+   "description": "Chilled Water Valve Position",
+   "units": "%",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 84,
+   "name": "HtgPropGain",
+   "description": "Heating PI loop proportional gain",
+   "units": "",
+   "access": "W",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 85,
+   "name": "HtgIntegGain",
+   "description": "Heating PI loop integral gain",
+   "units": "",
+   "access": "W",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 86,
+   "name": "HtgMinPos",
+   "description": "Minimum Heating Position",
+   "units": "%",
+   "access": "W",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 87,
+   "name": "HtgMaxDeltaTemp",
+   "description": "Maximum Heating Temperature Differential",
+   "units": "°F",
+   "access": "W",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 88,
+   "name": "HtgMaxPos",
+   "description": "Maximum Heating Position",
+   "units": "%",
+   "access": "W",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 89,
+   "name": "HotWaterPI",
+   "description": "Hot Water Valve Position",
+   "units": "%",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 90,
+   "name": "FBDamperPropGain",
+   "description": "Face and bypass damper PI loop proportional gain",
+   "units": "",
+   "access": "W",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 91,
+   "name": "FBDamperIntegGain",
+   "description": "Face and bypass damper PI loop integral gain",
+   "units": "",
+   "access": "W",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 92,
+   "name": "FBP_PIOut",
+   "description": "Face and Bypass Damper Position Output",
+   "units": "%",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 93,
+   "name": "HtgElectPropGain",
+   "description": "Electric heat PI loop proportional gain",
+   "units": "",
+   "access": "W",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 94,
+   "name": "HtgElectIntegGain",
+   "description": "Electric heat PI loop integral gain",
+   "units": "",
+   "access": "W",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 95,
+   "name": "ElectDatLLPIOut",
+   "description": "Electric Heat Discharge Air Temperature Low Limit Output",
+   "units": "%",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 96,
+   "name": "ElectDehumPIOut",
+   "description": "Electric Heat Dehumidification Output",
+   "units": "%",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 101,
+   "name": "CO2PropGain",
+   "description": "CO2 PI loop proportional gain",
+   "units": "",
+   "access": "W",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 102,
+   "name": "CO2IntegGain",
+   "description": "CO2 PI loop integral gain",
+   "units": "",
+   "access": "W",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 112,
+   "name": "NetworkMinDATSetpt",
+   "description": "Network Minimum Discharge Air Temperature Setpoint Input",
+   "units": "°F",
+   "access": "W",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 103,
+   "name": "OADPosCO2",
+   "description": "Outdoor Air Damper Position",
+   "units": "%",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 104,
+   "name": "EconPropGain",
+   "description": "Economizer PI loop proportional gain",
+   "units": "",
+   "access": "W",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 105,
+   "name": "EconIntegTime",
+   "description": "Economizer PI loop integral gain",
+   "units": "",
+   "access": "W",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 106,
+   "name": "FreeCoolingPILoopOut",
+   "description": "Outdoor Air Damper Position",
+   "units": "%",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 107,
+   "name": "OADLLPropGain",
+   "description": "OA damper low limit PI loop proportional gain",
+   "units": "",
+   "access": "W",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 108,
+   "name": "OADLLIntegGain",
+   "description": "OA damper low limit PI loop integral gain",
+   "units": "",
+   "access": "W",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 109,
+   "name": "OADLLPiOut",
+   "description": "Outdoor Air Damper Low Limit Differential",
+   "units": "%",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 111,
+   "name": "OAMaxPos",
+   "description": "Maximum Outdoor Damper Position",
+   "units": "%",
+   "access": "W",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 411,
+   "name": "MacAddress",
+   "description": "BACnet MAC Address",
+   "units": "",
+   "access": "W",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 412,
+   "name": "SystemMinInstance",
+   "description": "BACnet Minimum Instance Number",
+   "units": "",
+   "access": "W",
+   "states": ""
+  },
+  {
+   "type": "BV",
+   "instance": 1,
+   "name": "ClearAlarm",
+   "description": "Clear Alarm",
+   "units": "",
+   "access": "W",
+   "states": "0=None, 1=Clear Alarm"
+  },
+  {
+   "type": "BV",
+   "instance": 3,
+   "name": "ResetFilter",
+   "description": "Reset Filter",
+   "units": "",
+   "access": "W",
+   "states": "0=None, 1=Clear Alarm"
+  },
+  {
+   "type": "MI",
+   "instance": 1,
+   "name": "CondOverFlow",
+   "description": "Condensate Overflow Status",
+   "units": "",
+   "access": "R",
+   "states": "1=Dry, 2=Wet, 3=Null"
+  },
+  {
+   "type": "MI",
+   "instance": 4,
+   "name": "Humidistat",
+   "description": "Humidistat",
+   "units": "",
+   "access": "R",
+   "states": "1=Notdehumidify, 2=Dehumidify"
+  },
+  {
+   "type": "MV",
+   "instance": 1,
+   "name": "NetworkComprEnable",
+   "description": "Compressor Enable",
+   "units": "",
+   "access": "W",
+   "states": "1=Disable, 2=Enable, 3=Null"
+  },
+  {
+   "type": "MV",
+   "instance": 2,
+   "name": "CurrentAlarm",
+   "description": "Current Alarm",
+   "units": "",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "MV",
+   "instance": 6,
+   "name": "EffectOccup",
+   "description": "Effective Occupancy Output",
+   "units": "",
+   "access": "R",
+   "states": "1=Occ, 2=Unocc, 3=Bypass, 4=Standby, 5=Null"
+  },
+  {
+   "type": "MV",
+   "instance": 7,
+   "name": "OccManCmd",
+   "description": "Occupancy Override Input",
+   "units": "",
+   "access": "W",
+   "states": "1=Occ, 2=Unocc, 3=Bypass, 4=Standby, 5=Null"
+  },
+  {
+   "type": "MV",
+   "instance": 8,
+   "name": "OccSchedule",
+   "description": "Occupancy Scheduler Input",
+   "units": "",
+   "access": "W",
+   "states": "1=Occ, 2=Unocc, 3=Standby, 4=Null"
+  },
+  {
+   "type": "MV",
+   "instance": 9,
+   "name": "OccSensor",
+   "description": "Occupancy Sensor Input",
+   "units": "",
+   "access": "W",
+   "states": "1=Occ, 2=Unocc, 3=Null"
+  },
+  {
+   "type": "MV",
+   "instance": 12,
+   "name": "EnergyHoldOff",
+   "description": "Energy Hold Off Input",
+   "units": "",
+   "access": "W",
+   "states": "1=Normal, 2=Energy Hold, 3=Null"
+  },
+  {
+   "type": "MV",
+   "instance": 13,
+   "name": "PumpRequest",
+   "description": "Pump Request Output",
+   "units": "",
+   "access": "R",
+   "states": "1=Inactive, 2=Active"
+  },
+  {
+   "type": "MV",
+   "instance": 15,
+   "name": "Units",
+   "description": "Units (English/Metric)",
+   "units": "",
+   "access": "W",
+   "states": "1=Imperial (English), 2=SI (Metric)"
+  },
+  {
+   "type": "MV",
+   "instance": 16,
+   "name": "DehumidEnable",
+   "description": "Dehumidification Enable",
+   "units": "",
+   "access": "W",
+   "states": "1=Disable, 2=Enable, 3=Null"
+  },
+  {
+   "type": "MV",
+   "instance": 17,
+   "name": "NetworkApplicMode",
+   "description": "Application Mode",
+   "units": "",
+   "access": "W",
+   "states": "1=Auto, 2=Heat, 3=Cool, 4=Night_Purge, 5=Off, 6=Emerg_Heat, 7=Fan_Only, 8=Dehumid, 9=Null"
+  },
+  {
+   "type": "MV",
+   "instance": 20,
+   "name": "EffectHeatCool",
+   "description": "Effective Heat/Cool",
+   "units": "",
+   "access": "R",
+   "states": "1=Auto, 2=Heat, 3=Cool, 4=Night_Purge, 5=Off, 6=Emerg_Heat, 7=Fan_Only, 8=Dehumid, 9=Null"
+  },
+  {
+   "type": "MV",
+   "instance": 21,
+   "name": "EmergOverride",
+   "description": "Emergency Override",
+   "units": "",
+   "access": "C",
+   "states": "1=Normal, 2=Pressurize, 3=Depressurize, 4=Purge, 5=Shutdown, 6=Fire, 7=Invalid"
+  },
+  {
+   "type": "MV",
+   "instance": 22,
+   "name": "NetworkEconEnable",
+   "description": "Economizer Enable",
+   "units": "",
+   "access": "C",
+   "states": "1=Disable, 2=Enable, 3=Null"
+  },
+  {
+   "type": "MV",
+   "instance": 23,
+   "name": "RemoteSetpointAdjTyp",
+   "description": "Remote Sensor Adjustment",
+   "units": "",
+   "access": "W",
+   "states": "1=DIFF, 2=ABS"
+  },
+  {
+   "type": "MV",
+   "instance": 24,
+   "name": "AuxiliaryHeat",
+   "description": "Auxiliary Heat Enable",
+   "units": "",
+   "access": "C",
+   "states": "1=Disable, 2=Enable, 3=Null"
+  },
+  {
+   "type": "MV",
+   "instance": 25,
+   "name": "AuxHeatReverse",
+   "description": "Auxiliary Heat Reverse",
+   "units": "",
+   "access": "W",
+   "states": "1=Direct, 2=Reversed"
+  },
+  {
+   "type": "MV",
+   "instance": 26,
+   "name": "OALockoutEnable",
+   "description": "Outdoor Air Lockout Enable",
+   "units": "",
+   "access": "W",
+   "states": "1=Disable, 2=Enable"
+  },
+  {
+   "type": "MV",
+   "instance": 27,
+   "name": "RSSystemModeStatus",
+   "description": "Room Sensor Mode Status",
+   "units": "",
+   "access": "R",
+   "states": "1=Not_Present, 2=Cool, 3=Auto, 4=Heat"
+  },
+  {
+   "type": "MV",
+   "instance": 28,
+   "name": "RSFanSpeedStatus",
+   "description": "Room Sensor Fan Speed",
+   "units": "",
+   "access": "R",
+   "states": "1=Auto, 2=High, 3=Medium, 4=Low, 5=Off"
+  },
+  {
+   "type": "MV",
+   "instance": 29,
+   "name": "EmergHtgEnable",
+   "description": "Emergency Heating Enable",
+   "units": "",
+   "access": "W",
+   "states": "1=Disable, 2=Enable"
+  },
+  {
+   "type": "MV",
+   "instance": 30,
+   "name": "FilterChangeEnable",
+   "description": "Filter Change Enable",
+   "units": "",
+   "access": "W",
+   "states": "1=Disable, 2=Enable"
+  },
+  {
+   "type": "MV",
+   "instance": 31,
+   "name": "AirTemperingMode",
+   "description": "Air Tempering Mode",
+   "units": "",
+   "access": "W",
+   "states": "1=Inactive, 2=Active"
+  },
+  {
+   "type": "MV",
+   "instance": 32,
+   "name": "FanCycling",
+   "description": "Fan Cycling",
+   "units": "",
+   "access": "W",
+   "states": "1=Continuous, 2=Cycling"
+  },
+  {
+   "type": "MV",
+   "instance": 33,
+   "name": "FanTimeReset",
+   "description": "Fan Run Time Reset",
+   "units": "",
+   "access": "W",
+   "states": "1=Dont_Reset, 2=Reset"
+  },
+  {
+   "type": "MV",
+   "instance": 34,
+   "name": "ComprTimeReset",
+   "description": "Compressor Run Time Reset",
+   "units": "",
+   "access": "W",
+   "states": "1=Dont_Reset, 2=Reset"
+  },
+  {
+   "type": "MV",
+   "instance": 35,
+   "name": "AirTemperingEnable",
+   "description": "Air Tempering Enable",
+   "units": "",
+   "access": "W",
+   "states": "1=Disable, 2=Enable"
+  },
+  {
+   "type": "MV",
+   "instance": 38,
+   "name": "EconStategy",
+   "description": "Economizer Strategy",
+   "units": "",
+   "access": "W",
+   "states": "1=None, 2=Diff_Temp, 3=Outdoor_Enth, 4=Enth_Compare"
+  },
+  {
+   "type": "MV",
+   "instance": 39,
+   "name": "ControlTempSource",
+   "description": "Control Temperature Source",
+   "units": "",
+   "access": "W",
+   "states": "1=Space, 2=RAT, 3=AISR_Avg"
+  },
+  {
+   "type": "MV",
+   "instance": 40,
+   "name": "FanControlSelect",
+   "description": "Indoor Fan Control Select",
+   "units": "",
+   "access": "W",
+   "states": "1=Single_DAT, 2=CO2, 3=AI_Input"
+  },
+  {
+   "type": "MV",
+   "instance": 41,
+   "name": "SpaceCO2Enable",
+   "description": "Space CO2 Enable",
+   "units": "",
+   "access": "W",
+   "states": "1=Disable, 2=Enable"
+  },
+  {
+   "type": "MV",
+   "instance": 42,
+   "name": "UnitState",
+   "description": "Unit State",
+   "units": "",
+   "access": "R",
+   "states": "1=Powerup, 2=Off, 3=Fan_Only, 4=Off_Alarm, 5=Defrost, 6=Night_Purge, 7=Low_Limit, 8=Lvg_Elect_Heat, 9=Prep_To_Heat, 10=Comp_Heat_1, 11=Comp_Heat_2, 12=Elect_Heat_1, 13=Elect_Heat_2, 14=Elect_Heat_3, 15=Hydro_Heat, 16=Hyd_Heat_Elect_1, 17=Hyd_Heat_Elect_2, 18=Hyd_Heat_Elect_3, 19=Comp_Heat_2_Elect_Heat_1, 20=Comp_Heat_2_Elect_Heat_2, 21=Comp_Heat_2_Elect_Heat_3, 22=Prep_Dehumid, 23=Dehumid_Water, 24=Dehumid_Comp_1, 25=Dehumid_Comp_2, 26=Comp_Cool_1, 27=Comp_Cool_2, 28=Air_Econo, 29=Econo_Comp_1, 30=Econo_Comp_2, 31=Air_Econo_Water, 32=Water_Cool, 33=Prep_To_Cool, 34=Reheat, 35=Reheat_Low_Limit, 36=Emerg_Heat"
+  },
+  {
+   "type": "MV",
+   "instance": 43,
+   "name": "EnergyHoldOffStatus",
+   "description": "Energy Hold Off Status",
+   "units": "",
+   "access": "R",
+   "states": "1=Allow, 2=Hold_Off"
+  },
+  {
+   "type": "MV",
+   "instance": 44,
+   "name": "SetptMethod",
+   "description": "Setpoint Method",
+   "units": "",
+   "access": "W",
+   "states": "1=Easy, 2=Advanced"
+  },
+  {
+   "type": "MV",
+   "instance": 45,
+   "name": "SpaceTempSensInst",
+   "description": "Space Temperature Sensor Installed",
+   "units": "",
+   "access": "W",
+   "states": "1=Not_Installed, 2=Installed"
+  }
+ ],
+ "page": "https://easybacnet.com/bacnet-points-lists/daikin-applied/microtech-unit-ventilator",
+ "note": "Re-typed from the manufacturer's public documentation (see source). Point availability varies by firmware and options; verify against the live device."
+}
