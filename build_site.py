@@ -177,6 +177,13 @@ CSS = """
   .appcta p { margin:0; flex:1 1 18rem; }
   .appcta a.btn { background:var(--accent); color:var(--ink); text-decoration:none;
                   font-weight:700; padding:.6rem 1rem; border-radius:10px; white-space:nowrap; }
+  /* Phones: the tagline wrapped onto its own line and the nav onto a third;
+     the footer already links the points library. */
+  @media (max-width:520px) {
+    header.site .muted, header.site .navl { display:none; }
+    header.site .getapp { margin-left:auto; }
+    code { overflow-wrap:anywhere; }
+  }
 """ + diagrams.CSS
 
 
@@ -320,7 +327,7 @@ def page(slug, title, question, answer_html, body_html, related, description):
 <header class="site">
   <a href="%(prefix)sindex.html" style="display:inline-flex;align-items:center;gap:.5rem;text-decoration:none"><img src="icon.svg" alt="" width="28" height="28" style="border-radius:7px"><b class="brand">Easy BACnet</b></a>
   <span class="muted">&middot; BACnet IP Controls made Easy</span>
-  <a href="%(prefix)sbacnet-points-lists/index.html" style="margin-left:1rem;font-family:'IBM Plex Mono',monospace;font-size:.72rem;letter-spacing:.12em;text-transform:uppercase;color:#ff9a1f">Points lists</a>
+  <a class="navl" href="%(prefix)sbacnet-points-lists/index.html" style="margin-left:1rem;font-family:'IBM Plex Mono',monospace;font-size:.72rem;letter-spacing:.12em;text-transform:uppercase;color:#ff9a1f">Points lists</a>
   <a class="getapp" href="%(play_nav)s" rel="noopener">Get the app</a>
 </header>
 
@@ -3592,11 +3599,16 @@ footer a{color:var(--mut); text-decoration:underline}
 @media (max-width:760px){
   body{font-size:16px}
   .hero .wrap{grid-template-columns:1fr}
-  .hero .art{order:-1}
+  .phone{max-width:230px}
   .grid{grid-template-columns:1fr}
   .shotrow{grid-template-columns:1fr}
   .top .tag{display:none}
 }
+@media (max-width:520px){
+  .top .navl{display:none}
+  .top .getapp{margin-left:auto}
+}
+.brand b{white-space:nowrap}
 </style>
 <script type="application/ld+json">
 {
@@ -3635,7 +3647,7 @@ footer a{color:var(--mut); text-decoration:underline}
   <div class="wrap">
     <a class="brand" href="index.html"><img src="icon.svg" alt=""><b>Easy BACnet</b></a>
     <span class="tag">BACnet IP Controls made Easy</span>
-    <a href="bacnet-points-lists/index.html" style="margin-left:1.2rem;font-family:'IBM Plex Mono',monospace;font-size:.72rem;letter-spacing:.14em;text-transform:uppercase">Points lists</a>
+    <a class="navl" href="bacnet-points-lists/index.html" style="margin-left:1.2rem;font-family:'IBM Plex Mono',monospace;font-size:.72rem;letter-spacing:.14em;text-transform:uppercase">Points lists</a>
     <a class="getapp" href="{{PLAY_NAV}}" rel="noopener">Get the app</a>
   </div>
 </div>
@@ -3916,7 +3928,7 @@ def main(ping=False):
     write(".nojekyll", "")
 
     # Guides removed 2026-10-12: send their old URLs to the closest live guide.
-    write("_redirects", "/guides/best-free-bacnet-explorer /guides/bacnet-scanner-app-android 301\n/guides/bacnet-add-object-by-number /guides/read-bacnet-values-from-phone 301\n/guides/bacnet-add-device-by-ip /guides/why-cant-i-find-my-bacnet-devices 301\n/guides/what-is-a-bbmd /guides/subnets 301\n/guides/how-to-release-a-bacnet-override /guides/bacnet-priority-and-stuck-overrides 301\n/guides/bacnet-status-flags-explained /guides/bacnet-glossary 301\n/guides/bacnet-multistate-values-explained /guides/bacnet-object-types-explained 301\n/guides/best-free-bacnet-explorer.html /guides/bacnet-scanner-app-android 301\n/guides/bacnet-add-object-by-number.html /guides/read-bacnet-values-from-phone 301\n/guides/bacnet-add-device-by-ip.html /guides/why-cant-i-find-my-bacnet-devices 301\n/guides/what-is-a-bbmd.html /guides/subnets 301\n/guides/how-to-release-a-bacnet-override.html /guides/bacnet-priority-and-stuck-overrides 301\n/guides/bacnet-status-flags-explained.html /guides/bacnet-glossary 301\n/guides/bacnet-multistate-values-explained.html /guides/bacnet-object-types-explained 301\n")
+    write("_redirects", "/guides /#guides 301\n/guides/ /#guides 301\n/guides/best-free-bacnet-explorer /guides/bacnet-scanner-app-android 301\n/guides/bacnet-add-object-by-number /guides/read-bacnet-values-from-phone 301\n/guides/bacnet-add-device-by-ip /guides/why-cant-i-find-my-bacnet-devices 301\n/guides/what-is-a-bbmd /guides/subnets 301\n/guides/how-to-release-a-bacnet-override /guides/bacnet-priority-and-stuck-overrides 301\n/guides/bacnet-status-flags-explained /guides/bacnet-glossary 301\n/guides/bacnet-multistate-values-explained /guides/bacnet-object-types-explained 301\n/guides/best-free-bacnet-explorer.html /guides/bacnet-scanner-app-android 301\n/guides/bacnet-add-object-by-number.html /guides/read-bacnet-values-from-phone 301\n/guides/bacnet-add-device-by-ip.html /guides/why-cant-i-find-my-bacnet-devices 301\n/guides/what-is-a-bbmd.html /guides/subnets 301\n/guides/how-to-release-a-bacnet-override.html /guides/bacnet-priority-and-stuck-overrides 301\n/guides/bacnet-status-flags-explained.html /guides/bacnet-glossary 301\n/guides/bacnet-multistate-values-explained.html /guides/bacnet-object-types-explained 301\n")
 
     # Standalone 404 page (not built via page())
     write("404.html", """<!doctype html>
