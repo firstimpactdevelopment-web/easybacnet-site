@@ -1704,12 +1704,12 @@ GUIDES.append(dict(
     description="A plain-English checklist for when a scan finds nothing, misses a device, shows a device with no points, or a point with no value.",
     answer_html="""<p>Work through the same four checks the app shows: are you on the right
     network, is BACnet IP turned on in the device, can you ping it, and is it on another
-    subnet? Usually the phone is not on the same network as the controllers.
-    The app shows your phone's IP address; compare it with a controller's IP, and on
-    most sites the first three numbers should match. If they don't, get onto the
-    controls network (often a USB-C Ethernet adapter into the controls switch) and scan
-    again. If you're on the right network, or the problem is a missing device, an empty
-    point list or a blank value, find the matching section below.</p>""",
+    subnet? The most common cause is that the phone is not on the same network as the
+    controllers. Compare the phone's IP address (shown in the app) with a controller's;
+    on most sites the first three numbers should match. If they don't, get onto the
+    controls network, usually with a USB-C Ethernet adapter into the controls switch, and
+    scan again. For a missing device, an empty point list or a blank value, see the
+    matching section below.</p>""",
     body_html="""
   <h2>The scan finds nothing at all</h2>
   <p>You tapped <strong>Scan for Devices</strong> and got the red <em>No devices
@@ -1727,7 +1727,8 @@ GUIDES.append(dict(
     has a Device ID.</li>
     <li><strong>Can you ping it?</strong> Type the device's IP address into the ping box
     on the <em>No devices found</em> screen and tap <strong>Ping</strong>. If it answers,
-    the network is fine, so BACnet IP is probably off in the device (step 2). If it
+    the network path is fine, so BACnet IP is probably off in the device or set to a
+    different UDP port (step 2). If it
     doesn't, this phone probably isn't on the same network as the device (step 1), or the
     device is off. If it answers but is on a different subnet, the app says so; go to
     step 4. <a href="is-my-bacnet-device-online-ping-test.html">Is my BACnet device
@@ -1809,7 +1810,7 @@ GUIDES.append(dict(
 GUIDES.append(dict(
     slug="guides/is-my-bacnet-device-online-ping-test",
     title="Is my BACnet device online? Ping test | Easy BACnet",
-    question="How do I tell if a BACnet device is really online before blaming the app?",
+    question="How do I tell if a BACnet device is online?",
     description="A hands-on test that separates a network problem from a BACnet problem: find the device IP, ping it, then add it by IP, and what each result means.",
     answer_html="""<p><strong>Ping it.</strong> Easy BACnet has a ping tool on the
     <em>No devices found</em> screen: type the controller's IP address and tap Ping. No
@@ -2036,7 +2037,8 @@ GUIDES.append(dict(
     description="BACnet/IP runs over Ethernet on UDP 47808; MS/TP runs over an RS-485 twisted pair. How they differ, how a router joins them, and which one you have.",
     answer_html="""<p><strong>BACnet/IP</strong> carries BACnet over Ethernet using
     <a href="what-port-does-bacnet-use.html">UDP&nbsp;47808</a>.
-    <strong>BACnet MS/TP</strong> (Master-Slave/Token-Passing) carries it over an RS-485
+    <strong>BACnet MS/TP</strong> (Master-Slave/Token-Passing; recent editions of the
+    standard say Manager-Subordinate) carries it over an RS-485
     twisted pair daisy-chained between controllers. IP is fast and needs a switch port per
     device; MS/TP is slow but cheap to wire. That is why on many sites the supervisory
     controllers and plant controllers are on IP, while VAV boxes, fan coils and unit
@@ -2053,9 +2055,9 @@ GUIDES.append(dict(
   <h2>Token passing</h2>
   <p>MS/TP devices share one pair, so masters take turns: a token passes from one master MAC
   address to the next, and only the holder may transmit. It works well when the trunk is
-  healthy, but it caps throughput, and a trunk with 40 to 60 devices, a bad termination or a
-  duplicate MAC gets slow fast. That is part of why reading a large MS/TP controller from
-  the IP side takes a while.</p>
+  healthy, but it limits throughput. A heavily loaded trunk (40 to 60 devices), a bad
+  termination or a duplicate MAC address slows every device on it. That is part of why
+  reading a large MS/TP controller from the IP side takes a while.</p>
 
   <h2>Addressing and how they meet</h2>
   <p>On MS/TP a device has a one-byte <strong>MAC address</strong> on its trunk (0&ndash;127
@@ -2757,7 +2759,7 @@ GUIDES.append(dict(
     body_html="""
   <h2>Who owns what</h2>
   <p>On most buildings the network, the equipment and the control programming belong to
-  different people. Calling the right one first saves a truck roll.</p>
+  different people. Calling the right one first saves a wasted site visit.</p>
 {{fig:whotocall}}
 
   <h3>IT / network</h3>
