@@ -1,0 +1,954 @@
+{
+  "manufacturer": "WEG",
+  "manufacturer_slug": "weg",
+  "model": "CFW701 HVAC drive (BACnet MS/TP)",
+  "model_slug": "cfw701",
+  "aliases": [
+    "CFW701",
+    "WEG CFW701",
+    "CFW701 HVAC-R",
+    "CFW701 BACnet",
+    "10001538519"
+  ],
+  "equipment_type": "Variable frequency drive (HVAC)",
+  "applies_to": "WEG CFW701 HVAC-R frequency inverters using BACnet MS/TP on the RS-485 port.",
+  "summary": "The CFW701 is WEG's HVAC-R drive with BACnet MS/TP on its RS-485 port. Drive parameters map to fixed objects: AVs for readings, ramps, three PID loops and the network speed reference, BVs for the status word (P0680) and control word (P0682), plus digital and analog I/O. A mailbox (AV 100/101, BV 100/101) reads or writes any parameter by number.",
+  "bacnet_transport": [
+    "BACnet MS/TP"
+  ],
+  "firmware": null,
+  "default_device_instance": "359000 + serial address (P0308) when P0760 and P0761 are 0",
+  "access_inferred": false,
+  "notes": [
+    "Source is the Spanish edition of the BACnet manual; object names are in English, and 'Reservado' rows are reserved objects.",
+    "The manual calls the object types ANI, ANO, ANV, BIN and BOUT; they are standard AI, AO, AV, BI and BO objects.",
+    "AV 11 kWh Output Energy is printed with unit 'H'; it is an energy counter.",
+    "PID setpoint and feedback units (AV 21, 23, 25, 27, 29, 31) are user-set; the manual shows examples (bar, °C, %) only.",
+    "BI 11 is missing from the binary input table; BI 8-15 are reserved.",
+    "Mailbox: write the parameter number to AV 100, then 1 to BV 100 to read it into AV 101, or set AV 101 and write 1 to BV 101."
+  ],
+  "source": {
+    "title": "CFW701 Manual del Usuario BACnet",
+    "doc_number": "10001538519 / 01",
+    "revision_date": "2016-09",
+    "url": "https://static.weg.net/medias/downloadcenter/h65/h01/WEG-cfw701-manual-bacnet-10001538519-es.pdf"
+  },
+  "integration": {
+    "summary": "Set P0312 = 3 (BACnet MS/TP), the address in P0308 and the baud rate in P0310, then set P0220-P0228 so run/stop, direction and reference come from the serial port. Write BV 16 start/stop with BV 17 general enable and the speed reference to AV 17 (8192 = synchronous speed). Read BV 8, AV 3, AV 1 and BV 15, and reset faults with BV 23.",
+    "minimum_points": [
+      {
+        "ref": "BV 16",
+        "name": "Start/Stop",
+        "why": "Start/stop from the BMS"
+      },
+      {
+        "ref": "BV 17",
+        "name": "General Enabling",
+        "why": "General enable; must be on to run"
+      },
+      {
+        "ref": "BV 20",
+        "name": "LOC/REM",
+        "why": "Remote mode when P0220 selects serial"
+      },
+      {
+        "ref": "AV 17",
+        "name": "Serial/USB Speed Ref.",
+        "why": "Speed reference, 8192 = synchronous speed"
+      },
+      {
+        "ref": "BV 23",
+        "name": "Fault reset",
+        "why": "Reset a tripped drive"
+      },
+      {
+        "ref": "BV 8",
+        "name": "Ramp Enabled (RUN)",
+        "why": "Running status"
+      },
+      {
+        "ref": "AV 3",
+        "name": "Motor Frequency",
+        "why": "Output frequency in Hz"
+      },
+      {
+        "ref": "AV 1",
+        "name": "Motor Current",
+        "why": "Motor amps"
+      },
+      {
+        "ref": "BV 15",
+        "name": "Fault condition",
+        "why": "Any active drive fault"
+      },
+      {
+        "ref": "AV 13",
+        "name": "Present Fault",
+        "why": "Active fault number"
+      }
+    ],
+    "enable": "The drive only obeys the network when P0220-P0228 select a serial option for local/remote, reference, direction and run/stop. It needs both BV 17 General Enabling and BV 16 Start/Stop; BV 20 LOC/REM switches to remote when P0220 takes local/remote from the serial control word.",
+    "heartbeat": "P0314 Serial Watchdog (0.0-999.0 s, 0 = off, factory 0.0): if no valid telegram arrives within that time the drive shows alarm A128 (or fault F228) and runs the P0313 action: 0 none, 1 ramp stop (factory), 2 general disable, 3 go to local, 4 local keeping commands, 5 fault. Timing starts at the first valid telegram after power-up.",
+    "remote_sensors": "The BMS can write the main PID automatic setpoint (AV 21) and the external PID 1 and 2 setpoints (AV 25, AV 29) when the drive's PID loops are used; their units follow the drive's PID setup.",
+    "setup": [
+      "P0312 = 3 (BACnet MS/TP); P0308 MS/TP address 0-254 (factory 1); reinitialize after changing the address.",
+      "P0310 baud 9600, 19200 (factory), 38400 or 57600; P0311 must be 0 (8 bits, no parity, 1 stop).",
+      "Device instance: P0760 x 10000 + P0761; with both at 0 the drive uses 359000 + P0308 (WEG vendor ID 359).",
+      "P0762 max master, P0763 max info frames, P0764 I-Am at power-up or continuously."
+    ],
+    "gotchas": [
+      "Speed reference AV 17 is a 13-bit value, not Hz or %: 8192 = motor synchronous speed; negative values reverse.",
+      "Ramp times AV 14/15 and the mailbox write change drive parameters; don't write them cyclically.",
+      "P0313 = 0 keeps the drive running at the last command after a comm loss.",
+      "PID units are user-defined; set them in the drive and the BMS to match."
+    ]
+  },
+  "points": [
+    {
+      "type": "AI",
+      "instance": 0,
+      "name": "AI1 Value",
+      "description": "Analog input 1 level (P0018)",
+      "units": "%",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AI",
+      "instance": 1,
+      "name": "AI2 Value",
+      "description": "Analog input 2 level (P0019)",
+      "units": "%",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AI",
+      "instance": 2,
+      "name": "AI3 Value",
+      "description": "Analog input 3 level (P0020)",
+      "units": "%",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AO",
+      "instance": 0,
+      "name": "AO1 Value",
+      "description": "Network value for an analog output (P0696)",
+      "units": "",
+      "access": "C",
+      "states": ""
+    },
+    {
+      "type": "AO",
+      "instance": 1,
+      "name": "AO2 Value",
+      "description": "Network value for an analog output (P0697)",
+      "units": "",
+      "access": "C",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 0,
+      "name": "Motor Speed",
+      "description": "Motor speed (P0002)",
+      "units": "rpm",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 1,
+      "name": "Motor Current",
+      "description": "Motor current (P0003)",
+      "units": "A",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 2,
+      "name": "DC Link Voltage (Ud)",
+      "description": "DC bus voltage (P0004)",
+      "units": "V",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 3,
+      "name": "Motor Frequency",
+      "description": "Output frequency (P0005)",
+      "units": "Hz",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 4,
+      "name": "Motor Voltage",
+      "description": "Output voltage (P0007)",
+      "units": "V",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 5,
+      "name": "Motor Torque",
+      "description": "Motor torque (P0009)",
+      "units": "%",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 6,
+      "name": "Output Power",
+      "description": "Output power (P0010)",
+      "units": "kW",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 7,
+      "name": "IGBTs Temperature U",
+      "description": "IGBT temperature, phase U (P0030)",
+      "units": "°C",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 8,
+      "name": "Internal Air Temp",
+      "description": "Internal air temperature (P0034)",
+      "units": "°C",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 9,
+      "name": "Time Powered",
+      "description": "Powered hours (P0042)",
+      "units": "h",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 10,
+      "name": "Time Enabled",
+      "description": "Enabled hours (P0043)",
+      "units": "h",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 11,
+      "name": "kWh Output Energy",
+      "description": "Energy counter (P0044); unit printed as H",
+      "units": "kWh",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 12,
+      "name": "Present Alarm",
+      "description": "Active alarm number (P0048)",
+      "units": "",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 13,
+      "name": "Present Fault",
+      "description": "Active fault number (P0049)",
+      "units": "",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 14,
+      "name": "Acceleration Time",
+      "description": "Acceleration ramp time (P0100)",
+      "units": "s",
+      "access": "C",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 15,
+      "name": "Deceleration Time",
+      "description": "Deceleration ramp time (P0101)",
+      "units": "s",
+      "access": "C",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 16,
+      "name": "Speed in 13 bits",
+      "description": "Motor speed, 13-bit scale (P0681)",
+      "units": "%",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 17,
+      "name": "Serial/USB Speed Ref.",
+      "description": "Speed reference, 13-bit scale (P0683)",
+      "units": "",
+      "access": "C",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 18,
+      "name": "SoftPLC Parameter 1012",
+      "description": "SoftPLC user parameter",
+      "units": "",
+      "access": "C",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 19,
+      "name": "SoftPLC Parameter 1013",
+      "description": "SoftPLC user parameter",
+      "units": "",
+      "access": "C",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 20,
+      "name": "SoftPLC Parameter 1025",
+      "description": "SoftPLC user parameter",
+      "units": "",
+      "access": "C",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 21,
+      "name": "Automatic Setpoint main PID",
+      "description": "Main PID automatic setpoint (P1011); user unit",
+      "units": "",
+      "access": "C",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 22,
+      "name": "Manual Setpoint main PID",
+      "description": "Main PID manual setpoint (P1014)",
+      "units": "%",
+      "access": "C",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 23,
+      "name": "Feedback main PID",
+      "description": "Main PID feedback (P1015); user unit",
+      "units": "",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 24,
+      "name": "Main PID output",
+      "description": "Main PID output (P1016)",
+      "units": "%",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 25,
+      "name": "Automatic Setpoint external PID 1",
+      "description": "External PID 1 automatic setpoint (P1060); user unit",
+      "units": "",
+      "access": "C",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 26,
+      "name": "Manual Setpoint external PID 1",
+      "description": "External PID 1 manual setpoint (P1061)",
+      "units": "%",
+      "access": "C",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 27,
+      "name": "Feedback external PID 1",
+      "description": "External PID 1 feedback (P1062); user unit",
+      "units": "",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 28,
+      "name": "External PID 1 output",
+      "description": "External PID 1 output (P1063)",
+      "units": "%",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 29,
+      "name": "Automatic Setpoint external PID 2",
+      "description": "External PID 2 automatic setpoint (P1080); user unit",
+      "units": "",
+      "access": "C",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 30,
+      "name": "Manual Setpoint external PID 2",
+      "description": "External PID 2 manual setpoint (P1081)",
+      "units": "%",
+      "access": "C",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 31,
+      "name": "Feedback external PID 2",
+      "description": "External PID 2 feedback (P1082); user unit",
+      "units": "",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 32,
+      "name": "External PID 2 output",
+      "description": "External PID 2 output (P1083)",
+      "units": "%",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 100,
+      "name": "MBOX parameter",
+      "description": "Parameter number for mailbox access",
+      "units": "",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 101,
+      "name": "MBOX data",
+      "description": "Value read from or to write to the parameter",
+      "units": "",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "BI",
+      "instance": 0,
+      "name": "DI1 Status",
+      "description": "Digital input 1 (P0012 bit 0)",
+      "units": "",
+      "access": "R",
+      "states": "0=OFF, 1=ON"
+    },
+    {
+      "type": "BI",
+      "instance": 1,
+      "name": "DI2 Status",
+      "description": "Digital input 2 (P0012 bit 1)",
+      "units": "",
+      "access": "R",
+      "states": "0=OFF, 1=ON"
+    },
+    {
+      "type": "BI",
+      "instance": 2,
+      "name": "DI3 Status",
+      "description": "Digital input 3 (P0012 bit 2)",
+      "units": "",
+      "access": "R",
+      "states": "0=OFF, 1=ON"
+    },
+    {
+      "type": "BI",
+      "instance": 3,
+      "name": "DI4 Status",
+      "description": "Digital input 4 (P0012 bit 3)",
+      "units": "",
+      "access": "R",
+      "states": "0=OFF, 1=ON"
+    },
+    {
+      "type": "BI",
+      "instance": 4,
+      "name": "DI5 Status",
+      "description": "Digital input 5 (P0012 bit 4)",
+      "units": "",
+      "access": "R",
+      "states": "0=OFF, 1=ON"
+    },
+    {
+      "type": "BI",
+      "instance": 5,
+      "name": "DI6 Status",
+      "description": "Digital input 6 (P0012 bit 5)",
+      "units": "",
+      "access": "R",
+      "states": "0=OFF, 1=ON"
+    },
+    {
+      "type": "BI",
+      "instance": 6,
+      "name": "DI7 Status",
+      "description": "Digital input 7 (P0012 bit 6)",
+      "units": "",
+      "access": "R",
+      "states": "0=OFF, 1=ON"
+    },
+    {
+      "type": "BI",
+      "instance": 7,
+      "name": "DI8 Status",
+      "description": "Digital input 8 (P0012 bit 7)",
+      "units": "",
+      "access": "R",
+      "states": "0=OFF, 1=ON"
+    },
+    {
+      "type": "BI",
+      "instance": 8,
+      "name": "Reservado",
+      "description": "Reserved",
+      "units": "",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "BI",
+      "instance": 9,
+      "name": "Reservado",
+      "description": "Reserved",
+      "units": "",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "BI",
+      "instance": 10,
+      "name": "Reservado",
+      "description": "Reserved",
+      "units": "",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "BI",
+      "instance": 12,
+      "name": "Reservado",
+      "description": "Reserved",
+      "units": "",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "BI",
+      "instance": 13,
+      "name": "Reservado",
+      "description": "Reserved",
+      "units": "",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "BI",
+      "instance": 14,
+      "name": "Reservado",
+      "description": "Reserved",
+      "units": "",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "BI",
+      "instance": 15,
+      "name": "Reservado",
+      "description": "Reserved",
+      "units": "",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "BO",
+      "instance": 0,
+      "name": "DO1 Value",
+      "description": "Digital output 1 (P0695 bit 0)",
+      "units": "",
+      "access": "C",
+      "states": "0=OFF, 1=ON"
+    },
+    {
+      "type": "BO",
+      "instance": 1,
+      "name": "DO2 Value",
+      "description": "Digital output 2 (P0695 bit 1)",
+      "units": "",
+      "access": "C",
+      "states": "0=OFF, 1=ON"
+    },
+    {
+      "type": "BO",
+      "instance": 2,
+      "name": "DO3 Value",
+      "description": "Digital output 3 (P0695 bit 2)",
+      "units": "",
+      "access": "C",
+      "states": "0=OFF, 1=ON"
+    },
+    {
+      "type": "BO",
+      "instance": 3,
+      "name": "DO4 Value",
+      "description": "Digital output 4 (P0695 bit 3)",
+      "units": "",
+      "access": "C",
+      "states": "0=OFF, 1=ON"
+    },
+    {
+      "type": "BO",
+      "instance": 4,
+      "name": "DO5 Value",
+      "description": "Digital output 5 (P0695 bit 4)",
+      "units": "",
+      "access": "C",
+      "states": "0=OFF, 1=ON"
+    },
+    {
+      "type": "BV",
+      "instance": 0,
+      "name": "Reservado",
+      "description": "Reserved",
+      "units": "",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "BV",
+      "instance": 1,
+      "name": "Reservado",
+      "description": "Reserved",
+      "units": "",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "BV",
+      "instance": 2,
+      "name": "Fire Mode",
+      "description": "Status: fire mode",
+      "units": "",
+      "access": "R",
+      "states": "0=OFF, 1=ON"
+    },
+    {
+      "type": "BV",
+      "instance": 3,
+      "name": "Bypass",
+      "description": "Status: bypass",
+      "units": "",
+      "access": "R",
+      "states": "0=OFF, 1=ON"
+    },
+    {
+      "type": "BV",
+      "instance": 4,
+      "name": "Active Quick Stop",
+      "description": "Status: quick stop active",
+      "units": "",
+      "access": "R",
+      "states": "0=OFF, 1=ON"
+    },
+    {
+      "type": "BV",
+      "instance": 5,
+      "name": "2nd Ramp Select",
+      "description": "Status: second ramp",
+      "units": "",
+      "access": "R",
+      "states": "0=OFF, 1=ON"
+    },
+    {
+      "type": "BV",
+      "instance": 6,
+      "name": "In configuration mode",
+      "description": "Status: configuration mode",
+      "units": "",
+      "access": "R",
+      "states": "0=OFF, 1=ON"
+    },
+    {
+      "type": "BV",
+      "instance": 7,
+      "name": "Alarm condition",
+      "description": "Status: alarm active",
+      "units": "",
+      "access": "R",
+      "states": "0=OFF, 1=ON"
+    },
+    {
+      "type": "BV",
+      "instance": 8,
+      "name": "Ramp Enabled (RUN)",
+      "description": "Status: ramp enabled (running)",
+      "units": "",
+      "access": "R",
+      "states": "0=OFF, 1=ON"
+    },
+    {
+      "type": "BV",
+      "instance": 9,
+      "name": "General Enabling active",
+      "description": "Status: general enable",
+      "units": "",
+      "access": "R",
+      "states": "0=OFF, 1=ON"
+    },
+    {
+      "type": "BV",
+      "instance": 10,
+      "name": "Speed Direction",
+      "description": "Status: direction",
+      "units": "",
+      "access": "R",
+      "states": "0=OFF, 1=ON"
+    },
+    {
+      "type": "BV",
+      "instance": 11,
+      "name": "JOG",
+      "description": "Status: JOG",
+      "units": "",
+      "access": "R",
+      "states": "0=OFF, 1=ON"
+    },
+    {
+      "type": "BV",
+      "instance": 12,
+      "name": "LOC/REM",
+      "description": "Status: local/remote",
+      "units": "",
+      "access": "R",
+      "states": "0=OFF, 1=ON"
+    },
+    {
+      "type": "BV",
+      "instance": 13,
+      "name": "Undervoltage",
+      "description": "Status: undervoltage",
+      "units": "",
+      "access": "R",
+      "states": "0=OFF, 1=ON"
+    },
+    {
+      "type": "BV",
+      "instance": 14,
+      "name": "Reservado",
+      "description": "Reserved",
+      "units": "",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "BV",
+      "instance": 15,
+      "name": "Fault condition",
+      "description": "Status: fault active",
+      "units": "",
+      "access": "R",
+      "states": "0=OFF, 1=ON"
+    },
+    {
+      "type": "BV",
+      "instance": 16,
+      "name": "Start/Stop",
+      "description": "Command: start/stop",
+      "units": "",
+      "access": "C",
+      "states": "0=OFF, 1=ON"
+    },
+    {
+      "type": "BV",
+      "instance": 17,
+      "name": "General Enabling",
+      "description": "Command: general enable",
+      "units": "",
+      "access": "C",
+      "states": "0=OFF, 1=ON"
+    },
+    {
+      "type": "BV",
+      "instance": 18,
+      "name": "Direction of Rotation",
+      "description": "Command: direction",
+      "units": "",
+      "access": "C",
+      "states": "0=OFF, 1=ON"
+    },
+    {
+      "type": "BV",
+      "instance": 19,
+      "name": "JOG",
+      "description": "Command: JOG",
+      "units": "",
+      "access": "C",
+      "states": "0=OFF, 1=ON"
+    },
+    {
+      "type": "BV",
+      "instance": 20,
+      "name": "LOC/REM",
+      "description": "Command: local/remote select",
+      "units": "",
+      "access": "C",
+      "states": "0=OFF, 1=ON"
+    },
+    {
+      "type": "BV",
+      "instance": 21,
+      "name": "Second Ramp Use",
+      "description": "Command: second ramp",
+      "units": "",
+      "access": "C",
+      "states": "0=OFF, 1=ON"
+    },
+    {
+      "type": "BV",
+      "instance": 22,
+      "name": "Quick Stop",
+      "description": "Command: quick stop",
+      "units": "",
+      "access": "C",
+      "states": "0=OFF, 1=ON"
+    },
+    {
+      "type": "BV",
+      "instance": 23,
+      "name": "Fault reset",
+      "description": "Command: fault reset",
+      "units": "",
+      "access": "C",
+      "states": "0=OFF, 1=ON"
+    },
+    {
+      "type": "BV",
+      "instance": 24,
+      "name": "Reservado",
+      "description": "Reserved",
+      "units": "",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "BV",
+      "instance": 25,
+      "name": "Reservado",
+      "description": "Reserved",
+      "units": "",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "BV",
+      "instance": 26,
+      "name": "Reservado",
+      "description": "Reserved",
+      "units": "",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "BV",
+      "instance": 27,
+      "name": "Reservado",
+      "description": "Reserved",
+      "units": "",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "BV",
+      "instance": 28,
+      "name": "Reservado",
+      "description": "Reserved",
+      "units": "",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "BV",
+      "instance": 29,
+      "name": "Manual/Auto Internal PID",
+      "description": "Command: internal PID manual/auto",
+      "units": "",
+      "access": "C",
+      "states": "0=OFF, 1=ON"
+    },
+    {
+      "type": "BV",
+      "instance": 30,
+      "name": "Manual/Auto external PID 1",
+      "description": "Command: external PID 1 manual/auto",
+      "units": "",
+      "access": "C",
+      "states": "0=OFF, 1=ON"
+    },
+    {
+      "type": "BV",
+      "instance": 31,
+      "name": "Manual/Auto external PID 2",
+      "description": "Command: external PID 2 manual/auto",
+      "units": "",
+      "access": "C",
+      "states": "0=OFF, 1=ON"
+    },
+    {
+      "type": "BV",
+      "instance": 100,
+      "name": "MBOX read",
+      "description": "Mailbox read trigger",
+      "units": "",
+      "access": "W",
+      "states": "0=OFF, 1=ON"
+    },
+    {
+      "type": "BV",
+      "instance": 101,
+      "name": "MBOX write",
+      "description": "Mailbox write trigger",
+      "units": "",
+      "access": "W",
+      "states": "0=OFF, 1=ON"
+    }
+  ]
+}

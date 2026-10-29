@@ -1,0 +1,984 @@
+{
+  "manufacturer": "Siemens",
+  "manufacturer_slug": "siemens",
+  "model": "BACnet PTEC VAV Controller - Application 6602 (VAV with Electric Reheat or Baseboard Radiation)",
+  "model_slug": "ptec-6602-vav-electric-reheat",
+  "short_model": "PTEC VAV Electric Reheat 6602",
+  "aliases": [
+    "PTEC 6602",
+    "Application 6602",
+    "App 6602",
+    "550-495PA",
+    "Siemens VAV electric reheat"
+  ],
+  "equipment_type": "VAV terminal unit controller",
+  "applies_to": "Pressure-independent single-duct VAV boxes with up to three stages of electric reheat or baseboard radiation on the Siemens BACnet PTEC terminal box controller 550-495PA.",
+  "summary": "Application 6602 runs a single-duct VAV box with staged electric reheat or baseboard radiation on a Siemens BACnet PTEC controller over BACnet MS/TP. The cooling loop modulates the supply air damper; in heating the box holds minimum airflow or modulates airflow while up to three heat stages are time-modulated. An airflow interlock (EHEAT FLOW) keeps the electric heat off when airflow is too low.",
+  "bacnet_transport": [
+    "BACnet MS/TP"
+  ],
+  "firmware": "Newer than revision Bx40",
+  "default_device_instance": null,
+  "access_inferred": true,
+  "notes": [
+    "AI and BI objects are read-only. AO and BO objects are BACnet output objects with a priority array; the guide has no access column, so access is inferred from object type. Many AOs are calculated status values, not commands.",
+    "Instances shown in braces in the guide may be unbundled at a field panel; that marking is not reproduced here.",
+    "Units are given in US units (°F, cfm, ft²); the guide also lists SI factory defaults.",
+    "The guide covers controllers with firmware newer than revision Bx40; older firmware has separate documentation.",
+    "Stage 1 output (BO 43) can drive electric heat or a 2-position heating valve; unused stage outputs are spare DOs.",
+    "The electric heat is time-modulated over STAGE TIME, so heat output follows the heating loop proportionally."
+  ],
+  "source": {
+    "title": "BACnet PTEC Controller Terminal Box (VAV) - Electric Reheat or Baseboard Radiation, Application 6602, Application Note",
+    "doc_number": "140-1163",
+    "revision_date": "2014-10-27",
+    "url": "https://sid.siemens.com/api/khub/documents/hKhN_qa9Mjm10QW~_8Xzxw/content"
+  },
+  "integration": {
+    "summary": "Address the controller on the BACnet MS/TP trunk (manually or with auto addressing), then release the box to application control. The BMS commands occupancy with DAY.NGT (BO 29) and the day setpoints, and reads room temperature, airflow, damper position, heat stage status and the error status.",
+    "minimum_points": [
+      {
+        "ref": "BO 29",
+        "name": "DAY.NGT",
+        "why": "DAY = occupied, NIGHT = unoccupied"
+      },
+      {
+        "ref": "AO 6",
+        "name": "DAY CLG STPT",
+        "why": "Occupied cooling setpoint, °F"
+      },
+      {
+        "ref": "AO 7",
+        "name": "DAY HTG STPT",
+        "why": "Occupied heating setpoint, °F"
+      },
+      {
+        "ref": "BO 5",
+        "name": "HEAT.COOL",
+        "why": "Current mode: HEAT or COOL"
+      },
+      {
+        "ref": "AI 4",
+        "name": "ROOM TEMP",
+        "why": "Space temperature"
+      },
+      {
+        "ref": "AI 35",
+        "name": "AIR VOLUME",
+        "why": "Measured box airflow, cfm"
+      },
+      {
+        "ref": "AO 49",
+        "name": "DMPR POS",
+        "why": "Damper position, %"
+      },
+      {
+        "ref": "BO 43",
+        "name": "HEAT STAGE 1",
+        "why": "Electric heat stage 1 on/off"
+      },
+      {
+        "ref": "AO 99",
+        "name": "ERROR STATUS",
+        "why": "Controller error code"
+      }
+    ],
+    "enable": "Occupancy is DAY.NGT (BO 29). With a wall switch on DI 2 and WALL SWITCH (BO 18) = YES, the switch sets it; standalone with no switch the controller stays in day mode; on a network the field panel or BMS commands DAY.NGT. NGT OVRD (BO 21) shows a temporary night override from the room unit button.",
+    "heartbeat": null,
+    "remote_sensors": "VENT DMD MIN (AO 105) sets the occupied ventilation minimum airflow and can be adjusted by the field panel; the larger of it and the cooling or heating minimum is used.",
+    "setup": [
+      "BACnet MS/TP only. CTLR ADDRESS (AO 1) holds the MS/TP address; the factory value is 255.",
+      "APPLICATION (AO 2) holds the application number; the point table lists its factory default as 6687."
+    ],
+    "gotchas": [
+      "As shipped, the controller keeps all equipment OFF until it is released to application control (see Siemens start-up procedures).",
+      "With a digital room unit (revision 26 and later), a command sent through the room unit puts the matching BACnet input Out Of Service.",
+      "Loop gains, motor timing, rotation angles and setup codes are commissioning values; don't write them from the BMS routinely.",
+      "Don't set EHEAT FLOW (AO 60) below 5 %; a lower value disables the electric heat airflow interlock."
+    ]
+  },
+  "points": [
+    {
+      "type": "AO",
+      "instance": 1,
+      "name": "CTLR ADDRESS",
+      "description": "Controller MS/TP address",
+      "units": "",
+      "access": "C",
+      "states": ""
+    },
+    {
+      "type": "AO",
+      "instance": 2,
+      "name": "APPLICATION",
+      "description": "Application number running in the controller",
+      "units": "",
+      "access": "C",
+      "states": ""
+    },
+    {
+      "type": "AO",
+      "instance": 3,
+      "name": "RMTMP OFFSET",
+      "description": "Room temperature calibration offset",
+      "units": "°F",
+      "access": "C",
+      "states": ""
+    },
+    {
+      "type": "AI",
+      "instance": 4,
+      "name": "ROOM TEMP",
+      "description": "Room temperature from the room unit",
+      "units": "°F",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "BO",
+      "instance": 5,
+      "name": "HEAT.COOL",
+      "description": "Current heating/cooling mode",
+      "units": "",
+      "access": "C",
+      "states": "0=COOL, 1=HEAT"
+    },
+    {
+      "type": "AO",
+      "instance": 6,
+      "name": "DAY CLG STPT",
+      "description": "Day (occupied) cooling setpoint",
+      "units": "°F",
+      "access": "C",
+      "states": ""
+    },
+    {
+      "type": "AO",
+      "instance": 7,
+      "name": "DAY HTG STPT",
+      "description": "Day (occupied) heating setpoint",
+      "units": "°F",
+      "access": "C",
+      "states": ""
+    },
+    {
+      "type": "AO",
+      "instance": 8,
+      "name": "NGT CLG STPT",
+      "description": "Night (unoccupied) cooling setpoint",
+      "units": "°F",
+      "access": "C",
+      "states": ""
+    },
+    {
+      "type": "AO",
+      "instance": 9,
+      "name": "NGT HTG STPT",
+      "description": "Night (unoccupied) heating setpoint",
+      "units": "°F",
+      "access": "C",
+      "states": ""
+    },
+    {
+      "type": "BI",
+      "instance": 10,
+      "name": "DI 6",
+      "description": "Digital input 6",
+      "units": "",
+      "access": "R",
+      "states": "0=OFF, 1=ON"
+    },
+    {
+      "type": "AO",
+      "instance": 11,
+      "name": "RM STPT MIN",
+      "description": "Lowest setpoint allowed from the room unit",
+      "units": "°F",
+      "access": "C",
+      "states": ""
+    },
+    {
+      "type": "AO",
+      "instance": 12,
+      "name": "RM STPT MAX",
+      "description": "Highest setpoint allowed from the room unit",
+      "units": "°F",
+      "access": "C",
+      "states": ""
+    },
+    {
+      "type": "AI",
+      "instance": 13,
+      "name": "RM STPT DIAL",
+      "description": "Setpoint from the room unit dial or keypad",
+      "units": "°F",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "BO",
+      "instance": 14,
+      "name": "STPT DIAL",
+      "description": "Use the room unit setpoint dial",
+      "units": "",
+      "access": "C",
+      "states": "0=NO, 1=YES"
+    },
+    {
+      "type": "AI",
+      "instance": 15,
+      "name": "AUX TEMP AI5",
+      "description": "Auxiliary temperature input on AI 5",
+      "units": "°F",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AO",
+      "instance": 16,
+      "name": "FLOW START",
+      "description": "Heating loop % where airflow starts to rise",
+      "units": "%",
+      "access": "C",
+      "states": ""
+    },
+    {
+      "type": "AO",
+      "instance": 17,
+      "name": "FLOW END",
+      "description": "Heating loop % where airflow reaches maximum",
+      "units": "%",
+      "access": "C",
+      "states": ""
+    },
+    {
+      "type": "BO",
+      "instance": 18,
+      "name": "WALL SWITCH",
+      "description": "Wall switch connected to DI 2",
+      "units": "",
+      "access": "C",
+      "states": "0=NO, 1=YES"
+    },
+    {
+      "type": "BI",
+      "instance": 19,
+      "name": "DI OVRD SW",
+      "description": "Room unit night override button",
+      "units": "",
+      "access": "R",
+      "states": "0=OFF, 1=ON"
+    },
+    {
+      "type": "AO",
+      "instance": 20,
+      "name": "OVRD TIME",
+      "description": "Night override duration",
+      "units": "h",
+      "access": "C",
+      "states": ""
+    },
+    {
+      "type": "BO",
+      "instance": 21,
+      "name": "NGT OVRD",
+      "description": "Night override status",
+      "units": "",
+      "access": "C",
+      "states": "0=DAY, 1=NIGHT"
+    },
+    {
+      "type": "AO",
+      "instance": 22,
+      "name": "REHEAT START",
+      "description": "Heating loop % where reheat starts",
+      "units": "%",
+      "access": "C",
+      "states": ""
+    },
+    {
+      "type": "AO",
+      "instance": 23,
+      "name": "REHEAT END",
+      "description": "Heating loop % where reheat is at full output",
+      "units": "%",
+      "access": "C",
+      "states": ""
+    },
+    {
+      "type": "BI",
+      "instance": 24,
+      "name": "DI 2",
+      "description": "Digital input 2",
+      "units": "",
+      "access": "R",
+      "states": "0=OFF, 1=ON"
+    },
+    {
+      "type": "BI",
+      "instance": 25,
+      "name": "DI 5",
+      "description": "Digital input 5",
+      "units": "",
+      "access": "R",
+      "states": "0=OFF, 1=ON"
+    },
+    {
+      "type": "BO",
+      "instance": 29,
+      "name": "DAY.NGT",
+      "description": "Day/night (occupancy) mode",
+      "units": "",
+      "access": "C",
+      "states": "0=DAY, 1=NIGHT"
+    },
+    {
+      "type": "AO",
+      "instance": 31,
+      "name": "CLG FLOW MIN",
+      "description": "Minimum airflow in cooling",
+      "units": "cfm",
+      "access": "C",
+      "states": ""
+    },
+    {
+      "type": "AO",
+      "instance": 32,
+      "name": "CLG FLOW MAX",
+      "description": "Maximum airflow in cooling",
+      "units": "cfm",
+      "access": "C",
+      "states": ""
+    },
+    {
+      "type": "AO",
+      "instance": 33,
+      "name": "HTG FLOW MIN",
+      "description": "Minimum airflow in heating",
+      "units": "cfm",
+      "access": "C",
+      "states": ""
+    },
+    {
+      "type": "AO",
+      "instance": 34,
+      "name": "HTG FLOW MAX",
+      "description": "Maximum airflow in heating",
+      "units": "cfm",
+      "access": "C",
+      "states": ""
+    },
+    {
+      "type": "AI",
+      "instance": 35,
+      "name": "AIR VOLUME",
+      "description": "Measured airflow",
+      "units": "cfm",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AO",
+      "instance": 36,
+      "name": "FLOW COEFF",
+      "description": "Airflow pickup correction coefficient",
+      "units": "",
+      "access": "C",
+      "states": ""
+    },
+    {
+      "type": "AO",
+      "instance": 37,
+      "name": "MTR3 COMD",
+      "description": "Motor 3 position command",
+      "units": "%",
+      "access": "C",
+      "states": ""
+    },
+    {
+      "type": "AO",
+      "instance": 38,
+      "name": "MTR3 POS",
+      "description": "Motor 3 position (calculated)",
+      "units": "%",
+      "access": "C",
+      "states": ""
+    },
+    {
+      "type": "AO",
+      "instance": 39,
+      "name": "MTR3 TIMING",
+      "description": "Motor 3 full-stroke time",
+      "units": "s",
+      "access": "C",
+      "states": ""
+    },
+    {
+      "type": "BI",
+      "instance": 40,
+      "name": "DI 4",
+      "description": "Digital input 4",
+      "units": "",
+      "access": "R",
+      "states": "0=OFF, 1=ON"
+    },
+    {
+      "type": "BO",
+      "instance": 41,
+      "name": "DO 1",
+      "description": "Digital output 1",
+      "units": "",
+      "access": "C",
+      "states": "0=OFF, 1=ON"
+    },
+    {
+      "type": "BO",
+      "instance": 42,
+      "name": "DO 2",
+      "description": "Digital output 2",
+      "units": "",
+      "access": "C",
+      "states": "0=OFF, 1=ON"
+    },
+    {
+      "type": "BO",
+      "instance": 43,
+      "name": "HEAT STAGE 1",
+      "description": "Electric heat stage 1 (or 2-position valve) output",
+      "units": "",
+      "access": "C",
+      "states": "0=OFF, 1=ON"
+    },
+    {
+      "type": "BO",
+      "instance": 44,
+      "name": "HEAT STAGE 2",
+      "description": "Electric heat stage 2 output",
+      "units": "",
+      "access": "C",
+      "states": "0=OFF, 1=ON"
+    },
+    {
+      "type": "BO",
+      "instance": 45,
+      "name": "HEAT STAGE 3",
+      "description": "Electric heat stage 3 output",
+      "units": "",
+      "access": "C",
+      "states": "0=OFF, 1=ON"
+    },
+    {
+      "type": "BO",
+      "instance": 46,
+      "name": "DO 6",
+      "description": "Digital output 6",
+      "units": "",
+      "access": "C",
+      "states": "0=OFF, 1=ON"
+    },
+    {
+      "type": "BI",
+      "instance": 47,
+      "name": "DI 3",
+      "description": "Digital input 3",
+      "units": "",
+      "access": "R",
+      "states": "0=OFF, 1=ON"
+    },
+    {
+      "type": "AO",
+      "instance": 48,
+      "name": "DMPR COMD",
+      "description": "Damper position command",
+      "units": "%",
+      "access": "C",
+      "states": ""
+    },
+    {
+      "type": "AO",
+      "instance": 49,
+      "name": "DMPR POS",
+      "description": "Damper position (calculated)",
+      "units": "%",
+      "access": "C",
+      "states": ""
+    },
+    {
+      "type": "AI",
+      "instance": 50,
+      "name": "AI 4",
+      "description": "Spare analog input 4",
+      "units": "°F",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AO",
+      "instance": 51,
+      "name": "MTR1 TIMING",
+      "description": "Motor 1 full-stroke time",
+      "units": "s",
+      "access": "C",
+      "states": ""
+    },
+    {
+      "type": "AI",
+      "instance": 54,
+      "name": "AI3",
+      "description": "Spare analog input 3",
+      "units": "%",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AO",
+      "instance": 56,
+      "name": "DMPR ROT ANG",
+      "description": "Damper rotation angle",
+      "units": "",
+      "access": "C",
+      "states": ""
+    },
+    {
+      "type": "AO",
+      "instance": 58,
+      "name": "MTR SETUP",
+      "description": "Motor enable/reverse setup (additive code)",
+      "units": "",
+      "access": "C",
+      "states": ""
+    },
+    {
+      "type": "AO",
+      "instance": 59,
+      "name": "DO DIR. REV",
+      "description": "Digital output direction reverse (additive code)",
+      "units": "",
+      "access": "C",
+      "states": ""
+    },
+    {
+      "type": "AO",
+      "instance": 60,
+      "name": "EHEAT FLOW",
+      "description": "Airflow % needed before electric heat may run",
+      "units": "%",
+      "access": "C",
+      "states": ""
+    },
+    {
+      "type": "AO",
+      "instance": 63,
+      "name": "CLG P GAIN",
+      "description": "Cooling loop proportional gain",
+      "units": "",
+      "access": "C",
+      "states": ""
+    },
+    {
+      "type": "AO",
+      "instance": 64,
+      "name": "CLG I GAIN",
+      "description": "Cooling loop integral gain",
+      "units": "",
+      "access": "C",
+      "states": ""
+    },
+    {
+      "type": "AO",
+      "instance": 65,
+      "name": "CLG D GAIN",
+      "description": "Cooling loop derivative gain",
+      "units": "",
+      "access": "C",
+      "states": ""
+    },
+    {
+      "type": "AO",
+      "instance": 66,
+      "name": "AOV 1",
+      "description": "Analog output 1 (0-10 V)",
+      "units": "V",
+      "access": "C",
+      "states": ""
+    },
+    {
+      "type": "AO",
+      "instance": 67,
+      "name": "HTG P GAIN",
+      "description": "Heating loop proportional gain",
+      "units": "",
+      "access": "C",
+      "states": ""
+    },
+    {
+      "type": "AO",
+      "instance": 68,
+      "name": "HTG I GAIN",
+      "description": "Heating loop integral gain",
+      "units": "",
+      "access": "C",
+      "states": ""
+    },
+    {
+      "type": "AO",
+      "instance": 69,
+      "name": "HTG D GAIN",
+      "description": "Heating loop derivative gain",
+      "units": "",
+      "access": "C",
+      "states": ""
+    },
+    {
+      "type": "AO",
+      "instance": 70,
+      "name": "AOV 2",
+      "description": "Analog output 2 (0-10 V)",
+      "units": "V",
+      "access": "C",
+      "states": ""
+    },
+    {
+      "type": "AO",
+      "instance": 71,
+      "name": "FLOW P GAIN",
+      "description": "Flow loop proportional gain",
+      "units": "",
+      "access": "C",
+      "states": ""
+    },
+    {
+      "type": "AO",
+      "instance": 72,
+      "name": "FLOW I GAIN",
+      "description": "Flow loop integral gain",
+      "units": "",
+      "access": "C",
+      "states": ""
+    },
+    {
+      "type": "AO",
+      "instance": 73,
+      "name": "FLOW D GAIN",
+      "description": "Flow loop derivative gain",
+      "units": "",
+      "access": "C",
+      "states": ""
+    },
+    {
+      "type": "AO",
+      "instance": 74,
+      "name": "FLOW BIAS",
+      "description": "Flow loop bias",
+      "units": "%",
+      "access": "C",
+      "states": ""
+    },
+    {
+      "type": "AO",
+      "instance": 75,
+      "name": "FLOW",
+      "description": "Airflow as percent of maximum",
+      "units": "%",
+      "access": "C",
+      "states": ""
+    },
+    {
+      "type": "AO",
+      "instance": 76,
+      "name": "CTL FLOW MIN",
+      "description": "Active minimum airflow",
+      "units": "cfm",
+      "access": "C",
+      "states": ""
+    },
+    {
+      "type": "AO",
+      "instance": 77,
+      "name": "CTL FLOW MAX",
+      "description": "Active maximum airflow",
+      "units": "cfm",
+      "access": "C",
+      "states": ""
+    },
+    {
+      "type": "AO",
+      "instance": 78,
+      "name": "CTL TEMP",
+      "description": "Temperature the controller is controlling to",
+      "units": "°F",
+      "access": "C",
+      "states": ""
+    },
+    {
+      "type": "AO",
+      "instance": 79,
+      "name": "CLG LOOPOUT",
+      "description": "Cooling loop output",
+      "units": "%",
+      "access": "C",
+      "states": ""
+    },
+    {
+      "type": "AO",
+      "instance": 80,
+      "name": "HTG LOOPOUT",
+      "description": "Heating loop output",
+      "units": "%",
+      "access": "C",
+      "states": ""
+    },
+    {
+      "type": "AO",
+      "instance": 81,
+      "name": "AVG HEAT OUT",
+      "description": "Average auxiliary heat output",
+      "units": "%",
+      "access": "C",
+      "states": ""
+    },
+    {
+      "type": "AO",
+      "instance": 82,
+      "name": "STAGE MAX",
+      "description": "Staged heat maximum, percent",
+      "units": "%",
+      "access": "C",
+      "states": ""
+    },
+    {
+      "type": "AO",
+      "instance": 83,
+      "name": "STAGE MIN",
+      "description": "Staged heat minimum, percent",
+      "units": "%",
+      "access": "C",
+      "states": ""
+    },
+    {
+      "type": "AO",
+      "instance": 85,
+      "name": "SWITCH LIMIT",
+      "description": "Loop output below which mode may switch",
+      "units": "%",
+      "access": "C",
+      "states": ""
+    },
+    {
+      "type": "AO",
+      "instance": 86,
+      "name": "SWITCH TIME",
+      "description": "Minimum time before heat/cool switchover",
+      "units": "min",
+      "access": "C",
+      "states": ""
+    },
+    {
+      "type": "BO",
+      "instance": 87,
+      "name": "CAL MODULE",
+      "description": "Calibration module installed",
+      "units": "",
+      "access": "C",
+      "states": "0=NO, 1=YES"
+    },
+    {
+      "type": "AO",
+      "instance": 88,
+      "name": "STAGE COUNT",
+      "description": "Number of electric heat stages",
+      "units": "",
+      "access": "C",
+      "states": ""
+    },
+    {
+      "type": "AO",
+      "instance": 89,
+      "name": "STAGE TIME",
+      "description": "Electric heat cycle time",
+      "units": "min",
+      "access": "C",
+      "states": ""
+    },
+    {
+      "type": "AO",
+      "instance": 90,
+      "name": "SWITCH DBAND",
+      "description": "Temperature deadband for heat/cool switchover",
+      "units": "°F",
+      "access": "C",
+      "states": ""
+    },
+    {
+      "type": "AO",
+      "instance": 91,
+      "name": "AOV 3",
+      "description": "Analog output 3 (0-10 V)",
+      "units": "V",
+      "access": "C",
+      "states": ""
+    },
+    {
+      "type": "AO",
+      "instance": 92,
+      "name": "CTL STPT",
+      "description": "Active control setpoint",
+      "units": "°F",
+      "access": "C",
+      "states": ""
+    },
+    {
+      "type": "AO",
+      "instance": 93,
+      "name": "FLOW STPT",
+      "description": "Airflow setpoint, percent",
+      "units": "%",
+      "access": "C",
+      "states": ""
+    },
+    {
+      "type": "BO",
+      "instance": 94,
+      "name": "CAL AIR",
+      "description": "Start air velocity sensor calibration",
+      "units": "",
+      "access": "C",
+      "states": "0=NO, 1=YES"
+    },
+    {
+      "type": "AO",
+      "instance": 95,
+      "name": "CAL SETUP",
+      "description": "Calibration setup code",
+      "units": "",
+      "access": "C",
+      "states": ""
+    },
+    {
+      "type": "AO",
+      "instance": 96,
+      "name": "CAL TIMER",
+      "description": "Hours between automatic calibrations",
+      "units": "h",
+      "access": "C",
+      "states": ""
+    },
+    {
+      "type": "AO",
+      "instance": 97,
+      "name": "DUCT AREA",
+      "description": "Inlet duct area for airflow calculation",
+      "units": "ft²",
+      "access": "C",
+      "states": ""
+    },
+    {
+      "type": "AO",
+      "instance": 98,
+      "name": "LOOP TIME",
+      "description": "Control loop interval",
+      "units": "s",
+      "access": "C",
+      "states": ""
+    },
+    {
+      "type": "AO",
+      "instance": 99,
+      "name": "ERROR STATUS",
+      "description": "Controller error status code",
+      "units": "",
+      "access": "C",
+      "states": ""
+    },
+    {
+      "type": "BO",
+      "instance": 102,
+      "name": "DO 7",
+      "description": "Digital output 7",
+      "units": "",
+      "access": "C",
+      "states": "0=OFF, 1=ON"
+    },
+    {
+      "type": "BO",
+      "instance": 103,
+      "name": "DO 8",
+      "description": "Digital output 8",
+      "units": "",
+      "access": "C",
+      "states": "0=OFF, 1=ON"
+    },
+    {
+      "type": "AO",
+      "instance": 104,
+      "name": "NGT FLOW MIN",
+      "description": "Minimum airflow at night",
+      "units": "cfm",
+      "access": "C",
+      "states": ""
+    },
+    {
+      "type": "AO",
+      "instance": 105,
+      "name": "VENT DMD MIN",
+      "description": "Ventilation demand minimum airflow",
+      "units": "cfm",
+      "access": "C",
+      "states": ""
+    },
+    {
+      "type": "AO",
+      "instance": 106,
+      "name": "STPT SPAN",
+      "description": "Room unit setpoint adjustment span",
+      "units": "°F",
+      "access": "C",
+      "states": ""
+    },
+    {
+      "type": "AI",
+      "instance": 121,
+      "name": "DEW POINT",
+      "description": "Room dew point",
+      "units": "°F",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AO",
+      "instance": 124,
+      "name": "SENSOR SEL",
+      "description": "Room unit / sensor select code (additive)",
+      "units": "",
+      "access": "C",
+      "states": ""
+    },
+    {
+      "type": "AI",
+      "instance": 125,
+      "name": "RM CO2",
+      "description": "Room CO2",
+      "units": "ppm",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AI",
+      "instance": 126,
+      "name": "RM RH",
+      "description": "Room relative humidity",
+      "units": "%",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "BO",
+      "instance": 127,
+      "name": "PPCL STATE",
+      "description": "PPCL program loaded or empty",
+      "units": "",
+      "access": "C",
+      "states": "0=EMPTY, 1=LOADED"
+    }
+  ]
+}

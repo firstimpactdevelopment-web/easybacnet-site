@@ -35,8 +35,8 @@ BASE_URL = "https://easybacnet.com"
 ROOT = "bacnet-points-lists"
 
 # Bump when the library's data or pages change meaningfully.
-UPDATED = "2026-10-16"
-UPDATED_HUMAN = "16 October 2026"
+UPDATED = "2026-10-28"
+UPDATED_HUMAN = "28 October 2026"
 
 # Google Play listing with UTM tags (same scheme as build_site.play_url), so
 # Play Console credits installs that start from a points-list page.
