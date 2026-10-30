@@ -1,0 +1,492 @@
+{
+  "manufacturer": "Lochinvar",
+  "manufacturer_slug": "lochinvar",
+  "model": "Armor 1250-4000 water heater (SMART SYSTEM)",
+  "model_slug": "armor-1250-4000",
+  "aliases": [
+    "Armor",
+    "Armor 1250",
+    "Armor 4000",
+    "AWH",
+    "Armor Series 100",
+    "Armor Series 101",
+    "SMART SYSTEM",
+    "MTR-01",
+    "100305786"
+  ],
+  "equipment_type": "Commercial condensing water heater controller",
+  "applies_to": "Lochinvar Armor volume water heaters, models 1250-4000, Series 100 and 101, with the SMART SYSTEM control and the Modbus/BACnet communication board.",
+  "summary": "The large Armor water heaters (1250-4000 MBH) talk BACnet MS/TP through Lochinvar's add-on Modbus/BACnet communication board. The fixed object map has two writable binary values (enable and tank thermostat), safety-switch and output status inputs, temperatures, firing rate, status/blocking/lockout codes, cascade totals, and analog values the BAS writes for configuration, rate or setpoint, tank setpoint and tank temperature.",
+  "bacnet_transport": [
+    "BACnet MS/TP"
+  ],
+  "firmware": null,
+  "default_device_instance": "640000 + MAC address",
+  "access_inferred": false,
+  "notes": [
+    "BACnet needs the optional communication board; its address and baud rate are set on dip switches.",
+    "The board is an MS/TP master only, so MAC addresses 0-127 are usable.",
+    "AV 0 (Configuration) is a bitmask: setting a bit tells the heater to use the BAS-written value instead of its own input.",
+    "AI 0-2 and AI 25 pack the binary inputs into 16-bit words.",
+    "Temperatures are in °C on the bus.",
+    "Revision C of this manual changed the analog-value table; earlier revisions list different analog values."
+  ],
+  "source": {
+    "title": "Modbus and BACnet Communication Instructions, Armor Models 1250-4000, Series 100 & 101",
+    "doc_number": "100305786_2000558371 Rev C",
+    "revision_date": "2022-09",
+    "url": "https://assets.lochinvar.com/damroot/Original/10014/100305786_2000558371_Rev%20C_AWH%20Modbus%20Bacnet%20Manual%20(52880).pdf"
+  },
+  "integration": {
+    "summary": "Set parameter H5 ModBus to Active on the SMART SYSTEM control, then write AV 0 Configuration so the heater knows which values the BAS will supply. After that the BAS sends an enable (BV 0 / AV 1), a rate or setpoint command (AV 2), or both, and keeps rewriting them. Status, temperatures and the status, blocking and lockout codes can be read without taking control.",
+    "minimum_points": [
+      {
+        "ref": "AV 0",
+        "name": "Configuration",
+        "why": "Bitmask of BAS-supplied inputs; resend before commands"
+      },
+      {
+        "ref": "AV 1",
+        "name": "Coils",
+        "why": "Enable command: 1 = enable, 0 = disable"
+      },
+      {
+        "ref": "AV 2",
+        "name": "0-10 Volt Input / Rate Command / Setpoint Command",
+        "why": "Rate command: firing % or setpoint, per BMS Type"
+      },
+      {
+        "ref": "AI 13",
+        "name": "Status Code",
+        "why": "What the heater is doing; 40 = lockout"
+      },
+      {
+        "ref": "AI 8",
+        "name": "Outlet Temperature",
+        "why": "Outlet water temperature, °C"
+      },
+      {
+        "ref": "AI 11",
+        "name": "Firing Rate",
+        "why": "Burner firing rate, %"
+      },
+      {
+        "ref": "AI 15",
+        "name": "Lockout Code",
+        "why": "Lockout cause; valid only when status code is 40"
+      }
+    ],
+    "enable": "Set H5 ModBus = Active. Enable only (local setpoints): AV 0 = 0x0001 and AV 1 Coils = 1 (0 disables). Enable plus rate: AV 0 = 0x0005, AV 1 = 1 and AV 2 = modulation % or setpoint. Rate only: AV 0 = 0x0004 and AV 2. AV 2 is a firing % or a setpoint depending on the BMS Type setting; as a setpoint it is scaled like a 0-10 V signal between the BMS temperatures set for the low and high analog input.",
+    "heartbeat": "BAS-written tank temperature and the 0-10 V/rate value must be refreshed every few seconds; parameter H6 ModBus Time sets the timeout (the manual gives 5-120 s with a 10 s default in one place and 1-255 s in another). Other commands such as the enable have a fixed 4-minute timeout. When either timer runs out the heater goes back to its local inputs.",
+    "remote_sensors": "Set the AV 0 bits for the values the BAS will supply, then write AV 3 tank setpoint and/or AV 4 tank temperature (°C). The tank temperature must be rewritten every few seconds or the heater returns to its own sensor.",
+    "setup": [
+      "MAC address from dip switches 1-8 (master only, so 0-127); baud from switches 9-10: 9600, 19200, 38400 or 76800.",
+      "Device instance = 640000 + MAC address (e.g. MAC 50 = 640050).",
+      "RS-485 bus up to 4000 ft, 24 AWG shielded twisted pair, 120 ohm termination at each end, up to 32 nodes."
+    ],
+    "gotchas": [
+      "The manual says to resend the AV 0 configuration bits before each command.",
+      "In a cascade only the leader needs the board for control; it then reports cascade totals only, so fit a board to every unit to see each one.",
+      "Without H5 set to Active the board is monitor-only.",
+      "The lockout code changes during normal operation; read it only when the status code is 40."
+    ]
+  },
+  "points": [
+    {
+      "type": "BV",
+      "instance": 0,
+      "name": "Enable",
+      "description": "BAS enable command (also packed in AV 1)",
+      "units": "",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "BV",
+      "instance": 4,
+      "name": "Tank Thermostat",
+      "description": "BAS tank thermostat call",
+      "units": "",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "BI",
+      "instance": 0,
+      "name": "Manual Reset High Limit",
+      "description": "Manual reset high limit input",
+      "units": "",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "BI",
+      "instance": 1,
+      "name": "Flow Switch",
+      "description": "Flow switch input",
+      "units": "",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "BI",
+      "instance": 2,
+      "name": "Gas Pressure Switch",
+      "description": "Gas pressure switch input",
+      "units": "",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "BI",
+      "instance": 3,
+      "name": "Louver Proving Switch",
+      "description": "Louver proving switch input",
+      "units": "",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "BI",
+      "instance": 5,
+      "name": "Blocked Drain Switch",
+      "description": "Blocked drain switch input",
+      "units": "",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "BI",
+      "instance": 6,
+      "name": "Auto Reset High Limit",
+      "description": "Auto reset high limit input",
+      "units": "",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "BI",
+      "instance": 7,
+      "name": "Flame",
+      "description": "Flame detected",
+      "units": "",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "BI",
+      "instance": 8,
+      "name": "Enable",
+      "description": "Enable input status",
+      "units": "",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "BI",
+      "instance": 9,
+      "name": "Tank Thermostat",
+      "description": "Tank thermostat input status",
+      "units": "",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "BI",
+      "instance": 32,
+      "name": "Run Time Contacts",
+      "description": "Run-time contacts closed",
+      "units": "",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "BI",
+      "instance": 33,
+      "name": "Alarm Contacts",
+      "description": "Alarm contacts closed",
+      "units": "",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "BI",
+      "instance": 35,
+      "name": "DHW Pump",
+      "description": "DHW pump output",
+      "units": "",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "BI",
+      "instance": 37,
+      "name": "Gas Valve",
+      "description": "Gas valve output",
+      "units": "",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "BI",
+      "instance": 38,
+      "name": "Recirculation Pump",
+      "description": "Recirculation pump output",
+      "units": "",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "BI",
+      "instance": 48,
+      "name": "Power Fan",
+      "description": "Blower (fan) power output",
+      "units": "",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AI",
+      "instance": 0,
+      "name": "Binary Inputs 0-15",
+      "description": "Packed copy of binary inputs 0-15",
+      "units": "",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AI",
+      "instance": 1,
+      "name": "Binary Inputs 16-31",
+      "description": "Packed copy of binary inputs 16-31",
+      "units": "",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AI",
+      "instance": 2,
+      "name": "Binary Inputs 32-47",
+      "description": "Packed copy of binary inputs 32-47",
+      "units": "",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AI",
+      "instance": 3,
+      "name": "System / Cascade Setpoint",
+      "description": "Active system or cascade setpoint",
+      "units": "°C",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AI",
+      "instance": 5,
+      "name": "Cascade Total Power",
+      "description": "Total cascade capacity, 100-800 %",
+      "units": "%",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AI",
+      "instance": 6,
+      "name": "Cascade Current Power",
+      "description": "Cascade firing rate now, 0-800 %",
+      "units": "%",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AI",
+      "instance": 8,
+      "name": "Outlet Temperature",
+      "description": "Outlet water temperature",
+      "units": "°C",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AI",
+      "instance": 9,
+      "name": "Inlet Temperature",
+      "description": "Inlet water temperature",
+      "units": "°C",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AI",
+      "instance": 10,
+      "name": "Flue Temperature",
+      "description": "Flue gas temperature",
+      "units": "°C",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AI",
+      "instance": 11,
+      "name": "Firing Rate",
+      "description": "Burner firing rate",
+      "units": "%",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AI",
+      "instance": 13,
+      "name": "Status Code",
+      "description": "Appliance status code; 40 = lockout",
+      "units": "",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AI",
+      "instance": 14,
+      "name": "Blocking Code",
+      "description": "Blocking reason code; 0 = none",
+      "units": "",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AI",
+      "instance": 15,
+      "name": "Lockout Code",
+      "description": "Lockout cause; valid when status code is 40",
+      "units": "",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AI",
+      "instance": 25,
+      "name": "Binary Inputs 48-63",
+      "description": "Packed copy of binary inputs 48-63",
+      "units": "",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AI",
+      "instance": 26,
+      "name": "Lock-Out Error Leader",
+      "description": "Cascade leader lockout flag (0-1)",
+      "units": "",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AI",
+      "instance": 27,
+      "name": "Lock-Out Error Member 1",
+      "description": "Cascade member 1 lockout flag (0-1)",
+      "units": "",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AI",
+      "instance": 28,
+      "name": "Lock-Out Error Member 2",
+      "description": "Cascade member 2 lockout flag (0-1)",
+      "units": "",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AI",
+      "instance": 29,
+      "name": "Lock-Out Error Member 3",
+      "description": "Cascade member 3 lockout flag (0-1)",
+      "units": "",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AI",
+      "instance": 30,
+      "name": "Lock-Out Error Member 4",
+      "description": "Cascade member 4 lockout flag (0-1)",
+      "units": "",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AI",
+      "instance": 31,
+      "name": "Lock-Out Error Member 5",
+      "description": "Cascade member 5 lockout flag (0-1)",
+      "units": "",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AI",
+      "instance": 32,
+      "name": "Lock-Out Error Member 6",
+      "description": "Cascade member 6 lockout flag (0-1)",
+      "units": "",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AI",
+      "instance": 33,
+      "name": "Lock-Out Error Member 7",
+      "description": "Cascade member 7 lockout flag (0-1)",
+      "units": "",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 0,
+      "name": "Configuration",
+      "description": "Bitmask of values the BAS will supply",
+      "units": "",
+      "access": "W",
+      "states": "Bit 0 Enable, bit 1 Tank Thermostat, bit 2 Rate/0-10 V/Setpoint Command, bit 3 Tank Setpoint, bit 6 Tank Temperature"
+    },
+    {
+      "type": "AV",
+      "instance": 1,
+      "name": "Coils",
+      "description": "Packed BAS commands (enable, tank thermostat)",
+      "units": "",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 2,
+      "name": "0-10 Volt Input / Rate Command / Setpoint Command",
+      "description": "Rate (modulation %) or setpoint command, per BMS Type",
+      "units": "%",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 3,
+      "name": "Tank Setpoint",
+      "description": "Tank setpoint from the BAS, 0-87.5 °C",
+      "units": "°C",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 4,
+      "name": "Tank Temperature",
+      "description": "Tank temperature from the BAS",
+      "units": "°C",
+      "access": "W",
+      "states": ""
+    }
+  ]
+}

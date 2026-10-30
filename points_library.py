@@ -242,6 +242,7 @@ strong{color:#fff}
 .dl{display:flex;flex-wrap:wrap;gap:.6rem;margin:1.2rem 0}
 .btn{display:inline-flex;align-items:center;gap:.45rem;font-weight:700;font-size:.92rem;padding:.6rem 1rem;border-radius:9px;border:1px solid var(--line);background:var(--panel);color:var(--fg)!important;text-decoration:none!important}
 .btn.primary{background:var(--accent);border-color:var(--accent);color:var(--ink)!important}
+.btn.app{border-color:var(--accent);color:var(--accent)!important}
 .btn small{font-family:"IBM Plex Mono",monospace;font-weight:500;font-size:.68rem;opacity:.75}
 .tools{display:flex;flex-wrap:wrap;gap:.7rem;align-items:center;margin:1rem 0 .4rem}
 .search{flex:1 1 260px;font:inherit;color:var(--fg);background:var(--code);border:1px solid var(--line);border-radius:9px;padding:.65rem .85rem}
@@ -1238,6 +1239,7 @@ It is re-typed from %(mfr)s&rsquo;s own free documentation, linked below.</p></d
   <a class="btn" href="%(base)s-ede.csv" download>Download EDE <small>B.I.G.-EU</small></a>
   <a class="btn" href="%(base)s.json">JSON</a>
   <a class="btn" href="%(src)s" rel="nofollow noopener" target="_blank">Manufacturer PDF &#8599;</a>
+  <a class="btn app" href="%(play_pdf)s" rel="noopener" target="_blank">Download Easy BACnet Mobile App <small>Google Play</small></a>
 </div>
 %(integ)s
 <h2 id="points">%(mfr)s %(model)s BACnet objects</h2>
@@ -1261,7 +1263,7 @@ Object names, instances and units are reproduced as published; descriptions are 
 """ % {
         "summary": esc(m.get("summary") or ""), "n": n, "w": w,
         "mfr": esc(m["manufacturer"]), "model": esc(m["model"]), "facts": facts_html,
-        "base": base, "src": esc(s["url"]), "fbar": filter_bar(m), "table": points_table(m),
+        "base": base, "src": esc(s["url"]), "play_pdf": PLAY_URL % "pdf", "fbar": filter_bar(m), "table": points_table(m),
         "notes": notes_html, "faq": faq_html, "integ": integration_html(m),
         "inferred": ('<p class="count"><strong>Note:</strong> the source document has no read/write column, so access '
                      'here is inferred from the object type (inputs read-only, values writable). Confirm on the live '

@@ -1,0 +1,956 @@
+{
+ "manufacturer": "Johnson Controls",
+ "manufacturer_slug": "johnson-controls",
+ "model": "TEC3000 Series TEC3620 / TEC3621 / TEC3622 / TEC3623 Proportional Fan Coil Thermostat (BACnet MS/TP)",
+ "model_slug": "tec3620-tec3623-proportional-fan-coil-thermostat",
+ "short_model": "TEC3620-TEC3623 Proportional Thermostat",
+ "aliases": [
+  "TEC3620",
+  "TEC3621",
+  "TEC3622",
+  "TEC3623",
+  "TEC362x",
+  "TEC3000 proportional",
+  "JCI TEC3000 0-10V fan coil"
+ ],
+ "equipment_type": "Fan coil unit controller (room thermostat)",
+ "applies_to": "Two- or four-pipe fan coils, cabinet unit heaters, reheat valves and pressure-dependent VAV zones with 0-10 VDC proportional outputs, using the networked TEC3620-TEC3623 thermostats.",
+ "summary": "The TEC3620-TEC3623 are field-selectable BACnet MS/TP or N2 networked thermostats for 0-10 VDC proportional fan coil and zoning equipment. The point table covers modes, occupied/unoccupied/standby setpoints, network overrides, loop outputs, the cooling and heating valve percent commands, fan speed outputs, tuning values and the internal schedule. TEC3621 and TEC3623 have an onboard occupancy sensor; TEC3622 and TEC3623 support dehumidification.",
+ "bacnet_transport": [
+  "BACnet MS/TP"
+ ],
+ "firmware": null,
+ "default_device_instance": 1,
+ "access_inferred": true,
+ "notes": [
+  "The guide's BACnet table has no access column; access here is inferred from the N2 point type printed in the same row (AO/BO/MO writable, AI/BI/MI read-only). The network override points and the Schedule and Calendar objects (no N2 type) are marked writable.",
+  "Multistate state numbers are copied from the guide's enum lists.",
+  "The six MV event objects (MV 29995-30000) and their notification classes (10-15) come from the guide's separate multi-state event table, which applies to all three TEC36xx families on BACnet MS/TP.",
+  "Some points only appear with matching configuration, e.g. Fan Mode for single/variable-speed fans and Fan Mode 2 for multi-speed fans."
+ ],
+ "source": {
+  "title": "TEC3000 Series Field-Selectable BACnet MS/TP or N2 Networked and Wireless Thermostat Controllers Technical Bulletin",
+  "doc_number": "LIT-12011956",
+  "revision_date": "2018-07",
+  "url": "https://docs.johnsoncontrols.com/bas/api/khub/documents/of4XABY6Cun_CHQyMfnYOw/content"
+ },
+ "integration": {
+  "summary": "Put the TEC on the MS/TP trunk with a unique address and instance, set OCC-CONFIG to External and command NET-OCC from the BAS. Write the occupied setpoints, control mode and fan mode, and read the operational zone temperature, unit status, valve commands and the critical event MV.",
+  "minimum_points": [
+   {
+    "ref": "MV 29501",
+    "name": "Unit Enable (UNITEN-MODE)",
+    "why": "Shutdown or enable the unit"
+   },
+   {
+    "ref": "MV 29500",
+    "name": "Control Mode (SYSTEM-MODE)",
+    "why": "Auto, cooling or heating"
+   },
+   {
+    "ref": "MV 29519",
+    "name": "Supervisory Occupancy (NET-OCC)",
+    "why": "BAS occupancy: occupied, unoccupied, standby"
+   },
+   {
+    "ref": "MV 29520",
+    "name": "Occupancy Configuration Source (OCC-CONFIG)",
+    "why": "Must be External for NET-OCC to take effect"
+   },
+   {
+    "ref": "MV 29524",
+    "name": "Fan Mode (FAN-MODE)",
+    "why": "Fan mode: on, auto or smart"
+   },
+   {
+    "ref": "AV 29502",
+    "name": "Occupied Cooling Setpoint (CLGOCC-SP)",
+    "why": "Occupied cooling setpoint, °F"
+   },
+   {
+    "ref": "AV 29503",
+    "name": "Occupied Heating Setpoint (HTGOCC-SP)",
+    "why": "Occupied heating setpoint, °F"
+   },
+   {
+    "ref": "MV 29700",
+    "name": "Unit Status (UNIT-S)",
+    "why": "Detailed unit status"
+   },
+   {
+    "ref": "AV 29701",
+    "name": "Operational Space Temperature (EFF-ZNT)",
+    "why": "Zone temperature used for control"
+   },
+   {
+    "ref": "MV 30000",
+    "name": "MV Critical Active Event",
+    "why": "Active critical faults"
+   }
+  ],
+  "enable": "Set Occupancy Configuration Source (OCC-CONFIG, MV 29520) to External, then command Supervisor Occupancy (NET-OCC, MV 29519) occupied, unoccupied or standby. With OCC-CONFIG = Schedule the internal schedule writes LOCAL-OCC instead. Unit Enable (MV 29501) shuts the unit down or enables it, and Control Mode (MV 29500) picks auto, cooling or heating. A manual override at the display, an occupancy input or the motion sensor can still change the effective occupancy.",
+  "heartbeat": null,
+  "remote_sensors": "Network Override Supply Air Temperature (NET-SAT, AV 29515) lets the BAS supply a supply air temperature, which the thermostat combines with its local sensor into EFF-SAT, and NET-ZNH (AV 29516) supplies zone humidity on units without a humidity sensor. The guide gives no timeout for these values.",
+  "setup": [
+   "Out of the box the thermostat runs BACnet MS/TP; N2 is chosen with FC Comm Mode in the Network Setup menu (the unit reboots).",
+   "BACnet Instance ID: 1 to 4,194,302, default 1. MS/TP address: 4 to 127, default 4.",
+   "MS/TP baud rate default is Auto; fixed choices are 1200, 9600, 19200, 38400 and 76800.",
+   "Character encoding defaults to ISO 10646 (UCS-2) for Metasys; a third-party BAS may need a different setting."
+  ],
+  "gotchas": [
+   "The guide says AV and MV objects are written without a priority (Metasys Change Default); the last such write received is the one executed.",
+   "The passcode cannot be changed from the BAS, only at the display or through the Mobile Access Portal.",
+   "LOCK-LVL (MV 29531) can hide the menu or most display functions; State 0 gives full access."
+  ]
+ },
+ "points": [
+  {
+   "type": "MV",
+   "instance": 29500,
+   "name": "Control Mode (SYSTEM-MODE)",
+   "description": "Unit control mode: auto, cooling or heating",
+   "units": "",
+   "access": "W",
+   "states": "1=Auto, 2=Cooling, 3=Heating"
+  },
+  {
+   "type": "MV",
+   "instance": 29501,
+   "name": "Unit Enable (UNITEN-MODE)",
+   "description": "Unit shutdown or enable",
+   "units": "",
+   "access": "W",
+   "states": "1=Shutdown, 2=Enable"
+  },
+  {
+   "type": "AV",
+   "instance": 29567,
+   "name": "Common Setpoint (COMMON-SP)",
+   "description": "Single common setpoint (common setpoint mode)",
+   "units": "°F",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 29502,
+   "name": "Occupied Cooling Setpoint (CLGOCC-SP)",
+   "description": "Occupied cooling setpoint",
+   "units": "°F",
+   "access": "W",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 29503,
+   "name": "Occupied Heating Setpoint (HTGOCC-SP)",
+   "description": "Occupied heating setpoint",
+   "units": "°F",
+   "access": "W",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 29504,
+   "name": "Unoccupied Cooling Setpoint (CLGUNOCC-SP)",
+   "description": "Unoccupied cooling setpoint",
+   "units": "°F",
+   "access": "W",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 29505,
+   "name": "Unoccupied Heating Setpoint (HTGUNOCC-SP)",
+   "description": "Unoccupied heating setpoint",
+   "units": "°F",
+   "access": "W",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 29506,
+   "name": "Standby Cooling Setpoint (CLGSTBY-SP)",
+   "description": "Standby cooling setpoint",
+   "units": "°F",
+   "access": "W",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 29507,
+   "name": "Standby Heating Setpoint (HTGSTBY-SP)",
+   "description": "Standby heating setpoint",
+   "units": "°F",
+   "access": "W",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 29508,
+   "name": "Setpoint Offset (WC-ADJ)",
+   "description": "Warmer/cooler offset added to the setpoint",
+   "units": "",
+   "access": "W",
+   "states": ""
+  },
+  {
+   "type": "MV",
+   "instance": 29509,
+   "name": "Hold/Run (HOLDRUN-MD)",
+   "description": "Hold or run the schedule",
+   "units": "",
+   "access": "W",
+   "states": "1=Hold, 2=Run"
+  },
+  {
+   "type": "AV",
+   "instance": 29510,
+   "name": "Humidity Setpoint (ZNH-SP)",
+   "description": "Zone humidity (dehumidification) setpoint",
+   "units": "%RH",
+   "access": "W",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 29515,
+   "name": "Network Override Supply Air Temperature (NET-SAT)",
+   "description": "Supply air temperature written by the BAS",
+   "units": "°F",
+   "access": "W",
+   "states": ""
+  },
+  {
+   "type": "MV",
+   "instance": 29517,
+   "name": "Reset PID Tuning (TUNING-RESET)",
+   "description": "Reset the PID auto-tuning",
+   "units": "",
+   "access": "W",
+   "states": "1=No, 2=Yes"
+  },
+  {
+   "type": "AV",
+   "instance": 29516,
+   "name": "Net ZNH (NET-ZNH)",
+   "description": "Zone humidity written by the BAS",
+   "units": "%RH",
+   "access": "W",
+   "states": ""
+  },
+  {
+   "type": "MV",
+   "instance": 29518,
+   "name": "Manual Occupancy (OCCOVRD-MODE)",
+   "description": "Manual occupancy override from the display",
+   "units": "",
+   "access": "W",
+   "states": "1=No Override, 2=Occupied, 3=Unoccupied"
+  },
+  {
+   "type": "MV",
+   "instance": 29519,
+   "name": "Supervisory Occupancy (NET-OCC)",
+   "description": "Occupancy command from the BAS (OCC-CONFIG = External)",
+   "units": "",
+   "access": "W",
+   "states": "1=Occupied, 2=Unoccupied, 3=Standby"
+  },
+  {
+   "type": "MV",
+   "instance": 29520,
+   "name": "Occupancy Configuration Source (OCC-CONFIG)",
+   "description": "Occupancy source: internal schedule or external (BAS)",
+   "units": "",
+   "access": "W",
+   "states": "1=Schedule, 2=External"
+  },
+  {
+   "type": "AV",
+   "instance": 29522,
+   "name": "Passcode (PASSCODE)",
+   "description": "Display passcode (cannot be changed from the BAS)",
+   "units": "",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "MV",
+   "instance": 29523,
+   "name": "Changeover Mode (CGOVR-MODE)",
+   "description": "Changeover mode: auto, cooling or heating",
+   "units": "",
+   "access": "W",
+   "states": "1=Auto, 2=Cooling, 3=Heating"
+  },
+  {
+   "type": "MV",
+   "instance": 29524,
+   "name": "Fan Mode (FAN-MODE)",
+   "description": "Fan mode (single- or variable-speed fan)",
+   "units": "",
+   "access": "W",
+   "states": "1=On, 2=Auto, 3=Smart"
+  },
+  {
+   "type": "MV",
+   "instance": 29525,
+   "name": "Fan Override (FANOVRD-MODE)",
+   "description": "Fan override from the display",
+   "units": "",
+   "access": "W",
+   "states": "1=On, 2=Auto, 3=Quiet"
+  },
+  {
+   "type": "MV",
+   "instance": 29568,
+   "name": "Fan Mode 2 (FAN-MODE2)",
+   "description": "Fan mode (multi-speed fan)",
+   "units": "",
+   "access": "W",
+   "states": "1=Auto, 2=Smart, 3=Low, 4=Medium, 5=High"
+  },
+  {
+   "type": "MV",
+   "instance": 29569,
+   "name": "Fan Override Mode 2 (FAN-OVRD2)",
+   "description": "Fan override from the display (multi-speed fan)",
+   "units": "",
+   "access": "W",
+   "states": "1=Auto, 2=Quiet, 3=Low, 4=Medium, 5=High"
+  },
+  {
+   "type": "MV",
+   "instance": 29527,
+   "name": "Aux Mode (AUX-MODE)",
+   "description": "Auxiliary output function",
+   "units": "",
+   "access": "W",
+   "states": "1=Not Used, 2=Occupied NO, 3=Occupied NC, 4=Occupied Fan NO, 5=Occupied Fan NC, 6=On, 7=Off"
+  },
+  {
+   "type": "MV",
+   "instance": 29528,
+   "name": "Temperature Units (TEMP-UNITS)",
+   "description": "Display units: IP or SI",
+   "units": "",
+   "access": "W",
+   "states": "1=IP, 2=SI"
+  },
+  {
+   "type": "AV",
+   "instance": 29529,
+   "name": "Max Setpoint Offset (MAXSP-OFFSET)",
+   "description": "Largest warmer/cooler offset allowed",
+   "units": "°F",
+   "access": "W",
+   "states": ""
+  },
+  {
+   "type": "MV",
+   "instance": 29700,
+   "name": "Unit Status (UNIT-S)",
+   "description": "Detailed unit status",
+   "units": "",
+   "access": "R",
+   "states": "1=System Fault, 2=Airflow Fault, 3=Open Window, 4=Control Off, 5=Unreliable Temperature, 6=Dehumidification, 7=Idle, 8=Cooling, 9=Heating, 10=Cooling Unavailable, 11=Heating Unavailable, 12=Cooling Unavailable due to Changeover, 13=Cooling Unavailable due to OA Temp, 14=Cooling Unavailable due to Control Mode, 15=Heating Unavailable due to Changeover, 16=Heating Unavailable due to OA Temp, 17=Heating Unavailable due to Control Mode, 18=Load Shed Active"
+  },
+  {
+   "type": "AV",
+   "instance": 29701,
+   "name": "Operational Space Temperature (EFF-ZNT)",
+   "description": "Zone temperature used for control",
+   "units": "",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 29702,
+   "name": "Eff Zone Hum (EFF-ZNH)",
+   "description": "Zone humidity used for control",
+   "units": "",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 29703,
+   "name": "Supply Air Temperature (EFF-SAT)",
+   "description": "Supply air temperature used for control",
+   "units": "",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 29705,
+   "name": "Active Setpoint (EFF-SETPOINT)",
+   "description": "Active setpoint",
+   "units": "",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 29706,
+   "name": "CV Operating Cooling Setpoint (EFFCLG-SP)",
+   "description": "Active cooling setpoint",
+   "units": "",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 29707,
+   "name": "CV Operating Heating Setpoint (EFFHTG-SP)",
+   "description": "Active heating setpoint",
+   "units": "",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "MV",
+   "instance": 29708,
+   "name": "Occupancy Status (EFF-OCC)",
+   "description": "Effective occupancy status",
+   "units": "",
+   "access": "R",
+   "states": "1=Occupied, 2=Temp Occupancy, 3=Unoccupied, 4=Standby, 5=Occupied-Override, 6=Unoccupied-Override"
+  },
+  {
+   "type": "MV",
+   "instance": 29709,
+   "name": "Occupancy Input Source (OCCSOURCE-S)",
+   "description": "What set the current occupancy",
+   "units": "",
+   "access": "R",
+   "states": "1=Occupancy BI, 2=Temp Occ BI, 3=Temp Occ, 4=Occ Override, 5=Local Schedule, 6=BAS Schedule, 7=Occupancy Sensor"
+  },
+  {
+   "type": "AV",
+   "instance": 29714,
+   "name": "Cool/Dehum PID Command (CLGPID-%)",
+   "description": "Cooling/dehumidification loop output",
+   "units": "%",
+   "access": "W",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 29717,
+   "name": "Heat PID Command (HTGPID-%)",
+   "description": "Heating loop output",
+   "units": "%",
+   "access": "W",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 29720,
+   "name": "Reheat PID Command (RHPID-%)",
+   "description": "Reheat loop output",
+   "units": "%",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "AO",
+   "instance": 86907,
+   "name": "Cooling Valve % Command (CLG-O)",
+   "description": "Cooling valve output, percent",
+   "units": "%",
+   "access": "W",
+   "states": ""
+  },
+  {
+   "type": "BO",
+   "instance": 86909,
+   "name": "Fan Low Command (FANL-C)",
+   "description": "Fan low speed output",
+   "units": "",
+   "access": "W",
+   "states": "Inactive/Active"
+  },
+  {
+   "type": "BO",
+   "instance": 86910,
+   "name": "Fan Medium Command (FANM-C)",
+   "description": "Fan medium speed output",
+   "units": "",
+   "access": "W",
+   "states": "Inactive/Active"
+  },
+  {
+   "type": "BO",
+   "instance": 86911,
+   "name": "Fan High Command (FANH-C)",
+   "description": "Fan high speed output",
+   "units": "",
+   "access": "W",
+   "states": "Inactive/Active"
+  },
+  {
+   "type": "AO",
+   "instance": 86906,
+   "name": "Heating Valve % Command (HTG-O)",
+   "description": "Heating valve output, percent",
+   "units": "%",
+   "access": "W",
+   "states": ""
+  },
+  {
+   "type": "MV",
+   "instance": 29728,
+   "name": "Load Shed Active (LOADSHED-EN)",
+   "description": "Load shed active",
+   "units": "",
+   "access": "W",
+   "states": "0=No, 1=Yes"
+  },
+  {
+   "type": "AV",
+   "instance": 29725,
+   "name": "Load Shed Rate limit (LOADSHED-RL)",
+   "description": "Load shed setpoint rate limit",
+   "units": "°F",
+   "access": "W",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 29726,
+   "name": "Load Shed Adjust (LOADSHED-ADJ)",
+   "description": "Load shed setpoint adjustment",
+   "units": "°F",
+   "access": "W",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 86905,
+   "name": "Fan Speed % Command (FANSPD-%)",
+   "description": "Fan speed command, percent",
+   "units": "%",
+   "access": "W",
+   "states": ""
+  },
+  {
+   "type": "MV",
+   "instance": 29712,
+   "name": "Fan Speed Status (FANSPD-S)",
+   "description": "Supply fan status",
+   "units": "",
+   "access": "R",
+   "states": "1=Off, 2=On, 3=Low, 4=Medium, 5=High"
+  },
+  {
+   "type": "BI",
+   "instance": 30827,
+   "name": "BI1 Sensor (BI1-S)",
+   "description": "Binary input 1 state",
+   "units": "",
+   "access": "R",
+   "states": "Inactive/Active"
+  },
+  {
+   "type": "BI",
+   "instance": 30828,
+   "name": "BI2 Sensor (BI2-S)",
+   "description": "Binary input 2 state",
+   "units": "",
+   "access": "R",
+   "states": "Inactive/Active"
+  },
+  {
+   "type": "AV",
+   "instance": 29727,
+   "name": "Temporary Occupancy Duration (TEMPOCC-LEN)",
+   "description": "Temporary occupancy duration",
+   "units": "min",
+   "access": "W",
+   "states": ""
+  },
+  {
+   "type": "MV",
+   "instance": 6,
+   "name": "Local Occupancy (LOCAL-OCC)",
+   "description": "Occupancy from the internal schedule",
+   "units": "",
+   "access": "R",
+   "states": "1=Occupied, 2=Unoccupied, 3=Standby, 4=Not Set"
+  },
+  {
+   "type": "AV",
+   "instance": 29530,
+   "name": "Changeover Setpoint (CGOVR-SP)",
+   "description": "Supply temperature changeover setpoint",
+   "units": "°F",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 29534,
+   "name": "Unoccupied Off Delay (UNOCC-OFF-DELAY)",
+   "description": "Delay before unoccupied off",
+   "units": "min",
+   "access": "W",
+   "states": ""
+  },
+  {
+   "type": "MV",
+   "instance": 29563,
+   "name": "Occ Setpoint Select (OCCSP-SEL)",
+   "description": "Setpoint adjust method: offset or min/max",
+   "units": "",
+   "access": "W",
+   "states": "0=Setpoint Offset, 1=Min and Max Setpoint"
+  },
+  {
+   "type": "MV",
+   "instance": 29566,
+   "name": "Heat Cool Setpoint Mode (HTGCLGSP-MODE)",
+   "description": "Common or individual heat/cool setpoints",
+   "units": "",
+   "access": "W",
+   "states": "0=Common Setpoint, 1=Individual Setpoint"
+  },
+  {
+   "type": "AV",
+   "instance": 29560,
+   "name": "Max Heating Setpoint (MAXHTG-SP)",
+   "description": "Highest heating setpoint allowed",
+   "units": "",
+   "access": "W",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 29559,
+   "name": "Min Heating Setpoint (MINHTG-SP)",
+   "description": "Lowest heating setpoint allowed",
+   "units": "°F",
+   "access": "W",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 29562,
+   "name": "Max Cooling Setpoint (MAXCLG-SP)",
+   "description": "Highest cooling setpoint allowed",
+   "units": "°F",
+   "access": "W",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 29561,
+   "name": "Min Cooling Setpoint (MINCLG-SP)",
+   "description": "Lowest cooling setpoint allowed",
+   "units": "",
+   "access": "W",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 29565,
+   "name": "Max Setpoint (MAX-SP)",
+   "description": "Highest common setpoint allowed",
+   "units": "°F",
+   "access": "W",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 29564,
+   "name": "Min Setpoint (MIN-SP)",
+   "description": "Lowest common setpoint allowed",
+   "units": "°F",
+   "access": "W",
+   "states": ""
+  },
+  {
+   "type": "MV",
+   "instance": 29558,
+   "name": "Temp Control Setup 2 (TEMPCTRL-SETUP2)",
+   "description": "Temperature control tuning method (subset)",
+   "units": "",
+   "access": "W",
+   "states": "0=Automatic PID Tuning, 1=Deadband Override, 2=Manual PID Tuning"
+  },
+  {
+   "type": "AV",
+   "instance": 29556,
+   "name": "Deadband (DEADBAND)",
+   "description": "Control deadband",
+   "units": "delta °F",
+   "access": "W",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 29535,
+   "name": "Heat Prop band (HTG-PROP-BAND)",
+   "description": "Heating loop proportional band",
+   "units": "delta °F",
+   "access": "W",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 29536,
+   "name": "Heat Integral Time (HTG-INT-TIME)",
+   "description": "Heating loop integral time",
+   "units": "s",
+   "access": "W",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 29537,
+   "name": "Heat Process Range (HTG-PROC-RANGE)",
+   "description": "Heating loop process range",
+   "units": "delta °F",
+   "access": "W",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 29538,
+   "name": "Heat Saturation Time (HTG-SAT-TIME)",
+   "description": "Heating loop saturation time",
+   "units": "s",
+   "access": "W",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 29539,
+   "name": "Heat Time Constant (HTG-TIME-CONST)",
+   "description": "Heating loop time constant",
+   "units": "s",
+   "access": "W",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 29540,
+   "name": "Heat Process Dead Time (HTG-DEAD-TIME)",
+   "description": "Heating loop process dead time",
+   "units": "s",
+   "access": "W",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 29541,
+   "name": "Heat Period (HTG-PERIOD)",
+   "description": "Heating loop period",
+   "units": "s",
+   "access": "W",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 29542,
+   "name": "Cool Prop Band (CLG-PROP-BAND)",
+   "description": "Cooling loop proportional band",
+   "units": "delta °F",
+   "access": "W",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 29543,
+   "name": "Cool Integral Time (CLG-INT-TIME)",
+   "description": "Cooling loop integral time",
+   "units": "s",
+   "access": "W",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 29544,
+   "name": "Cool Process Range (CLG-PROC-RANGE)",
+   "description": "Cooling loop process range",
+   "units": "delta °F",
+   "access": "W",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 29545,
+   "name": "Cool Saturation Time (CLG-SAT-TIME)",
+   "description": "Cooling loop saturation time",
+   "units": "s",
+   "access": "W",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 29546,
+   "name": "Cool Time Constant (CLG-TIME-CONST)",
+   "description": "Cooling loop time constant",
+   "units": "s",
+   "access": "W",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 29547,
+   "name": "Cool Process Dead Time (CLG-DEAD-TIME)",
+   "description": "Cooling loop process dead time",
+   "units": "s",
+   "access": "W",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 29548,
+   "name": "Cool Period (CLG-PERIOD)",
+   "description": "Cooling loop period",
+   "units": "s",
+   "access": "W",
+   "states": ""
+  },
+  {
+   "type": "MV",
+   "instance": 29531,
+   "name": "LOCK-LVL",
+   "description": "Display user lockout level",
+   "units": "",
+   "access": "W",
+   "states": "0=State 0, 1=State 1, 2=State 2"
+  },
+  {
+   "type": "SCH",
+   "instance": 10133,
+   "name": "Schedule",
+   "description": "Internal occupancy schedule",
+   "units": "",
+   "access": "W",
+   "states": ""
+  },
+  {
+   "type": "CAL",
+   "instance": 10019,
+   "name": "Calendar",
+   "description": "Holiday calendar for the schedule",
+   "units": "",
+   "access": "W",
+   "states": ""
+  },
+  {
+   "type": "MV",
+   "instance": 30000,
+   "name": "MV Critical Active Event",
+   "description": "Active critical faults (bit list)",
+   "units": "",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "NC",
+   "instance": 10,
+   "name": "Critical Active Event NTF",
+   "description": "Notification class for critical active events",
+   "units": "",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "MV",
+   "instance": 29999,
+   "name": "MV Critical Inactive Event",
+   "description": "Critical faults returned to normal",
+   "units": "",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "NC",
+   "instance": 11,
+   "name": "Critical Inactive Event NTF",
+   "description": "Notification class for critical inactive events",
+   "units": "",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "MV",
+   "instance": 29998,
+   "name": "MV Service Priority Active Event",
+   "description": "Active service-priority faults",
+   "units": "",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "NC",
+   "instance": 12,
+   "name": "Service Priority Active Event NTF",
+   "description": "Notification class for service-priority events",
+   "units": "",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "MV",
+   "instance": 29997,
+   "name": "MV Service Priority Inactive Event",
+   "description": "Service-priority faults returned to normal",
+   "units": "",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "NC",
+   "instance": 13,
+   "name": "Service Priority Inactive Event NTF",
+   "description": "Notification class for service-priority events",
+   "units": "",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "MV",
+   "instance": 29996,
+   "name": "MV Service Active Event",
+   "description": "Active service faults",
+   "units": "",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "NC",
+   "instance": 14,
+   "name": "Service Active Event NTF",
+   "description": "Notification class for service events",
+   "units": "",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "MV",
+   "instance": 29995,
+   "name": "MV Service Inactive Event",
+   "description": "Service faults returned to normal",
+   "units": "",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "NC",
+   "instance": 15,
+   "name": "Service Inactive Event NTF",
+   "description": "Notification class for service events",
+   "units": "",
+   "access": "R",
+   "states": ""
+  }
+ ],
+ "page": "https://easybacnet.com/bacnet-points-lists/johnson-controls/tec3620-tec3623-proportional-fan-coil-thermostat",
+ "note": "Re-typed from the manufacturer's public documentation (see source). Point availability varies by firmware and options; verify against the live device."
+}

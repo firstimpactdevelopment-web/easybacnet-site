@@ -1,0 +1,1969 @@
+{
+ "manufacturer": "AERCO",
+ "manufacturer_slug": "aerco",
+ "model": "Edge [ii] water heater controller (standalone / WHM)",
+ "model_slug": "edge-ii-water-heater",
+ "aliases": [
+  "Edge [ii]",
+  "Edge ii",
+  "Edge 2",
+  "WHM",
+  "Water Heater Management",
+  "Centurion",
+  "OMM-0176",
+  "Innovation 1600-2000"
+ ],
+ "equipment_type": "Commercial water heater controller",
+ "applies_to": "AERCO Innovation 1600-2000 water heaters with the Edge [ii] controller, run standalone or as a WHM (Water Heater Management) manager or client.",
+ "summary": "The Edge [ii] controller on AERCO water heaters talks BACnet IP on its Ethernet port or BACnet MS/TP on the J14 RS-485 terminals. Standalone and client units expose analog inputs for status, temperatures, valve position, O2 and combustion-calibration data plus analog values for setpoints and setup. A WHM manager adds plant values and a read-only block for each of up to 16 units. Only analog inputs and analog values are used.",
+ "bacnet_transport": [
+  "BACnet IP",
+  "BACnet MS/TP"
+ ],
+ "firmware": "Application software 1.0 (PICS dated 2018-09-27)",
+ "default_device_instance": null,
+ "access_inferred": false,
+ "notes": [
+  "Access is given per table in the manual (AI tables read only, AV tables read/write), not per point; it is applied that way here.",
+  "Two tables in the manual give AI 100-122 and AV 53 different meanings. On a WHM manager they are the plant values listed here (AI 100-122) and AV 53 Network Timeout (5-999 s). On a standalone unit or WHM client the same IDs are calibration history instead (AI 99-106 Previous O2 at Cal 1-8, AI 107-114 Previous NOx at Cal 1-8, AI 115-122 Previous CO at Cal 1-8) and AV 53 is FFWD Temp Display.",
+  "AI 123-138 (previous calibration points and flame strength) are from the standalone/client table; the manager table marks AI 123-151 Not Used.",
+  "The WHM manager repeats a read-only block for each of up to 16 units; only unit 1 (AI 300-319) is listed here. Unit n uses the same names at AI 300 + 100 x (n - 1) to 319 + 100 x (n - 1), so unit 16 = AI 1800-1819.",
+  "Objects marked Not Used, Unused or NA for the Edge [ii] are left out.",
+  "Temperatures are listed in °F; the BAS Temp Format setting can switch the interface to Celsius. AERCO's BACnet vendor ID is 601."
+ ],
+ "source": {
+  "title": "Edge [ii] Controller Communication Manual",
+  "doc_number": "OMM-0162C",
+  "revision_date": "2025-10-15",
+  "url": "https://www.aerco.com/dfsmedia/0533dbba17714b1ab581ab07a4cbb521/659416-source/omm-0176-aerco-edge-ii-communication-manual-4-1-25.pdf"
+ },
+ "integration": {
+  "summary": "Enable the BAS port under Advanced Setup > Comm & Network > BAS (BACnet IP on the Ethernet port or BACnet MS/TP on J14), set the communication address and node offset, then have the BAS write the setpoint. For a WHM plant connect the BAS to the manager (or backup manager) only; it exposes plant values and a read-only block per unit.",
+  "minimum_points": [
+   {
+    "ref": "AV 80",
+    "name": "Remote Disable Code",
+    "why": "85 = disable unit, 0 = enable"
+   },
+   {
+    "ref": "AV 12",
+    "name": "Operating Mode",
+    "why": "Selects constant or remote setpoint"
+   },
+   {
+    "ref": "AV 13",
+    "name": "Remote Signal",
+    "why": "Set to BAS so the remote setpoint comes from BACnet"
+   },
+   {
+    "ref": "AV 4",
+    "name": "Setpoint",
+    "why": "Unit temperature setpoint, 20-245 °F"
+   },
+   {
+    "ref": "AV 245",
+    "name": "WHM Setpoint",
+    "why": "Plant setpoint on a WHM manager"
+   },
+   {
+    "ref": "AI 1",
+    "name": "Unit Status",
+    "why": "Standby / manual / remote / auto / fault state"
+   },
+   {
+    "ref": "AI 2",
+    "name": "Outlet",
+    "why": "Outlet water temperature"
+   },
+   {
+    "ref": "AI 8",
+    "name": "Current Valve Position",
+    "why": "Firing (valve) position, %"
+   },
+   {
+    "ref": "AI 0",
+    "name": "Message Code",
+    "why": "Active event / fault code"
+   },
+   {
+    "ref": "AI 108",
+    "name": "Units Faulted",
+    "why": "Units faulted in the WHM plant"
+   }
+  ],
+  "enable": "Under Advanced Setup > Comm & Network > BAS pick BACnet IP or BACnet MSTP (default Off). The BAS controls the unit through AV 12 Operating Mode (1 = Remote Setpt), AV 13 Remote Signal (3 = BAS) and the setpoint (AV 4, or AV 245 on a WHM manager). AV 80 Remote Disable Code (AV 229 for the plant) disables with 85 and enables with 0, but only when Allow System Disable = Yes in the BAS menu.",
+  "heartbeat": "The BAS screen has a BAS Comm Timeout setting (range and default not given). On a WHM manager, AV 53 Network Timeout is listed as 5-999 s. AV 24 Unit Failsafe Mode sets what a unit does on lost communication: 0 = Shutdown, 1 = Constant Setpt.",
+  "remote_sensors": "On a WHM manager AV 213 Hdr Temp Sensor can be set to 3 = BAS, after which the BAS writes the header temperature to AV 214. AV 215 selects the return header sensor source.",
+  "setup": [
+   "BACnet MS/TP: baud 9600-115200, address 0-127, 8 data bits, no parity, 1 stop bit; wire to J14 pins 1 (+) and 2 (-), shield to J3 pin 8.",
+   "Terminate the BAS RS-485 with SW3 switch 5 ON only at the BAS and the first and last units on the daisy chain; biasing must be supplied externally.",
+   "BACnet IP: device instance = Node Offset + Communication Address; UDP port selectable 0xBAC0-0xBACF; DHCP enabled unless turned off in the Ethernet screen.",
+   "Each standalone unit or manager needs its own Ethernet connection through a switch; don't daisy-chain them.",
+   "AERCO recommends wiring the BAS to the backup manager too, so it can take over BAS communication."
+  ],
+  "gotchas": [
+   "Optional BAS IP/MAC security limits which server can talk to the controller.",
+   "Unit blocks repeat every 100 IDs (unit 1 = AI 300-319 ... unit 16 = AI 1800-1819); only unit 1 is listed.",
+   "Remote Disable only works with Allow System Disable = Yes.",
+   "AI 100-122 and AV 53 mean different things on a WHM manager and on a standalone/client unit; see the notes."
+  ]
+ },
+ "points": [
+  {
+   "type": "AI",
+   "instance": 0,
+   "name": "Message Code",
+   "description": "Active message / fault code",
+   "units": "",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "AI",
+   "instance": 1,
+   "name": "Unit Status",
+   "description": "Unit operating status",
+   "units": "",
+   "access": "R",
+   "states": "0=Disabled, 1=Standby, 2=Manual, 3=Remote, 4=Auto, 5=Fault"
+  },
+  {
+   "type": "AI",
+   "instance": 2,
+   "name": "Outlet",
+   "description": "Outlet water temperature",
+   "units": "°F",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "AI",
+   "instance": 3,
+   "name": "Lower Inlet",
+   "description": "Lower inlet water temperature",
+   "units": "°F",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "AI",
+   "instance": 4,
+   "name": "Air Inlet",
+   "description": "Combustion air inlet temperature",
+   "units": "°F",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "AI",
+   "instance": 5,
+   "name": "Outside Temp",
+   "description": "Outdoor temperature",
+   "units": "°F",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "AI",
+   "instance": 6,
+   "name": "Exhaust",
+   "description": "Exhaust temperature",
+   "units": "°F",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "AI",
+   "instance": 7,
+   "name": "Feed Forward",
+   "description": "Feed-forward temperature",
+   "units": "°F",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "AI",
+   "instance": 8,
+   "name": "Current Valve Position",
+   "description": "Air/fuel valve position now",
+   "units": "%",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "AI",
+   "instance": 9,
+   "name": "O2",
+   "description": "Flue O2",
+   "units": "%",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "AI",
+   "instance": 11,
+   "name": "Run Cycles",
+   "description": "Burner run cycles",
+   "units": "",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "AI",
+   "instance": 13,
+   "name": "Run Hours",
+   "description": "Burner run hours",
+   "units": "h",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "AI",
+   "instance": 15,
+   "name": "Flame Strength",
+   "description": "Flame strength",
+   "units": "%",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "AI",
+   "instance": 16,
+   "name": "Active Setpoint Temp",
+   "description": "Active setpoint",
+   "units": "°F",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "AI",
+   "instance": 17,
+   "name": "PID Output",
+   "description": "PID output",
+   "units": "%",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "AI",
+   "instance": 18,
+   "name": "SET Valve Position",
+   "description": "Valve position setpoint",
+   "units": "%",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "AI",
+   "instance": 19,
+   "name": "Communication Address",
+   "description": "Unit communication address",
+   "units": "",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "AI",
+   "instance": 44,
+   "name": "Select Output",
+   "description": "",
+   "units": "",
+   "access": "R",
+   "states": "0=Standard Setup, 1=Cascade Valve, 2=Aout 2"
+  },
+  {
+   "type": "AI",
+   "instance": 45,
+   "name": "Control Mode",
+   "description": "",
+   "units": "",
+   "access": "R",
+   "states": "0=On/Off, 1=Linear Modulation, 2=Delta T Modulation"
+  },
+  {
+   "type": "AI",
+   "instance": 46,
+   "name": "Isolation Feedback",
+   "description": "",
+   "units": "",
+   "access": "R",
+   "states": "Values: disable / enable"
+  },
+  {
+   "type": "AI",
+   "instance": 47,
+   "name": "Open Vlv Control Signal",
+   "description": "",
+   "units": "",
+   "access": "R",
+   "states": "0=0mA, 1=4mA, 2=20mA"
+  },
+  {
+   "type": "AI",
+   "instance": 48,
+   "name": "Close Vlv Control Signal",
+   "description": "",
+   "units": "",
+   "access": "R",
+   "states": "0=0mA, 1=4mA, 2=20mA"
+  },
+  {
+   "type": "AI",
+   "instance": 49,
+   "name": "Blower Speed",
+   "description": "Blower speed",
+   "units": "",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "AI",
+   "instance": 50,
+   "name": "Blower Pulses/Rev",
+   "description": "range 0 to 100",
+   "units": "",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "AI",
+   "instance": 51,
+   "name": "O2 Target 1",
+   "description": "O2 target for calibration point 1",
+   "units": "%",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "AI",
+   "instance": 52,
+   "name": "O2 Target 2",
+   "description": "O2 target for calibration point 2",
+   "units": "%",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "AI",
+   "instance": 53,
+   "name": "O2 Target 3",
+   "description": "O2 target for calibration point 3",
+   "units": "%",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "AI",
+   "instance": 54,
+   "name": "O2 Target 4",
+   "description": "O2 target for calibration point 4",
+   "units": "%",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "AI",
+   "instance": 55,
+   "name": "O2 Target 5",
+   "description": "O2 target for calibration point 5",
+   "units": "%",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "AI",
+   "instance": 56,
+   "name": "O2 Target 6",
+   "description": "O2 target for calibration point 6",
+   "units": "%",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "AI",
+   "instance": 57,
+   "name": "O2 Target 7",
+   "description": "O2 target for calibration point 7",
+   "units": "%",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "AI",
+   "instance": 58,
+   "name": "O2 Target 8",
+   "description": "O2 target for calibration point 8",
+   "units": "%",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "AI",
+   "instance": 62,
+   "name": "WHM Uart3 errors",
+   "description": "WHM serial link (UART3) error code",
+   "units": "",
+   "access": "R",
+   "states": "0=No errors, 1=Overrun Error, 2=Framing Error, 3=Parity Error, 4=Uart Sync Error, 5=CRC Error, 6=Unknown Error"
+  },
+  {
+   "type": "AI",
+   "instance": 63,
+   "name": "Nox Requirement",
+   "description": "range 0 to 200",
+   "units": "",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "AI",
+   "instance": 64,
+   "name": "Manifold Gas Pressure",
+   "description": "range 0 to 90",
+   "units": "",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "AI",
+   "instance": 65,
+   "name": "O2 at Cal Point 1",
+   "description": "O2, calibration point 1",
+   "units": "",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "AI",
+   "instance": 66,
+   "name": "O2 at Cal Point 2",
+   "description": "O2, calibration point 2",
+   "units": "",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "AI",
+   "instance": 67,
+   "name": "O2 at Cal Point 3",
+   "description": "O2, calibration point 3",
+   "units": "",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "AI",
+   "instance": 68,
+   "name": "O2 at Cal Point 4",
+   "description": "O2, calibration point 4",
+   "units": "",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "AI",
+   "instance": 69,
+   "name": "O2 at Cal Point 5",
+   "description": "O2, calibration point 5",
+   "units": "",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "AI",
+   "instance": 70,
+   "name": "O2 at Cal Point 6",
+   "description": "O2, calibration point 6",
+   "units": "",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "AI",
+   "instance": 71,
+   "name": "O2 at Cal Point 7",
+   "description": "O2, calibration point 7",
+   "units": "",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "AI",
+   "instance": 72,
+   "name": "O2 at Cal Point 8",
+   "description": "O2, calibration point 8",
+   "units": "",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "AI",
+   "instance": 73,
+   "name": "NOx at Cal 1",
+   "description": "NOx, calibration point 1",
+   "units": "",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "AI",
+   "instance": 74,
+   "name": "NOx at Cal 2",
+   "description": "NOx, calibration point 2",
+   "units": "",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "AI",
+   "instance": 75,
+   "name": "NOx at Cal 3",
+   "description": "NOx, calibration point 3",
+   "units": "",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "AI",
+   "instance": 76,
+   "name": "NOx at Cal 4",
+   "description": "NOx, calibration point 4",
+   "units": "",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "AI",
+   "instance": 77,
+   "name": "NOx at Cal 5",
+   "description": "NOx, calibration point 5",
+   "units": "",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "AI",
+   "instance": 78,
+   "name": "NOx at Cal 6",
+   "description": "NOx, calibration point 6",
+   "units": "",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "AI",
+   "instance": 79,
+   "name": "NOx at Cal 7",
+   "description": "NOx, calibration point 7",
+   "units": "",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "AI",
+   "instance": 80,
+   "name": "NOx at Cal 8",
+   "description": "NOx, calibration point 8",
+   "units": "",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "AI",
+   "instance": 81,
+   "name": "CO at Cal 1",
+   "description": "CO, calibration point 1",
+   "units": "",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "AI",
+   "instance": 82,
+   "name": "CO at Cal 2",
+   "description": "CO, calibration point 2",
+   "units": "",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "AI",
+   "instance": 83,
+   "name": "CO at Cal 3",
+   "description": "CO, calibration point 3",
+   "units": "",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "AI",
+   "instance": 84,
+   "name": "CO at Cal 4",
+   "description": "CO, calibration point 4",
+   "units": "",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "AI",
+   "instance": 85,
+   "name": "CO at Cal 5",
+   "description": "CO, calibration point 5",
+   "units": "",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "AI",
+   "instance": 86,
+   "name": "CO at Cal 6",
+   "description": "CO, calibration point 6",
+   "units": "",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "AI",
+   "instance": 87,
+   "name": "CO at Cal 7",
+   "description": "CO, calibration point 7",
+   "units": "",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "AI",
+   "instance": 88,
+   "name": "CO at Cal 8",
+   "description": "CO, calibration point 8",
+   "units": "",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "AI",
+   "instance": 89,
+   "name": "Flame Strength at Cal 1",
+   "description": "Flame Strength, calibration point 1",
+   "units": "",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "AI",
+   "instance": 90,
+   "name": "Flame Strength at Cal 2",
+   "description": "Flame Strength, calibration point 2",
+   "units": "",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "AI",
+   "instance": 91,
+   "name": "Flame Strength at Cal 3",
+   "description": "Flame Strength, calibration point 3",
+   "units": "",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "AI",
+   "instance": 92,
+   "name": "Flame Strength at Cal 4",
+   "description": "Flame Strength, calibration point 4",
+   "units": "",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "AI",
+   "instance": 93,
+   "name": "Flame Strength at Cal 5",
+   "description": "Flame Strength, calibration point 5",
+   "units": "",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "AI",
+   "instance": 94,
+   "name": "Flame Strength at Cal 6",
+   "description": "Flame Strength, calibration point 6",
+   "units": "",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "AI",
+   "instance": 95,
+   "name": "Flame Strength at Cal 7",
+   "description": "Flame Strength, calibration point 7",
+   "units": "",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "AI",
+   "instance": 96,
+   "name": "Flame Strength at Cal 8",
+   "description": "Flame Strength, calibration point 8",
+   "units": "",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "AI",
+   "instance": 97,
+   "name": "Calibration Time",
+   "description": "range 12.00am to 11.59pm",
+   "units": "",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "AI",
+   "instance": 98,
+   "name": "Calibration Date",
+   "description": "range 0/0/0 to 12/31/9999",
+   "units": "",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "AI",
+   "instance": 100,
+   "name": "Unit Mode",
+   "description": "",
+   "units": "",
+   "access": "R",
+   "states": "0=Off, 1=WHM Client, 2=WHM Manager"
+  },
+  {
+   "type": "AI",
+   "instance": 101,
+   "name": "Plant Constant Setpoint",
+   "description": "range 20F to 245F",
+   "units": "°F",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "AI",
+   "instance": 102,
+   "name": "Setback Setpoint",
+   "description": "range 20F to 245F",
+   "units": "°F",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "AI",
+   "instance": 103,
+   "name": "Setback Start Time",
+   "description": "range 12.00am to 11.59pm",
+   "units": "",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "AI",
+   "instance": 104,
+   "name": "Setback Stop Time",
+   "description": "range 0/0/0 to 12/31/9999",
+   "units": "",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "AI",
+   "instance": 105,
+   "name": "Auto-Manager Transfer",
+   "description": "",
+   "units": "",
+   "access": "R",
+   "states": "Values: Disabled / Enabled"
+  },
+  {
+   "type": "AI",
+   "instance": 106,
+   "name": "OutletTemp",
+   "description": "Plant outlet temperature",
+   "units": "°F",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "AI",
+   "instance": 107,
+   "name": "UEnabled",
+   "description": "Units enabled in the plant",
+   "units": "",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "AI",
+   "instance": 108,
+   "name": "Units Faulted",
+   "description": "Units faulted in the plant",
+   "units": "",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "AI",
+   "instance": 109,
+   "name": "Unit Address",
+   "description": "range 0 to 16",
+   "units": "",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "AI",
+   "instance": 110,
+   "name": "Header Temp",
+   "description": "Header temperature",
+   "units": "°F",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "AI",
+   "instance": 112,
+   "name": "Avg Fire Rate",
+   "description": "Average plant firing rate",
+   "units": "%",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "AI",
+   "instance": 113,
+   "name": "Units Ignited",
+   "description": "Units firing",
+   "units": "",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "AI",
+   "instance": 114,
+   "name": "Act Setpt",
+   "description": "Active plant setpoint",
+   "units": "°F",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "AI",
+   "instance": 115,
+   "name": "Next On Valve Pos",
+   "description": "range 16% to 100%",
+   "units": "%",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "AI",
+   "instance": 116,
+   "name": "Setpt Hi Lim",
+   "description": "range 20F to 220F",
+   "units": "°F",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "AI",
+   "instance": 117,
+   "name": "Setpt Low Limit",
+   "description": "range 40F to 245F",
+   "units": "°F",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "AI",
+   "instance": 118,
+   "name": "Cascade Temp Hi Limit",
+   "description": "range 40F to 210F",
+   "units": "°F",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "AI",
+   "instance": 119,
+   "name": "Operating Mode",
+   "description": "",
+   "units": "",
+   "access": "R",
+   "states": "0 = Constant Setpoint"
+  },
+  {
+   "type": "AI",
+   "instance": 121,
+   "name": "DHW Setpoint",
+   "description": "range 40F to 170F",
+   "units": "°F",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "AI",
+   "instance": 122,
+   "name": "Fuel Type",
+   "description": "",
+   "units": "",
+   "access": "R",
+   "states": "0=Natural Gas, 1=Propane"
+  },
+  {
+   "type": "AI",
+   "instance": 123,
+   "name": "Previous CAL Point 1",
+   "description": "Previous calibration point 1 setting",
+   "units": "",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "AI",
+   "instance": 124,
+   "name": "Previous CAL Point 2",
+   "description": "Previous calibration point 2 setting",
+   "units": "",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "AI",
+   "instance": 125,
+   "name": "Previous CAL Point 3",
+   "description": "Previous calibration point 3 setting",
+   "units": "",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "AI",
+   "instance": 126,
+   "name": "Previous CAL Point 4",
+   "description": "Previous calibration point 4 setting",
+   "units": "",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "AI",
+   "instance": 127,
+   "name": "Previous CAL Point 5",
+   "description": "Previous calibration point 5 setting",
+   "units": "",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "AI",
+   "instance": 128,
+   "name": "Previous CAL Point 6",
+   "description": "Previous calibration point 6 setting",
+   "units": "",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "AI",
+   "instance": 129,
+   "name": "Previous CAL Point 7",
+   "description": "Previous calibration point 7 setting",
+   "units": "",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "AI",
+   "instance": 130,
+   "name": "Previous CAL Point 8",
+   "description": "Previous calibration point 8 setting",
+   "units": "",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "AI",
+   "instance": 131,
+   "name": "Pre Flame Strength at Cal 1",
+   "description": "Pre Flame Strength, calibration point 1",
+   "units": "",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "AI",
+   "instance": 132,
+   "name": "Pre Flame Strength at Cal 2",
+   "description": "Pre Flame Strength, calibration point 2",
+   "units": "",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "AI",
+   "instance": 133,
+   "name": "Pre Flame Strength at Cal 3",
+   "description": "Pre Flame Strength, calibration point 3",
+   "units": "",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "AI",
+   "instance": 134,
+   "name": "Pre Flame Strength at Cal 4",
+   "description": "Pre Flame Strength, calibration point 4",
+   "units": "",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "AI",
+   "instance": 135,
+   "name": "Pre Flame Strength at Cal 5",
+   "description": "Pre Flame Strength, calibration point 5",
+   "units": "",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "AI",
+   "instance": 136,
+   "name": "Pre Flame Strength at Cal 6",
+   "description": "Pre Flame Strength, calibration point 6",
+   "units": "",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "AI",
+   "instance": 137,
+   "name": "Pre Flame Strength at Cal 7",
+   "description": "Pre Flame Strength, calibration point 7",
+   "units": "",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "AI",
+   "instance": 138,
+   "name": "Pre Flame Strength at Cal 8",
+   "description": "Pre Flame Strength, calibration point 8",
+   "units": "",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "AI",
+   "instance": 146,
+   "name": "Current Blower Voltage",
+   "description": "Blower control voltage",
+   "units": "V",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "AI",
+   "instance": 147,
+   "name": "Software Version",
+   "description": "Controller software version",
+   "units": "",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "AI",
+   "instance": 148,
+   "name": "Unit Alpha",
+   "description": "",
+   "units": "",
+   "access": "R",
+   "states": "0=E, 1=G, 2=H, 3=R, 4=N, 5=A"
+  },
+  {
+   "type": "AI",
+   "instance": 149,
+   "name": "Unit Year",
+   "description": "range 0 to 99",
+   "units": "",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "AI",
+   "instance": 150,
+   "name": "Unit Serial #",
+   "description": "range 0 to 9999",
+   "units": "",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "AI",
+   "instance": 151,
+   "name": "Fuel Type",
+   "description": "",
+   "units": "",
+   "access": "R",
+   "states": "0=Natural Gas, 1=Propane"
+  },
+  {
+   "type": "AI",
+   "instance": 152,
+   "name": "WHM Unit Mode",
+   "description": "",
+   "units": "",
+   "access": "R",
+   "states": "0=OFF, 1=Client, 2=Manager"
+  },
+  {
+   "type": "AI",
+   "instance": 300,
+   "name": "Communication Address",
+   "description": "WHM unit 1: Communication Address",
+   "units": "",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "AI",
+   "instance": 301,
+   "name": "unit Status",
+   "description": "WHM unit 1: unit Status",
+   "units": "",
+   "access": "R",
+   "states": "0=Disabled, 1=Standby, 2=Manual, 3=Remote, 4=Auto, 5=Fault"
+  },
+  {
+   "type": "AI",
+   "instance": 302,
+   "name": "Fault Code",
+   "description": "WHM unit 1: Fault Code",
+   "units": "",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "AI",
+   "instance": 303,
+   "name": "Outlet Temperature",
+   "description": "WHM unit 1: Outlet Temperature",
+   "units": "°F",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "AI",
+   "instance": 304,
+   "name": "FFWD Temperature",
+   "description": "WHM unit 1: FFWD Temperature",
+   "units": "°F",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "AI",
+   "instance": 305,
+   "name": "Inlet Temperature",
+   "description": "WHM unit 1: Inlet Temperature",
+   "units": "°F",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "AI",
+   "instance": 306,
+   "name": "Exhaust Temperature",
+   "description": "WHM unit 1: Exhaust Temperature",
+   "units": "°F",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "AI",
+   "instance": 307,
+   "name": "Inlet Air Temperature",
+   "description": "WHM unit 1: Inlet Air Temperature",
+   "units": "°F",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "AI",
+   "instance": 308,
+   "name": "Flame Strength",
+   "description": "WHM unit 1: Flame Strength",
+   "units": "%",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "AI",
+   "instance": 309,
+   "name": "Fire Rate In",
+   "description": "WHM unit 1: Fire Rate In",
+   "units": "%",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "AI",
+   "instance": 310,
+   "name": "Fire Rate Out",
+   "description": "WHM unit 1: Fire Rate Out",
+   "units": "%",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "AI",
+   "instance": 311,
+   "name": "Unit Type",
+   "description": "WHM unit 1: Unit Type",
+   "units": "",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "AI",
+   "instance": 312,
+   "name": "Unit Size",
+   "description": "WHM unit 1: Unit Size",
+   "units": "",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "AI",
+   "instance": 313,
+   "name": "Valve State",
+   "description": "WHM unit 1: Valve State",
+   "units": "",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "AI",
+   "instance": 314,
+   "name": "Net Remote Setpoint",
+   "description": "WHM unit 1: Net Remote Setpoint",
+   "units": "",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "AI",
+   "instance": 315,
+   "name": "Run Cycle Upper",
+   "description": "WHM unit 1: Run Cycle Upper",
+   "units": "",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "AI",
+   "instance": 316,
+   "name": "Run Cycle Lower",
+   "description": "WHM unit 1: Run Cycle Lower",
+   "units": "",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "AI",
+   "instance": 317,
+   "name": "Run Hours Upper",
+   "description": "WHM unit 1: Run Hours Upper",
+   "units": "",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "AI",
+   "instance": 318,
+   "name": "Run Hours Lower",
+   "description": "WHM unit 1: Run Hours Lower",
+   "units": "",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "AI",
+   "instance": 319,
+   "name": "Oxygen Lvel",
+   "description": "WHM unit 1: Oxygen Lvel",
+   "units": "%",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 0,
+   "name": "Net Remote Setpt",
+   "description": "Remote setpoint written by the network; range 0 to 9999",
+   "units": "",
+   "access": "W",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 2,
+   "name": "Remote Password",
+   "description": "",
+   "units": "",
+   "access": "W",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 3,
+   "name": "Password",
+   "description": "",
+   "units": "",
+   "access": "W",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 4,
+   "name": "Setpoint",
+   "description": "Unit temperature setpoint; range 20F to 245F",
+   "units": "°F",
+   "access": "W",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 5,
+   "name": "Language",
+   "description": "",
+   "units": "",
+   "access": "W",
+   "states": "0=English, 1=Spanish, 2=French"
+  },
+  {
+   "type": "AV",
+   "instance": 6,
+   "name": "Time",
+   "description": "range 12.00am to 11.59pm",
+   "units": "",
+   "access": "W",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 7,
+   "name": "Date",
+   "description": "range 0/0/0 to 12/31/9999",
+   "units": "",
+   "access": "W",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 8,
+   "name": "Unit of Measurement",
+   "description": "",
+   "units": "",
+   "access": "W",
+   "states": "Values: English / Metric"
+  },
+  {
+   "type": "AV",
+   "instance": 9,
+   "name": "Cascade Baud Rate",
+   "description": "",
+   "units": "",
+   "access": "W",
+   "states": "0=9600, 1=19200, 2=38400, 3=57600, 4=76800, 5=115200"
+  },
+  {
+   "type": "AV",
+   "instance": 10,
+   "name": "Unit Type",
+   "description": "",
+   "units": "",
+   "access": "W",
+   "states": "10 = Centurion"
+  },
+  {
+   "type": "AV",
+   "instance": 11,
+   "name": "Unit Size",
+   "description": "",
+   "units": "",
+   "access": "W",
+   "states": "5=1600 MBH, 6=2000 MBH"
+  },
+  {
+   "type": "AV",
+   "instance": 12,
+   "name": "Operating Mode",
+   "description": "Constant or remote setpoint mode",
+   "units": "",
+   "access": "W",
+   "states": "0=Constant Setpt, 1=Remote Setpt"
+  },
+  {
+   "type": "AV",
+   "instance": 13,
+   "name": "Remote Signal",
+   "description": "Source of the remote setpoint",
+   "units": "",
+   "access": "W",
+   "states": "0=4-20mA/1-5V, 1=0-20mA/0-5V, 2=Network, 3=BAS"
+  },
+  {
+   "type": "AV",
+   "instance": 18,
+   "name": "Setpoint Low Limit",
+   "description": "range 40F to 245F",
+   "units": "°F",
+   "access": "W",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 19,
+   "name": "Setpoint High Limit",
+   "description": "range 20F to 220F",
+   "units": "°F",
+   "access": "W",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 20,
+   "name": "Temperature High Limit",
+   "description": "range 40F to 210F",
+   "units": "°F",
+   "access": "W",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 21,
+   "name": "Max Valve Position",
+   "description": "range 40 to 100",
+   "units": "",
+   "access": "W",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 23,
+   "name": "Auxiliary Delay",
+   "description": "range 0 to 240",
+   "units": "",
+   "access": "W",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 24,
+   "name": "Unit Failsafe Mode",
+   "description": "Action on lost BAS communication",
+   "units": "",
+   "access": "W",
+   "states": "0=Shutdown, 1=Constant Setpt"
+  },
+  {
+   "type": "AV",
+   "instance": 25,
+   "name": "Low Fire Timer",
+   "description": "range 2sec to 600Sec",
+   "units": "s",
+   "access": "W",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 26,
+   "name": "Proportional Band",
+   "description": "range 1F to 120F",
+   "units": "°F",
+   "access": "W",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 27,
+   "name": "Integral Band",
+   "description": "range 0 to 2",
+   "units": "",
+   "access": "W",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 28,
+   "name": "Derivative Band",
+   "description": "range 0 to 2min",
+   "units": "min",
+   "access": "W",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 29,
+   "name": "Min Load Adj",
+   "description": "range -50 to 50F",
+   "units": "°F",
+   "access": "W",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 30,
+   "name": "Max Load Adj",
+   "description": "range -50 to 50F",
+   "units": "°F",
+   "access": "W",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 31,
+   "name": "Outlet Feedback",
+   "description": "",
+   "units": "",
+   "access": "W",
+   "states": "Values: No / Yes"
+  },
+  {
+   "type": "AV",
+   "instance": 32,
+   "name": "Feedback Gain",
+   "description": "range 0.01 to 1",
+   "units": "",
+   "access": "W",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 33,
+   "name": "Breakpt at 0%",
+   "description": "range -100 to 100F",
+   "units": "°F",
+   "access": "W",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 34,
+   "name": "Breakpt at 10%",
+   "description": "range -100 to 100F",
+   "units": "°F",
+   "access": "W",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 35,
+   "name": "Breakpt at 20%",
+   "description": "range -100 to 100F",
+   "units": "°F",
+   "access": "W",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 36,
+   "name": "Breakpt at 30%",
+   "description": "range -100 to 100F",
+   "units": "°F",
+   "access": "W",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 37,
+   "name": "Breakpt at 40%",
+   "description": "range -100 to 100F",
+   "units": "°F",
+   "access": "W",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 38,
+   "name": "Breakpt at 50%",
+   "description": "range -100 to 100F",
+   "units": "°F",
+   "access": "W",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 39,
+   "name": "Breakpt at 60%",
+   "description": "range -100 to 100F",
+   "units": "°F",
+   "access": "W",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 40,
+   "name": "Breakpt at 70%",
+   "description": "range -100 to 100F",
+   "units": "°F",
+   "access": "W",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 41,
+   "name": "Breakpt at 80%",
+   "description": "range -100 to 100F",
+   "units": "°F",
+   "access": "W",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 42,
+   "name": "Breakpt at 90%",
+   "description": "range -100 to 100F",
+   "units": "°F",
+   "access": "W",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 43,
+   "name": "Breakpt at 100%",
+   "description": "range -100 to 100F",
+   "units": "°F",
+   "access": "W",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 44,
+   "name": "Purge Timer",
+   "description": "range 5Sec to 60Sec",
+   "units": "s",
+   "access": "W",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 45,
+   "name": "Post Purge Timer",
+   "description": "range 0 to 60Sec",
+   "units": "s",
+   "access": "W",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 46,
+   "name": "Ignition Position",
+   "description": "range 5% to 60%",
+   "units": "%",
+   "access": "W",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 47,
+   "name": "Stop Valve Position",
+   "description": "range 0 to 40%",
+   "units": "%",
+   "access": "W",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 48,
+   "name": "Start Valve Position",
+   "description": "range 0 to 40%",
+   "units": "%",
+   "access": "W",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 49,
+   "name": "On Delay",
+   "description": "range 0 to 600Sec",
+   "units": "s",
+   "access": "W",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 53,
+   "name": "Network Timeout",
+   "description": "WHM manager: BAS network timeout; range 5 to 999 s",
+   "units": "s",
+   "access": "W",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 57,
+   "name": "Valve Pos Out Dsp",
+   "description": "",
+   "units": "",
+   "access": "W",
+   "states": "Values: Disable / Enable"
+  },
+  {
+   "type": "AV",
+   "instance": 58,
+   "name": "Exhaust Temp Dsp",
+   "description": "",
+   "units": "",
+   "access": "W",
+   "states": "Values: Disable / Enable"
+  },
+  {
+   "type": "AV",
+   "instance": 59,
+   "name": "Setpoint Limiting",
+   "description": "",
+   "units": "",
+   "access": "W",
+   "states": "Values: Disable / Enable"
+  },
+  {
+   "type": "AV",
+   "instance": 60,
+   "name": "Setpoint Limit Band",
+   "description": "range 0 to 10F",
+   "units": "°F",
+   "access": "W",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 62,
+   "name": "Inlet Temp Display",
+   "description": "",
+   "units": "",
+   "access": "W",
+   "states": "Values: Disable / Enable"
+  },
+  {
+   "type": "AV",
+   "instance": 64,
+   "name": "Water Temp Reset",
+   "description": "",
+   "units": "",
+   "access": "W",
+   "states": "Values: Manual / Automatic"
+  },
+  {
+   "type": "AV",
+   "instance": 65,
+   "name": "Gas Pressure Reset",
+   "description": "",
+   "units": "",
+   "access": "W",
+   "states": "Values: Manual / Automatic"
+  },
+  {
+   "type": "AV",
+   "instance": 70,
+   "name": "BAS",
+   "description": "BAS protocol selection",
+   "units": "",
+   "access": "W",
+   "states": "0=Off, 1=BACnet MSTP, 2=BACnet IP, 3=Modbus RTU, 4=Modbus TCP"
+  },
+  {
+   "type": "AV",
+   "instance": 71,
+   "name": "Cascade Baud Rate",
+   "description": "",
+   "units": "",
+   "access": "W",
+   "states": "0=9600, 1=19200, 2=38400, 3=57600"
+  },
+  {
+   "type": "AV",
+   "instance": 72,
+   "name": "INTL Communication",
+   "description": "",
+   "units": "",
+   "access": "W",
+   "states": "Values: Disable / Enable"
+  },
+  {
+   "type": "AV",
+   "instance": 73,
+   "name": "Intl Baud Rate",
+   "description": "",
+   "units": "",
+   "access": "W",
+   "states": "0=9600, 1=19200, 2=38400, 3=57600, 4=76800, 5=115200"
+  },
+  {
+   "type": "AV",
+   "instance": 75,
+   "name": "O2 Trim",
+   "description": "",
+   "units": "",
+   "access": "W",
+   "states": "Values: Disabled / Enabled"
+  },
+  {
+   "type": "AV",
+   "instance": 80,
+   "name": "Remote Disable Code",
+   "description": "Write 85 to disable the unit, 0 to enable (needs Allow System Disable = Yes)",
+   "units": "",
+   "access": "W",
+   "states": "0=Enable Unit, 85=Disable Unit"
+  },
+  {
+   "type": "AV",
+   "instance": 201,
+   "name": "Setback Setpoint",
+   "description": "range 20F to 245F",
+   "units": "°F",
+   "access": "W",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 202,
+   "name": "Setback Start Time",
+   "description": "range 12.00am to 11.59pm",
+   "units": "",
+   "access": "W",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 203,
+   "name": "Setback Stop Time",
+   "description": "range 12.00am to 11.59pm",
+   "units": "",
+   "access": "W",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 204,
+   "name": "Setback Schedule",
+   "description": "",
+   "units": "",
+   "access": "W",
+   "states": "Values: Disable / Enable"
+  },
+  {
+   "type": "AV",
+   "instance": 213,
+   "name": "Hdr Temp Sensor",
+   "description": "Header temperature sensor source",
+   "units": "",
+   "access": "W",
+   "states": "0=Network, 1=FFWD Temp, 2=Direct, 3=BAS, 4=OFF"
+  },
+  {
+   "type": "AV",
+   "instance": 214,
+   "name": "BAS Header Temp",
+   "description": "Header temperature written by the BAS; range 0F to 250F",
+   "units": "°F",
+   "access": "W",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 215,
+   "name": "Rtn Hdr Temp Sensor",
+   "description": "Return header temperature sensor source",
+   "units": "",
+   "access": "W",
+   "states": "0=OFF, 1=Network, 2=Direct, 3=BAS"
+  },
+  {
+   "type": "AV",
+   "instance": 216,
+   "name": "Rtn Hdr Temp Sensor",
+   "description": "Return header temperature (BAS value); range 0F to 250F",
+   "units": "°F",
+   "access": "W",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 219,
+   "name": "BAS",
+   "description": "",
+   "units": "",
+   "access": "W",
+   "states": "0=OFF, 1=BACnet MSTP, 2=BACnet IP, 3=Modbus RTU, 4=Modbus TCP"
+  },
+  {
+   "type": "AV",
+   "instance": 220,
+   "name": "Baud Rate",
+   "description": "",
+   "units": "",
+   "access": "W",
+   "states": "0=9600, 1=19200, 2=38400, 3=57600"
+  },
+  {
+   "type": "AV",
+   "instance": 221,
+   "name": "INTL Communication",
+   "description": "",
+   "units": "",
+   "access": "W",
+   "states": "0=Disabled, 1=Enabled"
+  },
+  {
+   "type": "AV",
+   "instance": 222,
+   "name": "Intl Baud Rate",
+   "description": "",
+   "units": "",
+   "access": "W",
+   "states": "0=9600, 1=19200, 2=38400, 3=57600"
+  },
+  {
+   "type": "AV",
+   "instance": 224,
+   "name": "O2 Trim",
+   "description": "",
+   "units": "",
+   "access": "W",
+   "states": "0=Disabled, 1=Enabled"
+  },
+  {
+   "type": "AV",
+   "instance": 229,
+   "name": "Remote Disable Code",
+   "description": "Write 85 to disable the plant, 0 to enable",
+   "units": "",
+   "access": "W",
+   "states": "0=Enable Plant, 85=Disable Plant"
+  },
+  {
+   "type": "AV",
+   "instance": 245,
+   "name": "WHM Setpoint",
+   "description": "WHM plant DHW setpoint; range 40F to 170F",
+   "units": "°F",
+   "access": "W",
+   "states": ""
+  }
+ ],
+ "page": "https://easybacnet.com/bacnet-points-lists/aerco/edge-ii-water-heater",
+ "note": "Re-typed from the manufacturer's public documentation (see source). Point availability varies by firmware and options; verify against the live device."
+}

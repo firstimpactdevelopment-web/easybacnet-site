@@ -1,0 +1,1076 @@
+{
+ "manufacturer": "Yaskawa",
+ "manufacturer_slug": "yaskawa",
+ "model": "Z1000 HVAC drive (embedded BACnet MS/TP)",
+ "model_slug": "z1000",
+ "aliases": [
+  "Z1000",
+  "CIMR-ZU",
+  "CIMR-ZUA",
+  "Z1000 AC Drive for HVAC Fan and Pump",
+  "SIEP C710616 45"
+ ],
+ "equipment_type": "Variable frequency drive (HVAC)",
+ "applies_to": "Yaskawa Z1000 HVAC fan and pump drives (CIMR-ZU, 200 V and 400 V class) using the built-in RS-485 port with H5-08 set to BACnet.",
+ "summary": "The Z1000 has BACnet MS/TP built into its RS-485 terminals; set H5-08 = 3 to select it. The fixed object list covers analog and digital I/O, run/fault/reset commands, the frequency and PI setpoint references, output monitors and a long set of fault and status flags. AV29/AV30 give indirect access to any drive parameter by Modbus register number.",
+ "bacnet_transport": [
+  "BACnet MS/TP"
+ ],
+ "firmware": "PICS lists application software 1.3, firmware VSE90101X",
+ "default_device_instance": 1,
+ "access_inferred": false,
+ "notes": [
+  "Object IDs marked Not used (AI3-AI5, AV24) are left out. AV15-AV17 (MF Input Status, Drive Status 2, MF Output Status) are named in the table but have no register, units or access, so they are left out too.",
+  "AV1, AV4 and AV5 are packed command words; the manual says not to use them together with the single-bit objects they duplicate (AV1 with BV1-BV11 or AV5, AV4 with BO1-BO3 or BV12, AV5 with AV1, BO4 or BV9-BV11).",
+  "Frequency units follow the o1-03 display setting.",
+  "AV29/AV30 with BV55/BV56 read and write drive parameters that are not in the object list.",
+  "The device object name is writable from BACnet (20 characters) and takes effect after a power cycle.",
+  "Each description gives the drive's Modbus register where the manual lists one."
+ ],
+ "source": {
+  "title": "YASKAWA AC Drive Z1000, AC Drive for HVAC Fan and Pump, Programming Manual (Appendix B, BACnet Communications)",
+  "doc_number": "SIEP C710616 45F",
+  "revision_date": "2021-06",
+  "url": "https://www.yaskawa.com/delegate/getAttachment?documentId=SIEPC71061645&cmd=documents&documentName=SIEPC71061645.pdf"
+ },
+ "integration": {
+  "summary": "Set H5-08 = 3 (BACnet), the MS/TP address in H5-01, the baud rate in H5-02 and the device instance in H5-14/H5-15, then cycle power. Set b1-01 = 2 and b1-02 = 2 so the network supplies the frequency reference and run command. Write BV1 RUN FWD and AV2 Frequency Command, read BV13/BV16 and AV10/AV12/AV13, and reset faults with BV4.",
+  "minimum_points": [
+   {
+    "ref": "BV 1",
+    "name": "RUN FWD",
+    "why": "Start/stop from the BMS (drive)"
+   },
+   {
+    "ref": "AV 2",
+    "name": "Frequency Command",
+    "why": "Frequency reference, units per o1-03"
+   },
+   {
+    "ref": "BV 4",
+    "name": "FAULT RESET",
+    "why": "Reset a tripped drive"
+   },
+   {
+    "ref": "BV 13",
+    "name": "RUN-STOP",
+    "why": "Running status"
+   },
+   {
+    "ref": "BV 15",
+    "name": "READY",
+    "why": "Drive ready to run"
+   },
+   {
+    "ref": "AV 10",
+    "name": "Output Frequency",
+    "why": "Output frequency, units per o1-03"
+   },
+   {
+    "ref": "AV 12",
+    "name": "Output Current",
+    "why": "Motor amps"
+   },
+   {
+    "ref": "AV 13",
+    "name": "Output Power",
+    "why": "Drive power in kW"
+   },
+   {
+    "ref": "BV 16",
+    "name": "FAULT",
+    "why": "Any active drive fault"
+   },
+   {
+    "ref": "AV 7",
+    "name": "Fault Details (Bitmapped)",
+    "why": "Bit-coded active fault flags"
+   }
+  ],
+  "enable": "Table B.1: set b1-01 Frequency Reference Selection 1 = 2 and b1-02 Run Command Selection 1 = 2 (serial communication); b1-15/b1-16 = 2 do the same for External Reference 2. With H5-12 = 0 (default) BV1 runs forward and BV2 runs reverse; with H5-12 = 1 bit 0 is run/stop and bit 1 sets direction. Monitoring, parameter access, fault set/reset and the multi-function inputs work at any time, whatever b1-01/b1-02 are set to.",
+  "heartbeat": "H5-05 = 1 (default) turns on CE detection: if the drive gets no data from the master for H5-09 (0.0-10.0 s, default 2.0 s) it raises a CE fault and acts per H5-04 (0 ramp to stop, 1 coast, 2 fast stop, 3 alarm only and keep running (default), 4 run at d1-04).",
+  "remote_sensors": "AV3 PI Setpoint lets the BMS write the PI setpoint; BO4 Ref Sel: PI Setpoint (or AV5 bit 1) selects it. The object list has no writable PI feedback.",
+  "setup": [
+   "H5-08 = 3 selects BACnet; H5-01 is the MS/TP address (0-FFH, default 1FH) and must be unique.",
+   "H5-02 sets the baud rate, 1200 to 76800 bps (BACnet default is setting 3 = 9600 bps); 115200 bps gives an oPE29 error.",
+   "H5-03 sets parity (default none); data is 8 bits with 1 stop bit.",
+   "Device instance = H5-14 (low word) + H5-15 (high word), in hex; default 1. Example: 1234 is H5-14 = 4D2H, H5-15 = 0.",
+   "H5 settings and the device instance take effect after a power cycle.",
+   "Up to 127 drives per MS/TP segment."
+  ],
+  "gotchas": [
+   "H5-04 defaults to Alarm Only, so the drive keeps running when BACnet traffic stops.",
+   "BV56 Parameter Enter writes EEPROM (rated about 100,000 writes); don't use it cyclically.",
+   "Don't mix the packed words (AV1, AV4, AV5) with the single-bit BV/BO objects they duplicate.",
+   "Terminal inputs and BACnet multi-function inputs are ORed together.",
+   "Frequency objects use the o1-03 display units, which are not always Hz."
+  ]
+ },
+ "points": [
+  {
+   "type": "AI",
+   "instance": 1,
+   "name": "Analog Input 1 Level",
+   "description": "Analog input 1 level; Modbus 004EH",
+   "units": "%",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "AI",
+   "instance": 2,
+   "name": "Analog Input 2 Level",
+   "description": "Analog input 2 level; Modbus 004FH",
+   "units": "%",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "AI",
+   "instance": 6,
+   "name": "Display Format o1-03",
+   "description": "Display units setting o1-03; Modbus 0502H",
+   "units": "",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "AI",
+   "instance": 7,
+   "name": "Scale Format b5-20",
+   "description": "PI scaling format b5-20; Modbus 01E2H",
+   "units": "",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "AI",
+   "instance": 8,
+   "name": "Inverter Model o2-04",
+   "description": "Drive model code o2-04; Modbus 0508F",
+   "units": "",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "AI",
+   "instance": 9,
+   "name": "Rated Current n9-01",
+   "description": "Drive rated current n9-01; Modbus 05D0H",
+   "units": "A",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "AO",
+   "instance": 1,
+   "name": "Analog Output 1 Level",
+   "description": "Analog output 1 level, written by the network; Modbus 0007H",
+   "units": "%",
+   "access": "C",
+   "states": ""
+  },
+  {
+   "type": "AO",
+   "instance": 2,
+   "name": "Analog Output 2 Level",
+   "description": "Analog output 2 level, written by the network; Modbus 0008H",
+   "units": "%",
+   "access": "C",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 1,
+   "name": "Operation Cmd (Bitmapped)",
+   "description": "Packed run/fault/MF-input command word; Modbus 0x0001",
+   "units": "",
+   "access": "C",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 2,
+   "name": "Frequency Command",
+   "description": "Frequency reference from the network; Modbus 0002H",
+   "units": "Hz (display units per o1-03)",
+   "access": "C",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 3,
+   "name": "PI Setpoint",
+   "description": "PI setpoint from the network; Modbus 0006H",
+   "units": "%",
+   "access": "C",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 4,
+   "name": "MF Output Cmd (Bitmapped)",
+   "description": "Packed relay output command word; Modbus 0x0009",
+   "units": "",
+   "access": "C",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 5,
+   "name": "Reference Select Cmd (Bitmapped)",
+   "description": "Packed reference-select command word; Modbus 0x000F",
+   "units": "",
+   "access": "C",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 6,
+   "name": "Drive Status (Bitmapped)",
+   "description": "Packed drive status: run, reverse, ready, fault, outputs; Modbus 0x0020",
+   "units": "",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 7,
+   "name": "Fault Details (Bitmapped)",
+   "description": "Packed fault flags; Modbus 0x0021",
+   "units": "",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 8,
+   "name": "Data Link Status (Bitmapped)",
+   "description": "Packed data-link status; Modbus 0x0022",
+   "units": "",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 9,
+   "name": "Frequency Reference",
+   "description": "Active frequency reference; Modbus 0040H",
+   "units": "Hz (display units per o1-03)",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 10,
+   "name": "Output Frequency",
+   "description": "Output frequency; Modbus 0041H",
+   "units": "Hz (display units per o1-03)",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 11,
+   "name": "Output Voltage",
+   "description": "Output voltage; Modbus 0045H",
+   "units": "V",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 12,
+   "name": "Output Current",
+   "description": "Output (motor) current; Modbus 0026H",
+   "units": "A",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 13,
+   "name": "Output Power",
+   "description": "Output power; Modbus 0047H",
+   "units": "kW",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 14,
+   "name": "Torque Reference",
+   "description": "Torque reference; Modbus 0048H",
+   "units": "%",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 18,
+   "name": "DC Bus Voltage",
+   "description": "DC bus voltage; Modbus 0031H",
+   "units": "V",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 19,
+   "name": "PI Feedback Level",
+   "description": "PI feedback level; Modbus 0038H",
+   "units": "%",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 20,
+   "name": "PI Input Level",
+   "description": "PI input level; Modbus 0039H",
+   "units": "%",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 21,
+   "name": "PI Output Level",
+   "description": "PI output level; Modbus 003AH",
+   "units": "%",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 22,
+   "name": "CPU Software",
+   "description": "Drive software number; Modbus 005BH",
+   "units": "",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 23,
+   "name": "Flash Number",
+   "description": "Flash ID number; Modbus 004DH",
+   "units": "",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 25,
+   "name": "kVA Setting",
+   "description": "Drive kVA setting; Modbus 0508H",
+   "units": "",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 26,
+   "name": "Control Method",
+   "description": "Control method; Modbus 0043H",
+   "units": "",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 27,
+   "name": "Accel Time",
+   "description": "Acceleration time; Modbus 0200H",
+   "units": "s",
+   "access": "W",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 28,
+   "name": "Decel Time",
+   "description": "Deceleration time; Modbus 0201H",
+   "units": "s",
+   "access": "W",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 29,
+   "name": "Param Number",
+   "description": "Modbus register number for indirect parameter access",
+   "units": "",
+   "access": "W",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 30,
+   "name": "Param Data",
+   "description": "Value of the register selected in AV29",
+   "units": "",
+   "access": "W",
+   "states": ""
+  },
+  {
+   "type": "BI",
+   "instance": 1,
+   "name": "Input Terminal 1",
+   "description": "Digital input terminal S1 status; Modbus 002BH:bit 0",
+   "units": "",
+   "access": "R",
+   "states": "Active: ON, Inactive: OFF"
+  },
+  {
+   "type": "BI",
+   "instance": 2,
+   "name": "Input Terminal 2",
+   "description": "Digital input terminal S2 status; Modbus 002BH:bit 1",
+   "units": "",
+   "access": "R",
+   "states": "Active: ON, Inactive: OFF"
+  },
+  {
+   "type": "BI",
+   "instance": 3,
+   "name": "Input Terminal 3",
+   "description": "Digital input terminal S3 status; Modbus 002BH:bit 2",
+   "units": "",
+   "access": "R",
+   "states": "Active: ON, Inactive: OFF"
+  },
+  {
+   "type": "BI",
+   "instance": 4,
+   "name": "Input Terminal 4",
+   "description": "Digital input terminal S4 status; Modbus 002BH:bit 3",
+   "units": "",
+   "access": "R",
+   "states": "Active: ON, Inactive: OFF"
+  },
+  {
+   "type": "BI",
+   "instance": 5,
+   "name": "Input Terminal 5",
+   "description": "Digital input terminal S5 status; Modbus 002BH:bit 4",
+   "units": "",
+   "access": "R",
+   "states": "Active: ON, Inactive: OFF"
+  },
+  {
+   "type": "BI",
+   "instance": 6,
+   "name": "Input Terminal 6",
+   "description": "Digital input terminal S6 status; Modbus 002BH:bit 5",
+   "units": "",
+   "access": "R",
+   "states": "Active: ON, Inactive: OFF"
+  },
+  {
+   "type": "BI",
+   "instance": 7,
+   "name": "Input Terminal 7",
+   "description": "Digital input terminal S7 status; Modbus 002BH:bit 6",
+   "units": "",
+   "access": "R",
+   "states": "Active: ON, Inactive: OFF"
+  },
+  {
+   "type": "BI",
+   "instance": 8,
+   "name": "Multi-Function Out 1",
+   "description": "Multi-function output 1 status; Modbus 0020H:bit 5",
+   "units": "",
+   "access": "R",
+   "states": "Active: ON, Inactive: OFF"
+  },
+  {
+   "type": "BI",
+   "instance": 9,
+   "name": "Multi-Function Out 2",
+   "description": "Multi-function output 2 status; Modbus 0020H:bit 6",
+   "units": "",
+   "access": "R",
+   "states": "Active: ON, Inactive: OFF"
+  },
+  {
+   "type": "BO",
+   "instance": 1,
+   "name": "MF Output M1-M2",
+   "description": "Relay output M1-M2 command; Modbus 0009H:bit 0",
+   "units": "",
+   "access": "C",
+   "states": "Active: ON, Inactive: OFF"
+  },
+  {
+   "type": "BO",
+   "instance": 2,
+   "name": "MF Output M3-M4",
+   "description": "Relay output M3-M4 command; Modbus 0009H:bit 1",
+   "units": "",
+   "access": "C",
+   "states": "Active: ON, Inactive: OFF"
+  },
+  {
+   "type": "BO",
+   "instance": 3,
+   "name": "MF Output MA-MC",
+   "description": "Relay output MA-MC command; Modbus 0009H:bit 2",
+   "units": "",
+   "access": "C",
+   "states": "Active: ON, Inactive: OFF"
+  },
+  {
+   "type": "BO",
+   "instance": 4,
+   "name": "Ref Sel: PI Setpoint",
+   "description": "Select the network PI setpoint; Modbus 000FH:bit 1",
+   "units": "",
+   "access": "C",
+   "states": "Active: ON, Inactive: OFF"
+  },
+  {
+   "type": "BO",
+   "instance": 5,
+   "name": "Ref Sel: Term S5 IN",
+   "description": "Reference-select bit for terminal S5 input; Modbus 000FH:bit 8",
+   "units": "",
+   "access": "C",
+   "states": "Active: ON, Inactive: OFF"
+  },
+  {
+   "type": "BO",
+   "instance": 6,
+   "name": "Ref Sel: Term S6 IN",
+   "description": "Reference-select bit for terminal S6 input; Modbus 000FH:bit 9",
+   "units": "",
+   "access": "C",
+   "states": "Active: ON, Inactive: OFF"
+  },
+  {
+   "type": "BO",
+   "instance": 7,
+   "name": "Refl Sel: Term S7 IN",
+   "description": "Reference-select bit for terminal S7 input; Modbus 000FH:bit 10",
+   "units": "",
+   "access": "C",
+   "states": "Active: ON, Inactive: OFF"
+  },
+  {
+   "type": "BV",
+   "instance": 1,
+   "name": "RUN FWD",
+   "description": "Run forward command; Modbus 0001H:bit 0",
+   "units": "",
+   "access": "C",
+   "states": "Active: RUN, Inactive: OFF"
+  },
+  {
+   "type": "BV",
+   "instance": 2,
+   "name": "RUN REV",
+   "description": "Run reverse command; Modbus 0001H:bit 1",
+   "units": "",
+   "access": "C",
+   "states": "Active: REV, Inactive: OFF"
+  },
+  {
+   "type": "BV",
+   "instance": 3,
+   "name": "EXT FAULT",
+   "description": "External fault (EF0) command; Modbus 0001H:bit 2",
+   "units": "",
+   "access": "C",
+   "states": "Active: FAULT, Inactive: OFF"
+  },
+  {
+   "type": "BV",
+   "instance": 4,
+   "name": "FAULT RESET",
+   "description": "Fault reset command; Modbus 0001H:bit 3",
+   "units": "",
+   "access": "C",
+   "states": "Active: RESET, Inactive: OFF"
+  },
+  {
+   "type": "BV",
+   "instance": 5,
+   "name": "COM NET",
+   "description": "MF input 1; ComRef when H1-01 = 40; Modbus 0001H:bit 4",
+   "units": "",
+   "access": "C",
+   "states": "Active: COM, Inactive: LOCAL"
+  },
+  {
+   "type": "BV",
+   "instance": 6,
+   "name": "COM CNTRL",
+   "description": "MF input 2; ComCtrl when H1-02 = 41; Modbus 0001H:bit 5",
+   "units": "",
+   "access": "C",
+   "states": "Active: COM, Inactive: LOCAL"
+  },
+  {
+   "type": "BV",
+   "instance": 7,
+   "name": "MF Input 3 Cmd",
+   "description": "Multi-function input 3 via network; Modbus 0001H:bit 6",
+   "units": "",
+   "access": "C",
+   "states": "Active: ON, Inactive: OFF"
+  },
+  {
+   "type": "BV",
+   "instance": 8,
+   "name": "MF Input 4 Cmd",
+   "description": "Multi-function input 4 via network; Modbus 0001H:bit 7",
+   "units": "",
+   "access": "C",
+   "states": "Active: ON, Inactive: OFF"
+  },
+  {
+   "type": "BV",
+   "instance": 9,
+   "name": "MF Input 5 Cmd",
+   "description": "Multi-function input 5 via network; Modbus 0001H:bit 8",
+   "units": "",
+   "access": "C",
+   "states": "Active: ON, Inactive: OFF"
+  },
+  {
+   "type": "BV",
+   "instance": 10,
+   "name": "MF Input 6 Cmd",
+   "description": "Multi-function input 6 via network; Modbus 0001H:bit 9",
+   "units": "",
+   "access": "C",
+   "states": "Active: ON, Inactive: OFF"
+  },
+  {
+   "type": "BV",
+   "instance": 11,
+   "name": "MF Input 7 Cmd",
+   "description": "Multi-function input 7 via network; Modbus 0001H:bit 10",
+   "units": "",
+   "access": "C",
+   "states": "Active: ON, Inactive: OFF"
+  },
+  {
+   "type": "BV",
+   "instance": 12,
+   "name": "Set Fault Contact Cmd",
+   "description": "Enables network control of the fault relay; Modbus 0009H:bit 6",
+   "units": "",
+   "access": "C",
+   "states": "Active: ENABLE, Inactive: OFF"
+  },
+  {
+   "type": "BV",
+   "instance": 13,
+   "name": "RUN-STOP",
+   "description": "Drive running; Modbus 0020H:bit 0",
+   "units": "",
+   "access": "R",
+   "states": "Active: RUN, Inactive: OFF"
+  },
+  {
+   "type": "BV",
+   "instance": 14,
+   "name": "REV-FWD",
+   "description": "Rotation direction; Modbus 0020H:bit 1",
+   "units": "",
+   "access": "R",
+   "states": "Active: REV, Inactive: FWD"
+  },
+  {
+   "type": "BV",
+   "instance": 15,
+   "name": "READY",
+   "description": "Drive ready; Modbus 0020H:bit 2",
+   "units": "",
+   "access": "R",
+   "states": "Active: READY, Inactive: OFF"
+  },
+  {
+   "type": "BV",
+   "instance": 16,
+   "name": "FAULT",
+   "description": "Drive faulted; Modbus 0020H:bit 3",
+   "units": "",
+   "access": "R",
+   "states": "Active: FAULTED, Inactive: OFF"
+  },
+  {
+   "type": "BV",
+   "instance": 17,
+   "name": "Data Set Error",
+   "description": "Data setting error; Modbus 0020H:bit 4",
+   "units": "",
+   "access": "R",
+   "states": "Active: ERROR, Inactive: OFF"
+  },
+  {
+   "type": "BV",
+   "instance": 18,
+   "name": "Overcurrent – Ground Fault",
+   "description": "Modbus 0021H:bit 0",
+   "units": "",
+   "access": "R",
+   "states": "Active: OC-GF, Inactive: OFF"
+  },
+  {
+   "type": "BV",
+   "instance": 19,
+   "name": "Main Circuit Overvoltage",
+   "description": "Modbus 0021H:bit 1",
+   "units": "",
+   "access": "R",
+   "states": "Active: OV, Inactive: OFF"
+  },
+  {
+   "type": "BV",
+   "instance": 20,
+   "name": "Drive Overload",
+   "description": "Modbus 0021H:bit 2",
+   "units": "",
+   "access": "R",
+   "states": "Active: OL2, Inactive: OFF"
+  },
+  {
+   "type": "BV",
+   "instance": 21,
+   "name": "Drive Overheat",
+   "description": "Modbus 0021H:bit 3",
+   "units": "",
+   "access": "R",
+   "states": "Active: OH1-OH2, Inactive: OFF"
+  },
+  {
+   "type": "BV",
+   "instance": 22,
+   "name": "Fuse Blown",
+   "description": "Modbus 0021H:bit 5",
+   "units": "",
+   "access": "R",
+   "states": "Active: PUF, Inactive: OFF"
+  },
+  {
+   "type": "BV",
+   "instance": 23,
+   "name": "PI Feedback Loss",
+   "description": "Modbus 0021H:bit 6",
+   "units": "",
+   "access": "R",
+   "states": "Active: FBL, Inactive: OFF"
+  },
+  {
+   "type": "BV",
+   "instance": 24,
+   "name": "External Fault",
+   "description": "Modbus 0021H:bit 7",
+   "units": "",
+   "access": "R",
+   "states": "Active: EF0-EF, Inactive: OFF"
+  },
+  {
+   "type": "BV",
+   "instance": 25,
+   "name": "Hardware Error",
+   "description": "Modbus 0021H:bit 8",
+   "units": "",
+   "access": "R",
+   "states": "Active: CPF, Inactive: OFF"
+  },
+  {
+   "type": "BV",
+   "instance": 26,
+   "name": "Mtr Ovrld-OvrTorque",
+   "description": "Modbus 0021H:bit 9",
+   "units": "",
+   "access": "R",
+   "states": "Active: OL1-OL3, Inactive: OFF"
+  },
+  {
+   "type": "BV",
+   "instance": 27,
+   "name": "Overspeed",
+   "description": "Modbus 0021H:bit 10",
+   "units": "",
+   "access": "R",
+   "states": "Active: OS-DEV, Inactive: OFF"
+  },
+  {
+   "type": "BV",
+   "instance": 28,
+   "name": "Main CKT Undervoltage",
+   "description": "Modbus 0021H:bit 11",
+   "units": "",
+   "access": "R",
+   "states": "Active: UV, Inactive: OFF"
+  },
+  {
+   "type": "BV",
+   "instance": 29,
+   "name": "MCU, Cntl Pwr Sy Err",
+   "description": "Modbus 0021H:bit 12",
+   "units": "",
+   "access": "R",
+   "states": "Active: UV1-2-3, Inactive: OFF"
+  },
+  {
+   "type": "BV",
+   "instance": 30,
+   "name": "Output Phase Loss",
+   "description": "Modbus 0021H:bit 13",
+   "units": "",
+   "access": "R",
+   "states": "Active: LF, Inactive: OFF"
+  },
+  {
+   "type": "BV",
+   "instance": 31,
+   "name": "Communication Error",
+   "description": "Modbus 0021H:bit 14",
+   "units": "",
+   "access": "R",
+   "states": "Active: CE, Inactive: OFF"
+  },
+  {
+   "type": "BV",
+   "instance": 32,
+   "name": "Operator Disconnect",
+   "description": "Modbus 0021H:bit 15",
+   "units": "",
+   "access": "R",
+   "states": "Active: OPR, Inactive: OFF"
+  },
+  {
+   "type": "BV",
+   "instance": 33,
+   "name": "Operating",
+   "description": "Modbus 002CH:bit 0",
+   "units": "",
+   "access": "R",
+   "states": "Active: OPERATING, Inactive: OFF"
+  },
+  {
+   "type": "BV",
+   "instance": 34,
+   "name": "Aero Speed",
+   "description": "Modbus 002CH:bit 1",
+   "units": "",
+   "access": "R",
+   "states": "Active: ON, Inactive: OFF"
+  },
+  {
+   "type": "BV",
+   "instance": 35,
+   "name": "Frequency Agree",
+   "description": "Modbus 002CH:bit 2",
+   "units": "",
+   "access": "R",
+   "states": "Active: ON, Inactive: OFF"
+  },
+  {
+   "type": "BV",
+   "instance": 36,
+   "name": "Desired Frequency Agree",
+   "description": "Modbus 002CH:bit 3",
+   "units": "",
+   "access": "R",
+   "states": "Active: ON, Inactive: OFF"
+  },
+  {
+   "type": "BV",
+   "instance": 37,
+   "name": "Frequency Detect 1",
+   "description": "Modbus 002CH:bit 4",
+   "units": "",
+   "access": "R",
+   "states": "Active: ON, Inactive: OFF"
+  },
+  {
+   "type": "BV",
+   "instance": 38,
+   "name": "Frequency Detect 2",
+   "description": "Modbus 002CH:bit 5",
+   "units": "",
+   "access": "R",
+   "states": "Active: ON, Inactive: OFF"
+  },
+  {
+   "type": "BV",
+   "instance": 39,
+   "name": "Drive Startup Complete",
+   "description": "Modbus 002CH:bit 6",
+   "units": "",
+   "access": "R",
+   "states": "Active: ON, Inactive: OFF"
+  },
+  {
+   "type": "BV",
+   "instance": 40,
+   "name": "Low Voltage Detect",
+   "description": "Modbus 002CH:bit 7",
+   "units": "",
+   "access": "R",
+   "states": "Active: ON, Inactive: OFF"
+  },
+  {
+   "type": "BV",
+   "instance": 41,
+   "name": "Base Block",
+   "description": "Modbus 002CH:bit 8",
+   "units": "",
+   "access": "R",
+   "states": "Active: ON, Inactive: OFF"
+  },
+  {
+   "type": "BV",
+   "instance": 42,
+   "name": "Frequency Reference Mode",
+   "description": "Modbus 002CH:bit 9",
+   "units": "",
+   "access": "R",
+   "states": "Active: COM, Inactive: LOCAL"
+  },
+  {
+   "type": "BV",
+   "instance": 43,
+   "name": "Run Command Mode",
+   "description": "Modbus 002CH:bit 10",
+   "units": "",
+   "access": "R",
+   "states": "Active: COM, Inactive: LOCAL"
+  },
+  {
+   "type": "BV",
+   "instance": 44,
+   "name": "Overtorque Detect",
+   "description": "Modbus 002CH:bit 11",
+   "units": "",
+   "access": "R",
+   "states": "Active: ON, Inactive: OFF"
+  },
+  {
+   "type": "BV",
+   "instance": 45,
+   "name": "Frequency Refer Lost",
+   "description": "Modbus 002CH:bit 12",
+   "units": "",
+   "access": "R",
+   "states": "Active: ON, Inactive: OFF"
+  },
+  {
+   "type": "BV",
+   "instance": 46,
+   "name": "Retry Error",
+   "description": "Modbus 002CH:bit 13",
+   "units": "",
+   "access": "R",
+   "states": "Active: ON, Inactive: OFF"
+  },
+  {
+   "type": "BV",
+   "instance": 47,
+   "name": "Modbus Comms Error",
+   "description": "Modbus 002CH:bit 14",
+   "units": "",
+   "access": "R",
+   "states": "Active: ON, Inactive: OFF"
+  },
+  {
+   "type": "BV",
+   "instance": 48,
+   "name": "Modbus Timeout Error",
+   "description": "Modbus 002CH:bit 15",
+   "units": "",
+   "access": "R",
+   "states": "Active: ON, Inactive: OFF"
+  },
+  {
+   "type": "BV",
+   "instance": 49,
+   "name": "CRC Error",
+   "description": "Modbus 003DH:bit 0",
+   "units": "",
+   "access": "R",
+   "states": "Active: ON, Inactive: OFF"
+  },
+  {
+   "type": "BV",
+   "instance": 50,
+   "name": "Invalid Data Length",
+   "description": "Modbus 003DH:bit 1",
+   "units": "",
+   "access": "R",
+   "states": "Active: ON, Inactive: OFF"
+  },
+  {
+   "type": "BV",
+   "instance": 51,
+   "name": "Parity Error",
+   "description": "Modbus 003DH:bit 3",
+   "units": "",
+   "access": "R",
+   "states": "Active: ON, Inactive: OFF"
+  },
+  {
+   "type": "BV",
+   "instance": 52,
+   "name": "Overrun Error",
+   "description": "Modbus 003DH:bit 4",
+   "units": "",
+   "access": "R",
+   "states": "Active: ON, Inactive: OFF"
+  },
+  {
+   "type": "BV",
+   "instance": 53,
+   "name": "Framing Error",
+   "description": "Modbus 003DH:bit 5",
+   "units": "",
+   "access": "R",
+   "states": "Active: ON, Inactive: OFF"
+  },
+  {
+   "type": "BV",
+   "instance": 54,
+   "name": "Timeout Error",
+   "description": "Modbus 003DH:bit 6",
+   "units": "",
+   "access": "R",
+   "states": "Active: ON, Inactive: OFF"
+  },
+  {
+   "type": "BV",
+   "instance": 55,
+   "name": "Parameter Accept",
+   "description": "ON = accept parameter writes into RAM; Modbus 0910H:bit 0",
+   "units": "",
+   "access": "W",
+   "states": "Active: ON, Inactive: OFF"
+  },
+  {
+   "type": "BV",
+   "instance": 56,
+   "name": "Parameter Enter",
+   "description": "ON = enter parameter writes and save to EEPROM; Modbus 0900H:bit 0",
+   "units": "",
+   "access": "W",
+   "states": "Active: ON, Inactive: OFF"
+  },
+  {
+   "type": "BV",
+   "instance": 57,
+   "name": "Drive Comm Error",
+   "description": "Drive communication error",
+   "units": "",
+   "access": "R",
+   "states": "Active: ON, Inactive: OFF"
+  }
+ ],
+ "page": "https://easybacnet.com/bacnet-points-lists/yaskawa/z1000",
+ "note": "Re-typed from the manufacturer's public documentation (see source). Point availability varies by firmware and options; verify against the live device."
+}

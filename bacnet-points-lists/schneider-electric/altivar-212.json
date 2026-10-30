@@ -1,0 +1,545 @@
+{
+ "manufacturer": "Schneider Electric",
+ "manufacturer_slug": "schneider-electric",
+ "model": "Altivar 212 (embedded BACnet MS/TP)",
+ "model_slug": "altivar-212",
+ "aliases": [
+  "ATV212",
+  "ATV 212",
+  "Altivar 212",
+  "ATV212H",
+  "ATV212W",
+  "S1A53845"
+ ],
+ "equipment_type": "Variable frequency drive (HVAC)",
+ "applies_to": "Schneider Electric Altivar 212 HVAC fan and pump drives using the built-in open-style RS-485 terminals with F829 set to BACnet.",
+ "summary": "The Altivar 212 has BACnet MS/TP built in; F829 = 4 selects it on the open-style RS-485 terminals. The fixed list of 48 objects covers relay and logic input status, run/stop, direction and fault reset commands, a % speed reference, three preset speeds, motor monitors, the last three fault codes and a mailbox (MBOX) for reading or writing any drive parameter. BV21/BV22 give BACnet priority over the local reference and command sources.",
+ "bacnet_transport": [
+  "BACnet MS/TP"
+ ],
+ "firmware": null,
+ "default_device_instance": 0,
+ "access_inferred": false,
+ "notes": [
+  "The manual gives no units for the analog inputs and output; they read 0-100 % (100 % = 1023).",
+  "BO0/BO1 drive the FL and RY relays only when F132 = 38 or 39 and F130 = 40 or 41.",
+  "AI2 and AO0 relate to the FM output and need FMSL = 18.",
+  "AV25/AV26 with BV15/BV16 form a mailbox for reading and writing any drive parameter.",
+  "BV23 DAMPER FB only works when F807 = 1 (open style) and F580 = 3 or 4.",
+  "The device object reports 49 objects (48 here plus the device); only Max_Master is writable on it."
+ ],
+ "source": {
+  "title": "Altivar 212 BACnet Communication Manual",
+  "doc_number": "S1A53845 (04)",
+  "revision_date": "2020-07",
+  "url": "https://download.schneider-electric.com/files?p_Doc_Ref=S1A53845&p_enDocType=User+guide&p_File_Name=ATV212_BACnet_manual_EN_S1A53845_04.pdf"
+ },
+ "integration": {
+  "summary": "Set F829 = 4 (BACnet), F807 = 1 (open style), the MAC address in F890 and the device instance in F893/F894, then power-cycle. Set CMOd = 2 and FMOd = 4 so BACnet supplies commands and the speed reference, or leave them on terminals and use BV22 CMDSEL / BV21 STPSEL to give BACnet priority. Write BV10 RUN/STOP CMD and AV16 INPUT REF 1 and pick the comm-loss action in F851.",
+  "minimum_points": [
+   {
+    "ref": "BV 10",
+    "name": "RUN/STOP CMD",
+    "why": "Start/stop from the BMS"
+   },
+   {
+    "ref": "AV 16",
+    "name": "INPUT REF 1",
+    "why": "Speed reference in %"
+   },
+   {
+    "ref": "BV 14",
+    "name": "FAULT RESET",
+    "why": "Reset a tripped drive"
+   },
+   {
+    "ref": "BV 0",
+    "name": "RUN/STOP ACT",
+    "why": "Running status"
+   },
+   {
+    "ref": "BV 4",
+    "name": "HAND/AUTO ACT",
+    "why": "Shows if the drive is in Hand"
+   },
+   {
+    "ref": "AV 1",
+    "name": "OUTPUT FREQ",
+    "why": "Output frequency in Hz"
+   },
+   {
+    "ref": "AV 4",
+    "name": "CURRENT",
+    "why": "Motor amps"
+   },
+   {
+    "ref": "AV 6",
+    "name": "POWER",
+    "why": "Motor power in %"
+   },
+   {
+    "ref": "BV 2",
+    "name": "FAULT ACT",
+    "why": "Any active drive fault"
+   },
+   {
+    "ref": "AV 18",
+    "name": "LAST FLT",
+    "why": "Which fault is active"
+   }
+  ],
+  "enable": "Full BACnet control: CMOd Command mode sel = 2 (Communication) and FMOd Frequency mode sel = 4 (Serial com ref); F207 = 4 does the same for the second reference. Alternatively keep terminal control and turn on BV22 CMDSEL (command priority) and BV21 STPSEL (setpoint priority) to hand commands and the reference to BACnet. The LOC/REM key and logic inputs set to Forced local (48) or Frequency source (38) can take control back locally.",
+  "heartbeat": "F892 Network time out (20-600 = 2-60 s, default 100 = 10 s) is the trip time once communication has been established. F851 Com. fault setting picks the reaction: 0 ramp to stop and hand control back to CMOd/FMOd, 1 no action (last command continues), 2 ramp stop keeping serial control, 3 freewheel, 4 ramp stop with Err8 Network error fault (default).",
+  "remote_sensors": "The object list has no writable process value; AV10 PRC PID FBCK is read-only. BV23 DAMPER FB lets the BMS supply the damper-open feedback when F580 = 3 or 4.",
+  "setup": [
+   "F829 = 4 selects BACnet; F807 = 1 uses the open-style network terminals. Changes need the motor stopped and a power cycle.",
+   "F890 MAC address 0-127 (default 0); F895 Max master (default 127); F896 Max info frames.",
+   "F891 baud: 9600, 19200, 38400, 76800 or Auto (default Auto); 8 data bits, no parity, 1 stop bit fixed.",
+   "Device instance is F893 (upper 4 digits) and F894 (lower 3 digits), range 0-4194303; e.g. 0235045 = F893 0235, F894 0045.",
+   "F856 sets motor poles so AV0 OUTPUT SPEED reads in rpm."
+  ],
+  "gotchas": [
+   "F851 = 1 disables communication monitoring; Schneider says to use it only for commissioning tests.",
+   "The LOC/REM key and forced-local logic inputs override BACnet control.",
+   "AV16 is a % reference, not Hz.",
+   "BO0/BO1 only drive the relays when F130/F132 assign them to the network.",
+   "Writing AV8 resets the energy counter."
+  ]
+ },
+ "points": [
+  {
+   "type": "BI",
+   "instance": 0,
+   "name": "RO 1 ACT",
+   "description": "Status of relay FL",
+   "units": "",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "BI",
+   "instance": 1,
+   "name": "RO 2 ACT",
+   "description": "Status of relay RY",
+   "units": "",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "BI",
+   "instance": 6,
+   "name": "DI 1 ACT",
+   "description": "Value of F",
+   "units": "",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "BI",
+   "instance": 7,
+   "name": "DI 2 ACT",
+   "description": "Value of R",
+   "units": "",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "BI",
+   "instance": 8,
+   "name": "DI 3 ACT",
+   "description": "Value of RES",
+   "units": "",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "BO",
+   "instance": 0,
+   "name": "RO1 CMD",
+   "description": "FL relay out accessible if not assigned; F132 =38 or 39",
+   "units": "",
+   "access": "C",
+   "states": ""
+  },
+  {
+   "type": "BO",
+   "instance": 1,
+   "name": "RO2 CMD",
+   "description": "RY relay out accessible if not assigned; F130 =40 or 41",
+   "units": "",
+   "access": "C",
+   "states": ""
+  },
+  {
+   "type": "AI",
+   "instance": 0,
+   "name": "ANALOG INPUT 1",
+   "description": "VIA analogue; 0-100% (100%=1023)",
+   "units": "%",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "AI",
+   "instance": 1,
+   "name": "ANALOG INPUT 2",
+   "description": "VIB analogue; 0-100% (100%=1023)",
+   "units": "%",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "AI",
+   "instance": 2,
+   "name": "ANALOG OUTPUT 1 ACT",
+   "description": "FM actual value; 0-100% (100%=1023) [FMSL=18]",
+   "units": "%",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "AO",
+   "instance": 0,
+   "name": "ANALOG OUTPUT 1",
+   "description": "Analogue output; 0-100% (100%=1023) [FMSL=18]",
+   "units": "%",
+   "access": "C",
+   "states": ""
+  },
+  {
+   "type": "BV",
+   "instance": 0,
+   "name": "RUN/STOP ACT",
+   "description": "Indicates the drive status",
+   "units": "",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "BV",
+   "instance": 1,
+   "name": "FWD/REV ACT",
+   "description": "Indicates the motor rotation's direction",
+   "units": "",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "BV",
+   "instance": 2,
+   "name": "FAULT ACT",
+   "description": "Indicates the drive's fault status",
+   "units": "",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "BV",
+   "instance": 4,
+   "name": "HAND/AUTO ACT",
+   "description": "Indicates if the drive is locally controlled or not",
+   "units": "",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "BV",
+   "instance": 6,
+   "name": "MAINT REQ",
+   "description": "Maintenance required",
+   "units": "",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "BV",
+   "instance": 7,
+   "name": "DRIVE READY",
+   "description": "The VSD is ready and waits a start command",
+   "units": "",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "BV",
+   "instance": 8,
+   "name": "AT SETPOINT",
+   "description": "The VSD has reached the target speed",
+   "units": "",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "BV",
+   "instance": 10,
+   "name": "RUN/STOP CMD",
+   "description": "Commands a drive start",
+   "units": "",
+   "access": "C",
+   "states": ""
+  },
+  {
+   "type": "BV",
+   "instance": 11,
+   "name": "FWD/REV CMD",
+   "description": "Commands a motor direction's change",
+   "units": "",
+   "access": "C",
+   "states": ""
+  },
+  {
+   "type": "BV",
+   "instance": 14,
+   "name": "FAULT RESET",
+   "description": "Clear the detected fault by resetting the drive",
+   "units": "",
+   "access": "C",
+   "states": ""
+  },
+  {
+   "type": "BV",
+   "instance": 15,
+   "name": "MBOX READ",
+   "description": "Command to read parameter",
+   "units": "",
+   "access": "W",
+   "states": ""
+  },
+  {
+   "type": "BV",
+   "instance": 16,
+   "name": "MBOX WRITE",
+   "description": "Command to write parameter",
+   "units": "",
+   "access": "W",
+   "states": ""
+  },
+  {
+   "type": "BV",
+   "instance": 18,
+   "name": "SP1PRESET",
+   "description": "Preset speed operation frequencies 1",
+   "units": "",
+   "access": "C",
+   "states": ""
+  },
+  {
+   "type": "BV",
+   "instance": 19,
+   "name": "SP2PRESET",
+   "description": "Preset speed operation frequencies 2",
+   "units": "",
+   "access": "C",
+   "states": ""
+  },
+  {
+   "type": "BV",
+   "instance": 20,
+   "name": "SP3PRESET",
+   "description": "Preset speed operation frequencies 3",
+   "units": "",
+   "access": "C",
+   "states": ""
+  },
+  {
+   "type": "BV",
+   "instance": 21,
+   "name": "STPSEL",
+   "description": "Gives the BACnet speed reference priority (ON)",
+   "units": "",
+   "access": "C",
+   "states": ""
+  },
+  {
+   "type": "BV",
+   "instance": 22,
+   "name": "CMDSEL",
+   "description": "Gives BACnet commands priority (ON)",
+   "units": "",
+   "access": "C",
+   "states": ""
+  },
+  {
+   "type": "BV",
+   "instance": 23,
+   "name": "DAMPER FB",
+   "description": "Damper open feedback written over BACnet",
+   "units": "",
+   "access": "W",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 0,
+   "name": "OUTPUT SPEED",
+   "description": "Output speed",
+   "units": "rpm",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 1,
+   "name": "OUTPUT FREQ",
+   "description": "Output frequency",
+   "units": "Hz",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 2,
+   "name": "DC BUS VOLT",
+   "description": "DC bus voltage",
+   "units": "V",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 3,
+   "name": "OUTPUT VOLT",
+   "description": "Motor voltage",
+   "units": "V",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 4,
+   "name": "CURRENT",
+   "description": "Motor current",
+   "units": "A",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 5,
+   "name": "TORQUE",
+   "description": "Motor Torque",
+   "units": "%",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 6,
+   "name": "POWER",
+   "description": "Motor power, % of nominal",
+   "units": "%",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 7,
+   "name": "DRIVE TEMP",
+   "description": "Drive Thermal State",
+   "units": "%",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 8,
+   "name": "KWH (R)",
+   "description": "Energy counter; writing a value resets it",
+   "units": "kWh",
+   "access": "W",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 10,
+   "name": "PRC PID FBCK",
+   "description": "PID regulator feedback",
+   "units": "%",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 14,
+   "name": "RUN TIME",
+   "description": "Operating time",
+   "units": "h",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 16,
+   "name": "INPUT REF 1",
+   "description": "Speed reference from BACnet, %",
+   "units": "%",
+   "access": "C",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 18,
+   "name": "LAST FLT",
+   "description": "Error code",
+   "units": "",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 19,
+   "name": "PREV FLT 1",
+   "description": "Previous detected fault (occurred before LASTFLT)",
+   "units": "",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 20,
+   "name": "PREV FLT 2",
+   "description": "Previous detected fault (occurred before PREVFLT1)",
+   "units": "",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 23,
+   "name": "ACCEL1 TIME",
+   "description": "Acceleration time",
+   "units": "s",
+   "access": "W",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 24,
+   "name": "DECEL1 TIME",
+   "description": "Deceleration time",
+   "units": "s",
+   "access": "W",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 25,
+   "name": "MBOX PARAM",
+   "description": "Parameter number",
+   "units": "",
+   "access": "W",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 26,
+   "name": "MBOX DATA",
+   "description": "Parameter value",
+   "units": "",
+   "access": "W",
+   "states": ""
+  }
+ ],
+ "page": "https://easybacnet.com/bacnet-points-lists/schneider-electric/altivar-212",
+ "note": "Re-typed from the manufacturer's public documentation (see source). Point availability varies by firmware and options; verify against the live device."
+}

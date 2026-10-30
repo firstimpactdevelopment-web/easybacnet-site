@@ -1,0 +1,704 @@
+{
+ "manufacturer": "A. O. Smith",
+ "manufacturer_slug": "a-o-smith",
+ "model": "Xi / MXi gas water heaters (ETH-1000 / Mirius gateway)",
+ "model_slug": "gas-water-heater-eth-1000-mirius",
+ "aliases": [
+  "Cyclone Xi",
+  "Xi 1.0",
+  "MXi",
+  "ETH-1000",
+  "Mirius",
+  "100316044",
+  "100316045",
+  "ICC gateway",
+  "iCOMM"
+ ],
+ "equipment_type": "Commercial gas water heater",
+ "applies_to": "A. O. Smith commercial gas water heaters with Xi 1.0 or MXi controls (such as Cyclone) fitted with the ICC ETH-1000 or Mirius communication gateway.",
+ "summary": "A. O. Smith's Xi and MXi gas water heater controls talk to BACnet through an ICC gateway: the Mirius gives BACnet MS/TP and the ETH-1000 gives BACnet IP. Each heater appears as a virtual BACnet device with tank temperatures, setpoint and differential, run-time and fault counters, safety-switch inputs, relay states and state/fault/alert codes. The BMS can write the setpoint and use an EMS control word to enable or disable heating.",
+ "bacnet_transport": [
+  "BACnet MS/TP",
+  "BACnet IP"
+ ],
+ "firmware": "Mirius V3.300, ETH-1000 V4.002 (device object values in the manual)",
+ "default_device_instance": 520081,
+ "access_inferred": false,
+ "notes": [
+  "The manual says not all models support all objects and some names differ by model; a column marks which points apply to Xi 1.0 and which to MXi controls.",
+  "Temperatures are in °C on the bus; the setpoint limits are also given in °F.",
+  "The manual's R/W column is blank for BI 312-320, the BO relay states (described as commanded relay status), the BVs and the multistate values; access for those rows is not given, and they are listed here as read-only.",
+  "AV 263 EMS Mode-Status uses coded values: Xi 1.0 writes 3841 to enter EMS mode, 1/0 to enable/disable heating, 3584 to refresh and 3840 to leave; MXi writes 32769 (enable heating), 32768 (disable) or 0 (no EMS control).",
+  "The table refers to state and fault tables by numbers that do not match the printed tables; the states here come from the CCB state table (Table 11) and the fault table (Table 14).",
+  "The gas table prints no objects at AV 203-206 (the electric table uses them for bank differentials)."
+ ],
+ "source": {
+  "title": "Installation Manual: Inter-Appliance Communications, Communication Node for EMS/BMS Control (ETH-1000 / Mirius)",
+  "doc_number": "100329879_2000571701 Rev. C",
+  "revision_date": "2020-02",
+  "url": "https://assets.hotwater.com/damroot/Original/10004/100329879.pdf"
+ },
+ "integration": {
+  "summary": "Install the ICC gateway (Mirius for BACnet MS/TP, ETH-1000 for BACnet IP) on the heater and set its address and device instance with ICC Configuration Studio. The BMS writes the tank setpoint (AV 201) and, if it should switch heating, takes EMS control through AV 263, which then has to be refreshed at least every 30 s. Read the tank temperature, CCB state and fault/alert codes.",
+  "minimum_points": [
+   {
+    "ref": "AV 263",
+    "name": "EMS Mode-Status",
+    "why": "EMS control word: enable/disable heating"
+   },
+   {
+    "ref": "AV 201",
+    "name": "Temper Setpoint",
+    "why": "Tank setpoint, 32.2-82.2 °C"
+   },
+   {
+    "ref": "AV 207",
+    "name": "Mxi Mod% Cmd",
+    "why": "MXi firing-rate limit, 0-100 %"
+   },
+   {
+    "ref": "MV 801",
+    "name": "System State",
+    "why": "CCB state: standby, purge, heating, fault"
+   },
+   {
+    "ref": "AI 5",
+    "name": "Tank Temperature",
+    "why": "Controlling tank temperature, °C"
+   },
+   {
+    "ref": "AI 3",
+    "name": "Upper Temperature",
+    "why": "Upper tank probe temperature, °C"
+   },
+   {
+    "ref": "BV 504",
+    "name": "System In Fault",
+    "why": "Heater in fault"
+   },
+   {
+    "ref": "MV 802",
+    "name": "Fault Code",
+    "why": "Active fault code"
+   },
+   {
+    "ref": "MV 803",
+    "name": "Alert Code",
+    "why": "Active alert code"
+   }
+  ],
+  "enable": "Heating on/off from the BMS goes through AV 263 EMS Mode-Status. Xi 1.0: write 3841 to enter EMS mode, then 1 to enable or 0 to disable heating; write 3840 to leave EMS mode. MXi: write 32769 to enter EMS mode with heating enabled, 32768 for EMS mode with heating disabled, 0 for no EMS control. Heating still also depends on tank temperature falling below setpoint minus differential and on the external thermostat if that option is on.",
+  "heartbeat": "Xi 1.0: write 3584 (EMS Mode Refresh) within 30 s, 15 s or less recommended, or EMS mode ends and the heater resumes normal operation. MXi: the enable-heating command must be resent at least every 30 s or heating is disabled. On MXi software below 3.16 EMS mode cannot be cleared over BACnet; only a power cycle clears it.",
+  "remote_sensors": null,
+  "setup": [
+   "Gateway settings (address, baud, device instance, device name, IP) are changed with the ICC Configuration Studio software over USB.",
+   "Mirius defaults: Modbus address 1, BACnet MS/TP MAC 81, device instance 520081 for gas models.",
+   "MS/TP baud rates listed: 4800-115200; the ETH-1000 uses DHCP by default and supports foreign-device registration.",
+   "Device object defaults: name Water Heater-01, vendor ICC, Inc. (242)."
+  ],
+  "gotchas": [
+   "The EMS word reads back with bit 14 set (0xC000/0xC001); a brief 0x8000 reading is normal between refreshes.",
+   "After leaving EMS mode with 3840 on Xi 1.0, write 0 and 3584 to clear leftover bits 1 and 14.",
+   "Some objects are Xi 1.0 only or MXi only; check which control the heater has.",
+   "Temperatures are in °C even where the setpoint range is quoted in °F."
+  ]
+ },
+ "points": [
+  {
+   "type": "AI",
+   "instance": 1,
+   "name": "Firmware Ver-Rev1",
+   "description": "Firmware version; major in upper byte, minor in lower",
+   "units": "",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "AI",
+   "instance": 2,
+   "name": "Configuration",
+   "description": "Configuration word",
+   "units": "",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "AI",
+   "instance": 3,
+   "name": "Upper Temperature",
+   "description": "Upper or Primary Temperature",
+   "units": "°C",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "AI",
+   "instance": 4,
+   "name": "Lower Temperature",
+   "description": "Lower or Secondary Temperature",
+   "units": "°C",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "AI",
+   "instance": 5,
+   "name": "Tank Temperature",
+   "description": "Controlling tank temperature, calculated",
+   "units": "°C",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 201,
+   "name": "Temper Setpoint",
+   "description": "Tank temperature setpoint; 32.2-82.2 °C (90-180 °F)",
+   "units": "°C",
+   "access": "W",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 202,
+   "name": "SetPoint Differ",
+   "description": "Setpoint differential; 1.1-11.1 °C (2-20 °F)",
+   "units": "°C",
+   "access": "W",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 207,
+   "name": "Mxi Mod% Cmd",
+   "description": "MXi modulation limit, 0 = minimum to 100 = rated input",
+   "units": "%",
+   "access": "W",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 208,
+   "name": "MxiLowTempAlrmSP2",
+   "description": "MXi low tank temperature alarm setpoint; 32.2-82.2 °C",
+   "units": "°C",
+   "access": "W",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 209,
+   "name": "Number of Cycles",
+   "description": "Number of heating cycles",
+   "units": "",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 210,
+   "name": "Elapsed Time",
+   "description": "Powered-up time, hours with two decimals",
+   "units": "h",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 211,
+   "name": "Elapsed Days",
+   "description": "Powered-up time, days part",
+   "units": "days",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 212,
+   "name": "Elapsed Hours",
+   "description": "Powered-up time, hours part (use with Elapsed Days)",
+   "units": "h",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 213,
+   "name": "Heating Time",
+   "description": "Time spent heating, hours with two decimals",
+   "units": "h",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 214,
+   "name": "Heating Days",
+   "description": "Time spent heating, days part",
+   "units": "days",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 215,
+   "name": "Heating Hours",
+   "description": "Time spent heating, hours part (use with Heating Days)",
+   "units": "h",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 216,
+   "name": "IgniterCurrent",
+   "description": "Hot Surface Igniter current in amps",
+   "units": "A",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 217,
+   "name": "#CCB HW Faults",
+   "description": "CCB Hardware Fault Counter",
+   "units": "",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 218,
+   "name": "#Model Faults",
+   "description": "Model Fault Counter",
+   "units": "",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 219,
+   "name": "#Upper Temp Faults",
+   "description": "Upper Temperature Probe Fault Counter",
+   "units": "",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 220,
+   "name": "#Lower Temp Faults",
+   "description": "Lower Temperature Probe Fault Counter",
+   "units": "",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 221,
+   "name": "#Flame Probe Flt",
+   "description": "Flame Probe Fault Counter",
+   "units": "",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 222,
+   "name": "#Flame Status Flt",
+   "description": "Flame status fault counter",
+   "units": "",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 223,
+   "name": "#CCB Comm Faults",
+   "description": "Communication Fault Counter",
+   "units": "",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 224,
+   "name": "#ECO Faults",
+   "description": "High-temperature ECO trip counter",
+   "units": "",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 225,
+   "name": "#LowGasPress Flt",
+   "description": "Low Gas Pressure switch Fault Counter",
+   "units": "",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 226,
+   "name": "#Blocked In Flts",
+   "description": "Blocked Inlet pressure switch Fault Counter",
+   "units": "",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 227,
+   "name": "#Blocked Exhst Flt",
+   "description": "Blocked exhaust / condensate switch fault counter",
+   "units": "",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 228,
+   "name": "#Ext Vent Faults",
+   "description": "External Vent Fault Counter",
+   "units": "",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 229,
+   "name": "#Blower Prv Flts",
+   "description": "Blower Prove Pressure Switch Fault Counter",
+   "units": "",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 230,
+   "name": "#Igniter Faults",
+   "description": "Igniter Fault Counter",
+   "units": "",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 231,
+   "name": "#Ignition Failure",
+   "description": "Ignition Failure Fault Counter",
+   "units": "",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 232,
+   "name": "#Powr Supply Flt",
+   "description": "Power Supply Fault Counter",
+   "units": "",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 233,
+   "name": "#Powr Anode Flts",
+   "description": "Powered Anode Alert Counter",
+   "units": "",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 263,
+   "name": "EMS Mode-Status",
+   "description": "EMS control word (BMS enable/disable of heating); see notes",
+   "units": "",
+   "access": "W",
+   "states": ""
+  },
+  {
+   "type": "BI",
+   "instance": 301,
+   "name": "Upper Temp Open",
+   "description": "Upper temperature Probe open status",
+   "units": "",
+   "access": "R",
+   "states": "0=Okay, 1=Open"
+  },
+  {
+   "type": "BI",
+   "instance": 302,
+   "name": "Upper Temp Short",
+   "description": "Upper temperature Probe shorted status",
+   "units": "",
+   "access": "R",
+   "states": "0=Okay, 1=Shorted"
+  },
+  {
+   "type": "BI",
+   "instance": 303,
+   "name": "MXi Call For Heat",
+   "description": "MXi call for heat",
+   "units": "",
+   "access": "R",
+   "states": "0=No, 1=Yes"
+  },
+  {
+   "type": "BI",
+   "instance": 304,
+   "name": "Lower Temp Open",
+   "description": "Lower temperature probe open",
+   "units": "",
+   "access": "R",
+   "states": "0=Okay, 1=Open"
+  },
+  {
+   "type": "BI",
+   "instance": 305,
+   "name": "Lower Temp Short",
+   "description": "Lower temperature probe shorted",
+   "units": "",
+   "access": "R",
+   "states": "0=Okay, 1=Shorted"
+  },
+  {
+   "type": "BI",
+   "instance": 306,
+   "name": "Igntr Current OK",
+   "description": "Igniter Current Sensed",
+   "units": "",
+   "access": "R",
+   "states": "0=No Current, 1=Current Sensed"
+  },
+  {
+   "type": "BI",
+   "instance": 307,
+   "name": "Flame Sensed",
+   "description": "Flame sensed",
+   "units": "",
+   "access": "R",
+   "states": "0=No Flame, 1=Flame Sensed"
+  },
+  {
+   "type": "BI",
+   "instance": 308,
+   "name": "Blower Prove PS",
+   "description": "Blower Prove pressure switch",
+   "units": "",
+   "access": "R",
+   "states": "0=Open Switch, 1=Closed Switch"
+  },
+  {
+   "type": "BI",
+   "instance": 309,
+   "name": "Ext Vent PS",
+   "description": "External vent pressure switch (if enabled by DIP switch)",
+   "units": "",
+   "access": "R",
+   "states": "0=Open Switch, 1=Closed Switch"
+  },
+  {
+   "type": "BI",
+   "instance": 310,
+   "name": "Blocked Exhaust PS",
+   "description": "Blocked exhaust pressure switch",
+   "units": "",
+   "access": "R",
+   "states": "0=Open Switch, 1=Closed Switch"
+  },
+  {
+   "type": "BI",
+   "instance": 311,
+   "name": "Blocked Inlet PS",
+   "description": "Blocked air intake pressure switch",
+   "units": "",
+   "access": "R",
+   "states": "0=Open Switch, 1=Closed Switch"
+  },
+  {
+   "type": "BI",
+   "instance": 312,
+   "name": "Low Gas PS",
+   "description": "Low Gas supply pressure switch",
+   "units": "",
+   "access": "R",
+   "states": "0=Open Switch, 1=Closed Switch"
+  },
+  {
+   "type": "BI",
+   "instance": 313,
+   "name": "Upper Temp ECO",
+   "description": "Upper probe high-temperature energy cut-out (ECO) status",
+   "units": "",
+   "access": "R",
+   "states": "0=Open Switch, 1=Closed Switch"
+  },
+  {
+   "type": "BI",
+   "instance": 314,
+   "name": "External T’stat",
+   "description": "External thermostat input (if enabled by DIP switch)",
+   "units": "",
+   "access": "R",
+   "states": "0=No, 1=Yes"
+  },
+  {
+   "type": "BI",
+   "instance": 315,
+   "name": "Xi 1.0 Call For Heat",
+   "description": "Xi 1.0 conditions allow heating",
+   "units": "",
+   "access": "R",
+   "states": "0=Okay, 1=Alarm"
+  },
+  {
+   "type": "BI",
+   "instance": 316,
+   "name": "MXi LowTemp Alrm",
+   "description": "MXi tank below low-temperature alarm setpoint",
+   "units": "",
+   "access": "R",
+   "states": "0=Okay, 1=Alarm"
+  },
+  {
+   "type": "BI",
+   "instance": 317,
+   "name": "MXi LeakDetected",
+   "description": "Optional leak detector tripped",
+   "units": "",
+   "access": "R",
+   "states": "0=No Leak, 1=Leak Detected"
+  },
+  {
+   "type": "BI",
+   "instance": 318,
+   "name": "Mxi HeaterEnab’d",
+   "description": "MXi front heater-enable switch",
+   "units": "",
+   "access": "R",
+   "states": "0=Disabled, 1=Enabled"
+  },
+  {
+   "type": "BI",
+   "instance": 319,
+   "name": "MXi External Enab",
+   "description": "MXi optional external enable input",
+   "units": "",
+   "access": "R",
+   "states": "0=Disabled, 1=Enabled"
+  },
+  {
+   "type": "BI",
+   "instance": 320,
+   "name": "Xi 1.0 Ign Tries",
+   "description": "Xi 1.0 ignition tries set by DIP switch",
+   "units": "",
+   "access": "R",
+   "states": "0=3 tries, 1=1 try"
+  },
+  {
+   "type": "BO",
+   "instance": 401,
+   "name": "Ext Vent Relay",
+   "description": "External Vent Relay output commanded status",
+   "units": "",
+   "access": "R",
+   "states": "0=Off, 1=On"
+  },
+  {
+   "type": "BO",
+   "instance": 402,
+   "name": "Blower Relay",
+   "description": "Blower Relay output commanded status",
+   "units": "",
+   "access": "R",
+   "states": "0=Off, 1=On"
+  },
+  {
+   "type": "BO",
+   "instance": 403,
+   "name": "Ignition Relay",
+   "description": "Ignition Relay output commanded status",
+   "units": "",
+   "access": "R",
+   "states": "0=Off, 1=On"
+  },
+  {
+   "type": "BO",
+   "instance": 404,
+   "name": "Gas Valve Relay",
+   "description": "Gas valve Relay output commanded status",
+   "units": "",
+   "access": "R",
+   "states": "0=Off, 1=On"
+  },
+  {
+   "type": "BV",
+   "instance": 501,
+   "name": "MXi Ign Tries",
+   "description": "MXi ignition tries (set at the UIM)",
+   "units": "",
+   "access": "R",
+   "states": "0=3 tries, 1=1 try"
+  },
+  {
+   "type": "BV",
+   "instance": 502,
+   "name": "MXi Use Ext Enab",
+   "description": "MXi use the optional external enable input",
+   "units": "",
+   "access": "R",
+   "states": "0=No, 1=Yes"
+  },
+  {
+   "type": "BV",
+   "instance": 503,
+   "name": "MXi Modulation",
+   "description": "MXi modulation enable (CCB software 3.15+)",
+   "units": "",
+   "access": "R",
+   "states": "0=Disabled, 1=Enabled"
+  },
+  {
+   "type": "BV",
+   "instance": 504,
+   "name": "System In Fault",
+   "description": "Heater in fault",
+   "units": "",
+   "access": "R",
+   "states": "0=Okay, 1=Alarm"
+  },
+  {
+   "type": "MV",
+   "instance": 801,
+   "name": "System State",
+   "description": "CCB control state",
+   "units": "",
+   "access": "R",
+   "states": "Xi 1.0: 1=Off (Standby), 2=Pre-Purge, 3=Igniter Warmup, 4=Ignition Activation, 5=Ignition Verification, 6=Inter-Purge, 7=Heating, 8=Post-Purge, 9=Fault; MXi: 1=Off (Standby), 2=Pre-Purge, 3=Igniting, 4=Gas Valve On, 5=Inter-Purge, 6=Heating, 7=Post-Purge, 8=In Fault"
+  },
+  {
+   "type": "MV",
+   "instance": 802,
+   "name": "Fault Code",
+   "description": "Active fault code",
+   "units": "",
+   "access": "R",
+   "states": "Numeric code; see the fault codes and warnings table in the manual"
+  },
+  {
+   "type": "MV",
+   "instance": 803,
+   "name": "Alert Code",
+   "description": "Active alert code",
+   "units": "",
+   "access": "R",
+   "states": "Numeric code; see the fault codes and warnings table in the manual"
+  }
+ ],
+ "page": "https://easybacnet.com/bacnet-points-lists/a-o-smith/gas-water-heater-eth-1000-mirius",
+ "note": "Re-typed from the manufacturer's public documentation (see source). Point availability varies by firmware and options; verify against the live device."
+}

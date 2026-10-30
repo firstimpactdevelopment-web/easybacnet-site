@@ -1,0 +1,999 @@
+{
+  "manufacturer": "RBI",
+  "manufacturer_slug": "rbi",
+  "model": "FIII / Fusion / CK boilers with HeatNet V3 control",
+  "model_slug": "heatnet-v3-fiii-fusion-ck",
+  "aliases": [
+    "HeatNet V3",
+    "HeatNet",
+    "Futera III",
+    "FIII",
+    "Futera Fusion",
+    "Fusion",
+    "CK Series",
+    "Mestek",
+    "RBI V3 BACnet Objects"
+  ],
+  "equipment_type": "Commercial boiler controller",
+  "applies_to": "RBI (Mestek) Futera III, Fusion and CK Series boilers with a HeatNet V3 control board, including HeatNet cascades of up to 16 boilers.",
+  "summary": "The HeatNet V3 control on RBI FIII, Fusion and CK boilers exposes a fixed BACnet object list. The BMS writes heat demand, the system setpoint (guarded by a countdown failsafe timer), outdoor-reset settings, DHW setpoint, clock and flow/boiler limits as analog and binary values. Read-only analog inputs give plant temperatures, counts and per-boiler run time, cycles, temperatures and modulation, and read-only binary values give interlock, alarm and status flags for each of up to 16 boilers.",
+  "bacnet_transport": [],
+  "firmware": "HeatNet V3; BTUH, system return/flow and boiler-count points need firmware 2.00 or later",
+  "default_device_instance": null,
+  "access_inferred": false,
+  "notes": [
+    "The object list does not say which BACnet data link (BACnet IP or BACnet MS/TP) is used and gives no device instance or network settings.",
+    "Per-boiler binary values are printed once as Boiler##_<name> with an instance formula; they are listed here at the boiler 1 instance. Boiler n = 1000-series base + (n - 1) x 32, or 2000/3000-series base + (n - 1) x 16. Boiler 1 is the master or stand-alone (BACnet-connected) boiler; members are 2-16.",
+    "Per-boiler analog inputs are printed as ranges and listed here for boiler 1 only: Boiler01-16_Runtime AI 48-63, _Cycles AI 64-79, _SupplyTemp AI 80-95, _ReturnTemp AI 96-111, _DHWTemp AI 112-127, _Modulation AI 128-143 (boiler n = boiler 1 instance + n - 1).",
+    "No objects are printed at BV 1014, BV 1022 or BV 3004-3008.",
+    "The manual describes Boiler##_OutsideSensorNA as 'Header Sensor not available', the same text as HeaderSensorNA; the name suggests the outside sensor.",
+    "Temperatures are in °F."
+  ],
+  "source": {
+    "title": "RBI FIII/Fusion/CK Series Boiler - HeatNet V3 BACnet Objects",
+    "doc_number": "V1.00",
+    "revision_date": null,
+    "url": "https://www.literature.mestek.com/dms/RBI%20Water%20Heaters/RBI%20V3%20BACnet%20Objects%20v1.00.pdf"
+  },
+  "integration": {
+    "summary": "Connect the BMS to the master (boiler 1) HeatNet board. Write BV 1 HeatDemand to call for heat and AV 2 Setpoint for the system setpoint, and keep reloading AV 1 SetpointTimer so the plant does not fall back to its local setpoint. Read header/supply/return temperatures, boilers on, modulation and the per-boiler alarm and failed flags.",
+    "minimum_points": [
+      {
+        "ref": "BV 1",
+        "name": "HeatDemand",
+        "why": "Heat demand from the BMS (1 = heat)"
+      },
+      {
+        "ref": "AV 2",
+        "name": "Setpoint",
+        "why": "System setpoint, 40-220 °F"
+      },
+      {
+        "ref": "AV 1",
+        "name": "SetpointTimer",
+        "why": "Failsafe countdown; reload before it reaches 0"
+      },
+      {
+        "ref": "AI 144",
+        "name": "OperatingSetpoint",
+        "why": "Active setpoint in use"
+      },
+      {
+        "ref": "AI 3",
+        "name": "HeaderTemp",
+        "why": "Header / system temperature, °F"
+      },
+      {
+        "ref": "AI 1",
+        "name": "BoilersOn",
+        "why": "Number of boilers running"
+      },
+      {
+        "ref": "AI 2",
+        "name": "Modulation",
+        "why": "System target modulation, %"
+      },
+      {
+        "ref": "BV 1005",
+        "name": "Boiler##_Running",
+        "why": "Boiler 1 firing (add 32 per boiler number)"
+      },
+      {
+        "ref": "BV 1002",
+        "name": "Boiler##_Alarm",
+        "why": "Boiler 1 alarm (add 32 per boiler number)"
+      },
+      {
+        "ref": "BV 1003",
+        "name": "Boiler##_Failed",
+        "why": "Boiler 1 failed (add 32 per boiler number)"
+      }
+    ],
+    "enable": "BV 1 HeatDemand puts the boiler (plant) into heating mode when set to 1; 0 removes the demand. The setpoint the BMS writes is AV 2 Setpoint.",
+    "heartbeat": "AV 1 SetpointTimer (0-65535 s) is a BMS failsafe countdown. The BMS must reload it periodically; if it reaches zero the control assumes the BMS has stopped and reloads its own saved local setpoint. Writing any read/write variable reloads the timer to 60 s if it is below 60 (on firmware below 3.48 only writing the setpoint does this).",
+    "remote_sensors": "AV 16 BMSFlowRateGPM lets the BMS supply the system flow for flow-limited control, and AV 17 BMSLimitBoilers caps how many boilers HeatNet may run. AV 3-7 and BV 2 set up outdoor air reset; there is no writable outdoor temperature.",
+    "setup": [
+      "The object document gives no data link, address or device-instance settings.",
+      "To set the clock, write AV 8-14 (month, day, year, hour, minute, second, weekday) and then write 1 to BV 3 SetClock."
+    ],
+    "gotchas": [
+      "If SetpointTimer runs out, the plant quietly returns to its local setpoint.",
+      "Per-boiler objects are listed at the boiler 1 instance; offset them by boiler number using the formulas in the notes. Boiler 1 is the master or stand-alone boiler.",
+      "Modulation per boiler (AI 128-143) does not work in AA/High Fire, T1 or T2 modes.",
+      "Several points need firmware 2.00 or later."
+    ]
+  },
+  "points": [
+    {
+      "type": "AV",
+      "instance": 1,
+      "name": "SetpointTimer",
+      "description": "BMS failsafe timer; reload before it counts to zero; 0 – 65535 seconds",
+      "units": "s",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 2,
+      "name": "Setpoint",
+      "description": "System setpoint written by the BMS (see SetpointTimer); 40 - 220 °F (4.5 – 104.4 °C)",
+      "units": "°F",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 3,
+      "name": "OARSetpoint",
+      "description": "Outdoor temperature at which the boiler shuts down; 40 – 100 °F (4.5 – 37.8 °C)",
+      "units": "°F",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 4,
+      "name": "OARHighWaterTemp",
+      "description": "Water setpoint at the high outdoor temperature; 60 – 190 °F (15.6 – 87.8 °C)",
+      "units": "°F",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 5,
+      "name": "OARHighAirTemp",
+      "description": "High outdoor air temperature reset point; 50 – 90 °F (10 – 32.2 °C)",
+      "units": "°F",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 6,
+      "name": "OARLowWaterTemp",
+      "description": "Header/supply setpoint at the low outdoor temperature; 70 – 220 °F (21.1 – 104.4 °C)",
+      "units": "°F",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 7,
+      "name": "OARLowAirTemp",
+      "description": "Low outdoor air temperature reset point; -35 – 40 °F (-37.2 – 4.4 °C)",
+      "units": "°F",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 8,
+      "name": "SetMonth",
+      "description": "Clock set value: month (0 = January); 0 (January) – 11 (December)",
+      "units": "months",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 9,
+      "name": "SetDay",
+      "description": "Clock set value: day; 1 – 31",
+      "units": "days",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 10,
+      "name": "SetYear",
+      "description": "Clock set value: year (0-99); 0 – 99",
+      "units": "years",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 11,
+      "name": "SetHour",
+      "description": "Clock set value: hour; 0 – 23",
+      "units": "h",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 12,
+      "name": "SetMinute",
+      "description": "Clock set value: minute; 0 – 59",
+      "units": "min",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 13,
+      "name": "SetSecond",
+      "description": "Clock set value: second; 0 – 59",
+      "units": "s",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 14,
+      "name": "SetWeekday",
+      "description": "Clock set value: weekday (0 = Monday); 0 (Monday) – 6 (Sunday)",
+      "units": "",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 15,
+      "name": "DHWSetpoint",
+      "description": "DHW setpoint; 40 – 200 °F (4.4 – 93.3 °C)",
+      "units": "°F",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 16,
+      "name": "BMSFlowRateGPM",
+      "description": "System flow measured by the BMS (flow-limited control); 0 – 1500",
+      "units": "gpm",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 17,
+      "name": "BMSLimitBoilers",
+      "description": "Number of boilers HeatNet may run (boilers-limited control); 0 – 16",
+      "units": "",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "BV",
+      "instance": 1,
+      "name": "HeatDemand",
+      "description": "BMS heat demand: 1 puts the boiler plant into heating",
+      "units": "",
+      "access": "W",
+      "states": "0=No heat demand, 1=Heat demand"
+    },
+    {
+      "type": "BV",
+      "instance": 2,
+      "name": "OAResetEnable",
+      "description": "Enable outdoor air reset",
+      "units": "",
+      "access": "W",
+      "states": "0=Disabled, 1=Enabled"
+    },
+    {
+      "type": "BV",
+      "instance": 3,
+      "name": "SetClock",
+      "description": "Write 1 to load the Set... values into the clock",
+      "units": "",
+      "access": "W",
+      "states": "1=Set the clock"
+    },
+    {
+      "type": "BV",
+      "instance": 1000,
+      "name": "Boiler##_Disabled",
+      "description": "Disabled",
+      "units": "",
+      "access": "R",
+      "states": "0=enabled, 1=disabled"
+    },
+    {
+      "type": "BV",
+      "instance": 1001,
+      "name": "Boiler##_LocalOverride",
+      "description": "Local Override (member boilers only)",
+      "units": "",
+      "access": "R",
+      "states": "0=no override, 1=override"
+    },
+    {
+      "type": "BV",
+      "instance": 1002,
+      "name": "Boiler##_Alarm",
+      "description": "Alarm",
+      "units": "",
+      "access": "R",
+      "states": "0=ok, 1=alarm"
+    },
+    {
+      "type": "BV",
+      "instance": 1003,
+      "name": "Boiler##_Failed",
+      "description": "Failed",
+      "units": "",
+      "access": "R",
+      "states": "0=ok, 1=failed"
+    },
+    {
+      "type": "BV",
+      "instance": 1004,
+      "name": "Boiler##_MemberError",
+      "description": "Member Alarm or Failed",
+      "units": "",
+      "access": "R",
+      "states": "0=ok, 1=error"
+    },
+    {
+      "type": "BV",
+      "instance": 1005,
+      "name": "Boiler##_Running",
+      "description": "Running/firing",
+      "units": "",
+      "access": "R",
+      "states": "0=off, 1=running (firing)"
+    },
+    {
+      "type": "BV",
+      "instance": 1006,
+      "name": "Boiler##_LocalPumpOn",
+      "description": "Local pump is on/running",
+      "units": "",
+      "access": "R",
+      "states": "0=off, 1=on (running)"
+    },
+    {
+      "type": "BV",
+      "instance": 1007,
+      "name": "Boiler##_SystemFlowInterlock",
+      "description": "System Flow Interlock",
+      "units": "",
+      "access": "R",
+      "states": "0=open, 1=closed"
+    },
+    {
+      "type": "BV",
+      "instance": 1008,
+      "name": "Boiler##_LwcoInterlock",
+      "description": "Low Water Cutoff Interlock",
+      "units": "",
+      "access": "R",
+      "states": "0=open, 1=closed"
+    },
+    {
+      "type": "BV",
+      "instance": 1009,
+      "name": "Boiler##_VfdInterlock",
+      "description": "VFD Interlock",
+      "units": "",
+      "access": "R",
+      "states": "0=open, 1=closed"
+    },
+    {
+      "type": "BV",
+      "instance": 1010,
+      "name": "Boiler##_GasProveInterlock",
+      "description": "Gas Prove Interlock",
+      "units": "",
+      "access": "R",
+      "states": "0=open, 1=closed"
+    },
+    {
+      "type": "BV",
+      "instance": 1011,
+      "name": "Boiler##_Spare4Interlock",
+      "description": "Spare 4 (application defined) Interlock",
+      "units": "",
+      "access": "R",
+      "states": "0=open, 1=closed"
+    },
+    {
+      "type": "BV",
+      "instance": 1012,
+      "name": "Boiler##_OperatorInterlock",
+      "description": "Operator Interlock",
+      "units": "",
+      "access": "R",
+      "states": "0=open, 1=closed"
+    },
+    {
+      "type": "BV",
+      "instance": 1013,
+      "name": "Boiler##_LocalFlowInterlock",
+      "description": "Local Flow Interlock",
+      "units": "",
+      "access": "R",
+      "states": "0=open, 1=closed"
+    },
+    {
+      "type": "BV",
+      "instance": 1015,
+      "name": "Boiler##_MainValve",
+      "description": "Main Valve",
+      "units": "",
+      "access": "R",
+      "states": "0=closed, 1=open"
+    },
+    {
+      "type": "BV",
+      "instance": 1016,
+      "name": "Boiler##_PilotValve",
+      "description": "Pilot Valve",
+      "units": "",
+      "access": "R",
+      "states": "0=closed, 1=open"
+    },
+    {
+      "type": "BV",
+      "instance": 1017,
+      "name": "Boiler##_BlowerOn",
+      "description": "Blower is on/running",
+      "units": "",
+      "access": "R",
+      "states": "0=off, 1=on (running)"
+    },
+    {
+      "type": "BV",
+      "instance": 1018,
+      "name": "Boiler##_IgnitionAlarm",
+      "description": "Ignition Circuit Alarm",
+      "units": "",
+      "access": "R",
+      "states": "0=ok, 1=alarm"
+    },
+    {
+      "type": "BV",
+      "instance": 1019,
+      "name": "Boiler##_IRIAlarm",
+      "description": "IRI Alarm",
+      "units": "",
+      "access": "R",
+      "states": "0=ok, 1=alarm"
+    },
+    {
+      "type": "BV",
+      "instance": 1020,
+      "name": "Boiler##_HighLimit",
+      "description": "High Limit",
+      "units": "",
+      "access": "R",
+      "states": "0=ok, 1=tripped"
+    },
+    {
+      "type": "BV",
+      "instance": 1021,
+      "name": "Boiler##_AirProveSwitch",
+      "description": "Air Prove Switch",
+      "units": "",
+      "access": "R",
+      "states": "0=proven, 1=not proven"
+    },
+    {
+      "type": "BV",
+      "instance": 1023,
+      "name": "Boiler##_SoftwareOperator",
+      "description": "Software Operator Tripped",
+      "units": "",
+      "access": "R",
+      "states": "0=not tripped, 1=tripped"
+    },
+    {
+      "type": "BV",
+      "instance": 1024,
+      "name": "Boiler##_HeaderSensorNA",
+      "description": "Header Sensor not available (detected)",
+      "units": "",
+      "access": "R",
+      "states": "0=detected, 1=not available"
+    },
+    {
+      "type": "BV",
+      "instance": 1025,
+      "name": "Boiler##_SupplySensorNA",
+      "description": "Supply/Outlet Sensor not available (detected)",
+      "units": "",
+      "access": "R",
+      "states": "0=detected, 1=not available"
+    },
+    {
+      "type": "BV",
+      "instance": 1026,
+      "name": "Boiler##_ReturnSensorNA",
+      "description": "Return/Inlet Sensor not available (detected)",
+      "units": "",
+      "access": "R",
+      "states": "0=detected, 1=not available"
+    },
+    {
+      "type": "BV",
+      "instance": 1027,
+      "name": "Boiler##_OutsideSensorNA",
+      "description": "Outside sensor not available (manual text says Header)",
+      "units": "",
+      "access": "R",
+      "states": "0=detected, 1=not available"
+    },
+    {
+      "type": "BV",
+      "instance": 1028,
+      "name": "Boiler##_SystemPumpOn",
+      "description": "System Pump is on/running",
+      "units": "",
+      "access": "R",
+      "states": "0=off, 1=on (running)"
+    },
+    {
+      "type": "BV",
+      "instance": 1029,
+      "name": "Boiler##_DamperProve1",
+      "description": "Combustion Air Damper Prove (J10B). (revision 1.x controls only)",
+      "units": "",
+      "access": "R",
+      "states": "0=not proven, 1=proven"
+    },
+    {
+      "type": "BV",
+      "instance": 1030,
+      "name": "Boiler##_Master",
+      "description": "This is the Master Boiler",
+      "units": "",
+      "access": "R",
+      "states": "0=member, 1=master"
+    },
+    {
+      "type": "BV",
+      "instance": 1031,
+      "name": "Boiler##_Detected",
+      "description": "Detected (present)",
+      "units": "",
+      "access": "R",
+      "states": "0=not detected, 1=detected"
+    },
+    {
+      "type": "BV",
+      "instance": 2000,
+      "name": "Boiler##_AAHighFire",
+      "description": "AA/High Fire Input",
+      "units": "",
+      "access": "R",
+      "states": "0=open, 1=closed"
+    },
+    {
+      "type": "BV",
+      "instance": 2001,
+      "name": "Boiler##_HeatDemand",
+      "description": "Heat Demand (Local Override) Input",
+      "units": "",
+      "access": "R",
+      "states": "0=open, 1=closed"
+    },
+    {
+      "type": "BV",
+      "instance": 2002,
+      "name": "Boiler##_4to20Remote",
+      "description": "4 to 20ma Remote Input",
+      "units": "",
+      "access": "R",
+      "states": "0=open, 1=closed"
+    },
+    {
+      "type": "BV",
+      "instance": 2003,
+      "name": "Boiler##_OAROverride",
+      "description": "Outside Air Reset Override Input",
+      "units": "",
+      "access": "R",
+      "states": "0=open, 1=closed"
+    },
+    {
+      "type": "BV",
+      "instance": 2004,
+      "name": "Boiler##_T1",
+      "description": "T1 Input",
+      "units": "",
+      "access": "R",
+      "states": "0=open, 1=closed"
+    },
+    {
+      "type": "BV",
+      "instance": 2005,
+      "name": "Boiler##_T2",
+      "description": "T2 Input",
+      "units": "",
+      "access": "R",
+      "states": "0=open, 1=closed"
+    },
+    {
+      "type": "BV",
+      "instance": 2006,
+      "name": "Boiler##_T3",
+      "description": "T3 Input",
+      "units": "",
+      "access": "R",
+      "states": "0=open, 1=closed"
+    },
+    {
+      "type": "BV",
+      "instance": 2007,
+      "name": "Boiler##_T4",
+      "description": "T4 Input",
+      "units": "",
+      "access": "R",
+      "states": "0=open, 1=closed"
+    },
+    {
+      "type": "BV",
+      "instance": 3000,
+      "name": "Boiler##_DHWEnabled",
+      "description": "DHW enabled status (menus)",
+      "units": "",
+      "access": "R",
+      "states": "0=disabled, 1=enabled"
+    },
+    {
+      "type": "BV",
+      "instance": 3001,
+      "name": "Boiler##_DamperProve2",
+      "description": "Damper Prove (J12B)",
+      "units": "",
+      "access": "R",
+      "states": "0=open, 1=closed (proven)"
+    },
+    {
+      "type": "BV",
+      "instance": 3002,
+      "name": "Boiler##_ServiceFault",
+      "description": "Call service fault",
+      "units": "",
+      "access": "R",
+      "states": "0=ok, 1=fault"
+    },
+    {
+      "type": "BV",
+      "instance": 3003,
+      "name": "Boiler##_BlowerFault",
+      "description": "Air Switch Blower fault",
+      "units": "",
+      "access": "R",
+      "states": "0=ok, 1=fault"
+    },
+    {
+      "type": "BV",
+      "instance": 3009,
+      "name": "Boiler##_DHWSensorNA",
+      "description": "DHW Sensor is not available (detected)",
+      "units": "",
+      "access": "R",
+      "states": "0=detected, 1=not available"
+    },
+    {
+      "type": "BV",
+      "instance": 3010,
+      "name": "Boiler##_DHWBoiler",
+      "description": "DHW Boiler",
+      "units": "",
+      "access": "R",
+      "states": "0=no, 1=yes"
+    },
+    {
+      "type": "BV",
+      "instance": 3011,
+      "name": "Boiler##_OpLimitClamp",
+      "description": "Input limited (clamped) by high supply temperature",
+      "units": "",
+      "access": "R",
+      "states": "0=not clamped, 1=clamped"
+    },
+    {
+      "type": "BV",
+      "instance": 3012,
+      "name": "Boiler01_BoilersFlowLimited",
+      "description": "Boilers limited by the BMS flow rate value",
+      "units": "",
+      "access": "R",
+      "states": "0=not limited, 1=limited"
+    },
+    {
+      "type": "BV",
+      "instance": 3013,
+      "name": "Boiler01_BoilersBMSLimited",
+      "description": "Boilers limited by the BMS limit-boilers value",
+      "units": "",
+      "access": "R",
+      "states": "0=not limited, 1=limited"
+    },
+    {
+      "type": "BV",
+      "instance": 3014,
+      "name": "Boiler##_StackSensorNA",
+      "description": "Stack Sensor is not available (detected) (firmware 2.00+)",
+      "units": "",
+      "access": "R",
+      "states": "0=detected, 1=not available"
+    },
+    {
+      "type": "BV",
+      "instance": 3015,
+      "name": "Boiler##_SysReturnSensorNA",
+      "description": "System Return Sensor is not available (detected) (firmware 2.00+)",
+      "units": "",
+      "access": "R",
+      "states": "0=detected, 1=not available"
+    },
+    {
+      "type": "AI",
+      "instance": 1,
+      "name": "BoilersOn",
+      "description": "Boilers currently running",
+      "units": "",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AI",
+      "instance": 2,
+      "name": "Modulation",
+      "description": "System target modulation level",
+      "units": "%",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AI",
+      "instance": 3,
+      "name": "HeaderTemp",
+      "description": "Header / system temperature",
+      "units": "°F",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AI",
+      "instance": 4,
+      "name": "SupplyTemp",
+      "description": "Supply temperature",
+      "units": "°F",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AI",
+      "instance": 5,
+      "name": "ReturnTemp",
+      "description": "Return temperature",
+      "units": "°F",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AI",
+      "instance": 6,
+      "name": "OutsideTemp",
+      "description": "Outside air temperature",
+      "units": "°F",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AI",
+      "instance": 7,
+      "name": "Spare1",
+      "description": "Raw A/D value, spare input 1",
+      "units": "",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AI",
+      "instance": 8,
+      "name": "Spare2",
+      "description": "Raw A/D value, spare input 2",
+      "units": "",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AI",
+      "instance": 9,
+      "name": "Month",
+      "description": "Clock month (0 = January)",
+      "units": "months",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AI",
+      "instance": 10,
+      "name": "Day",
+      "description": "Clock day",
+      "units": "days",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AI",
+      "instance": 11,
+      "name": "Year",
+      "description": "Clock year (0-99)",
+      "units": "years",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AI",
+      "instance": 12,
+      "name": "Hour",
+      "description": "Clock hour",
+      "units": "h",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AI",
+      "instance": 13,
+      "name": "Minute",
+      "description": "Clock minute",
+      "units": "min",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AI",
+      "instance": 14,
+      "name": "Second",
+      "description": "Clock second",
+      "units": "s",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AI",
+      "instance": 15,
+      "name": "Weekday",
+      "description": "Clock weekday (0 = Monday)",
+      "units": "",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AI",
+      "instance": 16,
+      "name": "DHWTemp",
+      "description": "DHW temperature",
+      "units": "°F",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AI",
+      "instance": 48,
+      "name": "Boiler01_Runtime",
+      "description": "Boiler 1 run time with the current control board",
+      "units": "min",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AI",
+      "instance": 64,
+      "name": "Boiler01_Cycles",
+      "description": "Boiler 1 cycles with the current control board",
+      "units": "",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AI",
+      "instance": 80,
+      "name": "Boiler01_SupplyTemp",
+      "description": "Boiler 1 supply (outlet) temperature",
+      "units": "°F",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AI",
+      "instance": 96,
+      "name": "Boiler01_ReturnTemp",
+      "description": "Boiler 1 return (inlet) temperature",
+      "units": "°F",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AI",
+      "instance": 112,
+      "name": "Boiler01_DHWTemp",
+      "description": "Boiler 1 DHW sensor temperature",
+      "units": "°F",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AI",
+      "instance": 128,
+      "name": "Boiler01_Modulation",
+      "description": "Boiler 1 modulation (not in AA/High Fire, T1 or T2 modes)",
+      "units": "%",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AI",
+      "instance": 144,
+      "name": "OperatingSetpoint",
+      "description": "Active setpoint: normal, DHW, outdoor reset or 4-20 mA",
+      "units": "°F",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AI",
+      "instance": 145,
+      "name": "AvailableBoilers",
+      "description": "Boilers available",
+      "units": "",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AI",
+      "instance": 146,
+      "name": "BTUH",
+      "description": "Estimated plant output (firmware 2.00+)",
+      "units": "BTU/h",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AI",
+      "instance": 147,
+      "name": "SystemReturnTemp",
+      "description": "System return temperature, if fitted (firmware 2.00+)",
+      "units": "°F",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AI",
+      "instance": 148,
+      "name": "SystemFlow",
+      "description": "System flow: meter reading or BMSFlowRateGPM (firmware 2.00+)",
+      "units": "gpm",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AI",
+      "instance": 149,
+      "name": "HeatingBoilersOn",
+      "description": "Boilers running for heating (firmware 2.00+)",
+      "units": "",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AI",
+      "instance": 150,
+      "name": "DHWBoilersOn",
+      "description": "Boilers running for DHW (firmware 2.00+)",
+      "units": "",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AI",
+      "instance": 151,
+      "name": "ManualBoilersOn",
+      "description": "Boilers running on local override, T1, T2, AA (firmware 2.00+)",
+      "units": "",
+      "access": "R",
+      "states": ""
+    }
+  ]
+}
