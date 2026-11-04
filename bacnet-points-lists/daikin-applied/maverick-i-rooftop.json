@@ -1,0 +1,598 @@
+{
+ "manufacturer": "Daikin Applied",
+ "manufacturer_slug": "daikin-applied",
+ "model": "Maverick I Packaged Rooftop Unit Controller (MPS)",
+ "model_slug": "maverick-i-rooftop",
+ "aliases": [
+  "Maverick I",
+  "MPS",
+  "Maverick I MPS",
+  "RTU-C",
+  "ED 15125"
+ ],
+ "equipment_type": "Rooftop unit controller",
+ "applies_to": "Daikin Applied Maverick I (MPS) packaged rooftop units with the RTU-C unit controller and a BACnet communication module.",
+ "summary": "The Maverick I rooftop unit controller talks BACnet IP, BACnet Ethernet or BACnet MS/TP through a plug-in BACnet communication module (a separate module covers LonWorks). The object list is short: unit state and capacities, application mode, emergency shutdown, occupancy, space, outdoor, discharge and return temperatures, setpoints, economizer and CO2 ventilation, dehumidification, VAV pressure and supply temperature points, two field inputs and alarm handling.",
+ "bacnet_transport": [
+  "BACnet IP",
+  "BACnet MS/TP"
+ ],
+ "firmware": null,
+ "default_device_instance": "47065 (IP) / 3002 + MAC (MS/TP)",
+ "access_inferred": false,
+ "notes": [
+  "Names are the point names from the main BACnet table (Table 7). The controller's own object names are short codes shown in the parameter detail pages (for example ApplicCmd, OccManCmd, EmergOverride, DischAirTemp).",
+  "Table 7 lists AV 63 and AV 64 together as Configurable Input 2 Type; the detail pages show them as the field input 2 low and high voltage range, so they are named that way here.",
+  "Three Device-object properties in the table (communication module version, application version, Location) are not separate objects and are left out.",
+  "BACnet Unit Support (MV 16) switches all values between English and metric; the doc gives metric as the default.",
+  "VAV points AI 14 and AV 67-69 were added in 2022 (BACnet software 2.06, unit controller 2.36 or later); field inputs and indoor fan mode need controller 1.5 or later.",
+  "The detail pages print some instance numbers inconsistently; instances here follow Table 7."
+ ],
+ "source": {
+  "title": "Maverick I Packaged Rooftop Systems Unit Controller Protocol Information",
+  "doc_number": "ED 15125-6",
+  "revision_date": "2022-06",
+  "url": "https://tahoeweb.daikinapplied.com/api/general/DownloadDocumentByName/media/Maverick%20I%20Rooftop%20Unit%20Controller%20Protocol%20Information%20-%20ED%2015125-6.pdf"
+ },
+ "integration": {
+  "summary": "Set the keypad occupancy override setting to Network, then schedule the unit with Occupancy Schedule (MV 8) or force it with Occupancy Mode (MV 7). Write Application Mode and the occupied setpoints, and use Emergency Override to stop the unit. Read Unit State, capacities, temperatures and Current Alarm.",
+  "minimum_points": [
+   {
+    "ref": "MV 8",
+    "name": "Occupancy Schedule",
+    "why": "Scheduled occupancy from the BMS (Occ/Unocc)"
+   },
+   {
+    "ref": "MV 7",
+    "name": "Occupancy Mode",
+    "why": "Occupancy override (Occ/Unocc/TntOvrd/Auto)"
+   },
+   {
+    "ref": "MV 10",
+    "name": "Emergency Override",
+    "why": "Network shutdown (2) / Normal (1)"
+   },
+   {
+    "ref": "MV 5",
+    "name": "Application Mode",
+    "why": "Off/heat only/cool only/fan only/auto"
+   },
+   {
+    "ref": "AV 9",
+    "name": "Occupied Cooling Setpoint",
+    "why": "Occupied cooling setpoint"
+   },
+   {
+    "ref": "AV 11",
+    "name": "Occupied Heating Setpoint",
+    "why": "Occupied heating setpoint"
+   },
+   {
+    "ref": "MV 15",
+    "name": "Unit State",
+    "why": "Current operating state"
+   },
+   {
+    "ref": "AI 3",
+    "name": "Effective Space Temperature",
+    "why": "Space temperature in use (local or network)"
+   },
+   {
+    "ref": "AI 1",
+    "name": "Discharge Air Temperature",
+    "why": "Supply (discharge) air temperature"
+   },
+   {
+    "ref": "AV 27",
+    "name": "Current Alarm",
+    "why": "Highest-priority active alarm number, 0 = none"
+   }
+  ],
+  "enable": "Network occupancy scheduling needs the keypad occupancy override setting (OCCPCY OVERR SP) set to Network; then Occupancy Schedule (MV 8) or Occupancy Mode (MV 7) drives the unit. Emergency Override (MV 10) = Shutdown stops the unit and it will not restart by schedule or any other means until Normal is written.",
+  "heartbeat": "Receive Heartbeat (AV 43, seconds, default 0 = off). When set, the network inputs for occupancy schedule, application mode, remote supply fan capacity, remote space temperature, economizer enable and remote space IAQ must be rewritten within that time; otherwise occupancy reverts to Powerup, application mode and economizer enable to Auto, and the remote values to invalid.",
+  "remote_sensors": "Remote Space Temperature (AV 28), Remote Outdoor Air Temperature (AV 29) and Remote Space IAQ (AV 31) take values from the BMS; the effective values (AI 3, AI 4) fall back to the local sensor if the network value is unreliable. Remote Space Temperature Spt Adjust (AV 56) is used only when Room Sensor Setpoint Enable (BV 65) is set to Disabled (Network).",
+  "setup": [
+   "BACnet IP defaults: IP 172.16.5.8, mask 255.255.0.0, UDP 47808, gateway 0.0.0.0; write 0.0.0.0 as the IP to turn on DHCP.",
+   "BACnet MS/TP defaults: MAC 0, 19200 baud (9600-76800 selectable); cycle power after changing the MAC.",
+   "Default device instance is 47065 for IP and 3002 plus the MAC for MS/TP; the device name is RTU_C followed by the instance.",
+   "Addressing is set with the BACnet communication module's web configuration tool (IM 1000); the module reset button restores factory defaults.",
+   "The communication type must be set to match the network (default BACnet IP)."
+  ],
+  "gotchas": [
+   "Writes to configuration points are stored in EEPROM/flash with a limited write life; don't write setpoints and configuration cyclically.",
+   "Clear All Alarms (BV 66) and Clear One Alarm (AV 57) only clear clearable alarms; some faults (smoke, emergency stop, sensor failure) can't be cleared from the network.",
+   "Values switch between English and metric with BACnet Unit Support (MV 16); check it before scaling temperatures.",
+   "Alarm numbers 1-99 are warnings, 100-199 problems, 200-254 shutdown faults."
+  ]
+ },
+ "points": [
+  {
+   "type": "MV",
+   "instance": 15,
+   "name": "Unit State",
+   "description": "Unit operating state",
+   "units": "",
+   "access": "R",
+   "states": "1=Off, 2=Start, 4=FanOnly, 6=Htg, 7=Econo, 8=Clg"
+  },
+  {
+   "type": "MV",
+   "instance": 16,
+   "name": "BACnet Unit Support",
+   "description": "Units sent to BACnet: English or metric (default metric)",
+   "units": "",
+   "access": "W",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 1,
+   "name": "Cooling Capacity",
+   "description": "Compressor cooling capacity",
+   "units": "%",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 2,
+   "name": "Heating Capacity Primary",
+   "description": "Primary heating capacity",
+   "units": "%",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 44,
+   "name": "Heating Capacity Secondary",
+   "description": "Secondary heating capacity",
+   "units": "%",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 15,
+   "name": "Economizer Capacity",
+   "description": "Economizer position feedback",
+   "units": "%",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "AI",
+   "instance": 8,
+   "name": "Effective Supply Fan Capacity",
+   "description": "Supply fan drive capacity",
+   "units": "%",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "AI",
+   "instance": 10,
+   "name": "Return/Exhaust Fan Capacity",
+   "description": "Return or exhaust fan capacity",
+   "units": "%",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "MV",
+   "instance": 5,
+   "name": "Application Mode",
+   "description": "Application mode command",
+   "units": "",
+   "access": "W",
+   "states": "1=Off, 2=HeatOnly, 3=CoolOnly, 4=FanOnly, 5=Auto"
+  },
+  {
+   "type": "MV",
+   "instance": 10,
+   "name": "Emergency Override",
+   "description": "Network shutdown command",
+   "units": "",
+   "access": "W",
+   "states": "1=Normal, 2=Shutdown"
+  },
+  {
+   "type": "MV",
+   "instance": 49,
+   "name": "Indoor Fan Occupancy",
+   "description": "Indoor fan mode: continuous or cycling",
+   "units": "",
+   "access": "W",
+   "states": "1=Continous Mode, 2=Cycle On in Heating/Cooling, 3=Continous in Occupied and Cycle in Unoccupied"
+  },
+  {
+   "type": "MV",
+   "instance": 6,
+   "name": "Effective Occupancy",
+   "description": "Effective occupancy state",
+   "units": "",
+   "access": "R",
+   "states": "1=Occ, 2=Unocc, 3=TntOvrd"
+  },
+  {
+   "type": "MV",
+   "instance": 8,
+   "name": "Occupancy Schedule",
+   "description": "Occupancy scheduler input from the BMS",
+   "units": "",
+   "access": "W",
+   "states": "1=Occ, 2=Unocc, 3=NUL (Powerup)"
+  },
+  {
+   "type": "MV",
+   "instance": 7,
+   "name": "Occupancy Mode",
+   "description": "Occupancy mode override",
+   "units": "",
+   "access": "W",
+   "states": "1=Occ, 2=Unocc, 3=TntOvrd, 4=NUL(Auto)"
+  },
+  {
+   "type": "AV",
+   "instance": 3,
+   "name": "Occupancy Schedule Override Setpoint",
+   "description": "Bypass (timed override) duration, 0 disables",
+   "units": "min",
+   "access": "W",
+   "states": ""
+  },
+  {
+   "type": "AI",
+   "instance": 3,
+   "name": "Effective Space Temperature",
+   "description": "Space temperature in use (local or network)",
+   "units": "°F/°C",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 4,
+   "name": "Local Space Temperature",
+   "description": "Local space temperature sensor",
+   "units": "°F/°C",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 28,
+   "name": "Remote Space Temperature",
+   "description": "Space temperature written by the BMS",
+   "units": "°F/°C",
+   "access": "W",
+   "states": ""
+  },
+  {
+   "type": "AI",
+   "instance": 4,
+   "name": "Effective Outdoor Air Temperature",
+   "description": "Outdoor air temperature in use (local or network)",
+   "units": "°F/°C",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 5,
+   "name": "Local OA Temperature",
+   "description": "Local outdoor air temperature sensor",
+   "units": "°F/°C",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 29,
+   "name": "Remote Outdoor Air Temperature",
+   "description": "Outdoor air temperature written by the BMS",
+   "units": "°F/°C",
+   "access": "W",
+   "states": ""
+  },
+  {
+   "type": "AI",
+   "instance": 1,
+   "name": "Discharge Air Temperature",
+   "description": "Discharge air temperature",
+   "units": "°F/°C",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "AI",
+   "instance": 2,
+   "name": "Return Air Temperature",
+   "description": "Return air temperature",
+   "units": "°F/°C",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 50,
+   "name": "Effective Setpoint",
+   "description": "Active space setpoint",
+   "units": "°F/°C",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 51,
+   "name": "Local Space Temperature Setpoint",
+   "description": "Local space sensor setpoint",
+   "units": "°F/°C",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "BV",
+   "instance": 65,
+   "name": "Room Sensor Setpoint Enable",
+   "description": "Enable local hard-wired setpoint adjust",
+   "units": "",
+   "access": "W",
+   "states": "0=Remote (Disabled), 1=Local (Enabled)"
+  },
+  {
+   "type": "AV",
+   "instance": 56,
+   "name": "Remote Space Temperature Spt Adjust",
+   "description": "Space setpoint written by the BMS",
+   "units": "°F/°C",
+   "access": "W",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 9,
+   "name": "Occupied Cooling Setpoint",
+   "description": "Occupied cooling setpoint",
+   "units": "°F/°C",
+   "access": "W",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 11,
+   "name": "Occupied Heating Setpoint",
+   "description": "Occupied heating setpoint",
+   "units": "°F/°C",
+   "access": "W",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 10,
+   "name": "Unoccupied Cooling Setpoint",
+   "description": "Unoccupied cooling setpoint",
+   "units": "°F/°C",
+   "access": "W",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 12,
+   "name": "Unoccupied Heating Setpoint",
+   "description": "Unoccupied heating setpoint",
+   "units": "°F/°C",
+   "access": "W",
+   "states": ""
+  },
+  {
+   "type": "MV",
+   "instance": 32,
+   "name": "Economizer Enable",
+   "description": "Economizer free cooling / ventilation enable",
+   "units": "",
+   "access": "W",
+   "states": "1=Disable Free Cooling, Enable Ventilation, 2=Enable Free Cooling, Enable Ventilation, 3=Auto (unit control decides), 4=Disable All Economizer Functionality"
+  },
+  {
+   "type": "AV",
+   "instance": 53,
+   "name": "Demand Control Ventilation Limit",
+   "description": "Minimum damper position under CO2 override",
+   "units": "%",
+   "access": "W",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 54,
+   "name": "Ventilation Limit",
+   "description": "Maximum damper position under CO2 override",
+   "units": "%",
+   "access": "W",
+   "states": ""
+  },
+  {
+   "type": "AI",
+   "instance": 13,
+   "name": "Local Space CO2",
+   "description": "Space CO2 from optional sensor",
+   "units": "ppm",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 31,
+   "name": "Remote Space IAQ",
+   "description": "Space CO2/IAQ written by the BMS",
+   "units": "ppm",
+   "access": "W",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 48,
+   "name": "Space CO2 High Limit Setpoint",
+   "description": "Space CO2 high limit; 0 disables",
+   "units": "ppm",
+   "access": "W",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 55,
+   "name": "Exhaust On/Off Setpoint",
+   "description": "Damper position that switches exhaust fan",
+   "units": "%",
+   "access": "W",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 65,
+   "name": "Space RH Configuration Setpoint",
+   "description": "Space RH setpoint configuration",
+   "units": "%RH",
+   "access": "W",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 66,
+   "name": "RH Setpoint",
+   "description": "Space RH setpoint; 0 disables dehumidification",
+   "units": "%RH",
+   "access": "W",
+   "states": ""
+  },
+  {
+   "type": "AI",
+   "instance": 14,
+   "name": "VAV Pressure",
+   "description": "VAV system pressure",
+   "units": "in. w.c.",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 67,
+   "name": "VAV Supply Temp",
+   "description": "VAV supply air temperature setpoint",
+   "units": "°F/°C",
+   "access": "W",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 68,
+   "name": "VAV Supply Pressure",
+   "description": "VAV supply pressure setpoint",
+   "units": "in. w.c.",
+   "access": "W",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 69,
+   "name": "VAV Max Pressure",
+   "description": "VAV maximum pressure setpoint",
+   "units": "in. w.c.",
+   "access": "W",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 61,
+   "name": "Field Input 1",
+   "description": "Field input 1 (temperature)",
+   "units": "°F/°C",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 62,
+   "name": "Field Input 2",
+   "description": "Field input 2 (configurable unit type)",
+   "units": "",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 63,
+   "name": "Configurable Input 2 Type (low range)",
+   "description": "Field input 2 low voltage range",
+   "units": "",
+   "access": "W",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 64,
+   "name": "Configurable Input 2 Type (high range)",
+   "description": "Field input 2 high voltage range",
+   "units": "",
+   "access": "W",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 27,
+   "name": "Current Alarm",
+   "description": "Highest-priority active alarm number, 0 = none",
+   "units": "",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "BV",
+   "instance": 66,
+   "name": "Clear All Alarms",
+   "description": "Write 1 to clear all clearable alarms",
+   "units": "",
+   "access": "W",
+   "states": "0=No Alarms, 1=Clear Alarms"
+  },
+  {
+   "type": "AV",
+   "instance": 57,
+   "name": "Clear One Alarm",
+   "description": "Write an alarm number to clear it",
+   "units": "",
+   "access": "W",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 43,
+   "name": "Receive Heartbeat",
+   "description": "Receive heartbeat timeout; 0 disables",
+   "units": "s",
+   "access": "W",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 45,
+   "name": "Integrated Furnace Controller Software Version",
+   "description": "Integrated furnace controller software version",
+   "units": "",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 46,
+   "name": "Honeywell Economizer Software Version",
+   "description": "Honeywell economizer software version",
+   "units": "",
+   "access": "R",
+   "states": ""
+  }
+ ],
+ "page": "https://easybacnet.com/bacnet-points-lists/daikin-applied/maverick-i-rooftop",
+ "note": "Re-typed from the manufacturer's public documentation (see source). Point availability varies by firmware and options; verify against the live device."
+}

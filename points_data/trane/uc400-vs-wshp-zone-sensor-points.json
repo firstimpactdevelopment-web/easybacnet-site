@@ -1,0 +1,220 @@
+{
+  "manufacturer": "Trane",
+  "manufacturer_slug": "trane",
+  "model": "UC400-B / Symbio 500 VS-WSHP - touch-screen zone sensor points",
+  "model_slug": "uc400-vs-wshp-zone-sensor-points",
+  "aliases": [
+    "UC400-B VS-WSHP",
+    "Symbio 500 VS-WSHP",
+    "variable speed WSHP",
+    "X13790993001",
+    "SEN02587",
+    "BAS-SVP080A"
+  ],
+  "equipment_type": "Heat pump / fan coil controller (zone sensor interaction subset)",
+  "applies_to": "Factory-programmed Trane variable-speed water-source heat pumps on Tracer UC400-B or Symbio 400-B/500, used with the touch-screen programmable zone sensor.",
+  "summary": "This short list shows which objects on a variable-speed WSHP controller (UC400-B / Symbio 500) the Trane touch-screen programmable zone sensor reads and overrides: space temperature, setpoints and offset, heat/cool mode request and status, occupancy request, fan configuration, fan speed and cooling/heating capacity. The sensor and controller talk BACnet MS/TP.",
+  "bacnet_transport": [
+    "BACnet MS/TP"
+  ],
+  "firmware": null,
+  "default_device_instance": null,
+  "access_inferred": true,
+  "notes": [
+    "This is a SUBSET: only the unit-controller objects that the Trane touch-screen programmable zone sensor reads or overrides (Table 3 of BAS-SVP080A). It is not the controller's full points list.",
+    "Access is inferred: the doc gives no read/write column. Points the sensor takes over (it writes Out_Of_Service at power-up) are shown as W; the others as R.",
+    "The sensor writes its commands at priority 7. A BMS can still write Space Temperature BAS at priority 5 or higher; priority 6 is reserved for minimum on/off.",
+    "The sensor objects that map to these points (AV 100, AV 44, AV 43, MV 16, MV 112, MI 33, MV 17, MV 140, MV 172-174) belong to the sensor itself; see the Viconics VT8000 BACnet guide for its full list.",
+    "Only factory-programmed controllers are supported; field-programmed UC400-B/Symbio 400-B/500 units are not.",
+    "Instances here are the 'UC400 VS-WSHP Object' column of Table 3; Heat Secondary Capacity Status is not listed for VS-WSHP."
+  ],
+  "source": {
+    "title": "Touch Screen Programmable Zone Sensor Integration Guide (Tracer UC400-B, Symbio 400-B/500/700/800, ReliaTel)",
+    "doc_number": "BAS-SVP080A-EN",
+    "revision_date": "2023-08",
+    "url": "https://elibrary.tranetechnologies.com/public/commercial-hvac/Literature/Integration/BAS-SVP080A-EN_08302023.pdf"
+  },
+  "integration": {
+    "summary": "Use a BMS mainly for monitoring, trending and alarms when the touch-screen sensor runs the unit. The sensor owns occupancy, mode, fan and setpoint commands; read the mode status, fan speed and capacity points, and only write Space Temperature BAS (priority 5 or higher) if the BMS must supply space temperature.",
+    "minimum_points": [
+      {
+        "ref": "MV 1",
+        "name": "Occupancy Request",
+        "why": "Occupancy request (1=Occ, 2=Unocc, 3=Bypass, 4=Standby)"
+      },
+      {
+        "ref": "MV 3",
+        "name": "Heat Cool Mode Request BAS",
+        "why": "Heat/cool mode request (1=Auto)"
+      },
+      {
+        "ref": "BV 2",
+        "name": "Supply Fan Configuration Command",
+        "why": "Fan mode: Inactive = Auto, Active = On"
+      },
+      {
+        "ref": "AV 27",
+        "name": "Space Temperature Setpoint BAS",
+        "why": "Space temperature setpoint"
+      },
+      {
+        "ref": "AV 14",
+        "name": "Space Temperature BAS",
+        "why": "Space temperature in use by the unit"
+      },
+      {
+        "ref": "MV 4",
+        "name": "Heat Cool Mode Status BAS",
+        "why": "Actual heat/cool mode"
+      },
+      {
+        "ref": "AV 6",
+        "name": "Supply Fan Speed Status",
+        "why": "Supply fan speed, %"
+      },
+      {
+        "ref": "AV 12",
+        "name": "Cooling Capacity Status",
+        "why": "Mechanical cooling, %"
+      },
+      {
+        "ref": "AV 13",
+        "name": "Heat Primary Capacity Status",
+        "why": "Primary heating, %"
+      }
+    ],
+    "enable": "The touch-screen sensor controls the unit: at power-up it sets Out_Of_Service on the occupancy, mode, fan and setpoint objects and writes them at priority 7. The guide recommends leaving control with the sensor and using the BMS for monitoring.",
+    "remote_sensors": "Space Temperature BAS normally comes from the sensor; a BMS can command it at priority 5 or higher. Space Temperature Local is the unit's hard-wired sensor.",
+    "heartbeat": null,
+    "setup": [
+      "The sensor talks BACnet MS/TP only; default baud 76800. Set Sens. Address (MAC 0-127), Sens. Device ID and Unit Device ID at the sensor (installer password 4017).",
+      "Sensor and unit controller should be on the same MS/TP link to reduce communication loss; they can be on different links if both reach the same BACnet network.",
+      "Trane best practice device ID: MS/TP network number followed by the rotary/MAC address (e.g. network 11, MAC 001 = 11001)."
+    ],
+    "gotchas": [
+      "The sensor holds these points Out_Of_Service and writes them at priority 7; a BMS writing the same points will fight the sensor.",
+      "Never add MV 5 to a VS-WSHP: the sensor uses the presence of MV 5 to tell a staged unit from a VS-WSHP.",
+      "The sensor reads the units property of Space Temperature BAS to decide between °F and °C.",
+      "If the wired temperature sensor fails, the sensor's own internal element takes over and is sent to Space Temperature BAS."
+    ]
+  },
+  "points": [
+    {
+      "type": "AV",
+      "instance": 14,
+      "name": "Space Temperature BAS",
+      "description": "Space temperature sent by the touch-screen sensor, -40-150 °F",
+      "units": "°F/°C",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "AI",
+      "instance": 1,
+      "name": "Space Temperature Local (TempRemSrc)",
+      "description": "Hard-wired space temperature at the unit, -40-200 °F",
+      "units": "°F/°C",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 23,
+      "name": "Unoccupied Cooling Setpoint",
+      "description": "Unoccupied cooling setpoint, 50-90 °F (sensor default 85 °F)",
+      "units": "°F/°C",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 24,
+      "name": "Unoccupied Heating Setpoint",
+      "description": "Unoccupied heating setpoint, 50-90 °F (sensor default 60 °F)",
+      "units": "°F/°C",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 27,
+      "name": "Space Temperature Setpoint BAS",
+      "description": "Space setpoint from the sensor, 50-90 °F (default 72.5 °F)",
+      "units": "°F/°C",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 30,
+      "name": "Occupied Offset",
+      "description": "Half the heat/cool setpoint spread, 1-5 °F (default 1.5 °F)",
+      "units": "°F/°C",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 6,
+      "name": "Supply Fan Speed Status",
+      "description": "Supply fan speed, 0-100 %",
+      "units": "%",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "MV",
+      "instance": 3,
+      "name": "Heat Cool Mode Request BAS",
+      "description": "Heat/cool mode request written by the sensor (default Auto)",
+      "units": "",
+      "access": "W",
+      "states": "1=Auto, 2=Heat, 3=Morning Warm-up, 4=Cool, 5=Night Purge, 6=Precool, 7=Off, 8=Test, 9=Emergency Heat, 10=Fan Only, 11=Free Cool, 12=Ice Making, 13=Max Heat, 14=Economy Mode, 15=Dehumidifying, 16=Calibrate"
+    },
+    {
+      "type": "MV",
+      "instance": 4,
+      "name": "Heat Cool Mode Status BAS",
+      "description": "Actual heat/cool mode of the unit",
+      "units": "",
+      "access": "R",
+      "states": "1=Auto, 2=Heat, 3=Morning Warm-up, 4=Cool, 5=Night Purge, 6=Precool, 7=Off, 8=Test, 9=Emergency Heat, 10=Fan Only, 11=Free Cool, 12=Ice Making, 13=Max Heat, 14=Economy Mode, 15=Dehumidifying, 16=Calibrate"
+    },
+    {
+      "type": "MV",
+      "instance": 1,
+      "name": "Occupancy Request",
+      "description": "Occupancy request written by the sensor (default Occupied)",
+      "units": "",
+      "access": "W",
+      "states": "1=Occupied, 2=Unoccupied, 3=Occupied Bypass, 4=Occupied Standby"
+    },
+    {
+      "type": "BV",
+      "instance": 2,
+      "name": "Supply Fan Configuration Command",
+      "description": "Fan mode: auto or continuous on (default Auto)",
+      "units": "",
+      "access": "W",
+      "states": "Inactive=Auto, Active=On"
+    },
+    {
+      "type": "AV",
+      "instance": 12,
+      "name": "Cooling Capacity Status",
+      "description": "Mechanical cooling, 0-100 %; sensor shows On when > 0",
+      "units": "%",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 13,
+      "name": "Heat Primary Capacity Status",
+      "description": "Primary heating, 0-100 %; sensor shows On when > 0",
+      "units": "%",
+      "access": "R",
+      "states": ""
+    }
+  ]
+}

@@ -1,0 +1,792 @@
+{
+  "manufacturer": "Carrier",
+  "manufacturer_slug": "carrier",
+  "model": "W2W Open",
+  "model_slug": "w2w-open",
+  "aliases": [
+    "W2W Open",
+    "Water-to-Water Open",
+    "OPN-WSHPW2WM",
+    "Carrier water-to-water heat pump controller",
+    "11-808-538-01"
+  ],
+  "equipment_type": "Water-to-water heat pump controller",
+  "applies_to": "Carrier water-to-water heat pumps fitted with the W2W Open (OPN-WSHPW2WM) multi-protocol controller.",
+  "summary": "W2W Open is Carrier's i-Vu Open controller for water-to-water heat pumps. It heats or cools the load water to a chilled or hot water supply setpoint with up to 4 capacity stages, and DIP switches select BACnet MS/TP (the default), BACnet ARC156, Modbus or N2 (LonWorks by option card). The list has 76 objects: water setpoints and temperatures, compressor capacity and stages, pump status, enables, OA reset and demand-level settings, alarms and the 'system' points a BAS writes.",
+  "bacnet_transport": [
+    "BACnet MS/TP",
+    "BACnet ARC156"
+  ],
+  "firmware": null,
+  "default_device_instance": "16101xx (xx = rotary switch address)",
+  "access_inferred": false,
+  "notes": [
+    "System points (system_oat, system_rh, system_t1_temp, system_elwt, system_llwt, system_ecwt) are network inputs; the guide says system points must be written at BACnet priority 16 and no more than once a minute, and -999 means no network value.",
+    "The table prints System Mode (run_status, MSV:2002) twice. The first row has the water-to-water states (Safety Shutdown, Dehumidify, Pump Only) and is used here; the repeat on the last page has unit-ventilator style states (Fire Shutdown, Pre-Occ Purge) and was dropped.",
+    "Shutdown (BV:9001) and RH Cooling Setpoint Reset (BV:1020) are printed with Normal/Alarm states; kept as printed.",
+    "Units 'deg' on the system water temperature inputs are as printed.",
+    "Each point also has a Modbus register in the same table (some later rows have none); only the BACnet side is captured here."
+  ],
+  "source": {
+    "title": "W2W Open Integration Guide (Appendix A: Network Points List for W2W Open)",
+    "doc_number": "11-808-538-01",
+    "revision_date": "2021-06-15",
+    "url": "https://www.shareddocs.com/hvac/docs/1000/Public/05/11-808-538-01.pdf"
+  },
+  "integration": {
+    "summary": "Set the controller for BACnet MS/TP with its DIP switches and rotary address. The unit is occupied by default and holds the load water at the chilled or hot water supply setpoint; the BAS commands occupancy through keypad_ovrde and writes the water setpoints. Outdoor air, T1 or water temperatures from the BMS go into the system_* points at priority 16.",
+    "minimum_points": [
+      {
+        "ref": "MV 1001",
+        "name": "keypad_ovrde",
+        "why": "BAS occupancy command: occupied/unoccupied"
+      },
+      {
+        "ref": "BV 9001",
+        "name": "shutdown",
+        "why": "Network shutdown command"
+      },
+      {
+        "ref": "AV 3024",
+        "name": "chws_setpoint",
+        "why": "Chilled water supply setpoint"
+      },
+      {
+        "ref": "AV 3023",
+        "name": "hws_setpoint",
+        "why": "Hot water supply setpoint"
+      },
+      {
+        "ref": "MV 2002",
+        "name": "run_status",
+        "why": "Current system mode"
+      },
+      {
+        "ref": "AV 1020",
+        "name": "lvg_load_wtr_temp",
+        "why": "Leaving load water temperature"
+      },
+      {
+        "ref": "AV 1019",
+        "name": "ent_load_wtr_temp",
+        "why": "Entering load water temperature"
+      },
+      {
+        "ref": "AV 5002",
+        "name": "total_comp_cap",
+        "why": "Total compressor capacity, %"
+      },
+      {
+        "ref": "BV 7013",
+        "name": "comp_alarm",
+        "why": "Compressor status alarm"
+      },
+      {
+        "ref": "BV 7048",
+        "name": "equip_alarm",
+        "why": "General equipment alarm"
+      }
+    ],
+    "enable": "The controller is occupied by default. A third-party BAS sets occupancy by writing BAS On/Off keypad_ovrde (MSV:1001): 1=Inactive, 2=Occupied, 3=Unoccupied; the sequence says this takes precedence over the other occupancy sources, while the system-point table says occupancy control must be set to 3 (BAS On/Off). No heating or cooling runs while unoccupied. Cool Enable (BV:1011) and Heat Enable (BV:1012) must be Enable; Shutdown (BV:9001) stops the unit.",
+    "heartbeat": "No general heartbeat. The guide gives refresh windows for the generic system points (OAT 5 min / 60 min, space RH 5 min / 10 min); a network value is only used while it is refreshed in time.",
+    "remote_sensors": "Write system_oat (AV:1901), system_rh (AV:1904), system_t1_temp (AV:1909) or the system water temperatures (AV:1910-1912) at BACnet priority 16, no more than once a minute. The controller clears a system point after processing it, so confirm a write by reading the control point (e.g. oa_temp, space_rh) at least 30 s later. System T1 is needed when Control Mode Selection uses T1 for heat/cool changeover.",
+    "setup": [
+      "MS/TP MAC address on rotary switches MSB (SW1) and LSB (SW2), 01-99; switch changes take effect after a power cycle.",
+      "Device instance is generated as 16101xx (16 = Carrier vendor ID, xx = rotary address).",
+      "SW3 DIP switches set protocol and baud (9600/19.2k/38.4k/76.8k, 76.8k default); 8N1 fixed. Network on port J19.",
+      "Max Masters defaults to 127 and Max Info Frames to 10 (Equipment Touch). The controller counts as a full load on the MS/TP bus."
+    ],
+    "gotchas": [
+      "System points must be written at priority 16; other priorities are ignored.",
+      "Demand levels widen the water setpoints cumulatively (level 3 = level 1 + 2 + 3 adjustments); the demand level points themselves are read-only here.",
+      "Only controllers set as MS/TP masters answer Who-Is.",
+      "Multi-unit master/slave setups add linkage points (cw_link_status, mr_comm_fail) that only matter in those systems."
+    ]
+  },
+  "points": [
+    {
+      "type": "AV",
+      "instance": 2020,
+      "name": "comp_stages",
+      "description": "Active Compressor Stages",
+      "units": "",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 3024,
+      "name": "chws_setpoint",
+      "description": "Chilled Water Supply Setpoint (default 44)",
+      "units": "°F",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 5001,
+      "name": "comp_cap",
+      "description": "Compressor Capacity",
+      "units": "%",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 9002,
+      "name": "oat_cl_lockout",
+      "description": "Cooling Lockout Temperature (default 45)",
+      "units": "°F",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 3005,
+      "name": "eff_cl_stpt",
+      "description": "Effective Cool Setpoint",
+      "units": "°F",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 3006,
+      "name": "eff_ht_stpt",
+      "description": "Effective Heat Setpoint",
+      "units": "°F",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 1019,
+      "name": "ent_load_wtr_temp",
+      "description": "Entering Load Water Temp",
+      "units": "°F",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 9003,
+      "name": "oat_ht_lockout",
+      "description": "Heating Lockout Temperature (default 65)",
+      "units": "°F",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 1020,
+      "name": "lvg_load_wtr_temp",
+      "description": "Leaving Load Water Temp",
+      "units": "°F",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 9037,
+      "name": "max_cw_reset",
+      "description": "Maximum OA CHW Reset (default 10)",
+      "units": "°F",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 1003,
+      "name": "oa_temp",
+      "description": "Outdoor Air Temperature",
+      "units": "°F",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 9007,
+      "name": "start_delay",
+      "description": "Power Fail Restart Delay (default 5)",
+      "units": "seconds",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 1011,
+      "name": "space_rh",
+      "description": "Space Relative Humidity",
+      "units": "%rh",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 1910,
+      "name": "system_elwt",
+      "description": "System Entering Load Water Temp (default -999)",
+      "units": "deg",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 1911,
+      "name": "system_ecwt",
+      "description": "System Entering Source Water Temp (default -999)",
+      "units": "deg",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 80001,
+      "name": "mstr_oa_temp",
+      "description": "System OAT Master",
+      "units": "°F",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 1901,
+      "name": "system_oat",
+      "description": "System Outdoor Air Temperature (default -999)",
+      "units": "°F",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 1909,
+      "name": "system_t1_temp",
+      "description": "System T1 Temperature (default -999)",
+      "units": "°F",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 5002,
+      "name": "total_comp_cap",
+      "description": "Total System Cmpr Capacity",
+      "units": "%",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "BV",
+      "instance": 1011,
+      "name": "cl_enable",
+      "description": "Cool Enable (default Active (1))",
+      "units": "",
+      "access": "W",
+      "states": "0=Disable, 1=Enable"
+    },
+    {
+      "type": "BV",
+      "instance": 1023,
+      "name": "clg_stpt_oa_rst_ena",
+      "description": "Cooling Setpoint OA Reset (default Inactive (0))",
+      "units": "",
+      "access": "W",
+      "states": "0=Disable, 1=Enable"
+    },
+    {
+      "type": "BV",
+      "instance": 7041,
+      "name": "ent_lwt_fail",
+      "description": "Entering Load Water Temp Sensor alarm",
+      "units": "",
+      "access": "R",
+      "states": "0=Normal, 1=Alarm"
+    },
+    {
+      "type": "BV",
+      "instance": 7040,
+      "name": "elwt_alarm",
+      "description": "Entering Load Water Temperature alarm",
+      "units": "",
+      "access": "R",
+      "states": "0=Normal, 1=Alarm"
+    },
+    {
+      "type": "BV",
+      "instance": 1012,
+      "name": "ht_enable",
+      "description": "Heat Enable (default Active (1))",
+      "units": "",
+      "access": "W",
+      "states": "0=Disable, 1=Enable"
+    },
+    {
+      "type": "BV",
+      "instance": 1024,
+      "name": "htg_stpt_oa_rst_ena",
+      "description": "Heating Setpoint OA Reset (default Inactive (0))",
+      "units": "",
+      "access": "W",
+      "states": "0=Disable, 1=Enable"
+    },
+    {
+      "type": "BV",
+      "instance": 7043,
+      "name": "llwt_alarm",
+      "description": "Leaving Load Water Temperature alarm",
+      "units": "",
+      "access": "R",
+      "states": "0=Normal, 1=Alarm"
+    },
+    {
+      "type": "BV",
+      "instance": 7042,
+      "name": "lvg_cwt_fail",
+      "description": "Leaving Source Water Temp Sensor alarm",
+      "units": "",
+      "access": "R",
+      "states": "0=Normal, 1=Alarm"
+    },
+    {
+      "type": "BV",
+      "instance": 1019,
+      "name": "load_pump",
+      "description": "Load Water Pump",
+      "units": "",
+      "access": "R",
+      "states": "0=Off, 1=On"
+    },
+    {
+      "type": "BV",
+      "instance": 2008,
+      "name": "occ_status",
+      "description": "Occupancy Status",
+      "units": "",
+      "access": "R",
+      "states": "0=Unoccupied, 1=Occupied"
+    },
+    {
+      "type": "BV",
+      "instance": 7036,
+      "name": "oat_alarm",
+      "description": "Outdoor Air Temperature alarm",
+      "units": "",
+      "access": "R",
+      "states": "0=Normal, 1=Alarm"
+    },
+    {
+      "type": "BV",
+      "instance": 1020,
+      "name": "rh_clg_stpt_rst",
+      "description": "RH Cooling Setpoint Reset (default Inactive (0))",
+      "units": "",
+      "access": "W",
+      "states": "0=Normal, 1=Alarm"
+    },
+    {
+      "type": "BV",
+      "instance": 9001,
+      "name": "shutdown",
+      "description": "Shutdown (default Inactive (0))",
+      "units": "",
+      "access": "W",
+      "states": "0=Normal, 1=Alarm"
+    },
+    {
+      "type": "BV",
+      "instance": 1021,
+      "name": "pump_iso_vlv",
+      "description": "Source Water Pump",
+      "units": "",
+      "access": "R",
+      "states": "0=Off/Close, 1=On/Open"
+    },
+    {
+      "type": "BV",
+      "instance": 7027,
+      "name": "cwt_alarm",
+      "description": "Source Water Temperature alarm",
+      "units": "",
+      "access": "R",
+      "states": "0=Normal, 1=Alarm"
+    },
+    {
+      "type": "BV",
+      "instance": 7018,
+      "name": "sprh_hi_alarm",
+      "description": "Space Relative Humidity alarm",
+      "units": "",
+      "access": "R",
+      "states": "0=Normal, 1=Alarm"
+    },
+    {
+      "type": "BV",
+      "instance": 7022,
+      "name": "sprh_sensor_fail",
+      "description": "Space Relative Humidity Sensor alarm",
+      "units": "",
+      "access": "R",
+      "states": "0=Normal, 1=Alarm"
+    },
+    {
+      "type": "BV",
+      "instance": 7032,
+      "name": "spt_sensor_fail",
+      "description": "SPT Sensor alarm",
+      "units": "",
+      "access": "R",
+      "states": "0=Normal, 1=Alarm"
+    },
+    {
+      "type": "BV",
+      "instance": 7046,
+      "name": "t1_fail",
+      "description": "System T1 Sensor alarm",
+      "units": "",
+      "access": "R",
+      "states": "0=Normal, 1=Alarm"
+    },
+    {
+      "type": "MV",
+      "instance": 1001,
+      "name": "keypad_ovrde",
+      "description": "BAS On / Off (default 2)",
+      "units": "",
+      "access": "W",
+      "states": "1=Inactive, 2=Occupied, 3=Unoccupied"
+    },
+    {
+      "type": "MV",
+      "instance": 2002,
+      "name": "run_status",
+      "description": "System Mode",
+      "units": "",
+      "access": "R",
+      "states": "1=Off, 2=Fan Only, 3=Economize, 4=Cooling, 5=Heating, 6=Cont Fan, 7=Test, 8=Start Delay, 9=Temer SAT, 10=Safety Shutdown, 11=Shutdown, 12=IAQ Override, 13=Dehumidify, 15=Pump Only"
+    },
+    {
+      "type": "AV",
+      "instance": 3023,
+      "name": "hws_setpoint",
+      "description": "Hot Water Supply Setpoint (default 120)",
+      "units": "°F",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 1912,
+      "name": "system_llwt",
+      "description": "System Leaving Load Water Temp (default -999)",
+      "units": "deg",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "BV",
+      "instance": 7044,
+      "name": "lvg_lwt_fail",
+      "description": "Leaving Load Water Temp Sensor alarm",
+      "units": "",
+      "access": "R",
+      "states": "0=Normal, 1=Alarm"
+    },
+    {
+      "type": "AV",
+      "instance": 1017,
+      "name": "cwl_temp",
+      "description": "Leaving Source Water Temp",
+      "units": "°F",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "BV",
+      "instance": 7029,
+      "name": "oat_fail",
+      "description": "Outdoor Air Temp Sensor alarm",
+      "units": "",
+      "access": "R",
+      "states": "0=Normal, 1=Alarm"
+    },
+    {
+      "type": "AV",
+      "instance": 9038,
+      "name": "max_hw_reset",
+      "description": "Maximum OA HW Reset (default 20)",
+      "units": "°F",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 1904,
+      "name": "system_rh",
+      "description": "System Space RH (default -999)",
+      "units": "%",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 3016,
+      "name": "eff_stpt",
+      "description": "Water Temperature Setpoint",
+      "units": "°F",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 3011,
+      "name": "occ_dehum_stpt",
+      "description": "Occ Relative Humidity Setpoint (default 60)",
+      "units": "%rh",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 88001,
+      "name": "total_comp_stg",
+      "description": "Total Req Sys Comp Stgs",
+      "units": "",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "BV",
+      "instance": 7055,
+      "name": "zs_config_fail",
+      "description": "ZS Sensor Configuration alarm",
+      "units": "",
+      "access": "R",
+      "states": "0=Normal, 1=Alarm"
+    },
+    {
+      "type": "BV",
+      "instance": 7013,
+      "name": "comp_alarm",
+      "description": "Compressor Status alarm",
+      "units": "",
+      "access": "R",
+      "states": "0=Normal, 1=Alarm"
+    },
+    {
+      "type": "BV",
+      "instance": 2702,
+      "name": "loop_pump",
+      "description": "Loop Pump Status",
+      "units": "",
+      "access": "R",
+      "states": "0=Off, 1=On"
+    },
+    {
+      "type": "BV",
+      "instance": 7049,
+      "name": "sw_flow_alarm",
+      "description": "Source Water Flow alarm",
+      "units": "",
+      "access": "R",
+      "states": "0=Normal, 1=Alarm"
+    },
+    {
+      "type": "BV",
+      "instance": 7057,
+      "name": "load_flow_alarm",
+      "description": "Load Water Flow alarm",
+      "units": "",
+      "access": "R",
+      "states": "0=Normal, 1=Alarm"
+    },
+    {
+      "type": "BV",
+      "instance": 7045,
+      "name": "sys_ecwt_fail",
+      "description": "System Entering Source Water Temp Fail",
+      "units": "",
+      "access": "R",
+      "states": "0=Normal, 1=Alarm"
+    },
+    {
+      "type": "AV",
+      "instance": 9006,
+      "name": "cool_demand_level",
+      "description": "System Cooling Demand Level",
+      "units": "",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 9036,
+      "name": "heat_demand_level",
+      "description": "System Heating Demand Level",
+      "units": "",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 3020,
+      "name": "h_dmd1_adj",
+      "description": "Demand Level 1 Heat Adj (default 3)",
+      "units": "°F",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "BV",
+      "instance": 2701,
+      "name": "cw_link_status",
+      "description": "Source Water Linkage",
+      "units": "",
+      "access": "R",
+      "states": "0=Inactive, 1=Active"
+    },
+    {
+      "type": "AV",
+      "instance": 3017,
+      "name": "c_dmd1_adj",
+      "description": "Demand Level 1 Cool Adj (default 3)",
+      "units": "°F",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 3018,
+      "name": "c_dmd2_adj",
+      "description": "Demand Level 2 Cool Adj (default 3)",
+      "units": "°F",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 3019,
+      "name": "c_dmd3_adj",
+      "description": "Demand Level 3 Cool Adj (default 4)",
+      "units": "°F",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "BV",
+      "instance": 7047,
+      "name": "mr_comm_fail",
+      "description": "Communications with Master alarm",
+      "units": "",
+      "access": "R",
+      "states": "0=Normal, 1=Alarm"
+    },
+    {
+      "type": "AV",
+      "instance": 3021,
+      "name": "h_dmd2_adj",
+      "description": "Demand Level 2 Heat Adj (default 5)",
+      "units": "°F",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 2701,
+      "name": "link_cwt",
+      "description": "Water Loop Temp",
+      "units": "°F",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "BV",
+      "instance": 7031,
+      "name": "cond_water_linkage_fail",
+      "description": "Source Water Linkage alarm",
+      "units": "",
+      "access": "R",
+      "states": "0=Normal, 1=Alarm"
+    },
+    {
+      "type": "AV",
+      "instance": 3022,
+      "name": "h_dmd3_adj",
+      "description": "Demand Level 3 Heat Adj (default 7)",
+      "units": "°F",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "BV",
+      "instance": 7056,
+      "name": "load_pmp_comm_fail",
+      "description": "Load Water Flow Comm alarm",
+      "units": "",
+      "access": "R",
+      "states": "0=Normal, 1=Alarm"
+    },
+    {
+      "type": "AV",
+      "instance": 2024,
+      "name": "loop_request",
+      "description": "Loop Pump Request",
+      "units": "",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "BV",
+      "instance": 7058,
+      "name": "src_pmp_comm_fail",
+      "description": "Source Water Flow Comm alarm",
+      "units": "",
+      "access": "R",
+      "states": "0=Normal, 1=Alarm"
+    },
+    {
+      "type": "BV",
+      "instance": 7048,
+      "name": "equip_alarm",
+      "description": "Equipment Alarm",
+      "units": "",
+      "access": "R",
+      "states": "0=Normal, 1=Alarm"
+    },
+    {
+      "type": "BV",
+      "instance": 7024,
+      "name": "safety_alarm",
+      "description": "Safety alarm",
+      "units": "",
+      "access": "R",
+      "states": "0=Normal, 1=Alarm"
+    },
+    {
+      "type": "MV",
+      "instance": 2004,
+      "name": "fan_run",
+      "description": "Fan / Speed",
+      "units": "",
+      "access": "R",
+      "states": "1=Off, 2=Low, 3=Med, 4=High, 5=On"
+    },
+    {
+      "type": "MV",
+      "instance": 2009,
+      "name": "start_type",
+      "description": "Optimal Start Type (default (2) Temp Compensated)",
+      "units": "",
+      "access": "W",
+      "states": "1=None, 2=Temp Compensated, 3=Learning Adaptive"
+    },
+    {
+      "type": "MV",
+      "instance": 2003,
+      "name": "spt_status",
+      "description": "Space Temp Source",
+      "units": "",
+      "access": "R",
+      "states": "1=Sensor Failure, 2=SPT Sensor, 3=RAT / T55, 4=Network, 5=Airside Linkage, 6=Locked Value, 7=T-Stat Linkage, 8=ZS Sensor"
+    }
+  ]
+}

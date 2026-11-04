@@ -1,0 +1,6302 @@
+{
+  "manufacturer": "Carrier",
+  "manufacturer_slug": "carrier",
+  "model": "50FCQ/50GCQ Rooftop Heat Pump (SystemVu)",
+  "model_slug": "50fcq-50gcq-systemvu",
+  "aliases": [
+    "SystemVu",
+    "50FCQ",
+    "50GCQ",
+    "50FCQ 04-28",
+    "50GCQ 04-12",
+    "SystemVu 4.X",
+    "50FCQ-GCQ-04T"
+  ],
+  "equipment_type": "Rooftop unit controller (heat-pump units)",
+  "applies_to": "Carrier 50FCQ 04-28 and 50GCQ 04-12 single-package rooftop heat pumps (R-410A) with SystemVu controls, version 4.X.",
+  "summary": "The SystemVu control on the R-410A 50FCQ/50GCQ rooftop heat pumps talks BACnet MS/TP (or CCN) on one RS-485 BMS port. The BACnet table holds about 690 analog, binary and multistate values, with reversing valve, defrost and auxiliary heat objects alongside the usual setpoints, sensors, network inputs, runtimes and alerts.",
+  "bacnet_transport": [
+    "BACnet MS/TP"
+  ],
+  "firmware": "SystemVu controls version 4.X",
+  "default_device_instance": null,
+  "access_inferred": false,
+  "notes": [
+    "Taken from Appendix E of the guide (pp. 138-150: AV, BV and MSV tables). MSV objects are listed as MV.",
+    "AV 8061 (hr_rvs_a) is printed twice and listed once. A few rows print R/W or R in the units column (AV 8049, AV 213); those units are left blank.",
+    "The table also gives a CCN point name for most objects; only the BACnet side is captured here.",
+    "Value ranges from the table are added to the descriptions in brackets. The BACnet table prints no multistate state texts; the display and CCN tables elsewhere in the guide list the options for many of them.",
+    "The guide also lists about 14 string objects (software versions, model and serial numbers, device description), all with the ID String:0; they are left out because no usable instance is printed.",
+    "Which objects exist depends on unit size, heat type and installed options (economizer, Humidi-MiZer, VFD fan, accessories). Many alert and fault flags (a_*, f_*) are printed as R/W and kept that way."
+  ],
+  "source": {
+    "title": "50FCQ 04-28, 50GCQ 04-12 Single Package Rooftop Heat Pump Units with SystemVu Controls Version 4.X, Controls, Start-Up, Operation and Troubleshooting (Appendix E: BACnet Points List)",
+    "doc_number": "50FCQ-GCQ-04T",
+    "revision_date": "2024-05",
+    "url": "https://brandportal.carrier.com/asset/25dc5c8a-09ae-475a-ba35-72f85eb607ab/50FCQ-GCQ-04T.pdf"
+  },
+  "integration": {
+    "summary": "The SystemVu control has one RS-485 BMS port. Set BAS Protocol to BACnet on the unit display (Settings > Network Settings), set the MAC address and baud rate, power-cycle and connect to the MS/TP trunk. Run occupancy from a BACnet schedule or the BMS Occupancy Request point, write the occupied setpoints, and read the system mode, temperatures and the active fault count.",
+    "minimum_points": [
+      {
+        "ref": "MV 12",
+        "name": "bms_occ",
+        "why": "Occupancy request from the BMS (unocc / occupied / disabled)"
+      },
+      {
+        "ref": "AV 288",
+        "name": "ocsp",
+        "why": "Occupied cooling setpoint"
+      },
+      {
+        "ref": "AV 289",
+        "name": "ohsp",
+        "why": "Occupied heating setpoint"
+      },
+      {
+        "ref": "BV 33",
+        "name": "alarm_reset",
+        "why": "Resets all current alarms"
+      },
+      {
+        "ref": "MV 2002",
+        "name": "sys_mode",
+        "why": "Current mode (off, cool, heat, vent, test)"
+      },
+      {
+        "ref": "AV 35",
+        "name": "req_fan_spd",
+        "why": "Indoor fan speed the control is calling for, %"
+      },
+      {
+        "ref": "AV 296",
+        "name": "space_t",
+        "why": "Space temperature"
+      },
+      {
+        "ref": "AV 1008",
+        "name": "sa_temp",
+        "why": "Supply air temperature"
+      },
+      {
+        "ref": "BV 7048",
+        "name": "equip_alarm",
+        "why": "Alarm output relay state"
+      },
+      {
+        "ref": "AV 335",
+        "name": "num_active_faults",
+        "why": "Count of active faults"
+      }
+    ],
+    "enable": "Set BAS Protocol Select to BACnet on the unit display (Settings > Network Settings > BAS Protocol; default None). With BACnet selected the local occupancy schedule is reset and scheduling comes from the BACnet side: a BACnet schedule, or the BMS Occupancy Request (MV 12; the display tables list Unocc, Occupied and Disabled). Unit Control Type (MV 2) decides whether the unit runs from thermostat inputs or a space sensor.",
+    "heartbeat": "Network Input Timeout (AV 9089, default 30 min per the display tables) applies to the network input values. The guide does not say what the unit does when it expires, so keep any written network value refreshed well inside that time.",
+    "remote_sensors": "Writable network inputs exist for space temperature (Network Space Temp Value, AV 7006), outdoor air temperature (AV 7007), return air temperature (AV 7005), space RH (AV 376), outdoor RH (AV 7003), IAQ and OAQ CO2 (AV 7001, AV 7002) and OA cfm (AV 371). The guide doesn't explain how the unit picks a network value over a local sensor; check the sensor channel settings on the display. The 'BACnet device for ...' and 'Object instance for ...' AVs let the unit read a sensor from another BACnet device.",
+    "setup": [
+      "BACnet MS/TP only, on the single RS-485 BMS port that is also used for CCN. Defaults: MAC address 01, baud 76800 (BACNET BAUDRATE 4).",
+      "i-Vu auto ID: with the auto ID scheme on, set the MAC and the device ID becomes the network number plus the MAC. With it off, set the MAC and write the device ID over BACnet; the controller keeps it.",
+      "To set the device ID by hand, set BACnet ID to manual on the display and enter it there. The MAC range for each mode is in the guide's BACnet settings table.",
+      "Power the controller down after changing the BACnet settings, then connect it to the MS/TP network."
+    ],
+    "gotchas": [
+      "Instances are not sequential (AV 9089, BV 7048, MV 2002 and so on); map by instance, not by position in the table.",
+      "Many configuration MVs and AVs are option codes or sensor channel numbers; read the current value and check the display before writing.",
+      "The guide gives only a numeric range for MV 12 and the other multistates; confirm the state numbering on the unit before writing.",
+      "BV 7048 shows the alarm relay; which alerts drive the relay is set under Unit Configurations > Alarm Relay."
+    ]
+  },
+  "points": [
+    {
+      "type": "AV",
+      "instance": 2,
+      "name": "cch_max_t",
+      "description": "CCH Max Temperature (40 to 90)",
+      "units": "°F",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 4,
+      "name": "dmpr_cmd",
+      "description": "Econo Commanded Position (0 to 100)",
+      "units": "%",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 5,
+      "name": "mp_uspd2",
+      "description": "Min Pos - User Speed 2 (0 to 100)",
+      "units": "%",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 7,
+      "name": "iaq_channel",
+      "description": "IAQ Assigned Channel (0 to 3)",
+      "units": "",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 8,
+      "name": "ucsp",
+      "description": "Unoccupied Cool Setpoint (65 to 95)",
+      "units": "°F",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 10,
+      "name": "idf_sa_temp",
+      "description": "Fan Supply Air Temp (-40 to 245)",
+      "units": "°F",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 12,
+      "name": "iaq_20ma",
+      "description": "IAQ Sensor Value at 20mA (0 to 5000)",
+      "units": "PPM",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 13,
+      "name": "iaq_4ma",
+      "description": "IAQ Sensor Value at 4mA (0 to 5000)",
+      "units": "PPM",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 14,
+      "name": "alarm_info",
+      "description": "Alarm display info (0 to 2)",
+      "units": "",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 15,
+      "name": "mp_spd2",
+      "description": "Min Pos Curve - Speed 2 (0 to 100)",
+      "units": "%",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 21,
+      "name": "oarh_4ma",
+      "description": "OARH Sensor Value @ 4mA (0 to 100)",
+      "units": "%",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 22,
+      "name": "oarh_20ma",
+      "description": "OARH Sensor Val. @ 20mA (0 to 100)",
+      "units": "%",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 23,
+      "name": "oarh_channel",
+      "description": "OARH Assigned Channel (0 to 3)",
+      "units": "",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 30,
+      "name": "rarh",
+      "description": "RA Relative Humidity (0 to 100)",
+      "units": "%",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 31,
+      "name": "rarh_4ma",
+      "description": "RARH Sensor Value @ 4mA (0 to 100)",
+      "units": "%",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 32,
+      "name": "rarh_20ma",
+      "description": "RARH Sensor Value @ 20mA (0 to 100)",
+      "units": "%",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 33,
+      "name": "rarh_channel",
+      "description": "RARH Assigned Channel (0 to 3)",
+      "units": "",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 35,
+      "name": "req_fan_spd",
+      "description": "Requested IDF Speed (0 to 100)",
+      "units": "%",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 36,
+      "name": "speed_max",
+      "description": "IDF Maximum Fan Speed (80 to 100)",
+      "units": "%",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 37,
+      "name": "sys_demand",
+      "description": "System Demand (0 to 255)",
+      "units": "",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 39,
+      "name": "prime_v",
+      "description": "Value of Prime variable (-40 to 245)",
+      "units": "",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 40,
+      "name": "cl_sel_timeguard",
+      "description": "Cool Mode Select T.guard (0 to 65535)",
+      "units": "sec",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 44,
+      "name": "max_enth",
+      "description": "Max Enthalpy OA limit (1.0 to 99.0)",
+      "units": "BTU_LB",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 45,
+      "name": "ht_sel_timeguard",
+      "description": "Heat Mode Select T.guard (0 to 65535)",
+      "units": "sec",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 46,
+      "name": "acthstgs",
+      "description": "Actual Heat Stage Active (0 to 2)",
+      "units": "",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 47,
+      "name": "hour_a1",
+      "description": "Compressor A1 Run Hours (0 to 999999)",
+      "units": "hrs",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 49,
+      "name": "hour_alarm",
+      "description": "Alarm Relay Run Hours (0 to 999999)",
+      "units": "hrs",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 50,
+      "name": "timgd_h2",
+      "description": "Heat Stage 2 Timeguard (0 to 600)",
+      "units": "sec",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 51,
+      "name": "hour_damp",
+      "description": "Econ Damper Run Hours (0 to 999999)",
+      "units": "hrs",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 52,
+      "name": "hour_full_ld",
+      "description": "Unit Full Load Run Hours (0 to 999999)",
+      "units": "hrs",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 53,
+      "name": "hour_free_cl",
+      "description": "Free Cooling Run Hours (0 to 999999)",
+      "units": "hrs",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 54,
+      "name": "hour_ht_1",
+      "description": "Heat Stage 1 Run Hours (0 to 999999)",
+      "units": "hrs",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 55,
+      "name": "hour_ht_2",
+      "description": "Heat Stage 2 Run Hours (0 to 999999)",
+      "units": "hrs",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 56,
+      "name": "hour_idf",
+      "description": "Indoor Fan Run Hours (0 to 999999)",
+      "units": "hrs",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 57,
+      "name": "hour_max_fan",
+      "description": "Max Fan Speed Run Hours (0 to 999999)",
+      "units": "hrs",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 61,
+      "name": "hour_pe_1",
+      "description": "Power Exhaust1 Run Hours (0 to 999999)",
+      "units": "hrs",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 62,
+      "name": "hour_pe_2",
+      "description": "Power Exhaust2 Run Hours (0 to 999999)",
+      "units": "hrs",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 63,
+      "name": "hour_serv_tst",
+      "description": "Service Test Run Hours (0 to 999999)",
+      "units": "hrs",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 64,
+      "name": "hour_vent_fan",
+      "description": "Vent IDF Run Hours (0 to 999999)",
+      "units": "hrs",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 67,
+      "name": "max_free_cl_temp",
+      "description": "Free Cooling Max OAT (0 to 90)",
+      "units": "°F",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 71,
+      "name": "min_free_cl_temp",
+      "description": "Free Cooling Min Temp (-30 to 70)",
+      "units": "°F",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 76,
+      "name": "oa_enth",
+      "description": "Outdoor Air Enthalpy (-9.6 to 334.2)",
+      "units": "BTU_LB (°F)",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 77,
+      "name": "oa_ra_diff_enth",
+      "description": "Enthalpy Cross Deadband (0 to 20)",
+      "units": "BTU_LB",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 78,
+      "name": "oa_ra_diff_temp",
+      "description": "Diff. Dry Bulb Deadband (1.0 to 99.0)",
+      "units": "°F",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 95,
+      "name": "ra_enth",
+      "description": "Return Air Enthalpy (-9.6 to 334.2)",
+      "units": "BTU_LB (°F)",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 97,
+      "name": "rs_a1",
+      "description": "Comp A1 Resets Count (0 to 65535)",
+      "units": "",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 99,
+      "name": "rs_alm",
+      "description": "Alarm Relay Resets Count (0 to 65535)",
+      "units": "",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 100,
+      "name": "rs_alrst",
+      "description": "Alarm Reset Resets Count (0 to 65535)",
+      "units": "",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 102,
+      "name": "rs_damp",
+      "description": "Econ Damper Resets Count (0 to 65535)",
+      "units": "",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 103,
+      "name": "rs_fload",
+      "description": "Full Load Resets Count (0 to 65535)",
+      "units": "",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 104,
+      "name": "rs_freec",
+      "description": "Free Cooling Reset Count (0 to 65535)",
+      "units": "",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 105,
+      "name": "ufctime",
+      "description": "UFC PreOcc Time (1 to 999)",
+      "units": "min",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 106,
+      "name": "rs_htr_1",
+      "description": "Heat Stage 1 Reset Count (0 to 65535)",
+      "units": "",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 107,
+      "name": "rs_htr_2",
+      "description": "Heat Stage 2 Reset Count (0 to 65535)",
+      "units": "",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 108,
+      "name": "rs_idf",
+      "description": "Indoor Fan Reset Count (0 to 65535)",
+      "units": "",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 109,
+      "name": "rs_maxf",
+      "description": "Max IDF Spd Resets Count (0 to 65535)",
+      "units": "",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 113,
+      "name": "rs_pe_1",
+      "description": "P.Exhaust 1 Resets Count (0 to 65535)",
+      "units": "",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 114,
+      "name": "rs_pe_2",
+      "description": "P.Exhaust 2 Resets Count (0 to 65535)",
+      "units": "",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 115,
+      "name": "rs_por",
+      "description": "Power Cycle Resets Count (0 to 65535)",
+      "units": "",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 116,
+      "name": "rs_stest",
+      "description": "Service Test Reset Count (0 to 65535)",
+      "units": "",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 117,
+      "name": "rs_ventf",
+      "description": "Vent IDF Resets Count (0 to 65535)",
+      "units": "",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 118,
+      "name": "s_damper",
+      "description": "Economizer Position Test (0 to 100)",
+      "units": "%",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 119,
+      "name": "s_idfspd",
+      "description": "Indoor Fan Speed Test (0 to 100)",
+      "units": "%",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 124,
+      "name": "sdp_a",
+      "description": "Cir.A Discharge Pressure (-67.06 to 699.63)",
+      "units": "PSI",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 131,
+      "name": "ssp_a",
+      "description": "Cir.A Suction Pressure (-47.33 to 430.16)",
+      "units": "PSI",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 134,
+      "name": "st_a1",
+      "description": "Compressor A1 Starts (0 to 999999)",
+      "units": "",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 136,
+      "name": "st_alm",
+      "description": "Alarm Relay Starts (0 to 999999)",
+      "units": "",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 137,
+      "name": "st_alrst",
+      "description": "Alarm Reset Counts (0 to 999999)",
+      "units": "",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 138,
+      "name": "mp_uspd3",
+      "description": "Min Pos - User Speed 3 (0 to 100)",
+      "units": "%",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 139,
+      "name": "st_damp",
+      "description": "Economizer Damper Starts (0 to 999999)",
+      "units": "",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 140,
+      "name": "st_fload",
+      "description": "Unit Full Load Starts (0 to 999999)",
+      "units": "",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 141,
+      "name": "st_freec",
+      "description": "Free Cooling Starts (0 to 999999)",
+      "units": "",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 142,
+      "name": "st_htr_1",
+      "description": "Heat Stage 1 Starts (0 to 999999)",
+      "units": "",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 143,
+      "name": "st_htr_2",
+      "description": "Heat Stage 2 Starts (0 to 999999)",
+      "units": "",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 144,
+      "name": "st_idf",
+      "description": "Indoor Fan Starts (0 to 999999)",
+      "units": "",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 145,
+      "name": "st_maxf",
+      "description": "Max IDF Speed Starts (0 to 999999)",
+      "units": "",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 148,
+      "name": "st_pe_1",
+      "description": "Power Exhaust 1 Starts (0 to 999999)",
+      "units": "",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 149,
+      "name": "st_pe_2",
+      "description": "Power Exhaust 2 Starts (0 to 999999)",
+      "units": "",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 150,
+      "name": "st_por",
+      "description": "Power Cycle Counts (0 to 999999)",
+      "units": "",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 151,
+      "name": "st_stest",
+      "description": "Service Test Starts (0 to 999999)",
+      "units": "",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 152,
+      "name": "st_ventf",
+      "description": "Ventilation Fan Starts (0 to 999999)",
+      "units": "",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 153,
+      "name": "startdly",
+      "description": "Unit Startup Delay (10 to 600)",
+      "units": "sec",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 161,
+      "name": "barp",
+      "description": "Barometric Pressure (10 to 35)",
+      "units": "IN_HG_OF_KPAG",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 162,
+      "name": "timgd_a1",
+      "description": "Compressor A1 Timeguard (0 to 600)",
+      "units": "sec",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 163,
+      "name": "temp_eff",
+      "description": "Effective Demand Temp (-40 to 245)",
+      "units": "°F",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 164,
+      "name": "timg_ald",
+      "description": "CMP Loader Timeguard (0 to 600)",
+      "units": "sec",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 169,
+      "name": "fw_bldtm",
+      "description": "Software Build Time (0 to 4294967295)",
+      "units": "",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 173,
+      "name": "timgd_h1",
+      "description": "Heat Stage 1 Timeguard (0 to 600)",
+      "units": "sec",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 175,
+      "name": "mintiloc",
+      "description": "Mins until next occupied (-1 to 10080)",
+      "units": "min",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 176,
+      "name": "nxtoctim",
+      "description": "Next Occupied Time (-1 to 10080)",
+      "units": "min",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 177,
+      "name": "nxtuntim",
+      "description": "Next Unoccupied Time (-1 to 10079)",
+      "units": "min",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 178,
+      "name": "uhsp",
+      "description": "Unoccupied Heat Setpoint (40 to 80)",
+      "units": "°F",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 179,
+      "name": "otl_cfg",
+      "description": "Timed Override Duration (0 to 4)",
+      "units": "hrs",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 180,
+      "name": "ovr_ext",
+      "description": "Timed Override Hours (0 to 240)",
+      "units": "min",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 181,
+      "name": "password",
+      "description": "User Password (0 to 9999)",
+      "units": "",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 182,
+      "name": "prvuntim",
+      "description": "Previous Unoccupied Time (-1 to 10079)",
+      "units": "min",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 184,
+      "name": "resetdev",
+      "description": "Reset Device",
+      "units": "",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 185,
+      "name": "dampmax",
+      "description": "Econ Max Damper Position (0 to 100)",
+      "units": "%",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 186,
+      "name": "tdmd_tg2",
+      "description": "Space Demand Time Guard2 (0 to 600)",
+      "units": "sec",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 187,
+      "name": "tdmd_tg3",
+      "description": "Space Demand Time Guard3 (5 to 120)",
+      "units": "min",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 188,
+      "name": "bac_id",
+      "description": "BACnet ID Number (0 to 4194302)",
+      "units": "",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 189,
+      "name": "bac_mac",
+      "description": "BACnet Device Macaddress (0 to 127)",
+      "units": "",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 191,
+      "name": "utc_ofst",
+      "description": "Local Std Time offset (-780 to 780)",
+      "units": "min",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 192,
+      "name": "a1strike",
+      "description": "Compressor A1 strikes (0 to 3)",
+      "units": "",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 194,
+      "name": "actcstgs",
+      "description": "Actual Cool Stage Active (0 to 3)",
+      "units": "",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 195,
+      "name": "aq_diff",
+      "description": "Differential Air Quality (-5000 to 5000)",
+      "units": "PPM",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 196,
+      "name": "aq_pos1",
+      "description": "IAQ DCV Curve - Pos 1 (0 to 100)",
+      "units": "%",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 197,
+      "name": "aq_pos2",
+      "description": "IAQ DCV Curve - Pos 2 (0 to 100)",
+      "units": "%",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 198,
+      "name": "aq_pos3",
+      "description": "IAQ DCV Curve - Pos 3 (0 to 100)",
+      "units": "%",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 199,
+      "name": "aq_spd1",
+      "description": "IAQ DCV Curve - Speed 1 (0 to 100)",
+      "units": "%",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 200,
+      "name": "aq_spd2",
+      "description": "IAQ DCV Curve - Speed 2 (0 to 100)",
+      "units": "%",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 201,
+      "name": "aq_spd3",
+      "description": "IAQ DCV Curve - Speed 3 (0 to 100)",
+      "units": "%",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 202,
+      "name": "c_minoff",
+      "description": "Compressor Min Off Time (120 to 600)",
+      "units": "sec",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 203,
+      "name": "c_minon",
+      "description": "Compressor Min On Time (180 to 600)",
+      "units": "sec",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 204,
+      "name": "cira_pr",
+      "description": "Circuit A Pressure Ratio (14.5 to 667.0)",
+      "units": "",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 205,
+      "name": "cldtrend",
+      "description": "Cooling Demand Trend (-99 to 99)",
+      "units": "",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 206,
+      "name": "cool_dmd",
+      "description": "Space Cooling Demand (-100 to 100)",
+      "units": "°F delta",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 207,
+      "name": "cool_fod",
+      "description": "Cooling Fan-Off Delay (0 to 600)",
+      "units": "sec",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 208,
+      "name": "csp_eff",
+      "description": "Cool Setpoint in Effect (55 to 95)",
+      "units": "°F",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 211,
+      "name": "dampact",
+      "description": "Econo Actual Position (0 to 100)",
+      "units": "%",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 212,
+      "name": "daq_high",
+      "description": "AQ Differential High (0 to 5000)",
+      "units": "",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 213,
+      "name": "daq_low",
+      "description": "AQ Differential Low (0 to 5000)",
+      "units": "",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 214,
+      "name": "mp_upt3",
+      "description": "User Min Pos Pnt 3 Valid",
+      "units": "",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 215,
+      "name": "dmdhcon",
+      "description": "High Cool Demand On (0.5 to 20)",
+      "units": "°F",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 217,
+      "name": "dmdhhon",
+      "description": "High Heat Demand On (0.5 to 20)",
+      "units": "°F",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 218,
+      "name": "dmdlcoff",
+      "description": "Low Cool Demand Off (-1 to 2)",
+      "units": "°F",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 219,
+      "name": "dmdlcon",
+      "description": "Low Cool Demand On (-1 to 2)",
+      "units": "°F",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 220,
+      "name": "dmdlhoff",
+      "description": "Low Heat Demand Off (-1 to 2)",
+      "units": "°F",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 221,
+      "name": "dmdlhon",
+      "description": "Low Heat Demand On (-1 to 2)",
+      "units": "°F",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 222,
+      "name": "mp_uspd1",
+      "description": "Min Pos - User Speed 1 (0 to 100)",
+      "units": "%",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 223,
+      "name": "dmdmcon",
+      "description": "Medium Cool Demand On (0.5 to 20)",
+      "units": "°F",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 226,
+      "name": "eceonotrv",
+      "description": "Economizer Travel Time (5 to 300)",
+      "units": "sec",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 227,
+      "name": "sys_dmd_alert",
+      "description": "System Demand Alert (0 to 65535)",
+      "units": "",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 229,
+      "name": "pe2_offs",
+      "description": "P.Exhaust 2 Curve Offset (0 to 100)",
+      "units": "%",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 235,
+      "name": "h_minoff",
+      "description": "Heat Minimum Off Time (60 to 600)",
+      "units": "sec",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 236,
+      "name": "h_minon",
+      "description": "Heat Minimum On Time (60 to 600)",
+      "units": "sec",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 237,
+      "name": "high_cool_sasp",
+      "description": "High FreeCool SAT Setpnt (40 to 80)",
+      "units": "°F",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 238,
+      "name": "hcsp_gap",
+      "description": "Heat-Cool Setpoint Gap (2 to 10)",
+      "units": "°F delta",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 239,
+      "name": "hadmd_lup",
+      "description": "Heat Demand Level Up (-2 to 2)",
+      "units": "°F",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 240,
+      "name": "heat_dmd",
+      "description": "Heating Space Demand (-100 to 100)",
+      "units": "°F delta",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 241,
+      "name": "heat_fod",
+      "description": "Heating Fan-Off Delay (10 to 600)",
+      "units": "sec",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 242,
+      "name": "hour_cchr1",
+      "description": "CCH1 Relay Run Hours (0 to 999999)",
+      "units": "hrs",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 243,
+      "name": "hsp_eff",
+      "description": "Heat Setpoint in Effect (40 to 80)",
+      "units": "°F",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 244,
+      "name": "htdtrend",
+      "description": "Heat Space Demand Trend (-99 to 99)",
+      "units": "",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 245,
+      "name": "iaq_offs",
+      "description": "IAQ DCV Curve Offset (0 to 100)",
+      "units": "%",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 246,
+      "name": "iaqminp",
+      "description": "IAQ Position at Max Fan (0 to 100)",
+      "units": "%",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 248,
+      "name": "iaqp_la",
+      "description": "Preocc Purge Lockout OAT (0 to 70)",
+      "units": "°F",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 252,
+      "name": "iaqptime",
+      "description": "Preocc Purge Duration (5 to 120)",
+      "units": "min",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 254,
+      "name": "low_cool_sasp",
+      "description": "LowFree Cool SAT Setpnt (40 to 80)",
+      "units": "°F",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 255,
+      "name": "lnk_aozt",
+      "description": "Average Occup. Zone Temp (-40 to 245)",
+      "units": "°F",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 256,
+      "name": "lnk_azt",
+      "description": "Average Zone Temperature (-40 to 245)",
+      "units": "°F",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 257,
+      "name": "lnk_creq",
+      "description": "Linkage Cooling Required (0 to 30)",
+      "units": "°F",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 258,
+      "name": "lnk_dpos",
+      "description": "Linkage Damper Position (0 to 100)",
+      "units": "%",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 259,
+      "name": "lnk_hreq",
+      "description": "Linkage Heating Required (0 to 30)",
+      "units": "°F",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 260,
+      "name": "lnk_mair",
+      "description": "Linkage Maximum Airflow (0 to 5000)",
+      "units": "",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 261,
+      "name": "lnk_mode",
+      "description": "Linkage Equipment Mode (0 to 8)",
+      "units": "",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 262,
+      "name": "lnk_mzbk",
+      "description": "Block No: in Master Zone (0 to 255)",
+      "units": "",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 263,
+      "name": "lnk_ocrq",
+      "description": "Occ Cooling Required (0 to 30)",
+      "units": "°F",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 264,
+      "name": "lnk_ocsp",
+      "description": "Average Occup. Cool Stp. (55 to 80)",
+      "units": "°F",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 265,
+      "name": "lnk_ohrq",
+      "description": "Occ Heating required (0 to 30)",
+      "units": "°F",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 266,
+      "name": "lnk_ohsp",
+      "description": "Average Occup. Heat Stp. (55 to 80)",
+      "units": "°F",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 267,
+      "name": "lnk_opst",
+      "description": "Linkage Optimal Start (0 to 180)",
+      "units": "min",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 268,
+      "name": "lnk_sat",
+      "description": "Linkage Supply air temp (-40 to 240)",
+      "units": "°F",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 269,
+      "name": "lnk_sbt",
+      "description": "Linkage Start Bias time (0 to 180)",
+      "units": "min",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 270,
+      "name": "lnk_siaq",
+      "description": "Linkage Space Air Qual. (0 to 2000)",
+      "units": "PPM",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 271,
+      "name": "lnk_sprh",
+      "description": "Linkage Space RH (0 to 100)",
+      "units": "%",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 272,
+      "name": "lnk_supb",
+      "description": "Linkage CCN Bus number (0 to 239)",
+      "units": "",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 273,
+      "name": "lnk_supe",
+      "description": "Linkage CCN element # (0 to 239)",
+      "units": "",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 274,
+      "name": "lnk_ucsp",
+      "description": "Average Unocc. Cool Stp. (65 to 90)",
+      "units": "°F",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 275,
+      "name": "lnk_uhsp",
+      "description": "Average Unocc. Heat Stp. (40 to 80)",
+      "units": "°F",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 276,
+      "name": "loch_lot",
+      "description": "Low Charge Disable Temp (-40 to 50)",
+      "units": "°F",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 277,
+      "name": "locharge",
+      "description": "Low Refrig Charge Level (0 to 150)",
+      "units": "PSI",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 278,
+      "name": "max_cstgs",
+      "description": "Max Allowed Cool Stages (0 to 3)",
+      "units": "",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 279,
+      "name": "max_hstgs",
+      "description": "Max Allowed Heat Stages (0 to 2)",
+      "units": "",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 280,
+      "name": "minodftm",
+      "description": "ODF High Speed Time (0 to 300)",
+      "units": "sec",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 284,
+      "name": "numhstgs",
+      "description": "Number Of Heating Stages (0 to 2)",
+      "units": "",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 286,
+      "name": "oat_loc",
+      "description": "Outdoor Air Temp Sensor (-40 to 245)",
+      "units": "°F",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 287,
+      "name": "oatlufc",
+      "description": "Unocc Free Cool Low Temp (-30 to 70)",
+      "units": "°F",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 288,
+      "name": "ocsp",
+      "description": "Occupied Cool Setpoint (55 to 80)",
+      "units": "°F",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 289,
+      "name": "ohsp",
+      "description": "Occupied Heat Setpoint (55 to 80)",
+      "units": "°F",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 290,
+      "name": "mp_dpos2",
+      "description": "Min Pos - Default Pos 2 (0 to 100)",
+      "units": "%",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 291,
+      "name": "rat_loc",
+      "description": "Return Air Temp Sensor (-40 to 245)",
+      "units": "°F",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 292,
+      "name": "req_cstgs",
+      "description": "Requested Cooling Stages (0 to 3)",
+      "units": "",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 293,
+      "name": "reqhstgs",
+      "description": "Requested Heating Stages (0 to 2)",
+      "units": "",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 294,
+      "name": "rs_cchr1",
+      "description": "CCH1 Relay Resets Count (0 to 65535)",
+      "units": "",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 295,
+      "name": "sdt_a",
+      "description": "Cir.A Sat.Discharge Temp (-100 to 500)",
+      "units": "°F",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 296,
+      "name": "space_t",
+      "description": "Space Temperature (-40 to 245)",
+      "units": "°F",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 297,
+      "name": "spt_loc",
+      "description": "Space Temperature Sensor (-40 to 245)",
+      "units": "°F",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 298,
+      "name": "spto_rng",
+      "description": "SPT Offset Range (+/-) (0 to 5)",
+      "units": "°F",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 300,
+      "name": "sstckdly",
+      "description": "Delay On Low SST Check (0 to 300)",
+      "units": "sec",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 301,
+      "name": "st_cchr1",
+      "description": "CCH1 Relay Starts (0 to 999999)",
+      "units": "",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 303,
+      "name": "std_barp",
+      "description": "Std Barometric Pressure (10 to 35)",
+      "units": "IN_HG_OF_KPAG",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 305,
+      "name": "t24chdly",
+      "description": "T24 Heat/Cool End Delay (0 to 60)",
+      "units": "min",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 306,
+      "name": "t24ecsts",
+      "description": "T24Econ Min Move for SAT (0 to 100)",
+      "units": "%",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 307,
+      "name": "t24ratdf",
+      "description": "T24 Min Diff in RAT-OAT (5 to 20)",
+      "units": "°F",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 308,
+      "name": "t24satdb",
+      "description": "Damper SAT deadband (0 to 20)",
+      "units": "°F",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 309,
+      "name": "t24tstmn",
+      "description": "T24 Test Minimum Pos (0 to 100)",
+      "units": "%",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 310,
+      "name": "t24tstmx",
+      "description": "T24 Test Maximum Pos (0 to 100)",
+      "units": "%",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 311,
+      "name": "tdmd_tg1",
+      "description": "Space Demand Time Guard1 (60 to 600)",
+      "units": "sec",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 312,
+      "name": "link_ahu_static",
+      "description": "Linkage static pressure (-5 to 5)",
+      "units": "IN_H2O",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 316,
+      "name": "pe_offdb",
+      "description": "PE Turn Off Dead band (0 to 100)",
+      "units": "%",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 317,
+      "name": "pe1_offs",
+      "description": "P.Exhaust 1 Curve Offset (0 to 100)",
+      "units": "%",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 318,
+      "name": "minp_max",
+      "description": "Econ Min at Max Fanspeed (0 to 100)",
+      "units": "%",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 319,
+      "name": "mp_dpos1",
+      "description": "Min Pos - Default Pos 1 (0 to 100)",
+      "units": "%",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 320,
+      "name": "mp_dpos3",
+      "description": "Min Pos - Default Pos 3 (0 to 100)",
+      "units": "%",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 321,
+      "name": "mp_dspd1",
+      "description": "Min Pos - Default Speed1 (0 to 100)",
+      "units": "%",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 322,
+      "name": "mp_dspd2",
+      "description": "Min Pos - Default Speed2 (0 to 100)",
+      "units": "%",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 323,
+      "name": "ms_dspd3",
+      "description": "Min Pos - Default Speed3 (0 to 100)",
+      "units": "%",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 324,
+      "name": "mp_pos1",
+      "description": "Min Pos Curve - Pos 1 (0 to 100)",
+      "units": "%",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 325,
+      "name": "mp_pos2",
+      "description": "Min Pos Curve - Pos 2 (0 to 100)",
+      "units": "%",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 326,
+      "name": "mp_pos3",
+      "description": "Min Pos Curve - Pos 3 (0 to 100)",
+      "units": "%",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 327,
+      "name": "mp_spd1",
+      "description": "Min Pos Curve - Speed 1 (0 to 100)",
+      "units": "%",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 328,
+      "name": "mp_spd3",
+      "description": "Min Pos Curve - Speed 3 (0 to 100)",
+      "units": "%",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 329,
+      "name": "mp_upos1",
+      "description": "Min Pos - User Pos 1 (0 to 100)",
+      "units": "%",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 330,
+      "name": "mp_upos2",
+      "description": "Min Pos - User Pos 2 (0 to 100)",
+      "units": "%",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 331,
+      "name": "mp_upos3",
+      "description": "Min Pos - User Pos 3 (0 to 100)",
+      "units": "%",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 332,
+      "name": "mp_upt1",
+      "description": "User Min Pos Pnt 1 Valid",
+      "units": "",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 333,
+      "name": "mp_upt2",
+      "description": "User Min Pos Pnt 2 Valid",
+      "units": "",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 334,
+      "name": "num_active_alerts",
+      "description": "Number of Active Alerts (0 to 100)",
+      "units": "",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 335,
+      "name": "num_active_faults",
+      "description": "Number of Active Faults (0 to 100)",
+      "units": "",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 336,
+      "name": "bkpreptm",
+      "description": "BACKUP Preparation Time (0 to 65535)",
+      "units": "",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 337,
+      "name": "rstcomtm",
+      "description": "Restore Completion Time (0 to 65535)",
+      "units": "",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 339,
+      "name": "sst_a",
+      "description": "Cir.A Sat.Suction Temp (-100 to 500)",
+      "units": "°F",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 342,
+      "name": "sattrend",
+      "description": "Supply Air Temp Trend (-285 to 285)",
+      "units": "",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 343,
+      "name": "pe1_pmax",
+      "description": "PE Stage 1 At Max Speed (0 to 100)",
+      "units": "%",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 344,
+      "name": "pe2_pmax",
+      "description": "PE Stage 2 At Max Speed (0 to 100)",
+      "units": "%",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 345,
+      "name": "pe1_pos1",
+      "description": "Power Exhaust 1 - Pos 1 (0 to 100)",
+      "units": "%",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 346,
+      "name": "pe1_pos2",
+      "description": "Power Exhaust 1 - Pos 2 (0 to 100)",
+      "units": "%",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 347,
+      "name": "pe1_pos3",
+      "description": "Power Exhaust 1 - Pos 3 (0 to 100)",
+      "units": "%",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 348,
+      "name": "pe1_spd1",
+      "description": "Power Exhaust 1 - Speed1 (0 to 100)",
+      "units": "%",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 349,
+      "name": "pe1_spd2",
+      "description": "Power Exhaust 1 - Speed2 (0 to 100)",
+      "units": "%",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 350,
+      "name": "pe1_spd3",
+      "description": "Power Exhaust 1 - Speed3 (0 to 100)",
+      "units": "%",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 351,
+      "name": "pe2_pos1",
+      "description": "Power Exhaust 2 - Pos 1 (0 to 100)",
+      "units": "%",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 352,
+      "name": "pe2_pos2",
+      "description": "Power Exhaust 2 - Pos 2 (0 to 100)",
+      "units": "%",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 353,
+      "name": "pe2_pos3",
+      "description": "Power Exhaust 2 - Pos 3 (0 to 100)",
+      "units": "%",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 354,
+      "name": "pe2_spd1",
+      "description": "Power Exhaust 2 - Speed1 (0 to 100)",
+      "units": "%",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 355,
+      "name": "pe2_spd2",
+      "description": "Power Exhaust 2 - Speed2 (0 to 100)",
+      "units": "%",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 356,
+      "name": "pe2_spd3",
+      "description": "Power Exhaust 2 - Speed3 (0 to 100)",
+      "units": "%",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 358,
+      "name": "aqp_pos1",
+      "description": "IAQ Purge Curve - Pos 1 (0 to 100)",
+      "units": "%",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 359,
+      "name": "aqp_pos2",
+      "description": "IAQ Purge Curve - Pos 2 (0 to 100)",
+      "units": "%",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 360,
+      "name": "aqp_pos3",
+      "description": "IAQ Purge Curve - Pos 3 (0 to 100)",
+      "units": "%",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 361,
+      "name": "aqp_spd1",
+      "description": "IAQ Purge Curve - Speed1 (0 to 100)",
+      "units": "%",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 362,
+      "name": "aqp_spd2",
+      "description": "IAQ Purge Curve - Speed2 (0 to 100)",
+      "units": "%",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 363,
+      "name": "aqp_spd3",
+      "description": "IAQ Purge Curve - Speed3 (0 to 100)",
+      "units": "%",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 364,
+      "name": "aqp_offs",
+      "description": "IAQ Purge Curve Offset (0 to 100)",
+      "units": "%",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 365,
+      "name": "pe1_channel",
+      "description": "PE1 Assigned Relay (0 to 2)",
+      "units": "",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 366,
+      "name": "pe2_channel",
+      "description": "PE2 Assigned Relay (0 to 2)",
+      "units": "",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 367,
+      "name": "sprh_osp",
+      "description": "Occupied SPRH Setpoint (0 to 100)",
+      "units": "%",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 368,
+      "name": "sprh_db",
+      "description": "Space RH Deadband (0 to 100)",
+      "units": "%",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 369,
+      "name": "ocfm_4ma",
+      "description": "OACFM at 4MA (0 to 5000)",
+      "units": "CFM",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 370,
+      "name": "ocfmchan",
+      "description": "OACFM Assigned Channel (0 to 3)",
+      "units": "",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 371,
+      "name": "ocfm_net",
+      "description": "Network OACFM Value (0 to 5000)",
+      "units": "CFM",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 372,
+      "name": "sprhchan",
+      "description": "SPRH Assigned Channel (0 to 3)",
+      "units": "",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 373,
+      "name": "sprh_20ma",
+      "description": "SPRH Sensor Value @ 20mA (0 to 100)",
+      "units": "%",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 375,
+      "name": "sprh_4ma",
+      "description": "SPRH Sensor Value @ 4mA (0 to 100)",
+      "units": "%",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 376,
+      "name": "sprh_net",
+      "description": "Network SPRH Value (0 to 100)",
+      "units": "%",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 380,
+      "name": "hour_ldv_a",
+      "description": "LDV_A Run Hours (0 to 999999)",
+      "units": "hrs",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 384,
+      "name": "st_ldv_a",
+      "description": "LDV_A Starts (0 to 999999)",
+      "units": "",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 388,
+      "name": "rs_ldv_a",
+      "description": "LDV_A Resets Count (0 to 65535)",
+      "units": "",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 400,
+      "name": "cdlm_level1",
+      "description": "COOL DMD Offset level 1 (0 to 40)",
+      "units": "°F",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 401,
+      "name": "cdlm_level2",
+      "description": "COOL DMD Offset level 2 (0 to 40)",
+      "units": "°F",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 402,
+      "name": "cdlm_level3",
+      "description": "COOL DMD Offset level 3 (0 to 40)",
+      "units": "°F",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 403,
+      "name": "hdlm_level1",
+      "description": "Heat DMD Offset level 1 (0 to 40)",
+      "units": "°F",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 404,
+      "name": "hdlm_level2",
+      "description": "Heat DMD Offset level 2 (0 to 40)",
+      "units": "°F",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 405,
+      "name": "hdlm_level3",
+      "description": "Heat DMD Offset level 3 (0 to 40)",
+      "units": "°F",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 411,
+      "name": "sup_air_temp_setpt",
+      "description": "SA Tempering Set point (-20 to 60)",
+      "units": "°F",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 412,
+      "name": "min_pos",
+      "description": "Min Position in Effect (0 to 100)",
+      "units": "%",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 413,
+      "name": "reqdstgs",
+      "description": "Req Compr DehumStgs (0 to 10)",
+      "units": "",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 416,
+      "name": "oacfm",
+      "description": "Outdoor Air in CFM (0 to 5000)",
+      "units": "CFM",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 417,
+      "name": "ocfm20ma",
+      "description": "OACFM Value at 20mA (0 to 5000)",
+      "units": "CFM",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 424,
+      "name": "oatstemp",
+      "description": "OATLimitForSupAirTemp (-40 to 125)",
+      "units": "°F",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 426,
+      "name": "oaq_channel",
+      "description": "OAQ Assigned Channel (0 to 3)",
+      "units": "",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 436,
+      "name": "fbdh_sat",
+      "description": "FBDH SAT Min value (35 to 80)",
+      "units": "°F",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 437,
+      "name": "fbdh_sst",
+      "description": "FBDH SST Min value (10 to 60)",
+      "units": "°F",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 438,
+      "name": "fbdlosp",
+      "description": "FBDH Low Set Point (-20 to 0)",
+      "units": "°F delta",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 441,
+      "name": "fbdsatsp",
+      "description": "FBDH SAT Set Point (0 to 240)",
+      "units": "°F",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 442,
+      "name": "aqd_high",
+      "description": "AQ DiffHigh-IAQ OVERRIDE (0 to 5000)",
+      "units": "PPM",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 443,
+      "name": "aqd_low",
+      "description": "AQ Diff Low-IAQ OVERRIDE (0 to 5000)",
+      "units": "PPM",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 458,
+      "name": "hr_rlv_a",
+      "description": "Compressor A1 Run Hours (0 to 999999)",
+      "units": "hrs",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 461,
+      "name": "sprh_usp",
+      "description": "Unoccupied SPRH Setpoint (0 to 100)",
+      "units": "%",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 462,
+      "name": "acaoff_t",
+      "description": "Comp UEOFF Diag Delay (0 to 300)",
+      "units": "sec",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 463,
+      "name": "llsv_ct",
+      "description": "LiquidLine Valve On Time (0 to 300)",
+      "units": "sec",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 464,
+      "name": "sstofset",
+      "description": "Heat Low Suc Lvl Offset (0 to 100)",
+      "units": "°F",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 617,
+      "name": "umin_sat",
+      "description": "Unit Minimum SAT (-40 to 245)",
+      "units": "°F",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 618,
+      "name": "satlaclr",
+      "description": "Auto Clr SAT Limit Fault",
+      "units": "",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 619,
+      "name": "satfzpro",
+      "description": "SAT Freeze Protection",
+      "units": "",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 620,
+      "name": "hour_idf2",
+      "description": "Indoor Fan2 Run Hours (0 to 999999)",
+      "units": "hrs",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 621,
+      "name": "st_idf2",
+      "description": "Indoor Fan2 Starts (0 to 999999)",
+      "units": "",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 622,
+      "name": "rs_idf2",
+      "description": "Indoor Fan2 Reset Count (0 to 65535)",
+      "units": "",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 623,
+      "name": "hour_ofr2",
+      "description": "ODF Relay 2 Run Hours (0 to 999999)",
+      "units": "hrs",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 624,
+      "name": "st_ofr2",
+      "description": "ODF Relay 2 Starts (0 to 999999)",
+      "units": "",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 625,
+      "name": "rs_ofr2",
+      "description": "ODF Relay2 Resets Counts (0 to 65535)",
+      "units": "",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 626,
+      "name": "hour_ofr3",
+      "description": "ODF Relay 3 Run Hours (0 to 999999)",
+      "units": "hrs",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 627,
+      "name": "st_ofr3",
+      "description": "ODF Relay 3 Starts (0 to 999999)",
+      "units": "",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 628,
+      "name": "rs_ofr3",
+      "description": "ODF Relay3 Resets Counts (0 to 65535)",
+      "units": "",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 1003,
+      "name": "oa_temp",
+      "description": "Outdoor Air Temperature (-40 to 245)",
+      "units": "°F",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 1006,
+      "name": "stpt_adj",
+      "description": "Space Temperature Offset (-10 to 10)",
+      "units": "°F delta",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 1008,
+      "name": "sa_temp",
+      "description": "Supply Air Temperature (-40 to 245)",
+      "units": "°F",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 1009,
+      "name": "iaq",
+      "description": "Indoor Air Quality Level (0 to 5000)",
+      "units": "PPM",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 1010,
+      "name": "ra_temp",
+      "description": "Return Air Temperature (-40 to 245)",
+      "units": "°F",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 1011,
+      "name": "space_rh",
+      "description": "Space RH (0 to 100)",
+      "units": "%",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 1012,
+      "name": "oaq",
+      "description": "OA Quality Level (0 to 5000)",
+      "units": "PPM",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 1022,
+      "name": "oarh",
+      "description": "OA Relative Humidity (0 to 100)",
+      "units": "%",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 1902,
+      "name": "EquipmentTouchSPT",
+      "description": "Equipment Touch SPT (-40 to 240)",
+      "units": "°F",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 1904,
+      "name": "EquipmentTouchRH",
+      "description": "Equipment Touch RH (0 to 100)",
+      "units": "%",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 1905,
+      "name": "ZSZoneTemp",
+      "description": "ZS Zone Temp (-40 to 245)",
+      "units": "°F",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 1906,
+      "name": "ZSZCO2",
+      "description": "Zone Sensor CO2 Level (0 to 5000)",
+      "units": "PPM",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 2007,
+      "name": "space_temp",
+      "description": "Pilot Space Temp Value (-40 to 245)",
+      "units": "°F",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 2015,
+      "name": "filter_rntm",
+      "description": "Filter hour remaining (0 to 9999)",
+      "units": "hrs",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 2019,
+      "name": "filter_service_hrs",
+      "description": "Change Filter Timer (0 to 9999)",
+      "units": "hrs",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 2022,
+      "name": "oa_dmpr_pos",
+      "description": "Damper Actual Position (0 to 100)",
+      "units": "%",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 4006,
+      "name": "dmpr_req_pos",
+      "description": "Requested Damper Pos (0 to 100)",
+      "units": "%",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 6001,
+      "name": "zonespt",
+      "description": "Single Zone Setpoint (55 to 80)",
+      "units": "°F",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 6002,
+      "name": "osp",
+      "description": "Occupied Zone Setpoint (40 to 80)",
+      "units": "°F",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 6003,
+      "name": "odb",
+      "description": "Occupied Setpoint Gap (0 to 10)",
+      "units": "",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 6004,
+      "name": "udb",
+      "description": "Unoccupied Setpoint Gap (0 to 55)",
+      "units": "",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 6005,
+      "name": "usp",
+      "description": "UnoccupiedZone Setpoint (40 to 95)",
+      "units": "°F",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 6006,
+      "name": "effsp",
+      "description": "Effective Zone Setpoint (55 to 90)",
+      "units": "°F",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 6007,
+      "name": "effdb",
+      "description": "Effective Deadband (0 to 55)",
+      "units": "",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 6011,
+      "name": "heatsh1",
+      "description": "Heat Shed 1 demand band (0 to 55)",
+      "units": "",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 6012,
+      "name": "heatsh2",
+      "description": "Heat Shed 2 demand band (0 to 55)",
+      "units": "",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 6013,
+      "name": "heatsh3",
+      "description": "Heat Shed 3 demand band (0 to 55)",
+      "units": "",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 6014,
+      "name": "coolsh1",
+      "description": "Cool Shed 1 demand band (0 to 55)",
+      "units": "",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 6015,
+      "name": "coolsh2",
+      "description": "Cool Shed 2 demand band (0 to 55)",
+      "units": "",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 6016,
+      "name": "coolsh3",
+      "description": "Cool Shed 3 demand band (0 to 55)",
+      "units": "",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 6020,
+      "name": "sptodiff",
+      "description": "SPT Offset Total diff (0 to 20)",
+      "units": "°F delta",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 6021,
+      "name": "setadj",
+      "description": "Setpoint adjustment",
+      "units": "°F delta",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 6022,
+      "name": "moset",
+      "description": "Momentary Setpoint Adj (0 to 20)",
+      "units": "°F delta",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 6025,
+      "name": "motlo",
+      "description": "Momentary TLO Adjustment (0 to 14400)",
+      "units": "sec",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 6027,
+      "name": "tlolim",
+      "description": "TLO limit (0 to 14400)",
+      "units": "sec",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 6028,
+      "name": "tlorem",
+      "description": "TLO Time Remaining (0 to 14400)",
+      "units": "sec",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 6029,
+      "name": "tlocan",
+      "description": "TLO cancel (0 to 10)",
+      "units": "sec",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 7001,
+      "name": "iaq_net",
+      "description": "Network IAQ Value (0 to 5000)",
+      "units": "PPM",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 7002,
+      "name": "oaq_net",
+      "description": "Network OAQ Value (0 to 5000)",
+      "units": "PPM",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 7003,
+      "name": "oarh_net",
+      "description": "Network OARH Value (0 to 100)",
+      "units": "%",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 7004,
+      "name": "rarh_net",
+      "description": "Network RARH Value (0 to 100)",
+      "units": "%",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 7005,
+      "name": "rat_net",
+      "description": "Network Return Air Temp (-40 to 245)",
+      "units": "°F",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 7006,
+      "name": "spt_net",
+      "description": "Network Space Temp Value (-40 to 245)",
+      "units": "°F",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 7007,
+      "name": "oat_net",
+      "description": "Network OAT Value (-40 to 245)",
+      "units": "°F",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 7010,
+      "name": "hr_aldr",
+      "description": "CMP A1 Loader Run Hours (0 to 999999)",
+      "units": "hrs",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 7011,
+      "name": "st_aldr",
+      "description": "CMP A1 Loader Starts (0 to 999999)",
+      "units": "",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 7012,
+      "name": "rs_aldr",
+      "description": "A1 Loader Resets Count (0 to 65535)",
+      "units": "",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 8001,
+      "name": "deviaq",
+      "description": "BACnet device for IAQ (0 to 4194303)",
+      "units": "",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 8002,
+      "name": "devoaq",
+      "description": "BACnet device for OAQ (0 to 4194303)",
+      "units": "",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 8003,
+      "name": "devoat",
+      "description": "BACnet device for OAT (0 to 4194303)",
+      "units": "",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 8004,
+      "name": "devoarh",
+      "description": "BACnet device for OARH (0 to 4194303)",
+      "units": "",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 8005,
+      "name": "devrarh",
+      "description": "BACnet device for RARH (0 to 4194303)",
+      "units": "",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 8006,
+      "name": "devrat",
+      "description": "BACnet device for RAT (0 to 4194303)",
+      "units": "",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 8007,
+      "name": "devspt",
+      "description": "BACnet device for SPT (0 to 4194303)",
+      "units": "",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 8008,
+      "name": "objiaq",
+      "description": "Object instance for IAQ (0 to 9999)",
+      "units": "",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 8009,
+      "name": "objoaq",
+      "description": "Object instance for OAQ (0 to 9999)",
+      "units": "",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 8010,
+      "name": "objoat",
+      "description": "Object instance for OAT (0 to 9999)",
+      "units": "",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 8011,
+      "name": "objoarh",
+      "description": "Object instance for OARH (0 to 9999)",
+      "units": "",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 8012,
+      "name": "objrarh",
+      "description": "Object instance for RARH (0 to 9999)",
+      "units": "",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 8013,
+      "name": "objrat",
+      "description": "Object instance for RAT (0 to 9999)",
+      "units": "",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 8014,
+      "name": "objspt",
+      "description": "Object instance for SPT (0 to 9999)",
+      "units": "",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 8015,
+      "name": "coviaq",
+      "description": "Change of value for IAQ (0 to 60)",
+      "units": "",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 8016,
+      "name": "covoaq",
+      "description": "Change of value for OAQ (0 to 60)",
+      "units": "",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 8017,
+      "name": "covoat",
+      "description": "Change of value for OAT (0 to 60)",
+      "units": "",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 8018,
+      "name": "covoarh",
+      "description": "Change of value for OARH (0 to 60)",
+      "units": "",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 8019,
+      "name": "covrarh",
+      "description": "Change of value for RARH (0 to 60)",
+      "units": "",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 8020,
+      "name": "covrat",
+      "description": "Change of value for RAT (0 to 60)",
+      "units": "",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 8021,
+      "name": "covspt",
+      "description": "Change of value for SPT (0 to 60)",
+      "units": "",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 8022,
+      "name": "strh_net",
+      "description": "System Touch RH Value (0 to 100)",
+      "units": "%",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 8023,
+      "name": "stst_net",
+      "description": "System Touch Temp Value (-40 to 245)",
+      "units": "°F",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 8024,
+      "name": "devst",
+      "description": "System Touch Device Inst (0 to 4194303)",
+      "units": "",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 8025,
+      "name": "pollst",
+      "description": "System Touch Poll Rate (10 to 60)",
+      "units": "",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 8026,
+      "name": "aistspt",
+      "description": "System Touch AI for SPT (0 to 9999)",
+      "units": "",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 8027,
+      "name": "aistsprh",
+      "description": "System Touch AI for SPRH (0 to 9999)",
+      "units": "",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 8028,
+      "name": "devsprh",
+      "description": "BACnet device for SPRH (0 to 4194303)",
+      "units": "",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 8029,
+      "name": "objsprh",
+      "description": "Object instance for SPRH (0 to 9999)",
+      "units": "",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 8030,
+      "name": "covsprh",
+      "description": "Change of value for SPRH (0 to 60)",
+      "units": "",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 8031,
+      "name": "lclocksp",
+      "description": "Low Cool Lockout Temp (-20 to 60)",
+      "units": "°F",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 8033,
+      "name": "oatlheat",
+      "description": "Heating Lockout Temp (40 to 125)",
+      "units": "°F",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 8034,
+      "name": "zsaddr1",
+      "description": "Zone Sensor 1 Address (0x00 to 0xFF)",
+      "units": "",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 8035,
+      "name": "zsaddr2",
+      "description": "Zone Sensor 2 Address (0x00 to 0xFF)",
+      "units": "",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 8036,
+      "name": "zsaddr3",
+      "description": "Zone sensor 3 address (0x00 to 0xFF)",
+      "units": "",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 8037,
+      "name": "zsaddr4",
+      "description": "Zone sensor 4 address (0x00 to 0xFF)",
+      "units": "",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 8038,
+      "name": "zsaddr5",
+      "description": "Zone sensor 5 address (0x00 to 0xFF)",
+      "units": "",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 8039,
+      "name": "ht2lctmp",
+      "description": "Max OAT for 3 Heat Stags (-20 to 60)",
+      "units": "°F",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 8040,
+      "name": "mindfint",
+      "description": "Min Time BTWN Defrosts (30 to 120)",
+      "units": "min",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 8042,
+      "name": "maxdftmr",
+      "description": "Defrost Max Duration (5 to 25)",
+      "units": "min",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 8043,
+      "name": "hour_ofr",
+      "description": "ODF Relay Run Hours (0 to 999999)",
+      "units": "hrs",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 8044,
+      "name": "rs_ofr",
+      "description": "ODF Relay Resets Counts (0 to 65535)",
+      "units": "",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 8045,
+      "name": "st_ofr",
+      "description": "ODF Relay Starts (0 to 999999)",
+      "units": "",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 8046,
+      "name": "rs_erv2p",
+      "description": "2Position/ERV ResetCount (0 to 65535)",
+      "units": "",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 8047,
+      "name": "st_erv2p",
+      "description": "2Position/ERV Starts (0 to 999999)",
+      "units": "",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 8048,
+      "name": "fspd_rpm",
+      "description": "IDF Commanded RPM (0 to 5000)",
+      "units": "RPM",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 8049,
+      "name": "erv2chan",
+      "description": "2-Pos Damper/ERV Channel (0 to 2)",
+      "units": "",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 8050,
+      "name": "rpm_fcl",
+      "description": "IDF Free Cool Speed-RPM (0 to 5000)",
+      "units": "RPM",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 8051,
+      "name": "rpm_hcl",
+      "description": "IDF High Cool Speed-RPM (0 to 5000)",
+      "units": "RPM",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 8052,
+      "name": "rpm_heat",
+      "description": "IDF Heat Speed-RPM (0 to 5000)",
+      "units": "RPM",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 8053,
+      "name": "rpm_lcl",
+      "description": "IDF Low Cool Speed-RPM (0 to 5000)",
+      "units": "RPM",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 8054,
+      "name": "rpm_vent",
+      "description": "IDF Vent Speed-RPM (0 to 5000)",
+      "units": "RPM",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 8055,
+      "name": "hr_erv2p",
+      "description": "2Position/ERV Run Hours (0 to 999999)",
+      "units": "hrs",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 8056,
+      "name": "fdrpmmin",
+      "description": "FBDH Min Fan Speed (0 to 5000)",
+      "units": "RPM",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 8057,
+      "name": "fdrpmmax",
+      "description": "FBDH Max Fan Speed (0 to 5000)",
+      "units": "RPM",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 8058,
+      "name": "hr_llsv",
+      "description": "LiquidLineValv Run Hours (0 to 999999)",
+      "units": "hrs",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 8059,
+      "name": "st_llsv",
+      "description": "Liquid Line Valve Starts (0 to 999999)",
+      "units": "",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 8060,
+      "name": "rs_llsv",
+      "description": "LiquidLineValv Reset Cnt (0 to 65535)",
+      "units": "",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 8061,
+      "name": "hr_rvs_a",
+      "description": "ReverseSolValv Run Hours (0 to 999999)",
+      "units": "hrs",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 8062,
+      "name": "st_rvs_a",
+      "description": "ReverseSolValv Starts (0 to 999999)",
+      "units": "",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 8063,
+      "name": "rs_rvs_a",
+      "description": "RevSolValv Reset Count (0 to 65535)",
+      "units": "",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 8064,
+      "name": "hr_mecht",
+      "description": "MechanicalHeat Run Hours (0 to 999999)",
+      "units": "hrs",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 8065,
+      "name": "st_mecht",
+      "description": "Mechanical Heat Starts (0 to 999999)",
+      "units": "",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 8066,
+      "name": "rs_mecht",
+      "description": "Mech Heat Reset Count (0 to 65535)",
+      "units": "",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 8067,
+      "name": "hr_mechc",
+      "description": "MechanicalCool Run Hours (0 to 999999)",
+      "units": "hrs",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 8068,
+      "name": "st_mechc",
+      "description": "Mechanical Cool Starts (0 to 999999)",
+      "units": "",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 8069,
+      "name": "rs_mechc",
+      "description": "Mech Cool Reset Count (0 to 65535)",
+      "units": "",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 8075,
+      "name": "unitsize",
+      "description": "Unit Model Number Size (0 to 255)",
+      "units": "",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 9011,
+      "name": "hr_dfrst",
+      "description": "Defrost Run Hours (0 to 999999)",
+      "units": "hrs",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 9012,
+      "name": "st_dfrst",
+      "description": "Defrost Mode Starts (0 to 999999)",
+      "units": "",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 9013,
+      "name": "rs_dfrst",
+      "description": "Defrost Reset Count (0 to 65535)",
+      "units": "",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 9078,
+      "name": "FANSPEED2",
+      "description": "Commanded IDF Speed2 (0 to 100)",
+      "units": "%",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 9079,
+      "name": "la_temp2",
+      "description": "LA_TEMP2 (0 to 80)",
+      "units": "°F",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 9083,
+      "name": "IFM2OFST",
+      "description": "IMF2OFST (0 to 100)",
+      "units": "%",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 9085,
+      "name": "fsp2_rpm",
+      "description": "IDF2 Commanded RPM (0 to 5000)",
+      "units": "RPM",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 9087,
+      "name": "LCLOFSET",
+      "description": "LOW COOL OFFSET (0 to 100)",
+      "units": "%",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 9089,
+      "name": "netinto",
+      "description": "Network Input Timeout (1 to 600)",
+      "units": "Min",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 9091,
+      "name": "zs_humidity",
+      "description": "Zone Sensor Humidity Out (0 to 100)",
+      "units": "%",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 9093,
+      "name": "zsm_tmr",
+      "description": "ZS Time Out (5 to 60)",
+      "units": "min",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "BV",
+      "instance": 3,
+      "name": "cch_relay",
+      "description": "CCH Relay 1 State",
+      "units": "",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "BV",
+      "instance": 4,
+      "name": "circa_hps",
+      "description": "Cir.A High Pressure Sw",
+      "units": "",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "BV",
+      "instance": 5,
+      "name": "cmpa1ena",
+      "description": "Circuit A Compressor 1",
+      "units": "",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "BV",
+      "instance": 7,
+      "name": "fanred10",
+      "description": "IDF Speed Reduction On",
+      "units": "",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "BV",
+      "instance": 9,
+      "name": "cmpalena",
+      "description": "Circuit A CMP A1 Loader",
+      "units": "",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "BV",
+      "instance": 10,
+      "name": "hs1",
+      "description": "Heat Stage 1 Relay",
+      "units": "",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "BV",
+      "instance": 11,
+      "name": "hs2",
+      "description": "Heat Stage 2 Relay",
+      "units": "",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "BV",
+      "instance": 15,
+      "name": "pe1",
+      "description": "Power Exhaust 1 Relay",
+      "units": "",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "BV",
+      "instance": 16,
+      "name": "ht1_aval",
+      "description": "Heat Stage 1 Available",
+      "units": "",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "BV",
+      "instance": 17,
+      "name": "ht2_aval",
+      "description": "Heat Stage 2 Available",
+      "units": "",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "BV",
+      "instance": 20,
+      "name": "iaqpurge",
+      "description": "IAQ Preoccupancy Purge",
+      "units": "",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "BV",
+      "instance": 21,
+      "name": "dmpr_err",
+      "description": "Econo Actual Position",
+      "units": "",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "BV",
+      "instance": 26,
+      "name": "sys_dmd_alarm",
+      "description": "System Demand Alarm",
+      "units": "",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "BV",
+      "instance": 27,
+      "name": "ALARMEN",
+      "description": "Alarm Reporting Enable",
+      "units": "",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "BV",
+      "instance": 29,
+      "name": "remocc",
+      "description": "Remote Occupancy Switch",
+      "units": "",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "BV",
+      "instance": 32,
+      "name": "alarm_hist_clear",
+      "description": "Clear Alarm History",
+      "units": "",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "BV",
+      "instance": 33,
+      "name": "alarm_reset",
+      "description": "Reset All Current Alarms",
+      "units": "",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "BV",
+      "instance": 35,
+      "name": "okpreocc",
+      "description": "Ok to Preoccupancy Purge",
+      "units": "",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "BV",
+      "instance": 36,
+      "name": "oktoheat",
+      "description": "OK to Run Heat",
+      "units": "",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "BV",
+      "instance": 37,
+      "name": "oktoufc",
+      "description": "Ok to Unocc Free Cool?",
+      "units": "",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "BV",
+      "instance": 38,
+      "name": "preoccon",
+      "description": "In Pre-Occupancy Purge?",
+      "units": "",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "BV",
+      "instance": 39,
+      "name": "damp_good",
+      "description": "Econ Damper Operational",
+      "units": "",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "BV",
+      "instance": 40,
+      "name": "db_lock_out",
+      "description": "Dry Bulb Lockout",
+      "units": "",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "BV",
+      "instance": 41,
+      "name": "dif_db_ena",
+      "description": "Diff. Dry Bulb Control",
+      "units": "",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "BV",
+      "instance": 42,
+      "name": "dif_enth_ena",
+      "description": "Diff. Enthalpy Control",
+      "units": "",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "BV",
+      "instance": 43,
+      "name": "econ_alarm",
+      "description": "Economizer Alerts",
+      "units": "",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "BV",
+      "instance": 44,
+      "name": "enth_lock_out",
+      "description": "Enthalpy Lockout",
+      "units": "",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "BV",
+      "instance": 45,
+      "name": "idf_alarm",
+      "description": "Indoor Fan Alerts",
+      "units": "",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "BV",
+      "instance": 46,
+      "name": "occupied_fan",
+      "description": "Fan On When Occupied",
+      "units": "",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "BV",
+      "instance": 49,
+      "name": "fst_error",
+      "description": "FST Sensor Error",
+      "units": "",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "BV",
+      "instance": 50,
+      "name": "gen_status",
+      "description": "General Status Switch",
+      "units": "",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "BV",
+      "instance": 51,
+      "name": "iaq_err",
+      "description": "IAQ Sensor Error",
+      "units": "",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "BV",
+      "instance": 52,
+      "name": "idf_bad",
+      "description": "IDF Operation Errors?",
+      "units": "",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "BV",
+      "instance": 58,
+      "name": "link_active",
+      "description": "Linkage Active",
+      "units": "",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "BV",
+      "instance": 60,
+      "name": "oarh_err",
+      "description": "OARH Sensor Error",
+      "units": "",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "BV",
+      "instance": 61,
+      "name": "oat_rel_alarm",
+      "description": "OAT Thermistor Alerts",
+      "units": "",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "BV",
+      "instance": 63,
+      "name": "sdpa_err",
+      "description": "SDPA Sensor Error",
+      "units": "",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "BV",
+      "instance": 64,
+      "name": "s_bmpald",
+      "description": "Cmp Bump Loader Test",
+      "units": "",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "BV",
+      "instance": 65,
+      "name": "ok_free_cl",
+      "description": "OK to Use Free Cooling?",
+      "units": "",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "BV",
+      "instance": 66,
+      "name": "pe2",
+      "description": "Power Exhaust 2 Relay",
+      "units": "",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "BV",
+      "instance": 67,
+      "name": "rarh_err",
+      "description": "RARH Sensor Error",
+      "units": "",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "BV",
+      "instance": 68,
+      "name": "rat_err",
+      "description": "RAT Sensor Error",
+      "units": "",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "BV",
+      "instance": 70,
+      "name": "s_alarm",
+      "description": "Alarm Output Relay Test",
+      "units": "",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "BV",
+      "instance": 71,
+      "name": "s_bmpa1",
+      "description": "Compressor Bump A1 Test",
+      "units": "",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "BV",
+      "instance": 73,
+      "name": "s_cchr1",
+      "description": "Crankcase Heater 1 test",
+      "units": "",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "BV",
+      "instance": 74,
+      "name": "s_coola1",
+      "description": "Cooling W/Comp.A1 Test",
+      "units": "",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "BV",
+      "instance": 76,
+      "name": "s_heat1",
+      "description": "Heating Stage 1 Test",
+      "units": "",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "BV",
+      "instance": 77,
+      "name": "s_heat2",
+      "description": "Heating Stage 2 Test",
+      "units": "",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "BV",
+      "instance": 78,
+      "name": "s_idftrn",
+      "description": "IDF Manual Transition",
+      "units": "",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "BV",
+      "instance": 79,
+      "name": "s_cola1d",
+      "description": "Cooling W/Comp.ALD Test",
+      "units": "",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "BV",
+      "instance": 80,
+      "name": "purge",
+      "description": "Smoke Purge Input",
+      "units": "",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "BV",
+      "instance": 82,
+      "name": "s_pe_1",
+      "description": "Power Exhaust 1 Test",
+      "units": "",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "BV",
+      "instance": 83,
+      "name": "s_pe_2",
+      "description": "Power Exhaust 2 Test",
+      "units": "",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "BV",
+      "instance": 84,
+      "name": "sat_err",
+      "description": "SAT Sensor Error",
+      "units": "",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "BV",
+      "instance": 89,
+      "name": "sspa_err",
+      "description": "SSPA Sensor Error",
+      "units": "",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "BV",
+      "instance": 92,
+      "name": "dst_actv",
+      "description": "DST currently active",
+      "units": "",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "BV",
+      "instance": 93,
+      "name": "dst_cfg",
+      "description": "DST allowed?",
+      "units": "",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "BV",
+      "instance": 95,
+      "name": "loc_occ",
+      "description": "Local Sched Occ Request",
+      "units": "",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "BV",
+      "instance": 96,
+      "name": "hol_tmrw",
+      "description": "Tomorrow Is A Holiday",
+      "units": "",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "BV",
+      "instance": 98,
+      "name": "holtoday",
+      "description": "Today Is A Holiday",
+      "units": "",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "BV",
+      "instance": 100,
+      "name": "pass_ebl",
+      "description": "User Password Protection",
+      "units": "",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "BV",
+      "instance": 103,
+      "name": "space_alarm",
+      "description": "Space Sensors Alerts",
+      "units": "",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "BV",
+      "instance": 104,
+      "name": "tstat_al",
+      "description": "Thermostat Alerts",
+      "units": "",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "BV",
+      "instance": 106,
+      "name": "auid",
+      "description": "ALC Auto Id Scheme",
+      "units": "",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "BV",
+      "instance": 107,
+      "name": "bac_auid",
+      "description": "BACnet ID Auto ID",
+      "units": "",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "BV",
+      "instance": 108,
+      "name": "bms_sced",
+      "description": "BACnet BMS Schedule",
+      "units": "",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "BV",
+      "instance": 109,
+      "name": "reset_filter_timer",
+      "description": "Reset Filter Timer",
+      "units": "",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "BV",
+      "instance": 110,
+      "name": "calobjst",
+      "description": "BACnetCal Object Status",
+      "units": "",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "BV",
+      "instance": 111,
+      "name": "backfile",
+      "description": "USB Find Restore File",
+      "units": "",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "BV",
+      "instance": 112,
+      "name": "firedown",
+      "description": "Fire Shutdown Switch",
+      "units": "",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "BV",
+      "instance": 115,
+      "name": "adptstat",
+      "description": "Tstat Adaptive Staging",
+      "units": "",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "BV",
+      "instance": 122,
+      "name": "allhtloc",
+      "description": "All Heat Stages Lockout",
+      "units": "",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "BV",
+      "instance": 123,
+      "name": "ca1_aval",
+      "description": "Compressor A1 Available",
+      "units": "",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "BV",
+      "instance": 124,
+      "name": "ca1_lock",
+      "description": "Compressor A1 Locked Out",
+      "units": "",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "BV",
+      "instance": 128,
+      "name": "ciralock",
+      "description": "Circuit A Locked Out",
+      "units": "",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "BV",
+      "instance": 129,
+      "name": "ddbckup",
+      "description": "Make Config Backup File",
+      "units": "",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "BV",
+      "instance": 130,
+      "name": "ddrstre",
+      "description": "Start Config Restore",
+      "units": "",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "BV",
+      "instance": 133,
+      "name": "tcs_Act",
+      "description": "Temp Compensate Start On",
+      "units": "",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "BV",
+      "instance": 135,
+      "name": "ufc_act",
+      "description": "Unocc Free Cool Active",
+      "units": "",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "BV",
+      "instance": 160,
+      "name": "autocool",
+      "description": "RUN AUTO COOLING TEST",
+      "units": "",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "BV",
+      "instance": 161,
+      "name": "autoheat",
+      "description": "RUN AUTO HEATING TEST",
+      "units": "",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "BV",
+      "instance": 162,
+      "name": "autosys",
+      "description": "RUN AUTO SYSTEM TEST",
+      "units": "",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "BV",
+      "instance": 163,
+      "name": "autoindp",
+      "description": "AUTO INDEPENDENT TEST",
+      "units": "",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "BV",
+      "instance": 164,
+      "name": "iaq_ovrd",
+      "description": "Is IAQ Override Active?",
+      "units": "",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "BV",
+      "instance": 167,
+      "name": "f_caloch",
+      "description": "Ckt-A low charge fault",
+      "units": "",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "BV",
+      "instance": 168,
+      "name": "f_caddf",
+      "description": "Cir A DDF Fault",
+      "units": "",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "BV",
+      "instance": 169,
+      "name": "a_capr",
+      "description": "Cir A Press Ratio Alert",
+      "units": "",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "BV",
+      "instance": 170,
+      "name": "a_calsp",
+      "description": "Cir A LSP Alert",
+      "units": "",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "BV",
+      "instance": 171,
+      "name": "a_cahps",
+      "description": "Cir A HPS alert",
+      "units": "",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "BV",
+      "instance": 172,
+      "name": "a_cahdp",
+      "description": "Cir A HDP alert",
+      "units": "",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "BV",
+      "instance": 178,
+      "name": "f_ca1ddf",
+      "description": "CA1 DDF Fault",
+      "units": "",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "BV",
+      "instance": 179,
+      "name": "a_ca1rr",
+      "description": "CA1 Rev Rotation alert",
+      "units": "",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "BV",
+      "instance": 181,
+      "name": "a_caoff",
+      "description": "A051 Cmp off expected ON",
+      "units": "",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "BV",
+      "instance": 182,
+      "name": "a_ca1ftp",
+      "description": "CA1 FTP alert",
+      "units": "",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "BV",
+      "instance": 183,
+      "name": "a_baddpa",
+      "description": "Circ A SDP range alert",
+      "units": "",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "BV",
+      "instance": 184,
+      "name": "a_badec1",
+      "description": "Damper fdbk out of range",
+      "units": "",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "BV",
+      "instance": 185,
+      "name": "a_badfst",
+      "description": "FST out of Range Alert",
+      "units": "",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "BV",
+      "instance": 186,
+      "name": "a_badoat",
+      "description": "OAT out of Range Alert",
+      "units": "",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "BV",
+      "instance": 187,
+      "name": "a_badrat",
+      "description": "RAT out of Range Alert",
+      "units": "",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "BV",
+      "instance": 188,
+      "name": "a_badsat",
+      "description": "RAT out of Range Alert",
+      "units": "",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "BV",
+      "instance": 189,
+      "name": "a_badspa",
+      "description": "Cir A SSP out Rng Alert",
+      "units": "",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "BV",
+      "instance": 190,
+      "name": "a_badspt",
+      "description": "SPToutofRangeAlert",
+      "units": "",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "BV",
+      "instance": 191,
+      "name": "a_opndpa",
+      "description": "Circ A SDP Open Alert",
+      "units": "",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "BV",
+      "instance": 192,
+      "name": "a_opnec1",
+      "description": "Dmpr fdbk Open Cir Alert",
+      "units": "",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "BV",
+      "instance": 193,
+      "name": "a_opnfst",
+      "description": "FST Open Circuit Alert",
+      "units": "",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "BV",
+      "instance": 194,
+      "name": "a_opniaq",
+      "description": "IAQ Open Circuit Alert",
+      "units": "",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "BV",
+      "instance": 195,
+      "name": "a_opnoaq",
+      "description": "OAQ Open Circuit Alert",
+      "units": "",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "BV",
+      "instance": 196,
+      "name": "a_opnoat",
+      "description": "OAT Open Circuit Alert",
+      "units": "",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "BV",
+      "instance": 197,
+      "name": "a_opnorh",
+      "description": "OARH Open Circuit Alert",
+      "units": "",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "BV",
+      "instance": 198,
+      "name": "a_opnrat",
+      "description": "RAT Open Circuit Alert",
+      "units": "",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "BV",
+      "instance": 199,
+      "name": "a_opnrrh",
+      "description": "RARH Open Circuit Alert",
+      "units": "",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "BV",
+      "instance": 200,
+      "name": "a_opnspa",
+      "description": "Circ A SSP Open Alert",
+      "units": "",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "BV",
+      "instance": 201,
+      "name": "a_opnspt",
+      "description": "SPT Open Circuit Alert",
+      "units": "",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "BV",
+      "instance": 202,
+      "name": "a_shtdpa",
+      "description": "Circ A SDP Short Alert",
+      "units": "",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "BV",
+      "instance": 203,
+      "name": "a_shtec1",
+      "description": "Damper fdbk Short Alert",
+      "units": "",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "BV",
+      "instance": 204,
+      "name": "a_shtfst",
+      "description": "FST Short Circuit Alert",
+      "units": "",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "BV",
+      "instance": 205,
+      "name": "a_shtiaq",
+      "description": "IAQ Short Circuit Alert",
+      "units": "",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "BV",
+      "instance": 206,
+      "name": "a_shtoaq",
+      "description": "OAQ Short Circuit Alert",
+      "units": "",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "BV",
+      "instance": 207,
+      "name": "a_shtoat",
+      "description": "OAT Short Circuit Alert",
+      "units": "",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "BV",
+      "instance": 208,
+      "name": "a_shtorh",
+      "description": "OARH Short Circuit Alert",
+      "units": "",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "BV",
+      "instance": 209,
+      "name": "a_shtrat",
+      "description": "RAT Short Circuit Alert",
+      "units": "",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "BV",
+      "instance": 210,
+      "name": "a_shtrrh",
+      "description": "RARH Short Circuit Alert",
+      "units": "",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "BV",
+      "instance": 211,
+      "name": "a_shtspa",
+      "description": "Circuit A SSP Shrt Alert",
+      "units": "",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "BV",
+      "instance": 212,
+      "name": "a_shtspt",
+      "description": "SPT Short Circuit Alert",
+      "units": "",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "BV",
+      "instance": 214,
+      "name": "a_dfilt",
+      "description": "dirty filter alert",
+      "units": "",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "BV",
+      "instance": 215,
+      "name": "a_dnm",
+      "description": "Damper Not Mod Alert",
+      "units": "",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "BV",
+      "instance": 216,
+      "name": "a_dnm_sc",
+      "description": "Damper Stuck Closed Alrt",
+      "units": "",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "BV",
+      "instance": 217,
+      "name": "a_dnm_so",
+      "description": "Damper Stuck Open Alert",
+      "units": "",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "BV",
+      "instance": 218,
+      "name": "a_dnmemd",
+      "description": "Act Mech Disconnect Alrt",
+      "units": "",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "BV",
+      "instance": 220,
+      "name": "a_impcl",
+      "description": "TSTAT Cool alert",
+      "units": "",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "BV",
+      "instance": 221,
+      "name": "a_impht",
+      "description": "TSTAT Heat alert",
+      "units": "",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "BV",
+      "instance": 222,
+      "name": "a_noign",
+      "description": "Ignition Failure Alert",
+      "units": "",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "BV",
+      "instance": 223,
+      "name": "a_simhc",
+      "description": "TSTAT Heat Cool alert",
+      "units": "",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "BV",
+      "instance": 224,
+      "name": "a_t24enc",
+      "description": "Economizer Not Cooling",
+      "units": "",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "BV",
+      "instance": 225,
+      "name": "a_t24eoa",
+      "description": "Excess Outside Air Alert",
+      "units": "",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "BV",
+      "instance": 226,
+      "name": "a_t24ewc",
+      "description": "Economizer Cooling",
+      "units": "",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "BV",
+      "instance": 230,
+      "name": "f_idfoff",
+      "description": "Fan Off When Cmded On",
+      "units": "",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "BV",
+      "instance": 231,
+      "name": "f_idfon",
+      "description": "Fan On When Cmded Off",
+      "units": "",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "BV",
+      "instance": 235,
+      "name": "f_ronoht",
+      "description": "Rollout without Heating",
+      "units": "",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "BV",
+      "instance": 236,
+      "name": "a_caldp",
+      "description": "Cir A LDP Alert",
+      "units": "",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "BV",
+      "instance": 237,
+      "name": "a_notime",
+      "description": "TIME range alert",
+      "units": "",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "BV",
+      "instance": 241,
+      "name": "f_cstuck",
+      "description": "CompressorStuck on Fault",
+      "units": "",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "BV",
+      "instance": 242,
+      "name": "f_fire",
+      "description": "Fire shutdown fault",
+      "units": "",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "BV",
+      "instance": 243,
+      "name": "f_bad_dd",
+      "description": "Bad DD Point-OutOfRange",
+      "units": "",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "BV",
+      "instance": 244,
+      "name": "a_gensw",
+      "description": "General Status alert",
+      "units": "",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "BV",
+      "instance": 245,
+      "name": "a_mbb0x",
+      "description": "MBB zero crossing alert",
+      "units": "",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "BV",
+      "instance": 246,
+      "name": "a_mbb12d",
+      "description": "MBB RNET Voltage Alert",
+      "units": "",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "BV",
+      "instance": 247,
+      "name": "a_mbb24d",
+      "description": "MBB 24VDC Alert",
+      "units": "",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "BV",
+      "instance": 248,
+      "name": "a_mbb5dc",
+      "description": "MBB 5VDC Alert",
+      "units": "",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "BV",
+      "instance": 265,
+      "name": "f_gensw",
+      "description": "General Status fault",
+      "units": "",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "BV",
+      "instance": 266,
+      "name": "f_hstuck",
+      "description": "Run away heat fault",
+      "units": "",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "BV",
+      "instance": 267,
+      "name": "f_mbbeep",
+      "description": "MBB EEPROM failure fault",
+      "units": "",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "BV",
+      "instance": 268,
+      "name": "f_mbbf2",
+      "description": "MBB Fuse 2 Fault",
+      "units": "",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "BV",
+      "instance": 269,
+      "name": "f_mbbf3",
+      "description": "MBB Fuse 3 Fault",
+      "units": "",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "BV",
+      "instance": 270,
+      "name": "f_mbblov",
+      "description": "MBB low voltage Fault",
+      "units": "",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "BV",
+      "instance": 271,
+      "name": "f_mbbref",
+      "description": "MBB Ref Volt Fail Fault",
+      "units": "",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "BV",
+      "instance": 272,
+      "name": "f_remoff",
+      "description": "Remote shutdown fault",
+      "units": "",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "BV",
+      "instance": 273,
+      "name": "f_cofs",
+      "description": "Condensate Ovrflow fault",
+      "units": "",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "BV",
+      "instance": 274,
+      "name": "a_opnsrh",
+      "description": "SPRH Open Circuit Alert",
+      "units": "",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "BV",
+      "instance": 275,
+      "name": "a_shtsrh",
+      "description": "SPRH Short Circuit Alert",
+      "units": "",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "BV",
+      "instance": 276,
+      "name": "a_opnoac",
+      "description": "OACFM Open Circuit Alert",
+      "units": "",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "BV",
+      "instance": 277,
+      "name": "a_shtoac",
+      "description": "OACFM ShortCircuit Alert",
+      "units": "",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "BV",
+      "instance": 278,
+      "name": "f_idflsm",
+      "description": "IDF Manual Limit Fault",
+      "units": "",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "BV",
+      "instance": 279,
+      "name": "f_phmon",
+      "description": "Phase Monitor Fault",
+      "units": "",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "BV",
+      "instance": 281,
+      "name": "s_ldv_a",
+      "description": "Liq Diverter Val Rly Tst",
+      "units": "",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "BV",
+      "instance": 282,
+      "name": "s_rdv_a",
+      "description": "Rht Dischg Valve Rly Tst",
+      "units": "",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "BV",
+      "instance": 301,
+      "name": "mechcool",
+      "description": "Mechanical Cool active?",
+      "units": "",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "BV",
+      "instance": 302,
+      "name": "okmechcl",
+      "description": "Ok to use compressors?",
+      "units": "",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "BV",
+      "instance": 303,
+      "name": "perc_bac",
+      "description": "Percent Enable/Disable",
+      "units": "",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "BV",
+      "instance": 305,
+      "name": "hw_al",
+      "description": "Hardware Failures Alerts",
+      "units": "",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "BV",
+      "instance": 306,
+      "name": "heat_al",
+      "description": "Heating Failure Alerts",
+      "units": "",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "BV",
+      "instance": 307,
+      "name": "co2s_al",
+      "description": "Air Quality CO2 Alerts",
+      "units": "",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "BV",
+      "instance": 308,
+      "name": "rhs_al",
+      "description": "RH sensor failure Alert",
+      "units": "",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "BV",
+      "instance": 309,
+      "name": "gens_al",
+      "description": "General Status Alerts",
+      "units": "",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "BV",
+      "instance": 310,
+      "name": "trans_al",
+      "description": "Transducer Sensor Alerts",
+      "units": "",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "BV",
+      "instance": 311,
+      "name": "sa_ra_alarm",
+      "description": "SAT/RAT Sensor Alerts",
+      "units": "",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "BV",
+      "instance": 312,
+      "name": "comp_alarm",
+      "description": "Compressor Alerts",
+      "units": "",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "BV",
+      "instance": 313,
+      "name": "circuit_alarm",
+      "description": "Refrig Circuit Alerts",
+      "units": "",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "BV",
+      "instance": 314,
+      "name": "oat_error",
+      "description": "OAT Sensor Error",
+      "units": "",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "BV",
+      "instance": 317,
+      "name": "lc_lock",
+      "description": "Low cooling locked out",
+      "units": "",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "BV",
+      "instance": 370,
+      "name": "heatdmdLimit",
+      "description": "HeatDemandLimiting",
+      "units": "",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "BV",
+      "instance": 371,
+      "name": "oacfm_rel_alarm",
+      "description": "OACFM Alarm Relay",
+      "units": "",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "BV",
+      "instance": 410,
+      "name": "sup_air_temp_en",
+      "description": "Supply Air Temper Enable",
+      "units": "",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "BV",
+      "instance": 415,
+      "name": "oktotemp",
+      "description": "OK to SupplyAirTempering",
+      "units": "",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "BV",
+      "instance": 420,
+      "name": "oktofbd",
+      "description": "Ok to fan based dehum",
+      "units": "",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "BV",
+      "instance": 422,
+      "name": "oktodhum",
+      "description": "Ok to Dehumidify?",
+      "units": "",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "BV",
+      "instance": 423,
+      "name": "humctrla",
+      "description": "humidity ctrl is active",
+      "units": "",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "BV",
+      "instance": 435,
+      "name": "cooldmdLimit",
+      "description": "CoolDemandLimiting",
+      "units": "",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "BV",
+      "instance": 439,
+      "name": "fbdsatlo",
+      "description": "fbdh sat locked out",
+      "units": "",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "BV",
+      "instance": 440,
+      "name": "fbdsstlo",
+      "description": "FBDH SST locked out",
+      "units": "",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "BV",
+      "instance": 445,
+      "name": "iaq_override_en",
+      "description": "IAQ override enable",
+      "units": "",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "BV",
+      "instance": 449,
+      "name": "sdwn_a1",
+      "description": "Shutdown A1 First",
+      "units": "",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "BV",
+      "instance": 451,
+      "name": "sdwn_ald",
+      "description": "Shutdown Loader First",
+      "units": "",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "BV",
+      "instance": 457,
+      "name": "s_erv2p",
+      "description": "2Position/ERV Relay Test",
+      "units": "",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "BV",
+      "instance": 459,
+      "name": "SDWN_A2",
+      "description": "Compressor A2 Shutdown",
+      "units": "",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "BV",
+      "instance": 465,
+      "name": "mecht_en",
+      "description": "Mechanical Heating",
+      "units": "",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "BV",
+      "instance": 467,
+      "name": "dfrstact",
+      "description": "Defrost Mode Active",
+      "units": "",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "BV",
+      "instance": 469,
+      "name": "disldpal",
+      "description": "Low Discharge Diagnostic",
+      "units": "",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "BV",
+      "instance": 1016,
+      "name": "flt_status",
+      "description": "Filter Status Switch",
+      "units": "",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "BV",
+      "instance": 1017,
+      "name": "w1_input",
+      "description": "Thermostat W1 Input",
+      "units": "",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "BV",
+      "instance": 1018,
+      "name": "w2_input",
+      "description": "Thermostat W2 Input",
+      "units": "",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "BV",
+      "instance": 1019,
+      "name": "y1_input",
+      "description": "Thermostat Y1 Input",
+      "units": "",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "BV",
+      "instance": 1020,
+      "name": "y2_input",
+      "description": "Thermostat Y2 Input",
+      "units": "",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "BV",
+      "instance": 1021,
+      "name": "g_input",
+      "description": "Thermostat G Input",
+      "units": "",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "BV",
+      "instance": 2008,
+      "name": "occ_status",
+      "description": "Currently Occupied",
+      "units": "",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "BV",
+      "instance": 6000,
+      "name": "ofr",
+      "description": "Outdoor Fan Speed Relay",
+      "units": "",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "BV",
+      "instance": 6001,
+      "name": "s_ofrspd",
+      "description": "ODF Speed Relay Test",
+      "units": "",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "BV",
+      "instance": 6002,
+      "name": "erv_2pos",
+      "description": "2-Pos Damper/ERV relay",
+      "units": "",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "BV",
+      "instance": 7001,
+      "name": "space_err",
+      "description": "SPT Sensor Error",
+      "units": "",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "BV",
+      "instance": 7002,
+      "name": "stpt_err",
+      "description": "SPTO Sensor Error",
+      "units": "",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "BV",
+      "instance": 7008,
+      "name": "sfan_fail_alarm",
+      "description": "Shut Down on IDF Failure",
+      "units": "",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "BV",
+      "instance": 7009,
+      "name": "sfan_hand_alarm",
+      "description": "IDF Speed Override Flag",
+      "units": "",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "BV",
+      "instance": 7017,
+      "name": "filter_alarm",
+      "description": "Dirty Filter Alerts",
+      "units": "",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "BV",
+      "instance": 7028,
+      "name": "condensate_switch",
+      "description": "COFS Switch State",
+      "units": "",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "BV",
+      "instance": 7030,
+      "name": "iaqoverride_switch",
+      "description": "IAQ override sw state",
+      "units": "",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "BV",
+      "instance": 7048,
+      "name": "equip_alarm",
+      "description": "Alarm Output Relay State",
+      "units": "",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "BV",
+      "instance": 7053,
+      "name": "loamben",
+      "description": "Low Ambient Enable",
+      "units": "",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "BV",
+      "instance": 9001,
+      "name": "rem_shut",
+      "description": "Remote Shutdown Switch",
+      "units": "",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "BV",
+      "instance": 9002,
+      "name": "defrostswitch",
+      "description": "Defrost Switch",
+      "units": "",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "BV",
+      "instance": 9004,
+      "name": "s_dfrst",
+      "description": "Defrost Test",
+      "units": "",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "BV",
+      "instance": 9005,
+      "name": "s_mecht",
+      "description": "Mechanical Heating Test",
+      "units": "",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "BV",
+      "instance": 9006,
+      "name": "s_rvs_a",
+      "description": "Rev.Val. Sole. Cir.A Tst",
+      "units": "",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "BV",
+      "instance": 9007,
+      "name": "s_llsv",
+      "description": "LiqLine Solenoid Test",
+      "units": "",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "BV",
+      "instance": 9008,
+      "name": "s_ecocal",
+      "description": "Econ Damper Calibration",
+      "units": "",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "BV",
+      "instance": 9076,
+      "name": "ofr2",
+      "description": "Outdoor Fan Relay 2",
+      "units": "",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "BV",
+      "instance": 9077,
+      "name": "ofr3",
+      "description": "Outdoor Fan Relay 3",
+      "units": "",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "BV",
+      "instance": 9081,
+      "name": "s_ofr2",
+      "description": "ODF Relay2 Test (1 to 1)",
+      "units": "",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "BV",
+      "instance": 9082,
+      "name": "s_ofr3",
+      "description": "ODF Relay3 Test",
+      "units": "",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "BV",
+      "instance": 9086,
+      "name": "IFM2OFEN",
+      "description": "IFM2OFEN",
+      "units": "",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "BV",
+      "instance": 9088,
+      "name": "zs_motion",
+      "description": "ZS Motion Sensor",
+      "units": "",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "BV",
+      "instance": 9090,
+      "name": "sprh_err",
+      "description": "SPRH Sensor Error",
+      "units": "",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "BV",
+      "instance": 9094,
+      "name": "occstdby",
+      "description": "OccupiedStandBY",
+      "units": "",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "MV",
+      "instance": 2,
+      "name": "control_type",
+      "description": "Unit Control Type (0 to 2)",
+      "units": "",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "MV",
+      "instance": 5,
+      "name": "tstat_type",
+      "description": "Thermostat Hardware Type (0 to 3)",
+      "units": "",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "MV",
+      "instance": 6,
+      "name": "ventstat",
+      "description": "Ventilation Status (0 to 9)",
+      "units": "",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "MV",
+      "instance": 8,
+      "name": "tstat_alert",
+      "description": "Alert from thermostat (0 to 65535)",
+      "units": "",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "MV",
+      "instance": 9,
+      "name": "color",
+      "description": "Operation Status Color (0 to 15)",
+      "units": "",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "MV",
+      "instance": 11,
+      "name": "bms_cfg",
+      "description": "BAS Protocol Select (0 to 2)",
+      "units": "",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "MV",
+      "instance": 12,
+      "name": "bms_occ",
+      "description": "BMS Occupancy Request (0 to 2)",
+      "units": "",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "MV",
+      "instance": 13,
+      "name": "lnk_occ",
+      "description": "Linkage Occupied Request (0 to 2)",
+      "units": "",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "MV",
+      "instance": 14,
+      "name": "occ_ctrl",
+      "description": "Active Occupancy control (0 to 6)",
+      "units": "",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "MV",
+      "instance": 16,
+      "name": "ht_type",
+      "description": "Type of Heat Installed (0 to 2)",
+      "units": "",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "MV",
+      "instance": 17,
+      "name": "e0commst",
+      "description": "Communications status",
+      "units": "",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "MV",
+      "instance": 18,
+      "name": "bac_baud",
+      "description": "BACnet BMS baud rate (0 to 5)",
+      "units": "",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "MV",
+      "instance": 19,
+      "name": "fw_state",
+      "description": "Firmware Release State (0 to 2)",
+      "units": "",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "MV",
+      "instance": 24,
+      "name": "ufc_cfg",
+      "description": "When to Unocc Free Cool? (0 to 2)",
+      "units": "",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "MV",
+      "instance": 25,
+      "name": "iaqancfg",
+      "description": "Analog Input IAQ Control (0 to 3)",
+      "units": "",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "MV",
+      "instance": 41,
+      "name": "filter_channel",
+      "description": "Filter Status Sw Channel (0 to 5)",
+      "units": "",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "MV",
+      "instance": 42,
+      "name": "filt_cfg",
+      "description": "Filter Status Swith Type (0 to 2)",
+      "units": "",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "MV",
+      "instance": 43,
+      "name": "sub_mode",
+      "description": "Running Mode Operation (0 to 99)",
+      "units": "",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "MV",
+      "instance": 44,
+      "name": "bac_rest",
+      "description": "Backup and Restore (0 to 2)",
+      "units": "",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "MV",
+      "instance": 45,
+      "name": "rmoc_cfg",
+      "description": "Remote Occupancy Sw Type",
+      "units": "",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "MV",
+      "instance": 46,
+      "name": "rmocchan",
+      "description": "Remote Occupancy Channel (0 to 5)",
+      "units": "",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "MV",
+      "instance": 47,
+      "name": "keepconf",
+      "description": "Keep configuration (0 to 2)",
+      "units": "",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "MV",
+      "instance": 56,
+      "name": "cdlm_level",
+      "description": "Cool demand Limit Level (0 to 3)",
+      "units": "",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "MV",
+      "instance": 57,
+      "name": "hdlm_level",
+      "description": "Heat demand Limit Level (0 to 3)",
+      "units": "",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "MV",
+      "instance": 58,
+      "name": "fbd_type",
+      "description": "Fan Based Dehum Type (0 to 2)",
+      "units": "",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "MV",
+      "instance": 101,
+      "name": "sys_demand_enum",
+      "description": "System Demand (0 to 255)",
+      "units": "",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "MV",
+      "instance": 156,
+      "name": "test_ito",
+      "description": "Test Inactivity Time Out (0 to 2)",
+      "units": "",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "MV",
+      "instance": 444,
+      "name": "iaqo_sw_chan",
+      "description": "IAQ override sw channel (0 to 5)",
+      "units": "",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "MV",
+      "instance": 451,
+      "name": "fanstcfg",
+      "description": "Fan Status SW Type (0 to 2)",
+      "units": "",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "MV",
+      "instance": 452,
+      "name": "odfstate",
+      "description": "ODF State (0 to 3)",
+      "units": "",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "MV",
+      "instance": 453,
+      "name": "venttype",
+      "description": "Ventilation Method (0 to 4)",
+      "units": "",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "MV",
+      "instance": 2002,
+      "name": "sys_mode",
+      "description": "System Mode (0 to 2)",
+      "units": "",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "MV",
+      "instance": 2003,
+      "name": "sysvtype",
+      "description": "Comp. Framework (0 to 2)",
+      "units": "",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "MV",
+      "instance": 2004,
+      "name": "htsrctyp",
+      "description": "Active Type of Heat (0 to 6)",
+      "units": "",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "MV",
+      "instance": 9077,
+      "name": "zsm_cfg",
+      "description": "ZS motion sensor cfg (0 to 3)",
+      "units": "",
+      "access": "W",
+      "states": ""
+    }
+  ]
+}

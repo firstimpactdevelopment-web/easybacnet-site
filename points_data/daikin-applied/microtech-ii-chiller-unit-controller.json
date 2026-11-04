@@ -1,0 +1,1274 @@
+{
+  "manufacturer": "Daikin Applied",
+  "manufacturer_slug": "daikin-applied",
+  "model": "MicroTech II Chiller Unit Controller",
+  "model_slug": "microtech-ii-chiller-unit-controller",
+  "aliases": [
+    "MicroTech II chiller",
+    "MTII Chiller UC",
+    "WSC",
+    "WDC",
+    "WPV",
+    "HSC",
+    "HDC",
+    "TSC",
+    "WMC",
+    "WCC",
+    "AGZ",
+    "ACZ",
+    "AGS",
+    "WGZ",
+    "TGZ",
+    "WGS",
+    "ED 15062",
+    "ED 15100"
+  ],
+  "equipment_type": "Chiller controller",
+  "applies_to": "Older Daikin Applied (McQuay) chillers with the MicroTech II unit controller: WSC/WDC/WPV/HSC/HDC/TSC/WMC/WCC centrifugals, AGZ/ACZ/WGZ/TGZ scroll and AGS/WGS screw units.",
+  "summary": "The MicroTech II chiller unit controller connects to BACnet MS/TP or BACnet IP/Ethernet through a BACnet communication module (a LonWorks module also exists). The object list is the same for both: enable, mode, cool/heat/ice setpoints and capacity limit commands, water temperatures and flows, chiller status and mode, refrigerant and oil data per compressor, compressor current/power/voltage, run hours and starts, pump status and alarm objects. Which objects return data depends on the chiller model; a model-support matrix in the doc shows which.",
+  "bacnet_transport": [
+    "BACnet IP",
+    "BACnet MS/TP"
+  ],
+  "firmware": null,
+  "default_device_instance": 3000,
+  "access_inferred": false,
+  "notes": [
+    "ED 15062-9 (BACnet MS/TP + LonWorks) and ED 15100-5 (BACnet IP/Ethernet) print the same 128 objects with the same instances and object names; the IP doc adds a Variable Index column for the web configuration interface.",
+    "Points that ask for 'the selected compressor' or 'the selected pump' return data for whatever CompSelect (MO 46) or PumpSelect (MO 47) is set to; other compressors and pumps also have their own fixed objects.",
+    "Run-hour values (compressor and pump hours) must be multiplied by 10 to get actual hours.",
+    "AI 82 (oil sump pressure, compressor 2) is printed with the object name Comp2OilFeedPress, the same as AI 81; kept as printed.",
+    "Ranges list both English and SI units; English units are shown here.",
+    "Object availability depends on chiller model (centrifugal, scroll, screw, Turbocor/WMC)."
+  ],
+  "source": {
+    "title": "MicroTech II Chiller Unit Controller Protocol Information (LonWorks, BACnet MS/TP)",
+    "doc_number": "ED 15062-9",
+    "revision_date": "2022-08",
+    "url": "https://tahoeweb.daikinapplied.com/api/general/DownloadDocumentByName/media/Daikin_ED_15062-9_MTII_Chiller_Unit_Controller_Protocol_Info_Tech_Sheet.pdf/"
+  },
+  "integration": {
+    "summary": "Set the chiller's control source to the network (BAS) at the keypad or touch screen, then write ChillerEnable, the operating mode, the cool setpoint and the capacity limit. Read UnitStatus, ActiveMode, water temperatures, capacity and AlarmDigitalOutput, and use ClearAlarm for clearable alarms.",
+    "minimum_points": [
+      {
+        "ref": "BV 41",
+        "name": "ChillerEnable",
+        "why": "Enable (1) / disable (0) the chiller"
+      },
+      {
+        "ref": "MO 45",
+        "name": "ChillerOperationMode",
+        "why": "Mode command: 1=Ice, 2=Cool, 3=Heat"
+      },
+      {
+        "ref": "AO 29",
+        "name": "NetworkCoolTempSetpoint",
+        "why": "Leaving chilled water setpoint"
+      },
+      {
+        "ref": "AO 32",
+        "name": "NetworkCapacityLimitPct",
+        "why": "Capacity limit from the BMS, %"
+      },
+      {
+        "ref": "MI 43",
+        "name": "UnitStatus",
+        "why": "Off/Start/Run/Pre-shutdown/Service"
+      },
+      {
+        "ref": "BI 38",
+        "name": "ChillerLocalRemote",
+        "why": "Reads Remote (0) when network control is allowed"
+      },
+      {
+        "ref": "AI 2",
+        "name": "LvgEvapWaterTempUnit",
+        "why": "Leaving chilled water temperature"
+      },
+      {
+        "ref": "AI 1",
+        "name": "EntEvapWaterTemp",
+        "why": "Entering chilled water temperature"
+      },
+      {
+        "ref": "AI 9",
+        "name": "ChillerCapacity",
+        "why": "Running capacity, %"
+      },
+      {
+        "ref": "BI 40",
+        "name": "AlarmDigitalOutput",
+        "why": "Any active alarm"
+      }
+    ],
+    "enable": "Disable the chiller, set the protocol to the BAS network at the user interface, then set the setpoint source to Network (on centrifugals, Control Source = BAS on the SETPOINTS/MODE screen, password 2001; other models use the passwords in the doc's table). Re-enable the chiller; ChillerEnable (BV 41) then starts and stops it.",
+    "heartbeat": "The receive-heartbeat and default-value behaviour described in the doc applies to the LonWorks interface only. No BACnet heartbeat point is listed.",
+    "remote_sensors": null,
+    "setup": [
+      "MS/TP defaults: device instance 3000, MAC 18, 38400 baud, Max Master 127, Max Info Frames 20; set with Daikin's BACnet Configuration Tool and cycle power afterwards.",
+      "IP module defaults: 172.16.5.8, mask 255.255.0.0, UDP 47808, device instance 3000; settings are changed in the module's web configuration interface (IM 837).",
+      "Device name is MTII Chiller UC plus the device instance; changing the instance changes every object's full reference.",
+      "Use CompSelect (MO 46) and PumpSelect (MO 47) to choose which compressor or pump the 'selected' objects report."
+    ],
+    "gotchas": [
+      "ClearAlarm (BV 42) can't clear shutdown faults on centrifugals such as low evaporator pressure, high condenser pressure, low oil pressure, freeze protection and high motor temperature; on other models only the flow-loss alarm can be cleared remotely.",
+      "Run-hour objects report hours divided by 10.",
+      "The heat setpoint is ignored while the chiller is in cool mode.",
+      "Many objects only return data on certain chiller types; check the model-support table before mapping."
+    ]
+  },
+  "points": [
+    {
+      "type": "AI",
+      "instance": 7,
+      "name": "ActiveLvgWaterTarget",
+      "description": "Active Setpoint",
+      "units": "°F",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AI",
+      "instance": 9,
+      "name": "ChillerCapacity",
+      "description": "Actual Capacity",
+      "units": "%",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AI",
+      "instance": 56,
+      "name": "Comp1ActualRPM",
+      "description": "Actual RPM, compressor 1",
+      "units": "RPM",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AI",
+      "instance": 60,
+      "name": "Comp2ActualRPM",
+      "description": "Actual RPM, compressor 2",
+      "units": "RPM",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AI",
+      "instance": 8,
+      "name": "ActiveCapacityLimit",
+      "description": "Capacity Limit Output",
+      "units": "%",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AI",
+      "instance": 67,
+      "name": "TotalChillerKW",
+      "description": "Total chiller kW (doc prints range as 0-160%)",
+      "units": "",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AI",
+      "instance": 88,
+      "name": "Comp2ActiveCapLimit",
+      "description": "Compressor 2 Active Capacity Limit",
+      "units": "%",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AI",
+      "instance": 80,
+      "name": "Comp2Speed",
+      "description": "Compressor 2 VFD Speed",
+      "units": "%",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AI",
+      "instance": 51,
+      "name": "Current",
+      "description": "Compressor Current, compressor chosen by CompSelect",
+      "units": "A",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AI",
+      "instance": 76,
+      "name": "Comp2Current",
+      "description": "Compressor Current, compressor 2",
+      "units": "A",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AI",
+      "instance": 95,
+      "name": "Comp3Current",
+      "description": "Compressor Current, compressor 3",
+      "units": "A",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AI",
+      "instance": 103,
+      "name": "Comp4Current",
+      "description": "Compressor Current, compressor 4",
+      "units": "A",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AI",
+      "instance": 111,
+      "name": "Comp5Current",
+      "description": "Compressor Current, compressor 5",
+      "units": "A",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AI",
+      "instance": 117,
+      "name": "Comp6Current",
+      "description": "Compressor Current, compressor 6",
+      "units": "A",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AI",
+      "instance": 18,
+      "name": "DischargeTemp",
+      "description": "Compressor Discharge Temperature, compressor chosen by CompSelect",
+      "units": "°F",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AI",
+      "instance": 72,
+      "name": "Comp2DischargeTmp",
+      "description": "Compressor Discharge Temperature, compressor 2",
+      "units": "°F",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AI",
+      "instance": 24,
+      "name": "CompMotorCurrentPercent",
+      "description": "Compressor Percent RLA, compressor chosen by CompSelect",
+      "units": "%",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AI",
+      "instance": 75,
+      "name": "Comp2CurrentPercent",
+      "description": "Compressor Percent RLA, compressor 2",
+      "units": "%",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AI",
+      "instance": 94,
+      "name": "Comp3CurrentPercent",
+      "description": "Compressor Percent RLA, compressor 3",
+      "units": "%",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AI",
+      "instance": 102,
+      "name": "Comp4CurrentPercent",
+      "description": "Compressor Percent RLA, compressor 4",
+      "units": "%",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AI",
+      "instance": 110,
+      "name": "Comp5CurrentPercent",
+      "description": "Compressor Percent RLA, compressor 5",
+      "units": "%",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AI",
+      "instance": 116,
+      "name": "Comp6CurrentPercent",
+      "description": "Compressor Percent RLA, compressor 6",
+      "units": "%",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AI",
+      "instance": 54,
+      "name": "Kilowatts",
+      "description": "Compressor Power, compressor chosen by CompSelect",
+      "units": "kW",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AI",
+      "instance": 77,
+      "name": "Comp2Kilowatts",
+      "description": "Compressor Power, compressor 2",
+      "units": "kW",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AI",
+      "instance": 96,
+      "name": "Comp3Kilowatts",
+      "description": "Compressor Power, compressor 3",
+      "units": "kW",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AI",
+      "instance": 104,
+      "name": "Comp4Kilowatts",
+      "description": "Compressor Power, compressor 4",
+      "units": "kW",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AI",
+      "instance": 112,
+      "name": "Comp5Kilowatts",
+      "description": "Compressor Power, compressor 5",
+      "units": "kW",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AI",
+      "instance": 118,
+      "name": "Comp6Kilowatts",
+      "description": "Compressor Power, compressor 6",
+      "units": "kW",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AI",
+      "instance": 26,
+      "name": "CompHours",
+      "description": "Compressor Run Hours, compressor chosen by CompSelect (reads hours/10)",
+      "units": "h",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AI",
+      "instance": 93,
+      "name": "Comp2Hours",
+      "description": "Compressor Run Hours, compressor 2 (reads hours/10)",
+      "units": "h",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AI",
+      "instance": 101,
+      "name": "Comp3Hours",
+      "description": "Compressor Run Hours, compressor 3 (reads hours/10)",
+      "units": "h",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AI",
+      "instance": 109,
+      "name": "Comp4Hours",
+      "description": "Compressor Run Hours, compressor 4 (reads hours/10)",
+      "units": "h",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AI",
+      "instance": 25,
+      "name": "CompStarts",
+      "description": "Compressor Starts, compressor chosen by CompSelect",
+      "units": "",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AI",
+      "instance": 92,
+      "name": "Comp2Starts",
+      "description": "Compressor Starts, compressor 2",
+      "units": "",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AI",
+      "instance": 100,
+      "name": "Comp3Starts",
+      "description": "Compressor Starts, compressor 3",
+      "units": "",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AI",
+      "instance": 108,
+      "name": "Comp4Starts",
+      "description": "Compressor Starts, compressor 4",
+      "units": "",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AI",
+      "instance": 123,
+      "name": "CompressorStatus",
+      "description": "Compressor Status, compressor chosen by CompSelect",
+      "units": "",
+      "access": "R",
+      "states": "0=Off, 1=Start Oil Pump, 2=Interlock/Prelube, 3=Run, 4=Shutdown, 5=Postlube"
+    },
+    {
+      "type": "AI",
+      "instance": 91,
+      "name": "Comp2Status",
+      "description": "Compressor Status, compressor 2",
+      "units": "",
+      "access": "R",
+      "states": "0=Off, 1=Start Oil Pump, 2=Interlock/Prelube, 3=Run, 4=Shutdown, 5=Postlube"
+    },
+    {
+      "type": "AI",
+      "instance": 99,
+      "name": "Comp3Status",
+      "description": "Compressor Status, compressor 3",
+      "units": "",
+      "access": "R",
+      "states": "0=Off, 1=Start Oil Pump, 2=Interlock/Prelube, 3=Run, 4=Shutdown, 5=Postlube"
+    },
+    {
+      "type": "AI",
+      "instance": 107,
+      "name": "Comp4Status",
+      "description": "Compressor Status, compressor 4",
+      "units": "",
+      "access": "R",
+      "states": "0=Off, 1=Start Oil Pump, 2=Interlock/Prelube, 3=Run, 4=Shutdown, 5=Postlube"
+    },
+    {
+      "type": "AI",
+      "instance": 115,
+      "name": "Comp5Status",
+      "description": "Compressor Status, compressor 5",
+      "units": "",
+      "access": "R",
+      "states": "0=Off, 1=Start Oil Pump, 2=Interlock/Prelube, 3=Run, 4=Shutdown, 5=Postlube"
+    },
+    {
+      "type": "AI",
+      "instance": 121,
+      "name": "Comp6Status",
+      "description": "Compressor Status, compressor 6",
+      "units": "",
+      "access": "R",
+      "states": "0=Off, 1=Start Oil Pump, 2=Interlock/Prelube, 3=Run, 4=Shutdown, 5=Postlube"
+    },
+    {
+      "type": "AI",
+      "instance": 15,
+      "name": "SuctionTemp",
+      "description": "Compressor Suction Line Temperature, compressor chosen by CompSelect",
+      "units": "°F",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AI",
+      "instance": 69,
+      "name": "Comp2SuctTemp",
+      "description": "Compressor Suction Line Temperature, compressor 2",
+      "units": "°F",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AI",
+      "instance": 52,
+      "name": "Voltage",
+      "description": "Compressor Voltage, compressor chosen by CompSelect",
+      "units": "V",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AI",
+      "instance": 79,
+      "name": "Comp2Voltage",
+      "description": "Compressor Voltage, compressor 2",
+      "units": "V",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AI",
+      "instance": 98,
+      "name": "Comp3Voltage",
+      "description": "Compressor Voltage, compressor 3",
+      "units": "V",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AI",
+      "instance": 106,
+      "name": "Comp4Voltage",
+      "description": "Compressor Voltage, compressor 4",
+      "units": "V",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AI",
+      "instance": 114,
+      "name": "Comp5Voltage",
+      "description": "Compressor Voltage, compressor 5",
+      "units": "V",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AI",
+      "instance": 120,
+      "name": "Comp6Voltage",
+      "description": "Compressor Voltage, compressor 6",
+      "units": "V",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AI",
+      "instance": 3,
+      "name": "EntCondWaterTemp",
+      "description": "Condenser Entering Water Temperature",
+      "units": "°F",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AI",
+      "instance": 4,
+      "name": "LvgCondWaterTemp",
+      "description": "Condenser Leaving Water Temperature",
+      "units": "°F",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AI",
+      "instance": 28,
+      "name": "CondPumpOperHours",
+      "description": "Condenser Pump Run Hours, pump chosen by PumpSelect (reads hours/10)",
+      "units": "h",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AI",
+      "instance": 90,
+      "name": "CondPmp2Hrs",
+      "description": "Condenser Pump Run Hours, pump 2 (reads hours/10)",
+      "units": "h",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AI",
+      "instance": 16,
+      "name": "CondPressure",
+      "description": "Condenser Refrigerant Pressure, compressor chosen by CompSelect",
+      "units": "psi",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AI",
+      "instance": 74,
+      "name": "Comp2CondPress",
+      "description": "Condenser Refrigerant Pressure, compressor 2",
+      "units": "psi",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AI",
+      "instance": 17,
+      "name": "CondSatTemp",
+      "description": "Condenser Saturated Refrigerant Temperature, compressor chosen by CompSelect",
+      "units": "°F",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AI",
+      "instance": 73,
+      "name": "Comp2CondSatTemp",
+      "description": "Condenser Saturated Refrigerant Temperature, compressor 2",
+      "units": "°F",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AI",
+      "instance": 50,
+      "name": "CondWaterFlowRate",
+      "description": "Condenser Water Flow Rate",
+      "units": "GPM",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AI",
+      "instance": 63,
+      "name": "Comp1DesignRPM",
+      "description": "Design RPM, compressor 1",
+      "units": "RPM",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AI",
+      "instance": 64,
+      "name": "Comp2DesignRPM",
+      "description": "Design RPM, compressor 2",
+      "units": "RPM",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AI",
+      "instance": 1,
+      "name": "EntEvapWaterTemp",
+      "description": "Evaporator Entering Water Temperature",
+      "units": "°F",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AI",
+      "instance": 2,
+      "name": "LvgEvapWaterTempUnit",
+      "description": "Evaporator Leaving Water Temperature for Unit",
+      "units": "°F",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AI",
+      "instance": 23,
+      "name": "LvgEvapWaterTempComp",
+      "description": "Evaporator Leaving Water Temperature for Compressor, compressor chosen by CompSelect",
+      "units": "°F",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AI",
+      "instance": 68,
+      "name": "Comp2EvapLvgWTmp",
+      "description": "Evaporator Leaving Water Temperature for Compressor, compressor 2",
+      "units": "°F",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AI",
+      "instance": 27,
+      "name": "EvapPumpOperHours",
+      "description": "Evaporator Pump Run Hours, pump chosen by PumpSelect (reads hours/10)",
+      "units": "h",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AI",
+      "instance": 89,
+      "name": "EvapPmp2Hrs",
+      "description": "Evaporator Pump Run Hours, pump 2 (reads hours/10)",
+      "units": "h",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AI",
+      "instance": 13,
+      "name": "EvapPressure",
+      "description": "Evaporator Refrigerant Pressure, compressor chosen by CompSelect",
+      "units": "psi",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AI",
+      "instance": 71,
+      "name": "Comp2EvapPress",
+      "description": "Evaporator Refrigerant Pressure, compressor 2",
+      "units": "psi",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AI",
+      "instance": 14,
+      "name": "EvapSatTemp",
+      "description": "Evaporator Saturated Refrigerant Temperature, compressor chosen by CompSelect",
+      "units": "°F",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AI",
+      "instance": 70,
+      "name": "Comp2EvapSatRTmp",
+      "description": "Evaporator Saturated Refrigerant Temperature, compressor 2",
+      "units": "°F",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AI",
+      "instance": 49,
+      "name": "EvapWaterFlowRate",
+      "description": "Evaporator Water Flow Rate",
+      "units": "GPM",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AI",
+      "instance": 5,
+      "name": "HeatRecEntWaterTemp",
+      "description": "Heat Recovery Entering Water Temperature",
+      "units": "°F",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AI",
+      "instance": 6,
+      "name": "HeatRecLvgWaterTemp",
+      "description": "Heat Recovery Leaving Water Temperature",
+      "units": "°F",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AI",
+      "instance": 58,
+      "name": "Comp1IGVPercentOpen",
+      "description": "IGV Percentage Open, compressor 1",
+      "units": "%",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AI",
+      "instance": 62,
+      "name": "Comp2IGVPercentOpen",
+      "description": "IGV Percentage Open, compressor 2",
+      "units": "%",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AI",
+      "instance": 66,
+      "name": "Comp1InverterTmp",
+      "description": "Inverter Temperature, compressor 1",
+      "units": "°F",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AI",
+      "instance": 87,
+      "name": "Comp2InverterTmp",
+      "description": "Inverter Temperature, compressor 2",
+      "units": "°F",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AI",
+      "instance": 12,
+      "name": "LiquidLinePress",
+      "description": "Liquid Line Refrigerant Pressure",
+      "units": "psi",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AI",
+      "instance": 11,
+      "name": "LiquidLineTemp",
+      "description": "Liquid Line Refrigerant Temperature, compressor chosen by CompSelect",
+      "units": "°F",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AI",
+      "instance": 85,
+      "name": "Comp2LiqLineTemp",
+      "description": "Liquid Line Refrigerant Temperature, compressor 2",
+      "units": "°F",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AI",
+      "instance": 55,
+      "name": "Comp1MaxRPM",
+      "description": "Maximum RPM, compressor 1",
+      "units": "RPM",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AI",
+      "instance": 59,
+      "name": "Comp2MaxRPM",
+      "description": "Maximum RPM, compressor 2",
+      "units": "RPM",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AI",
+      "instance": 57,
+      "name": "Comp1MinRPM",
+      "description": "Minimum RPM, compressor 1",
+      "units": "RPM",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AI",
+      "instance": 61,
+      "name": "Comp2MinRPM",
+      "description": "Minimum RPM, compressor 2",
+      "units": "RPM",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AI",
+      "instance": 65,
+      "name": "Comp1MotorCavityTmp",
+      "description": "Motor Cavity Temperature, compressor 1",
+      "units": "°F",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AI",
+      "instance": 86,
+      "name": "Comp2MotorCavityTmp",
+      "description": "Motor Cavity Temperature, compressor 2",
+      "units": "°F",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AI",
+      "instance": 19,
+      "name": "OilFeedPressure",
+      "description": "Oil Feed Pressure, compressor chosen by CompSelect",
+      "units": "psi",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AI",
+      "instance": 81,
+      "name": "Comp2OilFeedPress",
+      "description": "Oil Feed Pressure, compressor 2",
+      "units": "psi",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AI",
+      "instance": 21,
+      "name": "OilFeedTemp",
+      "description": "Oil Feed Temperature, compressor chosen by CompSelect",
+      "units": "°F",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AI",
+      "instance": 83,
+      "name": "Comp2OilFeedTemp",
+      "description": "Oil Feed Temperature, compressor 2",
+      "units": "°F",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AI",
+      "instance": 20,
+      "name": "OilSumpPressure",
+      "description": "Oil Sump Pressure, compressor chosen by CompSelect",
+      "units": "psi",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AI",
+      "instance": 82,
+      "name": "Comp2OilFeedPress",
+      "description": "Oil Sump Pressure, compressor 2",
+      "units": "psi",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AI",
+      "instance": 22,
+      "name": "OilSumpTemp",
+      "description": "Oil Sump Temperature, compressor chosen by CompSelect",
+      "units": "°F",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AI",
+      "instance": 84,
+      "name": "Comp2OilSumpTemp",
+      "description": "Oil Sump Temperature, compressor 2",
+      "units": "°F",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AI",
+      "instance": 10,
+      "name": "OutdoorAirTemp",
+      "description": "Outdoor Air Temperature",
+      "units": "°F",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AI",
+      "instance": 53,
+      "name": "PowerFactor",
+      "description": "Power factor x100, compressor chosen by CompSelect",
+      "units": "",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AI",
+      "instance": 78,
+      "name": "Comp2PowerFactor",
+      "description": "Power factor x100, compressor 2",
+      "units": "",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AI",
+      "instance": 97,
+      "name": "Comp3PowerFactor",
+      "description": "Power factor x100, compressor 3",
+      "units": "",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AI",
+      "instance": 105,
+      "name": "Comp4PowerFactor",
+      "description": "Power factor x100, compressor 4",
+      "units": "",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AI",
+      "instance": 113,
+      "name": "Comp5PowerFactor",
+      "description": "Power factor x100, compressor 5",
+      "units": "",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AI",
+      "instance": 119,
+      "name": "Comp6PowerFactor",
+      "description": "Power factor x100, compressor 6",
+      "units": "",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AO",
+      "instance": 32,
+      "name": "NetworkCapacityLimitPct",
+      "description": "Capacity Limit Setpoint",
+      "units": "%",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "AO",
+      "instance": 29,
+      "name": "NetworkCoolTempSetpoint",
+      "description": "Cool Setpoint",
+      "units": "°F",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "AO",
+      "instance": 31,
+      "name": "NetworkHeatTempSetpoint",
+      "description": "Heat Setpoint",
+      "units": "°F",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "AO",
+      "instance": 30,
+      "name": "NetworkIceTempSetpoint",
+      "description": "Ice Setpoint",
+      "units": "°F",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "BI",
+      "instance": 40,
+      "name": "AlarmDigitalOutput",
+      "description": "Alarm Digital Output",
+      "units": "",
+      "access": "R",
+      "states": "0=No Alarm, 1=Alarm"
+    },
+    {
+      "type": "BI",
+      "instance": 39,
+      "name": "ChillerLimited",
+      "description": "Chiller Limited",
+      "units": "",
+      "access": "R",
+      "states": "0=Not Limited (Inactive), 1=Limited (Active)"
+    },
+    {
+      "type": "BI",
+      "instance": 38,
+      "name": "ChillerLocalRemote",
+      "description": "Chiller Local/Remote",
+      "units": "",
+      "access": "R",
+      "states": "0=Remote, 1=Local"
+    },
+    {
+      "type": "BI",
+      "instance": 35,
+      "name": "CondWaterFlowStatus",
+      "description": "Condenser Flow Switch Status",
+      "units": "",
+      "access": "R",
+      "states": "0=No Flow (Inactive), 1=Flow (Active)"
+    },
+    {
+      "type": "BI",
+      "instance": 37,
+      "name": "CondPumpState",
+      "description": "Condenser Water Pump Status",
+      "units": "",
+      "access": "R",
+      "states": "0=OFF (Inactive), 1=ON (Active)"
+    },
+    {
+      "type": "BI",
+      "instance": 34,
+      "name": "EvapWaterFlowStatus",
+      "description": "Evaporator Flow Switch Status",
+      "units": "",
+      "access": "R",
+      "states": "0=No Flow (Inactive), 1=Flow (Active)"
+    },
+    {
+      "type": "BI",
+      "instance": 36,
+      "name": "EvapPumpState",
+      "description": "Evaporator Water Pump Status",
+      "units": "",
+      "access": "R",
+      "states": "0=OFF (Inactive), 1=ON (Active)"
+    },
+    {
+      "type": "BI",
+      "instance": 33,
+      "name": "UnitOFF",
+      "description": "Run Enabled",
+      "units": "",
+      "access": "R",
+      "states": "0=Off (Inactive), 1=Run Allowed (Active)"
+    },
+    {
+      "type": "BV",
+      "instance": 41,
+      "name": "ChillerEnable",
+      "description": "Chiller Enable",
+      "units": "",
+      "access": "W",
+      "states": "0=OFF (Disable), 1=ON (Enable)"
+    },
+    {
+      "type": "BV",
+      "instance": 42,
+      "name": "ClearAlarm",
+      "description": "Clear Alarm",
+      "units": "",
+      "access": "W",
+      "states": "0=Normal, 1=Clear Alarm"
+    },
+    {
+      "type": "MI",
+      "instance": 44,
+      "name": "ActiveMode",
+      "description": "Chiller Mode Output",
+      "units": "",
+      "access": "R",
+      "states": "1=Ice, 2=Cool, 3=Heat"
+    },
+    {
+      "type": "MI",
+      "instance": 43,
+      "name": "UnitStatus",
+      "description": "Chiller Status",
+      "units": "",
+      "access": "R",
+      "states": "1=Off, 2=Start, 3=Run, 4=Pre-shutdown, 5=Service"
+    },
+    {
+      "type": "MI",
+      "instance": 48,
+      "name": "DaikinChillerType",
+      "description": "Chiller Type",
+      "units": "",
+      "access": "R",
+      "states": "1=AGZS, 2=AGZD, 3=WGZD/TGZD, 4=WSC/WDC, 5=AGSU, 6=ACZS, 7=ACZD, 8=WMC, 9=WGSD, 10=AGSD, 11=AGZS, 12=AGZDU, 13=WGZU, 14=ACZSU, 15=ACZDU"
+    },
+    {
+      "type": "MO",
+      "instance": 45,
+      "name": "ChillerOperationMode",
+      "description": "Chiller Mode Setpoint",
+      "units": "",
+      "access": "W",
+      "states": "1=Ice, 2=Cool, 3=Heat"
+    },
+    {
+      "type": "MO",
+      "instance": 46,
+      "name": "CompSelect",
+      "description": "Compressor Select",
+      "units": "",
+      "access": "W",
+      "states": "1-6 = compressor number"
+    },
+    {
+      "type": "MO",
+      "instance": 47,
+      "name": "PumpSelect",
+      "description": "Pump Select",
+      "units": "",
+      "access": "W",
+      "states": "1=Pump 1, 2=Pump 2"
+    },
+    {
+      "type": "AI",
+      "instance": 901,
+      "name": "AIFaultAlarm",
+      "description": "Fault Alarms index number (analog form)",
+      "units": "",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "MI",
+      "instance": 901,
+      "name": "MSIFaultAlarm",
+      "description": "Fault Alarms index number (multistate form)",
+      "units": "",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AI",
+      "instance": 900,
+      "name": "AIProblemAlarm",
+      "description": "Problem Alarms index number (analog form)",
+      "units": "",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "MI",
+      "instance": 900,
+      "name": "MSIProblemAlarm",
+      "description": "Problem Alarms index number (multistate form)",
+      "units": "",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AI",
+      "instance": 902,
+      "name": "AIWarningAlarm",
+      "description": "Warning Alarms index number (analog form)",
+      "units": "",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "MI",
+      "instance": 902,
+      "name": "MSIWarningAlarm",
+      "description": "Warning Alarms index number (multistate form)",
+      "units": "",
+      "access": "R",
+      "states": ""
+    }
+  ]
+}

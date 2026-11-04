@@ -1,0 +1,1515 @@
+{
+  "manufacturer": "Carrier",
+  "manufacturer_slug": "carrier",
+  "model": "WeatherMaker 48/50A Rooftop (ComfortLink, UPC Open BACnet option)",
+  "model_slug": "48-50a-rooftop-upc-open",
+  "aliases": [
+    "48/50A",
+    "48A",
+    "50A",
+    "48/50A020-060",
+    "WeatherMaker 48/50A",
+    "UPC Open",
+    "ComfortLink",
+    "48-50A-17T"
+  ],
+  "equipment_type": "Packaged rooftop unit controller (BACnet option)",
+  "applies_to": "Carrier WeatherMaker 48/50A020-060 single-package applied rooftop units with ComfortLink 11.x controls and the factory UPC Open BACnet option.",
+  "summary": "On 48/50A rooftops the BACnet option is a UPC Open controller in its own enclosure below the main control box. It speaks BACnet MS/TP to the BMS and CCN to the unit's ComfortLink board. The list has 156 AVs and BVs: setpoints, air temperatures and pressures, compressor and heat relays, economizer and VFD outputs, thermostat inputs, demand limit, alarms and 40 user-defined spare values.",
+  "bacnet_transport": [
+    "BACnet MS/TP"
+  ],
+  "firmware": "ComfortLink 11.x",
+  "default_device_instance": "Network number 16101 followed by the MAC address (MAC 20 gives 1610120)",
+  "access_inferred": false,
+  "notes": [
+    "Object names end in _1. The 48/50A table has no CCN point name or default value columns.",
+    "Ranges are added to descriptions as printed. Units printed as °^F are shown as Δ°F (temperature differences).",
+    "Heating Supply Air Setpt (AV:3008) is printed with 'no unit'.",
+    "Two rows are both named Current Running Capacity: cool_capacity_1 (AV:1023) and htsg_cap_1 (AV:44, heating).",
+    "The 48/50P list (48-50P-15T) uses the same layout but differs in several objects (e.g. compressor A3/B3, CFM values, comm-loss alarm BV:105 instead of BV:15, user binaries at BV:2951+), so it is a separate entry.",
+    "This is ComfortLink + UPC Open, not the SystemVu or SmartVu controls used on other Carrier rooftops."
+  ],
+  "source": {
+    "title": "WeatherMaker 48/50A020-060 Single Package Applied Rooftop Units with ComfortLink Version 11.x Controls - Controls, Start-Up, Operation, Service and Troubleshooting (Appendix E: UPC Open Controller Network Points List)",
+    "doc_number": "48-50A-17T",
+    "revision_date": "3-26",
+    "url": "https://brandportal.carrier.com/asset/61cddf9c-46e9-44c0-b162-e45313633a9f/48-50A-17T.pdf"
+  },
+  "integration": {
+    "summary": "The BMS talks BACnet MS/TP to the UPC Open, which reads and writes the 48/50A ComfortLink control over CCN. Set the CCN schedule number for the occupancy source you want, then write occupancy, setpoints and (for VAV) the supply air setpoint; read HVAC mode, temperatures and alarm state. Values the BMS feeds in (space, return or outdoor temperature, RH, CO2) are forces that clear if not refreshed.",
+    "minimum_points": [
+      {
+        "ref": "BV 2008",
+        "name": "occ_status_1",
+        "why": "Occupied? (0 = no, 1 = yes); writable"
+      },
+      {
+        "ref": "AV 3001",
+        "name": "occ_cl_stpt_1",
+        "why": "Occupied cooling setpoint"
+      },
+      {
+        "ref": "AV 3002",
+        "name": "occ_ht_stpt_1",
+        "why": "Occupied heating setpoint"
+      },
+      {
+        "ref": "AV 3007",
+        "name": "sa_temp_stpt_1",
+        "why": "Supply air setpoint (VAV units)"
+      },
+      {
+        "ref": "AV 1022",
+        "name": "hvac_mode_1",
+        "why": "HVAC mode as a number"
+      },
+      {
+        "ref": "BV 94",
+        "name": "sfan_rly_1",
+        "why": "Supply fan relay on/off"
+      },
+      {
+        "ref": "AV 43",
+        "name": "ctrltemp_1",
+        "why": "Control temperature (RAT, SPT or zone)"
+      },
+      {
+        "ref": "AV 10",
+        "name": "sat_1",
+        "why": "Supply air temperature leaving the fan"
+      },
+      {
+        "ref": "BV 9",
+        "name": "alm_1",
+        "why": "Unit alarm state"
+      },
+      {
+        "ref": "BV 15",
+        "name": "comm_lost_alm_1",
+        "why": "UPC lost CCN communication with the unit"
+      }
+    ],
+    "enable": "Occupancy follows the ComfortLink CCN schedule number (Configuration > CCN > SC.OV > SCH.N): 0 = always occupied, 1 = local schedule (default), 65-99 = a CCN/global schedule. The points list makes Occupied? (BV:2008) writable, but the manual does not describe how a write interacts with SCH.N; test it on site. A remote switch input (RM.CF) can also set occupancy or start/stop the unit.",
+    "heartbeat": "The manual says forces at CCN priority 7 clear unless rewritten in time: outside air temperature, outside RH, outside air quality and static pressure reset after 30 minutes, return air and space temperature after 3 minutes.",
+    "remote_sensors": "Space Temperature (AV:137), Return Air Temperature (AV:135), Outside Air Temperature (AV:1003), Outside Air RH (AV:119), IAQ (AV:1009) and OAQ (AV:113) are writable. Refresh them within the force timeouts (3 min for space and return temperature, 30 min for outdoor values).",
+    "setup": [
+      "Set the MAC address on the UPC Open's Tens and Ones rotary switches; the controller reads switches, DIP switches and jumpers only at power-up.",
+      "Device instance = network number (default 16101) followed by the MAC address, e.g. MAC 20 gives 1610120.",
+      "BAS port: DS3 enable, DS4 E1-485, DS5-DS8 set to MSTP; baud on DS1-DS2 (9600, 19.2k, 38.4k or 76.8k, Carrier default 76.8k); 8N1 fixed. EIA-485 jumpers to EIA-485 and 2W.",
+      "Fit a BT485 terminator on the first and last controller of the MS/TP segment.",
+      "The UPC Open and the ComfortLink board must use the same CCN element and bus numbers (factory 1 and 0); the CCN side stays at 9600 baud."
+    ],
+    "gotchas": [
+      "Points depend on unit options (heat type, economizer, Humidi-MiZer, VFDs, expansion boards); objects for options not fitted carry no useful data.",
+      "Thermostat inputs (Y1, Y2, W1, W2, G) are writable BVs, but the thermostat control types are C.TYP 3 and 4.",
+      "The 20 user-defined analog and 20 binary values are spare objects with no unit function."
+    ]
+  },
+  "points": [
+    {
+      "type": "BV",
+      "instance": 2601,
+      "name": "a_link_status_1",
+      "description": "Airside Linkage Status",
+      "units": "",
+      "access": "R",
+      "states": "0=NOT ACTIVE, 1=ACTIVE"
+    },
+    {
+      "type": "AV",
+      "instance": 2607,
+      "name": "link_iaq_1",
+      "description": "(Airside Linkage) Indoor Air Quality (range 0 to 5000)",
+      "units": "ppm",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 2611,
+      "name": "link_max_dmpr_1",
+      "description": "(Airside Linkage) Max Damper Position (range 0 to 100)",
+      "units": "%",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 2606,
+      "name": "link_rh_1",
+      "description": "(Airside Linkage) Space Relative Humidity (range 0 to 100)",
+      "units": "%",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 10,
+      "name": "sat_1",
+      "description": "Air Temp Lvg Supply Fan",
+      "units": "°F",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "BV",
+      "instance": 7030,
+      "name": "air_linkage_fail_1",
+      "description": "Airside Linkage Alarm",
+      "units": "",
+      "access": "R",
+      "states": "0=NORMAL, 1=ALARM"
+    },
+    {
+      "type": "BV",
+      "instance": 9,
+      "name": "alm_1",
+      "description": "Alarm State",
+      "units": "",
+      "access": "R",
+      "states": "0=NORMAL, 1=ALARM"
+    },
+    {
+      "type": "AV",
+      "instance": 1070,
+      "name": "bldg_static_press_1",
+      "description": "Building Pressure",
+      "units": "H2O",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 3070,
+      "name": "bldg_press_stpt_1",
+      "description": "Building Pressure Setp. (range –0.25 to 0.25)",
+      "units": "H2O",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 1601,
+      "name": "discharge_press_a_1",
+      "description": "Cir A Discharge Pressure",
+      "units": "psig",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 1602,
+      "name": "sat_cond_temp_a_1",
+      "description": "Cir A Sat. Condensing Temperature",
+      "units": "°F",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 1603,
+      "name": "sat_suction_temp_a_1",
+      "description": "Cir A Sat. Suction Temperature",
+      "units": "°F",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 1600,
+      "name": "suction_press_a_1",
+      "description": "Cir A Suction Pressure",
+      "units": "psig",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 1605,
+      "name": "discharge_press_b_1",
+      "description": "Cir B Discharge Pressure",
+      "units": "psig",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 1606,
+      "name": "sat_cond_temp_b_1",
+      "description": "Cir B Sat. Condensing Temperature",
+      "units": "°F",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 1607,
+      "name": "sat_suction_temp_b_1",
+      "description": "Cir B Sat. Suction Temperature",
+      "units": "°F",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "BV",
+      "instance": 16,
+      "name": "cmpa1_1",
+      "description": "Compressor A1 Relay",
+      "units": "",
+      "access": "R",
+      "states": "0=OFF, 1=ON"
+    },
+    {
+      "type": "BV",
+      "instance": 17,
+      "name": "cmpa2_1",
+      "description": "Compressor A2 Relay",
+      "units": "",
+      "access": "R",
+      "states": "0=OFF, 1=ON"
+    },
+    {
+      "type": "BV",
+      "instance": 18,
+      "name": "cmpb1_1",
+      "description": "Compressor B1 Relay",
+      "units": "",
+      "access": "R",
+      "states": "0=OFF, 1=ON"
+    },
+    {
+      "type": "BV",
+      "instance": 19,
+      "name": "cmpb2_1",
+      "description": "Compressor B2 Relay",
+      "units": "",
+      "access": "R",
+      "states": "0=OFF, 1=ON"
+    },
+    {
+      "type": "AV",
+      "instance": 1030,
+      "name": "ra_temp_1",
+      "description": "Controlling Return Temp (range –40 to 240)",
+      "units": "°F",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 2007,
+      "name": "space_temp_1",
+      "description": "Controlling Space Temp (range –40 to 240)",
+      "units": "°F",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 1024,
+      "name": "cool_ctrl_point_1",
+      "description": "Cooling Control Point",
+      "units": "°F",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 3001,
+      "name": "occ_cl_stpt_1",
+      "description": "Cooling Occupied Setpoint (range 40 to 99)",
+      "units": "°F",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 3003,
+      "name": "unocc_cl_stpt_1",
+      "description": "Cooling Unoccupied Setpoint (range 40 to 99)",
+      "units": "°F",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 43,
+      "name": "ctrltemp_1",
+      "description": "Ctl.Temp RAT,SPT or ZONE - Prime Variable",
+      "units": "°F",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 1023,
+      "name": "cool_capacity_1",
+      "description": "Current Running Capacity",
+      "units": "%",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 44,
+      "name": "htsg_cap_1",
+      "description": "Current Running Capacity",
+      "units": "%",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 49,
+      "name": "dhcoolsp_1",
+      "description": "Dehumidify Cool Setpoint (range 40 to 55)",
+      "units": "°F",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "BV",
+      "instance": 30,
+      "name": "dhdiscin_1",
+      "description": "Dehumidify Input",
+      "units": "",
+      "access": "W",
+      "states": "0=OFF, 1=ON"
+    },
+    {
+      "type": "AV",
+      "instance": 50,
+      "name": "dhrelhsp_1",
+      "description": "Dehumidify RH Setpoint (range 10 to 90)",
+      "units": "%",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 53,
+      "name": "dlswsp1_1",
+      "description": "Demand Limit Sw.1 Setpt. (range 0 to 100)",
+      "units": "%",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 54,
+      "name": "dlswsp2_1",
+      "description": "Demand Limit Sw.2 Setpt. (range 0 to 100)",
+      "units": "%",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 1028,
+      "name": "econ_pos_1",
+      "description": "Economizer Act. Curr. Pos",
+      "units": "%",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "BV",
+      "instance": 36,
+      "name": "ecactive_1",
+      "description": "Economizer Active?",
+      "units": "",
+      "access": "R",
+      "states": "0=OFF, 1=ON"
+    },
+    {
+      "type": "BV",
+      "instance": 2999,
+      "name": "element_stat_1",
+      "description": "Element Comm Status",
+      "units": "",
+      "access": "R",
+      "states": "0=NO COMM, 1=NORMAL"
+    },
+    {
+      "type": "AV",
+      "instance": 76,
+      "name": "edt_1",
+      "description": "Evaporator Discharge Tmp",
+      "units": "°F",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 2075,
+      "name": "ef_vfd_output_1",
+      "description": "Exhaust Fan VFD Speed",
+      "units": "%",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "BV",
+      "instance": 1052,
+      "name": "filter_status_1",
+      "description": "Filter Status Input",
+      "units": "",
+      "access": "W",
+      "states": "0=CLEAN, 1=DIRTY"
+    },
+    {
+      "type": "BV",
+      "instance": 52,
+      "name": "hs1_1",
+      "description": "Heat Relay 1",
+      "units": "",
+      "access": "R",
+      "states": "0=OFF, 1=ON"
+    },
+    {
+      "type": "BV",
+      "instance": 53,
+      "name": "hs2_1",
+      "description": "Heat Relay 2",
+      "units": "",
+      "access": "R",
+      "states": "0=OFF, 1=ON"
+    },
+    {
+      "type": "AV",
+      "instance": 83,
+      "name": "hcsp_gap_1",
+      "description": "Heat-Cool Setpoint Gap (range 2 to 10)",
+      "units": "Δ°F",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 1025,
+      "name": "heat_ctrl_point_1",
+      "description": "Heating Control Point",
+      "units": "°F",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 3002,
+      "name": "occ_ht_stpt_1",
+      "description": "Heating Occupied Setpoint (range 40 to 99)",
+      "units": "°F",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 3008,
+      "name": "saspheat_1",
+      "description": "Heating Supply Air Setpt (range 80 to 120)",
+      "units": "",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 3004,
+      "name": "unocc_ht_stpt_1",
+      "description": "Heating Unoccupied Setpoint (range 40 to 99)",
+      "units": "°F",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 1022,
+      "name": "hvac_mode_1",
+      "description": "HVAC Mode Numerical Form",
+      "units": "",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "BV",
+      "instance": 1050,
+      "name": "iaq_status_1",
+      "description": "IAQ - Discrete Input",
+      "units": "",
+      "access": "W",
+      "states": "0=LOW, 1=HIGH"
+    },
+    {
+      "type": "AV",
+      "instance": 1009,
+      "name": "iaq_1",
+      "description": "IAQ - PPM Indoor CO2 (range 0 to 5000)",
+      "units": "",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 1027,
+      "name": "lvg_air_temperature_1",
+      "description": "Leaving Air Temperature",
+      "units": "°F",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "BV",
+      "instance": 5,
+      "name": "schedule_1",
+      "description": "Local Schedule",
+      "units": "",
+      "access": "R",
+      "states": "0=OFF, 1=ON"
+    },
+    {
+      "type": "AV",
+      "instance": 1500,
+      "name": "ma_temp_1",
+      "description": "Mixed Air Temperature",
+      "units": "°F",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 113,
+      "name": "oaq_1",
+      "description": "OAQ - PPM Outdoor CO2 (range 0 to 5000)",
+      "units": "",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 114,
+      "name": "occl_end_1",
+      "description": "Occupied Cool Mode End",
+      "units": "°F",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 115,
+      "name": "occlstrt_1",
+      "description": "Occupied Cool Mode Start",
+      "units": "°F",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 116,
+      "name": "ocht_end_1",
+      "description": "Occupied Heat Mode End",
+      "units": "°F",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 117,
+      "name": "ochtstrt_1",
+      "description": "Occupied Heat Mode Start",
+      "units": "°F",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "BV",
+      "instance": 2008,
+      "name": "occ_status_1",
+      "description": "Occupied?",
+      "units": "",
+      "access": "W",
+      "states": "0=NO, 1=YES"
+    },
+    {
+      "type": "AV",
+      "instance": 119,
+      "name": "oarh_1",
+      "description": "Outside Air Relative Humidity (range 0 to 100)",
+      "units": "%",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 1003,
+      "name": "oat_1",
+      "description": "Outside Air Temperature (range –40 to 240)",
+      "units": "°F",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "BV",
+      "instance": 72,
+      "name": "pe_a_1",
+      "description": "Power Exhaust Relay A",
+      "units": "",
+      "access": "R",
+      "states": "0=OFF, 1=ON"
+    },
+    {
+      "type": "BV",
+      "instance": 73,
+      "name": "pe_b_1",
+      "description": "Power Exhaust Relay B",
+      "units": "",
+      "access": "R",
+      "states": "0=OFF, 1=ON"
+    },
+    {
+      "type": "BV",
+      "instance": 74,
+      "name": "pe_c_1",
+      "description": "Power Exhaust Relay C",
+      "units": "",
+      "access": "R",
+      "states": "0=OFF, 1=ON"
+    },
+    {
+      "type": "BV",
+      "instance": 76,
+      "name": "hs3_1",
+      "description": "Relay 3 W1 Gas Valve 2",
+      "units": "",
+      "access": "R",
+      "states": "0=OFF, 1=ON"
+    },
+    {
+      "type": "BV",
+      "instance": 77,
+      "name": "hs4_1",
+      "description": "Relay 4 W2 Gas Valve 2",
+      "units": "",
+      "access": "R",
+      "states": "0=OFF, 1=ON"
+    },
+    {
+      "type": "BV",
+      "instance": 78,
+      "name": "hs5_1",
+      "description": "Relay 5 W1 Gas Valve 3",
+      "units": "",
+      "access": "R",
+      "states": "0=OFF, 1=ON"
+    },
+    {
+      "type": "BV",
+      "instance": 79,
+      "name": "hs6_1",
+      "description": "Relay 6 W2 Gas Valve 3",
+      "units": "",
+      "access": "R",
+      "states": "0=OFF, 1=ON"
+    },
+    {
+      "type": "AV",
+      "instance": 2003,
+      "name": "heat_run_1",
+      "description": "Requested Heat Stage",
+      "units": "",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 134,
+      "name": "rarh_1",
+      "description": "Return Air Relative Humidity (range 0 to 100)",
+      "units": "%",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 135,
+      "name": "rat_1",
+      "description": "Return Air Temperature (range –40 to 240)",
+      "units": "°F",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 139,
+      "name": "spto_rng_1",
+      "description": "Space Temp Offset Range (range 1 to 10)",
+      "units": "Δ°F",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 137,
+      "name": "spt_1",
+      "description": "Space Temperature (range –40 to 240)",
+      "units": "°F",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 150,
+      "name": "lat1sgas_1",
+      "description": "Staged Gas LAT 1",
+      "units": "°F",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 151,
+      "name": "lat2sgas_1",
+      "description": "Staged Gas LAT 2",
+      "units": "°F",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 152,
+      "name": "lat3sgas_1",
+      "description": "Staged Gas LAT 3",
+      "units": "°F",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 1016,
+      "name": "static_press_1",
+      "description": "Static Pressure",
+      "units": "H2O",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 157,
+      "name": "spreset_1",
+      "description": "Static Pressure Reset (range 0 to 15)",
+      "units": "",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 3050,
+      "name": "sa_static_stpt_1",
+      "description": "Static Pressure Setpoint (range 0 to 5)",
+      "units": "H2O",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "BV",
+      "instance": 93,
+      "name": "modesars_1",
+      "description": "Supply Air Reset",
+      "units": "",
+      "access": "R",
+      "states": "0=OFF, 1=ON"
+    },
+    {
+      "type": "AV",
+      "instance": 158,
+      "name": "sasprset_1",
+      "description": "Supply Air Setpnt. Reset (range 0 to 20)",
+      "units": "Δ°F",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 3007,
+      "name": "sa_temp_stpt_1",
+      "description": "Supply Air Setpoint (range 45 to 75)",
+      "units": "°F",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "BV",
+      "instance": 94,
+      "name": "sfan_rly_1",
+      "description": "Supply Fan Relay",
+      "units": "",
+      "access": "R",
+      "states": "0=OFF, 1=ON"
+    },
+    {
+      "type": "BV",
+      "instance": 95,
+      "name": "sfs_1",
+      "description": "Supply Fan Status Switch",
+      "units": "",
+      "access": "W",
+      "states": "0=OFF, 1=ON"
+    },
+    {
+      "type": "AV",
+      "instance": 2050,
+      "name": "sf_vfd_output_1",
+      "description": "Supply Fan VFD Speed (range 0 to 100)",
+      "units": "%",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 9006,
+      "name": "cool_demand_level_1",
+      "description": "System Cooling Demand Level",
+      "units": "",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "BV",
+      "instance": 3,
+      "name": "dem_lmt_act_1",
+      "description": "System Demand Limiting",
+      "units": "",
+      "access": "R",
+      "states": "0=INACTIVE, 1=ACTIVE"
+    },
+    {
+      "type": "AV",
+      "instance": 9036,
+      "name": "heat_demand_level_1",
+      "description": "System Heating Demand Level",
+      "units": "",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 80001,
+      "name": "mstr_oa_temp_1",
+      "description": "System OAT Master",
+      "units": "°F",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "BV",
+      "instance": 1021,
+      "name": "g_input_1",
+      "description": "Thermostat G Input",
+      "units": "",
+      "access": "W",
+      "states": "0=OFF, 1=ON"
+    },
+    {
+      "type": "BV",
+      "instance": 1019,
+      "name": "w1_input_1",
+      "description": "Thermostat W1 Input",
+      "units": "",
+      "access": "W",
+      "states": "0=OFF, 1=ON"
+    },
+    {
+      "type": "BV",
+      "instance": 1020,
+      "name": "w2_input_1",
+      "description": "Thermostat W2 Input",
+      "units": "",
+      "access": "W",
+      "states": "0=OFF, 1=ON"
+    },
+    {
+      "type": "BV",
+      "instance": 1017,
+      "name": "y1_input_1",
+      "description": "Thermostat Y1 Input",
+      "units": "",
+      "access": "W",
+      "states": "0=OFF, 1=ON"
+    },
+    {
+      "type": "BV",
+      "instance": 1018,
+      "name": "y2_input_1",
+      "description": "Thermostat Y2 Input",
+      "units": "",
+      "access": "W",
+      "states": "0=OFF, 1=ON"
+    },
+    {
+      "type": "AV",
+      "instance": 168,
+      "name": "uccl_end_1",
+      "description": "Unoccupied Cool Mode End",
+      "units": "°F",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 169,
+      "name": "ucclstrt_1",
+      "description": "Unoccupied Cool Mode Start",
+      "units": "°F",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 170,
+      "name": "ucht_end_1",
+      "description": "Unoccupied Heat Mode End",
+      "units": "°F",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 171,
+      "name": "uchtstrt_1",
+      "description": "Unoccupied Heat Mode Start",
+      "units": "°F",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 183,
+      "name": "dhvraoff_1",
+      "description": "Vent Reheat RAT Offset (range 0 to 8)",
+      "units": "Δ°F",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 184,
+      "name": "dhvht_sp_1",
+      "description": "Vent Reheat Setpoint (range 55 to 95)",
+      "units": "°F",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 185,
+      "name": "dhvhtcfg_1",
+      "description": "Vent Reheat Setpt Select (range 0 to 1)",
+      "units": "",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 2901,
+      "name": "user_analog_1_1",
+      "description": "User Defined Analog 1",
+      "units": "",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 2902,
+      "name": "user_analog_2_1",
+      "description": "User Defined Analog 2",
+      "units": "",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 2903,
+      "name": "user_analog_3_1",
+      "description": "User Defined Analog 3",
+      "units": "",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 2904,
+      "name": "user_analog_4_1",
+      "description": "User Defined Analog 4",
+      "units": "",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 2905,
+      "name": "user_analog_5_1",
+      "description": "User Defined Analog 5",
+      "units": "",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 2906,
+      "name": "user_analog_6_1",
+      "description": "User Defined Analog 6",
+      "units": "",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 2907,
+      "name": "user_analog_7_1",
+      "description": "User Defined Analog 7",
+      "units": "",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 2908,
+      "name": "user_analog_8_1",
+      "description": "User Defined Analog 8",
+      "units": "",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 2909,
+      "name": "user_analog_9_1",
+      "description": "User Defined Analog 9",
+      "units": "",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 2910,
+      "name": "user_analog_10_1",
+      "description": "User Defined Analog 10",
+      "units": "",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 2911,
+      "name": "user_analog_11_1",
+      "description": "User Defined Analog 11",
+      "units": "",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 2912,
+      "name": "user_analog_12_1",
+      "description": "User Defined Analog 12",
+      "units": "",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 2913,
+      "name": "user_analog_13_1",
+      "description": "User Defined Analog 13",
+      "units": "",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 2914,
+      "name": "user_analog_14_1",
+      "description": "User Defined Analog 14",
+      "units": "",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 2915,
+      "name": "user_analog_15_1",
+      "description": "User Defined Analog 15",
+      "units": "",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 2916,
+      "name": "user_analog_16_1",
+      "description": "User Defined Analog 16",
+      "units": "",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 2917,
+      "name": "user_analog_17_1",
+      "description": "User Defined Analog 17",
+      "units": "",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 2918,
+      "name": "user_analog_18_1",
+      "description": "User Defined Analog 18",
+      "units": "",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 2919,
+      "name": "user_analog_19_1",
+      "description": "User Defined Analog 19",
+      "units": "",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 2920,
+      "name": "user_analog_20_1",
+      "description": "User Defined Analog 20",
+      "units": "",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "BV",
+      "instance": 6,
+      "name": "stpt_adj_enable_1",
+      "description": "Setpoint Adjustment Enable",
+      "units": "",
+      "access": "W",
+      "states": "0=DSABLE, 1=ENABLE"
+    },
+    {
+      "type": "BV",
+      "instance": 203,
+      "name": "zs_co2_valid_1",
+      "description": "ZS CO2 Sensor Valid Status",
+      "units": "",
+      "access": "R",
+      "states": "0=N/A, 1=VALID/CONNECTED"
+    },
+    {
+      "type": "BV",
+      "instance": 201,
+      "name": "zs_sen_valid_1",
+      "description": "ZS Temp Sensor Valid Status",
+      "units": "",
+      "access": "R",
+      "states": "0=N/A, 1=VALID/CONNECTED"
+    },
+    {
+      "type": "BV",
+      "instance": 200,
+      "name": "zs_sen_alm_1",
+      "description": "ZS Thermostat Config Alarm",
+      "units": "",
+      "access": "R",
+      "states": "0=NORMAL, 1=ALARM"
+    },
+    {
+      "type": "BV",
+      "instance": 2911,
+      "name": "user_binary_1_1",
+      "description": "User Defined Binary 1",
+      "units": "",
+      "access": "W",
+      "states": "0=OFF, 1=ON"
+    },
+    {
+      "type": "BV",
+      "instance": 2912,
+      "name": "user_binary_2_1",
+      "description": "User Defined Binary 2",
+      "units": "",
+      "access": "W",
+      "states": "0=OFF, 1=ON"
+    },
+    {
+      "type": "BV",
+      "instance": 2913,
+      "name": "user_binary_3_1",
+      "description": "User Defined Binary 3",
+      "units": "",
+      "access": "W",
+      "states": "0=OFF, 1=ON"
+    },
+    {
+      "type": "BV",
+      "instance": 2914,
+      "name": "user_binary_4_1",
+      "description": "User Defined Binary 4",
+      "units": "",
+      "access": "W",
+      "states": "0=OFF, 1=ON"
+    },
+    {
+      "type": "BV",
+      "instance": 2915,
+      "name": "user_binary_5_1",
+      "description": "User Defined Binary 5",
+      "units": "",
+      "access": "W",
+      "states": "0=OFF, 1=ON"
+    },
+    {
+      "type": "BV",
+      "instance": 2916,
+      "name": "user_binary_6_1",
+      "description": "User Defined Binary 6",
+      "units": "",
+      "access": "W",
+      "states": "0=OFF, 1=ON"
+    },
+    {
+      "type": "BV",
+      "instance": 2917,
+      "name": "user_binary_7_1",
+      "description": "User Defined Binary 7",
+      "units": "",
+      "access": "W",
+      "states": "0=OFF, 1=ON"
+    },
+    {
+      "type": "BV",
+      "instance": 2918,
+      "name": "user_binary_8_1",
+      "description": "User Defined Binary 8",
+      "units": "",
+      "access": "W",
+      "states": "0=OFF, 1=ON"
+    },
+    {
+      "type": "BV",
+      "instance": 2919,
+      "name": "user_binary_9_1",
+      "description": "User Defined Binary 9",
+      "units": "",
+      "access": "W",
+      "states": "0=OFF, 1=ON"
+    },
+    {
+      "type": "BV",
+      "instance": 2920,
+      "name": "user_binary_10_1",
+      "description": "User Defined Binary 10",
+      "units": "",
+      "access": "W",
+      "states": "0=OFF, 1=ON"
+    },
+    {
+      "type": "BV",
+      "instance": 2921,
+      "name": "user_binary_11_1",
+      "description": "User Defined Binary 11",
+      "units": "",
+      "access": "W",
+      "states": "0=OFF, 1=ON"
+    },
+    {
+      "type": "BV",
+      "instance": 2922,
+      "name": "user_binary_12_1",
+      "description": "User Defined Binary 12",
+      "units": "",
+      "access": "W",
+      "states": "0=OFF, 1=ON"
+    },
+    {
+      "type": "BV",
+      "instance": 2923,
+      "name": "user_binary_13_1",
+      "description": "User Defined Binary 13",
+      "units": "",
+      "access": "W",
+      "states": "0=OFF, 1=ON"
+    },
+    {
+      "type": "BV",
+      "instance": 2924,
+      "name": "user_binary_14_1",
+      "description": "User Defined Binary 14",
+      "units": "",
+      "access": "W",
+      "states": "0=OFF, 1=ON"
+    },
+    {
+      "type": "BV",
+      "instance": 2925,
+      "name": "user_binary_15_1",
+      "description": "User Defined Binary 15",
+      "units": "",
+      "access": "W",
+      "states": "0=OFF, 1=ON"
+    },
+    {
+      "type": "BV",
+      "instance": 2926,
+      "name": "user_binary_16_1",
+      "description": "User Defined Binary 16",
+      "units": "",
+      "access": "W",
+      "states": "0=OFF, 1=ON"
+    },
+    {
+      "type": "BV",
+      "instance": 2927,
+      "name": "user_binary_17_1",
+      "description": "User Defined Binary 17",
+      "units": "",
+      "access": "W",
+      "states": "0=OFF, 1=ON"
+    },
+    {
+      "type": "BV",
+      "instance": 2928,
+      "name": "user_binary_18_1",
+      "description": "User Defined Binary 18",
+      "units": "",
+      "access": "W",
+      "states": "0=OFF, 1=ON"
+    },
+    {
+      "type": "BV",
+      "instance": 2929,
+      "name": "user_binary_19_1",
+      "description": "User Defined Binary 19",
+      "units": "",
+      "access": "W",
+      "states": "0=OFF, 1=ON"
+    },
+    {
+      "type": "BV",
+      "instance": 2930,
+      "name": "user_binary_20_1",
+      "description": "User Defined Binary 20",
+      "units": "",
+      "access": "W",
+      "states": "0=OFF, 1=ON"
+    },
+    {
+      "type": "BV",
+      "instance": 15,
+      "name": "comm_lost_alm_1",
+      "description": "Element Communications Alarm",
+      "units": "",
+      "access": "R",
+      "states": "0=COMM NORMAL, 1=COMM LOST"
+    },
+    {
+      "type": "AV",
+      "instance": 1604,
+      "name": "suction_press_b_1",
+      "description": "Cir B Suction Pressure",
+      "units": "psig",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "BV",
+      "instance": 2605,
+      "name": "use_linkage_1",
+      "description": "Use Linkage",
+      "units": "",
+      "access": "W",
+      "states": "0=NO, 1=YES"
+    },
+    {
+      "type": "BV",
+      "instance": 5123,
+      "name": "et_reset_as_link_1",
+      "description": "Equipment Touch reset linkage Alarm",
+      "units": "",
+      "access": "W",
+      "states": "0=NO, 1=YES"
+    },
+    {
+      "type": "AV",
+      "instance": 1902,
+      "name": "system_spt_1",
+      "description": "System Space Temperature",
+      "units": "°F",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 1904,
+      "name": "system_rh_1",
+      "description": "System Space RH",
+      "units": "%rh",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 1903,
+      "name": "system_aq_1",
+      "description": "System Space AQ",
+      "units": "ppm",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 3052,
+      "name": "max_dmpr_pos_1",
+      "description": "Maximum Damper Position (range 0 to 100)",
+      "units": "%",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 3053,
+      "name": "min_dmpr_pos_1",
+      "description": "Minimum Damper Position (range 0 to 100)",
+      "units": "%",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 3054,
+      "name": "max_reset_1",
+      "description": "Maximum Reset",
+      "units": "inH2O",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 3055,
+      "name": "ct_sa_static_stpt_1",
+      "description": "Controlling Static Pressure Setpoint",
+      "units": "inH2O",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "BV",
+      "instance": 3051,
+      "name": "st_pr_rst_en_1",
+      "description": "Static Pressure Reset Enable",
+      "units": "",
+      "access": "W",
+      "states": "0=DSABLE, 1=ENABLE"
+    }
+  ]
+}

@@ -1,0 +1,1118 @@
+{
+  "manufacturer": "Carrier",
+  "manufacturer_slug": "carrier",
+  "model": "Connect Wi-Fi Thermostat (33CONNECTSTAT43)",
+  "model_slug": "connect-wifi-thermostat-33connectstat43",
+  "aliases": [
+    "33CONNECTSTAT43",
+    "Carrier Connect thermostat",
+    "Connect Wi-Fi thermostat",
+    "ConnectStat",
+    "11-808-728-01"
+  ],
+  "equipment_type": "Networked room thermostat",
+  "applies_to": "Carrier Connect Wi-Fi wall thermostats controlling packaged or split AC, heat pump and furnace/air handler systems.",
+  "summary": "The 33CONNECTSTAT43 is a Wi-Fi thermostat that also speaks BACnet MS/TP on its A+/B- terminals (B-ASC profile). Its 113 objects cover space temperature and humidity, setpoints, stage output status, fault flags, mode and fan mode, and most installer settings. Installer settings are 'gated' writes that only work when BACnet Config Write is enabled at the thermostat, and BMS occupancy only works when BACnet BMS Occ is enabled.",
+  "bacnet_transport": [
+    "BACnet MS/TP"
+  ],
+  "firmware": null,
+  "default_device_instance": "16 followed by the last 4 digits of the serial number (range 1-4194302)",
+  "access_inferred": false,
+  "notes": [
+    "The table prints four access levels: READ_ONLY, READ_WRITE, GATED_WRITE and WRITE_WHEN_OOS. GATED_WRITE points are marked W here and noted in the description; the two WRITE_WHEN_OOS inputs (AI:100, AI:101) are marked R.",
+    "Some units look like copy errors in the source and are kept as printed: Indoor Equip Stages (AV:500) in %RH and Outdoor Equip Stages (AV:501) in °F.",
+    "Fault flag ID TEMP SENSOR HIGH (BV:900) is printed with DISABLED/ENABLED states, unlike the other fault flags; kept as printed.",
+    "The Network GP Y3/W2/OB outputs (BV:211-213) only accept writes when their Net GP mode (MSV:509-511) is not Disabled, and they can time out per General Purpose Output Timeout (MSV:508).",
+    "Current Fan Mode (MSV:406) is printed with the object name 'FAN MODE' (with a space), unlike the other underscore names."
+  ],
+  "source": {
+    "title": "Carrier Connect Wi-Fi Thermostat 33CONNECTSTAT43 Installation Guide (Appendix: BACnet Points List)",
+    "doc_number": "11-808-728-01",
+    "revision_date": "2022-12-02",
+    "url": "https://www.shareddocs.com/hvac/docs/1000/Public/0C/11-808-728-01.pdf"
+  },
+  "integration": {
+    "summary": "Wire the thermostat to the MS/TP trunk and set MAC address, baud and device ID in its advanced system settings. Turn on BACnet BMS Occ at the thermostat if the BMS should drive occupancy through BMS_OCC, and BACnet Config Write only if the BMS must change installer settings. Write the baseline occupied/unoccupied setpoints for permanent changes; writes to HEAT_SP/COOL_SP are temporary holds.",
+    "minimum_points": [
+      {
+        "ref": "MV 400",
+        "name": "USER_MODE",
+        "why": "Mode command: off, heat, cool, auto, emergency heat"
+      },
+      {
+        "ref": "BV 405",
+        "name": "BMS_OCC",
+        "why": "BMS occupancy; needs BACnet BMS Occ enabled locally"
+      },
+      {
+        "ref": "AV 400",
+        "name": "OCC_HT_SP",
+        "why": "Occupied heating setpoint"
+      },
+      {
+        "ref": "AV 401",
+        "name": "OCC_CL_SP",
+        "why": "Occupied cooling setpoint"
+      },
+      {
+        "ref": "MV 404",
+        "name": "OCC_FAN",
+        "why": "Occupied fan mode: auto or on"
+      },
+      {
+        "ref": "MV 300",
+        "name": "CURRENT_MODE",
+        "why": "Mode now running: off, heat or cool"
+      },
+      {
+        "ref": "AV 104",
+        "name": "SP_TEMP_CTRL",
+        "why": "Space temperature used for control"
+      },
+      {
+        "ref": "BV 205",
+        "name": "G_OUT",
+        "why": "Fan output status"
+      },
+      {
+        "ref": "BV 911",
+        "name": "OD_TEMP_FAIL",
+        "why": "Outdoor sensor failure"
+      }
+    ],
+    "enable": "BACNET BMS OCC (set at the thermostat screen) enables BACnet occupancy control through BMS_OCC (BV:405); setting it to YES forces the thermostat to non-programmable mode and turns off a remote sensor set to Occupancy. BACNET CONFIG WRITE (also local) allows writes to all GATED_WRITE points. USER_MODE (MSV:400) sets the system mode.",
+    "heartbeat": "No communication-loss timeout is described. Network general purpose outputs return to inactive if not rewritten within the General Purpose Output Timeout (MSV:508: 2 min, 20 min, 1 h or unlimited).",
+    "remote_sensors": "Network Space Temperature (AV:103) and Network Space Humidity (AV:105) are writable, with enables Network Space Temp Enable (BV:407) and Network Space Hum Enable (BV:408). The guide gives no refresh time for them. Read SP_TEMP_CTRL (AV:104) and SP_HUM_CTRL (AV:106) for the values in use.",
+    "setup": [
+      "MS/TP on terminals A+ and B-; do not terminate the shield at the thermostat. 22 or 24 AWG shielded twisted pair, 2000 ft per segment.",
+      "Baud 9600, 19200, 38400, 76800 (default) or 115200; MAC address 1-127 (default 1); Max Masters default 127.",
+      "Device ID defaults to Carrier's BACnet identifier 16 plus the last 4 digits of the serial number; device object name up to 16 characters.",
+      "BACnet UTC offset is set at the thermostat (-13 to +13 h)."
+    ],
+    "gotchas": [
+      "Writing HEAT_SP (AV:409) or COOL_SP (AV:410) puts the thermostat in a temporary hold until Max Temperature Hold Time (AV:502, default 2 h) expires; write AV:400-403 for lasting changes.",
+      "GATED_WRITE points are rejected unless BACnet Config Write is enabled; the guide says the two gate settings are only accessible from the local screen.",
+      "BMS occupancy can't be used with programmable mode or a remote occupancy sensor at the same time."
+    ]
+  },
+  "points": [
+    {
+      "type": "AI",
+      "instance": 100,
+      "name": "ID_SPACE_TEMP",
+      "description": "Indoor Space Temperature (writable only when out of service)",
+      "units": "°F",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AI",
+      "instance": 101,
+      "name": "ID_SPACE_HUM",
+      "description": "Indoor Space Humidity (writable only when out of service)",
+      "units": "%RH",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 100,
+      "name": "REM_SPACE_TEMP",
+      "description": "Remote Space Temperature",
+      "units": "°F",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 101,
+      "name": "OD_TEMP",
+      "description": "Outdoor Temperature",
+      "units": "°F",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 102,
+      "name": "SAT",
+      "description": "Supply Air Temperature",
+      "units": "°F",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 103,
+      "name": "NET_SP_TEMP",
+      "description": "Network Space Temperature",
+      "units": "°F",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 104,
+      "name": "SP_TEMP_CTRL",
+      "description": "Space Temperature for Control",
+      "units": "°F",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 105,
+      "name": "NET_SP_HUM",
+      "description": "Network Space Humidity",
+      "units": "%RH",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 106,
+      "name": "SP_HUM_CTRL",
+      "description": "Space Humidity for Control",
+      "units": "%RH",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 300,
+      "name": "AIR_FLTR_HRS_LFT",
+      "description": "Air Filter Hours Left",
+      "units": "h",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 301,
+      "name": "OVRD_TIME",
+      "description": "Override Time Remaining",
+      "units": "s",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 400,
+      "name": "OCC_HT_SP",
+      "description": "Occupied Heat Setpoint",
+      "units": "°F",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 401,
+      "name": "OCC_CL_SP",
+      "description": "Occupied Cool Setpoint",
+      "units": "°F",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 402,
+      "name": "UNOCC_HT_SP",
+      "description": "Unoccupied Heat Setpoint",
+      "units": "°F",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 403,
+      "name": "UNOCC_CL_SP",
+      "description": "Unoccupied Cool Setpoint",
+      "units": "°F",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 406,
+      "name": "DEHUM_SP",
+      "description": "Dehumidification Setpoint",
+      "units": "%RH",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 407,
+      "name": "HUM_SP",
+      "description": "Humidification Setpoint",
+      "units": "%RH",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 408,
+      "name": "SCRN_TMT",
+      "description": "Screen Timeout",
+      "units": "min",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 409,
+      "name": "HEAT_SP",
+      "description": "Heat Setpoint",
+      "units": "°F",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 410,
+      "name": "COOL_SP",
+      "description": "Cool Setpoint",
+      "units": "°F",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 411,
+      "name": "ACTV_BCKLT",
+      "description": "Active Backlight",
+      "units": "%",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 412,
+      "name": "DRMNT_BCKLT",
+      "description": "Dormant Backlight",
+      "units": "%",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 500,
+      "name": "ID_STAGES",
+      "description": "Indoor Equip Stages (gated write)",
+      "units": "%RH",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 501,
+      "name": "OD_STAGES",
+      "description": "Outdoor Equip Stages (gated write)",
+      "units": "°F",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 502,
+      "name": "MAX_HOLD_TIME",
+      "description": "Max Temperature Hold Time (gated write)",
+      "units": "h",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 503,
+      "name": "AUTO_XOVR",
+      "description": "Auto Changeover Delay (gated write)",
+      "units": "min",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 504,
+      "name": "COOL_LOCKOUT",
+      "description": "Cool Lockout Temperature (gated write)",
+      "units": "°F",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 505,
+      "name": "LO_CL_LCKOUT",
+      "description": "Low Cool Lockout (HP only) (gated write)",
+      "units": "°F",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 506,
+      "name": "LO_HT_LCKOUT",
+      "description": "Low Heat Lockout (HP only) (gated write)",
+      "units": "°F",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 507,
+      "name": "DLY_BW_FUEL",
+      "description": "Delay Between Fuel (HP only) (gated write)",
+      "units": "min",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 508,
+      "name": "CYCLES_HR",
+      "description": "Cycles Per Hour (gated write)",
+      "units": "cycles/h",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 509,
+      "name": "MAX_HT_SP",
+      "description": "Max Heat Setpoint (gated write)",
+      "units": "°F",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 510,
+      "name": "MIN_CL_SP",
+      "description": "Min Cool Setpoint (gated write)",
+      "units": "°F",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 511,
+      "name": "AUX_HT_LCKOUT",
+      "description": "Aux Heat Lockout (HP only) (gated write)",
+      "units": "°F",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 512,
+      "name": "HP_LCKOUT",
+      "description": "Heat Pump Lockout (gated write)",
+      "units": "°F",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 513,
+      "name": "STG_DELAY",
+      "description": "Stage Delay (gated write)",
+      "units": "min",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 514,
+      "name": "FRCD_STG_UP",
+      "description": "Forced Stage Up Delay (gated write)",
+      "units": "min",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 515,
+      "name": "DIFFERENTIAL",
+      "description": "Stage Change Temp Differential (gated write)",
+      "units": "Δ°F",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 516,
+      "name": "LINE_FREQ",
+      "description": "Line Frequency (gated write)",
+      "units": "Hz",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 517,
+      "name": "ID_TEMP_OFF",
+      "description": "Indoor Temperature Offset (gated write)",
+      "units": "Δ°F",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 518,
+      "name": "ID_HUM_OFF",
+      "description": "Indoor Humidity Offset (gated write)",
+      "units": "%RH",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 519,
+      "name": "SAT_OFFSET",
+      "description": "SAT Temp Offset (gated write)",
+      "units": "Δ°F",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 520,
+      "name": "AIR_FLT_HRS",
+      "description": "Air Filter Hours",
+      "units": "h",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 521,
+      "name": "MAX_SP_ERR",
+      "description": "Max Setpoint Error (gated write)",
+      "units": "Δ°F",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 522,
+      "name": "ID_TMP_FLT_INHBT",
+      "description": "Indoor Temp Fault Inhibit (gated write)",
+      "units": "min",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "BV",
+      "instance": 200,
+      "name": "Y1_OUT",
+      "description": "1st Stage Cooling Out Status",
+      "units": "",
+      "access": "R",
+      "states": "0=OFF, 1=ON"
+    },
+    {
+      "type": "BV",
+      "instance": 201,
+      "name": "Y2_OUT",
+      "description": "2nd Stage Cooling Out Status",
+      "units": "",
+      "access": "R",
+      "states": "0=OFF, 1=ON"
+    },
+    {
+      "type": "BV",
+      "instance": 202,
+      "name": "Y3_OUT",
+      "description": "3rd Stage Cooling Out Status",
+      "units": "",
+      "access": "R",
+      "states": "0=OFF, 1=ON"
+    },
+    {
+      "type": "BV",
+      "instance": 203,
+      "name": "W1_OUT",
+      "description": "1st Stage Heating Out Status",
+      "units": "",
+      "access": "R",
+      "states": "0=OFF, 1=ON"
+    },
+    {
+      "type": "BV",
+      "instance": 204,
+      "name": "W2_OUT",
+      "description": "2nd Stage Heating Out Status",
+      "units": "",
+      "access": "R",
+      "states": "0=OFF, 1=ON"
+    },
+    {
+      "type": "BV",
+      "instance": 205,
+      "name": "G_OUT",
+      "description": "Fan Out Status",
+      "units": "",
+      "access": "R",
+      "states": "0=OFF, 1=ON"
+    },
+    {
+      "type": "BV",
+      "instance": 206,
+      "name": "OB_OUT",
+      "description": "Reversing Valve Out Status",
+      "units": "",
+      "access": "R",
+      "states": "0=OFF, 1=ON"
+    },
+    {
+      "type": "BV",
+      "instance": 208,
+      "name": "OCC_OUT",
+      "description": "Occupancy Out Status",
+      "units": "",
+      "access": "R",
+      "states": "0=OFF, 1=ON"
+    },
+    {
+      "type": "BV",
+      "instance": 209,
+      "name": "HUM_OUT",
+      "description": "Humidifier Out Status",
+      "units": "",
+      "access": "R",
+      "states": "0=OFF, 1=ON"
+    },
+    {
+      "type": "BV",
+      "instance": 210,
+      "name": "DEHUM_OUT",
+      "description": "Dehumidifier Out Status",
+      "units": "",
+      "access": "R",
+      "states": "0=OFF, 1=ON"
+    },
+    {
+      "type": "BV",
+      "instance": 211,
+      "name": "NET_GP_Y3_OUT",
+      "description": "Network General Purpose Out Y3",
+      "units": "",
+      "access": "W",
+      "states": "0=OFF, 1=ON"
+    },
+    {
+      "type": "BV",
+      "instance": 212,
+      "name": "NET_GP_W2_OUT",
+      "description": "Network General Purpose Out W2",
+      "units": "",
+      "access": "W",
+      "states": "0=OFF, 1=ON"
+    },
+    {
+      "type": "BV",
+      "instance": 213,
+      "name": "NET_GP_OB_OUT",
+      "description": "Network General Purpose Out OB",
+      "units": "",
+      "access": "W",
+      "states": "0=OFF, 1=ON"
+    },
+    {
+      "type": "BV",
+      "instance": 400,
+      "name": "WIFI_TIME_SYNC",
+      "description": "Wi-Fi Time Synchronization",
+      "units": "",
+      "access": "W",
+      "states": "0=DISABLED, 1=ENABLED"
+    },
+    {
+      "type": "BV",
+      "instance": 401,
+      "name": "PROXIMITY_EN",
+      "description": "Proximity Sensor Enable",
+      "units": "",
+      "access": "W",
+      "states": "0=DISABLED, 1=ENABLED"
+    },
+    {
+      "type": "BV",
+      "instance": 402,
+      "name": "AUTO_DST",
+      "description": "Auto DST Time Shift",
+      "units": "",
+      "access": "W",
+      "states": "0=DISABLED, 1=ENABLED"
+    },
+    {
+      "type": "BV",
+      "instance": 403,
+      "name": "WIFI_ENABLE",
+      "description": "Wi-Fi Enable",
+      "units": "",
+      "access": "W",
+      "states": "0=DISABLED, 1=ENABLED"
+    },
+    {
+      "type": "BV",
+      "instance": 404,
+      "name": "SETPT_OVERRIDE",
+      "description": "Setpoint Override",
+      "units": "",
+      "access": "W",
+      "states": "0=DISABLED, 1=ENABLED"
+    },
+    {
+      "type": "BV",
+      "instance": 405,
+      "name": "BMS_OCC",
+      "description": "BACnet BMS Occupancy (gated write)",
+      "units": "",
+      "access": "W",
+      "states": "0=UNOCCUPIED, 1=OCCUPIED"
+    },
+    {
+      "type": "BV",
+      "instance": 406,
+      "name": "FLTR_TMR_RST",
+      "description": "Filter Timer Reset",
+      "units": "",
+      "access": "W",
+      "states": "0=INACTIVE, 1=ACTIVE"
+    },
+    {
+      "type": "BV",
+      "instance": 407,
+      "name": "NET_SP_TEMP_EN",
+      "description": "Network Space Temp Enable",
+      "units": "",
+      "access": "W",
+      "states": "0=DISABLED, 1=ENABLED"
+    },
+    {
+      "type": "BV",
+      "instance": 408,
+      "name": "NET_SP_HUM_EN",
+      "description": "Network Space Hum Enable",
+      "units": "",
+      "access": "W",
+      "states": "0=DISABLED, 1=ENABLED"
+    },
+    {
+      "type": "BV",
+      "instance": 500,
+      "name": "OCC_IN_POL",
+      "description": "Occupancy Input Polarity (gated write)",
+      "units": "",
+      "access": "W",
+      "states": "0=OCCUPIED, 1=UNOCCUPIED"
+    },
+    {
+      "type": "BV",
+      "instance": 501,
+      "name": "ALLOW_AUTO",
+      "description": "Auto Mode Allowed (gated write)",
+      "units": "",
+      "access": "W",
+      "states": "0=NO, 1=YES"
+    },
+    {
+      "type": "BV",
+      "instance": 502,
+      "name": "ALLOW_PROG",
+      "description": "Prog Mode Allowed (gated write)",
+      "units": "",
+      "access": "W",
+      "states": "0=NO, 1=YES"
+    },
+    {
+      "type": "BV",
+      "instance": 503,
+      "name": "CELSIUS_DISP",
+      "description": "Celsius Display (gated write)",
+      "units": "",
+      "access": "W",
+      "states": "0=F°, 1=C°"
+    },
+    {
+      "type": "BV",
+      "instance": 504,
+      "name": "FAN_WITH_W",
+      "description": "Fan On with W (gated write)",
+      "units": "",
+      "access": "W",
+      "states": "0=NO, 1=YES"
+    },
+    {
+      "type": "BV",
+      "instance": 505,
+      "name": "RVS_VLV_DIR",
+      "description": "Rvs Vlv Energized Ht (gated write)",
+      "units": "",
+      "access": "W",
+      "states": "0=ENERGIZED FOR COOL, 1=ENERGIZED FOR HEAT"
+    },
+    {
+      "type": "BV",
+      "instance": 506,
+      "name": "HUM_INST",
+      "description": "Humidifier Installed (gated write)",
+      "units": "",
+      "access": "W",
+      "states": "0=NO, 1=YES"
+    },
+    {
+      "type": "BV",
+      "instance": 507,
+      "name": "BMS_OCC_EN",
+      "description": "BMS Occupancy Enable (gated write)",
+      "units": "",
+      "access": "W",
+      "states": "0=DISABLED, 1=ENABLED"
+    },
+    {
+      "type": "BV",
+      "instance": 511,
+      "name": "CFG_WR_EN",
+      "description": "BACnet Config Write Enable (gated write)",
+      "units": "",
+      "access": "W",
+      "states": "0=DISABLED, 1=ENABLED"
+    },
+    {
+      "type": "BV",
+      "instance": 900,
+      "name": "ID_TEMP_SENS_HI",
+      "description": "ID TEMP SENSOR HIGH",
+      "units": "",
+      "access": "R",
+      "states": "0=DISABLED, 1=ENABLED"
+    },
+    {
+      "type": "BV",
+      "instance": 901,
+      "name": "ID_TEMP_SENS_LO",
+      "description": "ID TEMP SENSOR LOW",
+      "units": "",
+      "access": "R",
+      "states": "0=INACTIVE, 1=ACTIVE"
+    },
+    {
+      "type": "BV",
+      "instance": 902,
+      "name": "REM_TEMP_HI",
+      "description": "REMOTE SENSOR HIGH",
+      "units": "",
+      "access": "R",
+      "states": "0=INACTIVE, 1=ACTIVE"
+    },
+    {
+      "type": "BV",
+      "instance": 903,
+      "name": "REM_TEMP_LO",
+      "description": "REMOTE SENSOR LOW",
+      "units": "",
+      "access": "R",
+      "states": "0=INACTIVE, 1=ACTIVE"
+    },
+    {
+      "type": "BV",
+      "instance": 904,
+      "name": "HUM_TEMP_HI",
+      "description": "HUM TEMP SENSOR HIGH",
+      "units": "",
+      "access": "R",
+      "states": "0=INACTIVE, 1=ACTIVE"
+    },
+    {
+      "type": "BV",
+      "instance": 905,
+      "name": "HUM_TEMP_LO",
+      "description": "HUM TEMP SENSOR LOW",
+      "units": "",
+      "access": "R",
+      "states": "0=INACTIVE, 1=ACTIVE"
+    },
+    {
+      "type": "BV",
+      "instance": 906,
+      "name": "ID_TEMP_RNG_HI",
+      "description": "ID TEMP RANGE HIGH",
+      "units": "",
+      "access": "R",
+      "states": "0=INACTIVE, 1=ACTIVE"
+    },
+    {
+      "type": "BV",
+      "instance": 907,
+      "name": "ID_TEMP_RNG_LO",
+      "description": "ID TEMP RANGE LOW",
+      "units": "",
+      "access": "R",
+      "states": "0=INACTIVE, 1=ACTIVE"
+    },
+    {
+      "type": "BV",
+      "instance": 908,
+      "name": "HUM_SENS_FAIL",
+      "description": "HUM SENSOR FAILURE",
+      "units": "",
+      "access": "R",
+      "states": "0=INACTIVE, 1=ACTIVE"
+    },
+    {
+      "type": "BV",
+      "instance": 909,
+      "name": "HUM_TOO_HI",
+      "description": "HUMIDITY RANGE HIGH",
+      "units": "",
+      "access": "R",
+      "states": "0=INACTIVE, 1=ACTIVE"
+    },
+    {
+      "type": "BV",
+      "instance": 910,
+      "name": "HUM_TOO_LO",
+      "description": "HUMIDITY RANGE LOW",
+      "units": "",
+      "access": "R",
+      "states": "0=INACTIVE, 1=ACTIVE"
+    },
+    {
+      "type": "BV",
+      "instance": 911,
+      "name": "OD_TEMP_FAIL",
+      "description": "OUTDOOR SENSOR FAILURE",
+      "units": "",
+      "access": "R",
+      "states": "0=INACTIVE, 1=ACTIVE"
+    },
+    {
+      "type": "BV",
+      "instance": 912,
+      "name": "SRVR_CONN_FAIL",
+      "description": "NOT CONNECTED TO SERVER",
+      "units": "",
+      "access": "R",
+      "states": "0=INACTIVE, 1=ACTIVE"
+    },
+    {
+      "type": "BV",
+      "instance": 913,
+      "name": "RTR_CONN_FAIL",
+      "description": "NOT CONNECTED TO ROUTER",
+      "units": "",
+      "access": "R",
+      "states": "0=INACTIVE, 1=ACTIVE"
+    },
+    {
+      "type": "BV",
+      "instance": 914,
+      "name": "WIFI_CONF_FAIL",
+      "description": "WIFI HARDWARE FAULT",
+      "units": "",
+      "access": "R",
+      "states": "0=INACTIVE, 1=ACTIVE"
+    },
+    {
+      "type": "BV",
+      "instance": 915,
+      "name": "ECON_FAULT",
+      "description": "ECONOMIZER FAULT",
+      "units": "",
+      "access": "R",
+      "states": "0=INACTIVE, 1=ACTIVE"
+    },
+    {
+      "type": "BV",
+      "instance": 916,
+      "name": "LOCKOUT_FAIL",
+      "description": "LOCKOUT-5 BAD PIN ENTRIES",
+      "units": "",
+      "access": "R",
+      "states": "0=INACTIVE, 1=ACTIVE"
+    },
+    {
+      "type": "MV",
+      "instance": 300,
+      "name": "CURRENT_MODE",
+      "description": "Current Mode Status",
+      "units": "",
+      "access": "R",
+      "states": "1=OFF, 2=HEAT, 3=COOL"
+    },
+    {
+      "type": "MV",
+      "instance": 400,
+      "name": "USER_MODE",
+      "description": "User Mode",
+      "units": "",
+      "access": "W",
+      "states": "1=OFF, 2=HEAT, 3=COOL, 4=AUTO, 5=E-HEAT"
+    },
+    {
+      "type": "MV",
+      "instance": 401,
+      "name": "PROX_SENS",
+      "description": "IR Proximity Sensitivity",
+      "units": "",
+      "access": "W",
+      "states": "1=HIGH, 2=MEDIUM, 3=LOW"
+    },
+    {
+      "type": "MV",
+      "instance": 402,
+      "name": "SOUND",
+      "description": "Sound Effect",
+      "units": "",
+      "access": "W",
+      "states": "1=OFF, 2=CLICK, 3=BEEP"
+    },
+    {
+      "type": "MV",
+      "instance": 403,
+      "name": "SCHED_DAY_PARTS",
+      "description": "Number of Parts in Schedule Day",
+      "units": "",
+      "access": "W",
+      "states": "1=2 PARTS, 2=4 PARTS"
+    },
+    {
+      "type": "MV",
+      "instance": 404,
+      "name": "OCC_FAN",
+      "description": "Occupied Fan Mode",
+      "units": "",
+      "access": "W",
+      "states": "1=AUTO, 2=ON"
+    },
+    {
+      "type": "MV",
+      "instance": 405,
+      "name": "UNOCC_FAN",
+      "description": "Unoccupied Fan Mode",
+      "units": "",
+      "access": "W",
+      "states": "1=AUTO, 2=ON"
+    },
+    {
+      "type": "MV",
+      "instance": 406,
+      "name": "FAN MODE",
+      "description": "Current Fan Mode",
+      "units": "",
+      "access": "W",
+      "states": "1=AUTO, 2=ON, 3=OVERRIDE AUTO, 4=OVERRIDE ON"
+    },
+    {
+      "type": "MV",
+      "instance": 500,
+      "name": "ID_EQUIP_TYPE",
+      "description": "Indoor Equipment Type",
+      "units": "",
+      "access": "R",
+      "states": "1=NO INDOOR, 2=FURNACE, 3=AIR HANDLER"
+    },
+    {
+      "type": "MV",
+      "instance": 501,
+      "name": "OD_EQUIP_TYPE",
+      "description": "Outdoor Equipment Type (gated write)",
+      "units": "",
+      "access": "W",
+      "states": "1=NO OUTDOOR, 2=A/C, 3=HEAT PUMP"
+    },
+    {
+      "type": "MV",
+      "instance": 502,
+      "name": "REMOTE_SENSOR",
+      "description": "Remote Sensor Type (gated write)",
+      "units": "",
+      "access": "W",
+      "states": "1=NONE, 2=OUTDOOR, 3=SPACE, 4=AVERAGE, 5=OCCUPANCY, 6=FAULT_INPUT, 7=SAT"
+    },
+    {
+      "type": "MV",
+      "instance": 503,
+      "name": "DEHUM_TYPE",
+      "description": "Dehumidification Type (gated write)",
+      "units": "",
+      "access": "W",
+      "states": "1=NO, 2=YES, 3=OVRCRL(2F), 4=HUMIDIMIZER"
+    },
+    {
+      "type": "MV",
+      "instance": 504,
+      "name": "OCC_OUTPUT",
+      "description": "Occupancy Output Terminal (gated write)",
+      "units": "",
+      "access": "W",
+      "states": "1=OFF, 2=Y3, 3=O/B, 4=W2"
+    },
+    {
+      "type": "MV",
+      "instance": 505,
+      "name": "HUM_OUTPUT",
+      "description": "Humidification Output Terminal (gated write)",
+      "units": "",
+      "access": "W",
+      "states": "1=OFF, 2=Y3, 3=O/B, 4=W2"
+    },
+    {
+      "type": "MV",
+      "instance": 506,
+      "name": "DEHUM_OUTPUT",
+      "description": "Dehumidification Output Terminal (gated write)",
+      "units": "",
+      "access": "W",
+      "states": "1=OFF, 2=Y3, 3=O/B, 4=W2"
+    },
+    {
+      "type": "MV",
+      "instance": 507,
+      "name": "SMART_RECVRY",
+      "description": "Smart Recovery (gated write)",
+      "units": "",
+      "access": "W",
+      "states": "1=NO, 2=30 MIN, 3=60 MIN, 4=90 MIN"
+    },
+    {
+      "type": "MV",
+      "instance": 508,
+      "name": "GP_OUT_TIMEOUT",
+      "description": "General Purpose Output Timeout (gated write)",
+      "units": "",
+      "access": "W",
+      "states": "1=2 MIN, 2=20 MIN, 3=1 HR, 4=UNLIMITED"
+    },
+    {
+      "type": "MV",
+      "instance": 509,
+      "name": "NET_GP_Y3_MODE",
+      "description": "Network GP Y3 Mode (gated write)",
+      "units": "",
+      "access": "W",
+      "states": "1=DISABLED, 2=ENERGIZED_ACTIVE, 3=ENERGIZED_INACTIVE"
+    },
+    {
+      "type": "MV",
+      "instance": 510,
+      "name": "NET_GP_W2_MODE",
+      "description": "Network GP W2 Mode (gated write)",
+      "units": "",
+      "access": "W",
+      "states": "1=DISABLED, 2=ENERGIZED_ACTIVE, 3=ENERGIZED_INACTIVE"
+    },
+    {
+      "type": "MV",
+      "instance": 511,
+      "name": "NET_GP_OB_MODE",
+      "description": "Network GP OB Mode (gated write)",
+      "units": "",
+      "access": "W",
+      "states": "1=DISABLED, 2=ENERGIZED_ACTIVE, 3=ENERGIZED_INACTIVE"
+    }
+  ]
+}

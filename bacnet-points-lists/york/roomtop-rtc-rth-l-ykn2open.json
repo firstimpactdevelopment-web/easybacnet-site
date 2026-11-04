@@ -1,0 +1,562 @@
+{
+ "manufacturer": "York",
+ "manufacturer_slug": "york",
+ "model": "Roomtop RTC/RTH-L with YKN2Open BMS kit (BACnet IP)",
+ "model_slug": "roomtop-rtc-rth-l-ykn2open",
+ "aliases": [
+  "Roomtop RTC-L",
+  "Roomtop RTH-L",
+  "YKN2Open",
+  "S606791244",
+  "FS-QS-1010-0122",
+  "ACTIVA Rooftop",
+  "Large ACTIVA Rooftop",
+  "VITALITY VAC",
+  "VITALITY VAH",
+  "VCH-VIR",
+  "N-40462"
+ ],
+ "equipment_type": "Rooftop unit (packaged, via BACnet IP gateway kit)",
+ "applies_to": "York (Johnson Controls Europe) Roomtop RTC/RTH-L cooling and heat pump rooftops, ACTIVA and Large ACTIVA rooftops and VITALITY VAC/VAH/VCH-VIR units with the YKN2Open control and the S606791244 BACnet IP kit.",
+ "summary": "These European York packaged units use the YKN2Open control, which speaks JCI Metasys N2 on RS-485. The S606791244 BMS kit adds a FieldServer QuickServer that converts N2 to BACnet IP (a sister kit, S606791245, does Modbus TCP). One QuickServer serves up to five units, each shown as its own virtual BACnet device with temperatures, enthalpies, run hours, an error code, setpoints, mode, fan mode, on/off and override/release flags.",
+ "bacnet_transport": [
+  "BACnet IP"
+ ],
+ "firmware": null,
+ "default_device_instance": "11-15 (one virtual device per unit)",
+ "access_inferred": true,
+ "notes": [
+  "The doc has no read/write column, so access is inferred. AV objects are marked In/Out (shown W); Fan Mode and ON/OFF are the unit's writable digital outputs; the Override and Release BVs are also shown W, but the doc doesn't say how they are used.",
+  "Each unit appears as a separate virtual BACnet device (Virtual_Dev_11 to _15, device IDs 11-15) behind the QuickServer; the object list is the same on each.",
+  "Status (BV 3) on each virtual device reads Online when the gateway is talking to that unit; other values hold their last reading when communication is lost.",
+  "Error Code (AI 31) gives alarm numbers 11-46 for the YKN2Open board and 91-99 for thermostat/probe faults.",
+  "Only map the points that exist on the unit's configuration and accessories; the doc warns extra variables slow the N2 polling.",
+  "Names are printed as in the doc, including spelling (Suply, Outdor, Water Bomb = water pump)."
+ ],
+ "source": {
+  "title": "YKN2Open BMS BACnet/IP and Modbus TCP/IP - Installation and user manual",
+  "doc_number": "N-40462_EN 0716",
+  "revision_date": null,
+  "url": "https://docs.johnsoncontrols.com/bas/api/khub/documents/bdk7s53yQ5tftUD6MrJq9g/content"
+ },
+ "integration": {
+  "summary": "Wire the YKN2Open boards on an RS-485 N2 bus to the QuickServer, give each board an N2 address (1-5) with the YKTool, then read each unit as virtual device 11-15. Write ON/OFF, Mode, the occupied setpoints and fan mode, and read temperatures, Error Code and Status.",
+  "minimum_points": [
+   {
+    "ref": "BV 2",
+    "name": "ON/OFF",
+    "why": "Unit on (1) / forced off (0)"
+   },
+   {
+    "ref": "AV 8",
+    "name": "Mode",
+    "why": "0=Off, 1=Cool, 2=Heat, 3=Auto, 5=Emerg Heat"
+   },
+   {
+    "ref": "AV 2",
+    "name": "Setpoint occupied cool",
+    "why": "Occupied cooling setpoint, 10-32 °C"
+   },
+   {
+    "ref": "AV 3",
+    "name": "Setpoint occupied heat",
+    "why": "Occupied heating setpoint, 10-32 °C"
+   },
+   {
+    "ref": "BV 1",
+    "name": "Fan Mode",
+    "why": "0 = fan auto, 1 = continuous"
+   },
+   {
+    "ref": "AI 16",
+    "name": "Indoor Temperature",
+    "why": "Room temperature"
+   },
+   {
+    "ref": "AI 12",
+    "name": "Suply air Temperature",
+    "why": "Supply air temperature"
+   },
+   {
+    "ref": "AI 31",
+    "name": "Error Code",
+    "why": "Active alarm number, see alarm table"
+   },
+   {
+    "ref": "BV 3",
+    "name": "Status",
+    "why": "Gateway comms with this unit (Online/Offline)"
+   }
+  ],
+  "enable": "Once the gateway is communicating, any analog or digital command written from the BMS takes over that function: it can no longer be changed from the thermostat or YKTool. ON/OFF (BV 2) is the run command; holding it at 0 keeps the unit off.",
+  "heartbeat": "No heartbeat point is described. If N2 communication to a unit is lost, Status (BV 3) goes Offline and the other objects keep their last values.",
+  "remote_sensors": null,
+  "setup": [
+   "Kit S606791244 = FieldServer QuickServer FS-QS-1010-0122 (BACnet IP to Metasys N2); S606791245 is the Modbus TCP version.",
+   "Up to 5 units per QuickServer on RS-485 (Belden 9272 or equal, max 1000 m), wired to J12 terminals 1-2 on each YKN2Open board; 150 ohm resistor on the last board.",
+   "N2 link: 9600 baud, 8 data bits, no parity, 1 stop bit; set each board's N2 address (1-5) in YKTool menu 7 > Configuration.",
+   "Set the QuickServer IP address with the FieldServer Toolbox application.",
+   "Virtual BACnet device IDs 11-15 match N2 addresses 1-5."
+  ],
+  "gotchas": [
+   "To reset an alarm write ON/OFF to 0 and back to 1 after 5 seconds, once the cause has cleared; leaving it at 0 keeps the unit off.",
+   "After the BMS writes a setpoint or command, local changes from the thermostat or YKTool for that variable are locked out.",
+   "Values are metric (°C).",
+   "Poll only the variables the unit actually has, to avoid slow N2 updates."
+  ]
+ },
+ "points": [
+  {
+   "type": "AI",
+   "instance": 1,
+   "name": "Suction Temperature 1",
+   "description": "Suction temperature, circuit 1, -50 to 160 °C",
+   "units": "°C",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "AI",
+   "instance": 2,
+   "name": "Liquid Temperature 1",
+   "description": "Liquid line temperature, circuit 1",
+   "units": "°C",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "AI",
+   "instance": 3,
+   "name": "Outdoor Temperature",
+   "description": "Outdoor air temperature",
+   "units": "°C",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "AI",
+   "instance": 4,
+   "name": "Suction Temperature 2",
+   "description": "Suction temperature, circuit 2",
+   "units": "°C",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "AI",
+   "instance": 5,
+   "name": "Liquid Temperature 2",
+   "description": "Liquid line temperature, circuit 2",
+   "units": "°C",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "AI",
+   "instance": 6,
+   "name": "Discharge Temperature 1",
+   "description": "Discharge temperature, circuit 1",
+   "units": "°C",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "AI",
+   "instance": 7,
+   "name": "Discharge Temperature 2",
+   "description": "Discharge temperature, circuit 2",
+   "units": "°C",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "AI",
+   "instance": 11,
+   "name": "Return Temperature",
+   "description": "Return air temperature",
+   "units": "°C",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "AI",
+   "instance": 12,
+   "name": "Suply air Temperature",
+   "description": "Supply air temperature",
+   "units": "°C",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "AI",
+   "instance": 13,
+   "name": "Water HWC Temperature",
+   "description": "Hot water coil water temperature",
+   "units": "°C",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "AI",
+   "instance": 14,
+   "name": "Outdor Enthalpy",
+   "description": "Outdoor air enthalpy, 0-300",
+   "units": "",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "AI",
+   "instance": 15,
+   "name": "Return Enthalpy",
+   "description": "Return air enthalpy, 0-300",
+   "units": "",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "AI",
+   "instance": 16,
+   "name": "Indoor Temperature",
+   "description": "Indoor (room) temperature, -30 to 70 °C",
+   "units": "°C",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "AI",
+   "instance": 17,
+   "name": "Economizer Door (out)",
+   "description": "Economizer damper output, 0-100 %",
+   "units": "%",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "AI",
+   "instance": 18,
+   "name": "Water Coil (out)",
+   "description": "Water coil valve output, 0-100 %",
+   "units": "%",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "AI",
+   "instance": 19,
+   "name": "Compressor 1 Hours",
+   "description": "Compressor 1 run hours",
+   "units": "h",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "AI",
+   "instance": 20,
+   "name": "Compressor 2 Hours",
+   "description": "Compressor 2 run hours",
+   "units": "h",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "AI",
+   "instance": 22,
+   "name": "Tandem Comp 1 Hours",
+   "description": "Tandem compressor 1 run hours",
+   "units": "h",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "AI",
+   "instance": 23,
+   "name": "Tandem Comp 2 Hours",
+   "description": "Tandem compressor 2 run hours",
+   "units": "h",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "AI",
+   "instance": 24,
+   "name": "Water Coil Hours",
+   "description": "Water coil run hours",
+   "units": "h",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "AI",
+   "instance": 25,
+   "name": "Auxiliary Stage 1 Hours",
+   "description": "Auxiliary heat stage 1 run hours",
+   "units": "h",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "AI",
+   "instance": 26,
+   "name": "Auxiliary Stage 2 Hours",
+   "description": "Auxiliary heat stage 2 run hours",
+   "units": "h",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "AI",
+   "instance": 27,
+   "name": "Auxiliary Stage 3 Hours",
+   "description": "Auxiliary heat stage 3 run hours",
+   "units": "h",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "AI",
+   "instance": 28,
+   "name": "Auxiliary Stage 4 Hours",
+   "description": "Auxiliary heat stage 4 run hours",
+   "units": "h",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "AI",
+   "instance": 29,
+   "name": "Indoor Fan Hours",
+   "description": "Indoor fan run hours",
+   "units": "h",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "AI",
+   "instance": 30,
+   "name": "Outdoor Fan 1 Hours",
+   "description": "Outdoor fan 1 run hours",
+   "units": "h",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "AI",
+   "instance": 31,
+   "name": "Error Code",
+   "description": "Alarm code; doc range 11-46, table also lists 91-99",
+   "units": "",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "AI",
+   "instance": 32,
+   "name": "Outdoor Fan 2 Hours",
+   "description": "Outdoor fan 2 run hours",
+   "units": "h",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "AI",
+   "instance": 34,
+   "name": "Exhaust fan Hours",
+   "description": "Exhaust fan run hours",
+   "units": "h",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "AI",
+   "instance": 35,
+   "name": "Water Bomb Hours",
+   "description": "Water pump run hours",
+   "units": "h",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "AI",
+   "instance": 36,
+   "name": "General Power Hours",
+   "description": "Unit powered hours, 0-100000",
+   "units": "h",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 1,
+   "name": "Minimum air renovation (Input)",
+   "description": "Minimum fresh-air (damper) setting, 0-100 %",
+   "units": "%",
+   "access": "W",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 2,
+   "name": "Setpoint occupied cool",
+   "description": "Occupied cooling setpoint, 10-32 °C",
+   "units": "°C",
+   "access": "W",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 3,
+   "name": "Setpoint occupied heat",
+   "description": "Occupied heating setpoint, 10-32 °C",
+   "units": "°C",
+   "access": "W",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 8,
+   "name": "Mode",
+   "description": "Operating mode command",
+   "units": "",
+   "access": "W",
+   "states": "0=OFF, 1=Cool, 2=Heat, 3=Auto, 5=Emerg Heat"
+  },
+  {
+   "type": "BV",
+   "instance": 1,
+   "name": "Fan Mode",
+   "description": "Indoor fan: auto or continuous",
+   "units": "",
+   "access": "W",
+   "states": "0=Fan auto, 1=Fan manual continuo"
+  },
+  {
+   "type": "BV",
+   "instance": 2,
+   "name": "ON/OFF",
+   "description": "Unit on/off; 0 then 1 after 5 s resets an alarm",
+   "units": "",
+   "access": "W",
+   "states": "0=OFF (forced), 1=ON. Reset"
+  },
+  {
+   "type": "BV",
+   "instance": 101,
+   "name": "Override Minimum air renovation (Input)",
+   "description": "Override flag for Minimum air renovation (Input)",
+   "units": "",
+   "access": "W",
+   "states": "Open-Close (state text 6)"
+  },
+  {
+   "type": "BV",
+   "instance": 102,
+   "name": "Override Setpoint occupied cool",
+   "description": "Override flag for Setpoint occupied cool",
+   "units": "",
+   "access": "W",
+   "states": "Open-Close (state text 6)"
+  },
+  {
+   "type": "BV",
+   "instance": 103,
+   "name": "Override Setpoint occupied heat",
+   "description": "Override flag for Setpoint occupied heat",
+   "units": "",
+   "access": "W",
+   "states": "Open-Close (state text 6)"
+  },
+  {
+   "type": "BV",
+   "instance": 104,
+   "name": "Override Mode",
+   "description": "Override flag for Mode",
+   "units": "",
+   "access": "W",
+   "states": "Open-Close (state text 6)"
+  },
+  {
+   "type": "BV",
+   "instance": 105,
+   "name": "Override Fan Mode",
+   "description": "Override flag for Fan Mode",
+   "units": "",
+   "access": "W",
+   "states": "Open-Close (state text 6)"
+  },
+  {
+   "type": "BV",
+   "instance": 106,
+   "name": "Override ON/OFF",
+   "description": "Override flag for ON/OFF",
+   "units": "",
+   "access": "W",
+   "states": "Open-Close (state text 6)"
+  },
+  {
+   "type": "BV",
+   "instance": 107,
+   "name": "Release Minimum air renovation (Input)",
+   "description": "Release flag for Minimum air renovation (Input)",
+   "units": "",
+   "access": "W",
+   "states": "Open-Close (state text 6)"
+  },
+  {
+   "type": "BV",
+   "instance": 108,
+   "name": "Release Setpoint occupied cool",
+   "description": "Release flag for Setpoint occupied cool",
+   "units": "",
+   "access": "W",
+   "states": "Open-Close (state text 6)"
+  },
+  {
+   "type": "BV",
+   "instance": 109,
+   "name": "Release Setpoint occupied heat",
+   "description": "Release flag for Setpoint occupied heat",
+   "units": "",
+   "access": "W",
+   "states": "Open-Close (state text 6)"
+  },
+  {
+   "type": "BV",
+   "instance": 110,
+   "name": "Release Mode",
+   "description": "Release flag for Mode",
+   "units": "",
+   "access": "W",
+   "states": "Open-Close (state text 6)"
+  },
+  {
+   "type": "BV",
+   "instance": 111,
+   "name": "Release Fan Mode",
+   "description": "Release flag for Fan Mode",
+   "units": "",
+   "access": "W",
+   "states": "Open-Close (state text 6)"
+  },
+  {
+   "type": "BV",
+   "instance": 112,
+   "name": "Release ON/OFF",
+   "description": "Release flag for ON/OFF",
+   "units": "",
+   "access": "W",
+   "states": "Open-Close (state text 6)"
+  },
+  {
+   "type": "BV",
+   "instance": 3,
+   "name": "Status",
+   "description": "Gateway link to this unit (DA_Comm_OK)",
+   "units": "",
+   "access": "R",
+   "states": "Inactive=Offline, Active=Online"
+  }
+ ],
+ "page": "https://easybacnet.com/bacnet-points-lists/york/roomtop-rtc-rth-l-ykn2open",
+ "note": "Re-typed from the manufacturer's public documentation (see source). Point availability varies by firmware and options; verify against the live device."
+}
