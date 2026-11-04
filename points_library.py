@@ -387,6 +387,11 @@ table.pts th[aria-sort="ascending"] button::after{content:" \\2191";opacity:1}
 table.pts th[aria-sort="descending"] button::after{content:" \\2193";opacity:1}
 table.pts th.r{text-align:right}
 .minmark{display:inline-block;margin-left:.35rem;font-size:.58rem;letter-spacing:.08em;text-transform:uppercase;color:var(--ink);background:var(--accent);border-radius:4px;padding:0 .25rem;vertical-align:1px}
+.idx{margin:1rem 0}
+.idx summary{cursor:pointer;font-weight:700}
+.idx ul{list-style:none;margin:.6rem 0 0;padding:0;columns:16rem;column-gap:1.5rem;font-size:.86rem}
+.idx li{break-inside:avoid;padding:.12rem 0}
+.idx code{font-family:"IBM Plex Mono",ui-monospace,monospace;color:var(--accent);margin-right:.4rem}
 table.pts.compact td{padding:.28rem .6rem;font-size:.84rem}
 table.pts.compact td.d,table.pts.compact td.s{white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:20rem}
 table.pts.compact td.n{white-space:nowrap}
@@ -898,7 +903,12 @@ def model_desc(m):
     eq = m.get("equipment_type") or "equipment"
     mm = "%s %s" % (m["manufacturer"], short_model(m))
     integ = bool(m.get("integration"))
+    ex = example_point(m)
+    ex = "%s %s = %s" % (ex["type"], ex["instance"], ex["name"]) if ex else ""
     for s in (
+        "%s BACnet points list: %d objects by ID and name (e.g. %s), %d writable, free CSV/EDE."
+        % (mm, n, ex, w) if ex else None,
+        "%s BACnet points list: %d objects by ID and name, e.g. %s." % (mm, n, ex) if ex else None,
         "%s BACnet points list: %d objects (%d writable), minimum BMS points, enable and heartbeat notes, "
         "plus free CSV and EDE downloads." % (mm, n, w) if integ else None,
         "%s BACnet points list: %d objects (%d writable) with minimum BMS points and free CSV/EDE "
@@ -1037,6 +1047,27 @@ def points_table(m, tid="pts"):
             '<caption class="sr-only">%s</caption>'
             '<thead><tr>%s</tr></thead><tbody>\n%s\n</tbody></table></div>'
             % (tid, esc(model_title(m)), head, "\n".join(rows)))
+
+
+def example_point(m):
+    """One point to quote as an ID example: the first minimum point, else the first point with an instance."""
+    it = integration_of(m)
+    for pt in ([p for p, _ in it["minimum_points"]] if it else []) + m["points"]:
+        if pt.get("instance") is not None and pt["name"] and pt["type"] not in ("DEV", "Other"):
+            return pt
+    return None
+
+
+def id_index(m):
+    """Every point as a compact ID ("AI15068") next to its name. Techs search the raw ID they
+    read off a BMS screen; this puts the ID and its meaning side by side for search snippets."""
+    items = ['<li><a href="#%s"><code>%s%s</code></a>%s</li>' % (row_id(pt), esc(pt["type"]), pt["instance"],
+                                                               esc(pt["name"]))
+             for pt in m["points"] if pt.get("instance") is not None and pt["type"] not in ("DEV", "Other")]
+    if not items:
+        return ""
+    return ('<details class="idx" id="object-ids"><summary>Object ID lookup: %s %s point IDs by name</summary>'
+            '<ul>%s</ul></details>' % (esc(m["manufacturer"]), esc(short_model(m)), "".join(items)))
 
 
 TYPE_GROUPS = (("Analog", ("AI", "AO", "AV")), ("Binary", ("BI", "BO", "BV")), ("Multi-state", ("MI", "MO", "MV")))
@@ -1249,6 +1280,7 @@ Access: <span class="acc">Read</span> read-only, <span class="acc W">Write</span
 %(inferred)s%(fbar)s
 %(table)s
 <p class="fnone" id="pts-none" hidden>No points match these filters. <button type="button" class="linkbtn" data-reset>Clear filters</button></p>
+%(ids)s
 %(notes)s
 <div class="callout"><p><strong>Check it against the live device.</strong> A points list tells you what the
 controller <em>can</em> expose; the unit in front of you may differ by firmware or installed options.
@@ -1264,7 +1296,7 @@ Object names, instances and units are reproduced as published; descriptions are 
         "summary": esc(m.get("summary") or ""), "n": n, "w": w,
         "mfr": esc(m["manufacturer"]), "model": esc(m["model"]), "facts": facts_html,
         "base": base, "src": esc(s["url"]), "play_pdf": PLAY_URL % "pdf", "fbar": filter_bar(m), "table": points_table(m),
-        "notes": notes_html, "faq": faq_html, "integ": integration_html(m),
+        "notes": notes_html, "faq": faq_html, "integ": integration_html(m), "ids": id_index(m),
         "inferred": ('<p class="count"><strong>Note:</strong> the source document has no read/write column, so access '
                      'here is inferred from the object type (inputs read-only, values writable). Confirm on the live '
                      'controller before writing.</p>') if m.get("access_inferred") else "", "sib": sib_html, "srcline": source_line(m),
