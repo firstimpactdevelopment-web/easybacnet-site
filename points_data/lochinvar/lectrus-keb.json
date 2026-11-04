@@ -1,0 +1,443 @@
+{
+  "manufacturer": "Lochinvar",
+  "manufacturer_slug": "lochinvar",
+  "model": "Lectrus electric boiler (KEB)",
+  "model_slug": "lectrus-keb",
+  "aliases": [
+    "Lectrus",
+    "KEB",
+    "KEB0015",
+    "KEB0150",
+    "MODB-I-O-KEB",
+    "Lochinvar electric boiler"
+  ],
+  "equipment_type": "Electric boiler controller",
+  "applies_to": "Lochinvar Lectrus electric boilers, models KEB 0015-0150, with the Modbus/BACnet communication board.",
+  "summary": "The Lectrus electric boiler uses the same Lochinvar Modbus/BACnet communication board and object scheme as the SMART TOUCH gas units, with its own names in an 'Electric Object Name' column. Binary values take the boiler and DHW enable commands, binary inputs give flow, pressure, LWCO and limit status plus relay and pump states, analog inputs give setpoints, temperatures, modulation and status codes, and analog values take the BAS configuration bits, rate command and remote temperatures.",
+  "bacnet_transport": [
+    "BACnet MS/TP"
+  ],
+  "firmware": null,
+  "default_device_instance": "600000 + MAC address (base is model dependent and can be changed)",
+  "access_inferred": false,
+  "notes": [
+    "The manual prints one table for gas and electric units; this list uses the Electric Object Name column.",
+    "Objects marked 'Not Used' for electric units are left out: BV 1, BV 2, BI 5, BI 43.",
+    "AV 0 (Configuration) is a bitmask: bit 0 boiler enable, 1 DHW enable, 2 0-10V BMS input, 3 tank setpoint, 4 system supply, 5 outdoor, 6 tank temperature.",
+    "Setpoints AI 3, AI 7 and AV 3 are printed with both °C and °F ranges; other temperatures are °C.",
+    "Default device name is \"MTR-01 BACnet\"."
+  ],
+  "integration": {
+    "summary": "At the control (installer code 5309, Control Modes) set BMS / ModBus-BACnet to Active, then write AV 0 Configuration so the boiler knows which values the BAS will supply. The BAS then sends the enable (BV 0, or the packed AV 1), a rate command (AV 2), or both, and keeps rewriting them. Status, temperatures and codes can be read without taking control.",
+    "minimum_points": [
+      {
+        "ref": "AV 0",
+        "name": "Configuration",
+        "why": "Bitmask of BAS-supplied inputs; resend before commands"
+      },
+      {
+        "ref": "BV 0",
+        "name": "Boiler Enable",
+        "why": "Enable / call for heat from the BAS"
+      },
+      {
+        "ref": "AV 2",
+        "name": "0-10V BMS Input",
+        "why": "Rate command: modulation % or setpoint, per BMS Type"
+      },
+      {
+        "ref": "AI 13",
+        "name": "Boiler Status Code",
+        "why": "What the boiler is doing"
+      },
+      {
+        "ref": "AI 8",
+        "name": "Outlet Temperature",
+        "why": "Boiler outlet water temperature, °C"
+      },
+      {
+        "ref": "AI 11",
+        "name": "Modulation Rate",
+        "why": "Heating modulation rate, %"
+      },
+      {
+        "ref": "AI 15",
+        "name": "Boiler Lockout Code",
+        "why": "Active lockout code"
+      }
+    ],
+    "enable": "Control Mode 1: local setpoints plus BAS enable (AV 0 = 0x0001, AV 1 = 0x0001). Control Mode 2: enable plus AV 2 rate command; BMS Type sets whether AV 2 is modulation % (POWER) or a temperature setpoint (SETPOINT, default). Set BMS to ACTIVE in Control Modes for rate control.",
+    "heartbeat": "The Modbus T/O timer (installer code 5309, Control Modes, Modbus T/O; 5-120 s, default 10 s) is reset by every write with new temperatures or commands; if it runs out the boiler reverts to its own controls. Commands without temperatures must still be refreshed at least every 4 minutes. Lochinvar recommends the shortest timer setting.",
+    "remote_sensors": "Set the AV 0 bits for the values the BAS will supply, then write AV 3 tank setpoint, AV 4 tank temperature, AV 5 outdoor temperature, AV 6 system supply temperature or AV 7 DHW recirculation temperature, and keep refreshing them.",
+    "setup": [
+      "MAC address from dip switches 1-8 (master, so 0-127); baud from switches 9-10: 9600, 19200, 38400 or 76800.",
+      "Device instance = base 600000 + MAC address; the base can be changed (0-4194048) and reset by powering up with dip switches 1-8 on.",
+      "Default device name is \"MTR-01 BACnet\"."
+    ],
+    "gotchas": [
+      "The manual says to resend the AV 0 configuration bits before each command.",
+      "In a cascade only the leader needs the board for control; it then reports cascade totals only.",
+      "Without BMS mode active the board is monitor-only.",
+      "The memory map is shared with gas models; ignore gas-only names when reading the PDF."
+    ]
+  },
+  "source": {
+    "title": "Modbus and BACnet Communication Instructions - Models KEB 0015-0150",
+    "doc_number": "100389961_2000844370",
+    "revision_date": "Rev A",
+    "url": "https://assets.lochinvar.com/damroot/Original/10017/MODB-I-O-KEB_100389961_2000844370_Rev_A_(63600).pdf"
+  },
+  "points": [
+    {
+      "type": "BV",
+      "instance": 0,
+      "name": "Boiler Enable",
+      "description": "Enable command from the BAS",
+      "units": "",
+      "access": "W",
+      "states": "0=Off, 1=On"
+    },
+    {
+      "type": "BV",
+      "instance": 4,
+      "name": "DHW Enable",
+      "description": "DHW enable command / status",
+      "units": "",
+      "access": "W",
+      "states": "0=Off, 1=On"
+    },
+    {
+      "type": "BI",
+      "instance": 1,
+      "name": "Flow Switch",
+      "description": "Flow switch status",
+      "units": "",
+      "access": "R",
+      "states": "0=Off, 1=On"
+    },
+    {
+      "type": "BI",
+      "instance": 2,
+      "name": "Low Pressure Switch",
+      "description": "Low pressure switch status",
+      "units": "",
+      "access": "R",
+      "states": "0=Off, 1=On"
+    },
+    {
+      "type": "BI",
+      "instance": 3,
+      "name": "External Low Water Cut Off",
+      "description": "External low water cutoff status",
+      "units": "",
+      "access": "R",
+      "states": "0=Off, 1=On"
+    },
+    {
+      "type": "BI",
+      "instance": 4,
+      "name": "LWCO/ MRHL",
+      "description": "Low water cutoff / manual reset high limit status",
+      "units": "",
+      "access": "R",
+      "states": "0=Off, 1=On"
+    },
+    {
+      "type": "BI",
+      "instance": 6,
+      "name": "Auto Reset High Limit",
+      "description": "Auto reset high limit status",
+      "units": "",
+      "access": "R",
+      "states": "0=Off, 1=On"
+    },
+    {
+      "type": "BI",
+      "instance": 8,
+      "name": "SH Enable",
+      "description": "Space heating enable input status",
+      "units": "",
+      "access": "R",
+      "states": "0=Off, 1=On"
+    },
+    {
+      "type": "BI",
+      "instance": 9,
+      "name": "DHW Enable",
+      "description": "DHW enable command / status",
+      "units": "",
+      "access": "R",
+      "states": "0=Off, 1=On"
+    },
+    {
+      "type": "BI",
+      "instance": 32,
+      "name": "Run-time Contacts",
+      "description": "Run-time contacts (relay) status",
+      "units": "",
+      "access": "R",
+      "states": "0=Off, 1=On"
+    },
+    {
+      "type": "BI",
+      "instance": 33,
+      "name": "Alarm Contacts",
+      "description": "Alarm contacts (relay) status",
+      "units": "",
+      "access": "R",
+      "states": "0=Off, 1=On"
+    },
+    {
+      "type": "BI",
+      "instance": 34,
+      "name": "Boiler Pump",
+      "description": "Boiler pump output status",
+      "units": "",
+      "access": "R",
+      "states": "0=Off, 1=On"
+    },
+    {
+      "type": "BI",
+      "instance": 35,
+      "name": "DHW Pump",
+      "description": "DHW pump output status",
+      "units": "",
+      "access": "R",
+      "states": "0=Off, 1=On"
+    },
+    {
+      "type": "BI",
+      "instance": 36,
+      "name": "Low Water Cut Off Enable",
+      "description": "Low water cutoff enable status",
+      "units": "",
+      "access": "R",
+      "states": "0=Off, 1=On"
+    },
+    {
+      "type": "BI",
+      "instance": 37,
+      "name": "Safety Monitor Relay",
+      "description": "Safety monitor relay status",
+      "units": "",
+      "access": "R",
+      "states": "0=Off, 1=On"
+    },
+    {
+      "type": "BI",
+      "instance": 38,
+      "name": "System Pump",
+      "description": "System pump output status",
+      "units": "",
+      "access": "R",
+      "states": "0=Off, 1=On"
+    },
+    {
+      "type": "AI",
+      "instance": 0,
+      "name": "Discrete Inputs 0 - 15",
+      "description": "Packed word of binary inputs 0-15",
+      "units": "",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AI",
+      "instance": 1,
+      "name": "Discrete Inputs 16 - 31",
+      "description": "Packed word of binary inputs 16-31",
+      "units": "",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AI",
+      "instance": 2,
+      "name": "Discrete Inputs 32 - 47",
+      "description": "Packed word of binary inputs 32-47",
+      "units": "",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AI",
+      "instance": 3,
+      "name": "System / Cascade Setpoint",
+      "description": "System or cascade setpoint in use",
+      "units": "°C",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AI",
+      "instance": 4,
+      "name": "System Pump Speed",
+      "description": "System pump speed output",
+      "units": "%",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AI",
+      "instance": 5,
+      "name": "Cascade Total Power",
+      "description": "Total cascade firing capacity",
+      "units": "%",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AI",
+      "instance": 6,
+      "name": "Cascade Current Power",
+      "description": "Current cascade firing rate",
+      "units": "%",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AI",
+      "instance": 7,
+      "name": "Outlet Setpoint",
+      "description": "Outlet setpoint in use",
+      "units": "°C",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AI",
+      "instance": 8,
+      "name": "Outlet Temperature",
+      "description": "Outlet water temperature",
+      "units": "°C",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AI",
+      "instance": 9,
+      "name": "Inlet Temperature",
+      "description": "Inlet water temperature",
+      "units": "°C",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AI",
+      "instance": 11,
+      "name": "Modulation Rate",
+      "description": "Heating element modulation rate",
+      "units": "%",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AI",
+      "instance": 12,
+      "name": "Boiler Pump Speed",
+      "description": "Boiler pump speed output",
+      "units": "%",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AI",
+      "instance": 13,
+      "name": "Boiler Status Code",
+      "description": "Current operating status code",
+      "units": "",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AI",
+      "instance": 14,
+      "name": "Boiler Blocking Code",
+      "description": "Active blocking (soft lockout) code",
+      "units": "",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AI",
+      "instance": 15,
+      "name": "Boiler Lockout Code",
+      "description": "Active lockout code",
+      "units": "",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 0,
+      "name": "Configuration",
+      "description": "Bitmask selecting which values the BAS supplies",
+      "units": "",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 1,
+      "name": "BV 0-4",
+      "description": "Packed word of the binary value commands",
+      "units": "",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 2,
+      "name": "0-10V BMS Input",
+      "description": "BAS rate or setpoint command (0-100%)",
+      "units": "%",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 3,
+      "name": "Tank Setpoint",
+      "description": "Tank setpoint from the BAS",
+      "units": "°C",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 4,
+      "name": "Tank Temperature",
+      "description": "Tank temperature from the BAS",
+      "units": "°C",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 5,
+      "name": "Outdoor Temperature",
+      "description": "Outdoor temperature from the BAS",
+      "units": "°C",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 6,
+      "name": "System Supply Temperature",
+      "description": "System supply temperature from the BAS",
+      "units": "°C",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 7,
+      "name": "DHW Recirc Temperature",
+      "description": "DHW recirculation temperature from the BAS",
+      "units": "°C",
+      "access": "W",
+      "states": ""
+    }
+  ]
+}

@@ -1,0 +1,1226 @@
+{
+  "manufacturer": "Wilo",
+  "manufacturer_slug": "wilo",
+  "model": "Stratos MAXO (CIF-Module BACnet MS/TP / Ethernet)",
+  "model_slug": "stratos-maxo-cif-module",
+  "aliases": [
+    "Stratos MAXO",
+    "Stratos MAXO-D",
+    "Stratos MAXO-Z",
+    "CIF-Module BACnet MS/TP",
+    "CIF-Module Ethernet Multiprotocol",
+    "2190367",
+    "2211408"
+  ],
+  "equipment_type": "Pump (CIF-Module BACnet interface)",
+  "applies_to": "Wilo Stratos MAXO smart wet-rotor circulators fitted with a CIF-Module BACnet MS/TP (2190367) or CIF-Module Ethernet Multiprotocol for BACnet IP (2211408).",
+  "summary": "The Stratos MAXO takes a plug-in CIF-Module that gives it BACnet MS/TP or, with the Ethernet Multiprotocol module, BACnet IP. The BMS writes on/off, control mode and a relative duty point, and keeps control alive with a bus command timer. It reports speed, power, head, calculated flow and energy, plus warning and error codes, and exposes override, preset (fallback) and auxiliary parameter sets. The MAXO list adds supply/return temperatures and heat/cooling energy metering.",
+  "bacnet_transport": [
+    "BACnet MS/TP",
+    "BACnet IP"
+  ],
+  "firmware": "CIF-Module 1.00-6.01 (EDE); datapoint list valid to 6.11",
+  "default_device_instance": null,
+  "access_inferred": true,
+  "notes": [
+    "Object list taken from Wilo's EDE file for this pump (CIF-Module BACnet MS/TP and Ethernet Multiprotocol files list the same objects); names follow Wilo's datapoint list.",
+    "Objects ending Prs are preset (startup / bus-failure fallback) values; objects ending Aux belong to the auxiliary parameter set chosen with MO 34.",
+    "A few objects (e.g. AI 50, AI 51) need CIF-Module firmware 5.01 or later. Wilo's Ethernet Multiprotocol EDE shortens a few names (e.g. busCmd.TimerAct for MO 1, controlFunctionPrsLim for MO 100); names here follow the MS/TP EDE and the datapoint list.",
+    "Multistate state lists show the values Wilo marks as supported for this pump; error-code objects use Wilo's E-code numbering (value = code + 1).",
+    "AI 20-27 report heating and cooling power and energy for the measured hydronic circuit."
+  ],
+  "integration": {
+    "summary": "Write the control mode (MO 0), the duty point setpoint in % (AO 0) and the on/off command (BO 0). To keep BMS control safe, write SET to the bus command timer (MO 1) more often than its timeout (AO 8, default 300 s); use SET_PRESET if the pump should load the Prs fallback values when the BMS goes quiet. Read status from BI 10, BI 13 and MI 1.",
+    "minimum_points": [
+      {
+        "ref": "BO 0",
+        "name": "device/functionOnInp",
+        "why": "Pump on/off command"
+      },
+      {
+        "ref": "MO 0",
+        "name": "controlFunctionInp",
+        "why": "Control mode, e.g. dp-c, dp-v, constant speed"
+      },
+      {
+        "ref": "AO 0",
+        "name": "dutyPointRelInp",
+        "why": "Duty point setpoint, % of the control range"
+      },
+      {
+        "ref": "MO 1",
+        "name": "busCmd.TimerInp,Act",
+        "why": "Heartbeat: write SET (2) before the timeout"
+      },
+      {
+        "ref": "BI 10",
+        "name": "device/functionOnOut",
+        "why": "Pump on"
+      },
+      {
+        "ref": "BI 15",
+        "name": "localOperationOut",
+        "why": "Local override; BMS not in control"
+      },
+      {
+        "ref": "AI 1",
+        "name": "speedP01Out",
+        "why": "Pump speed, rpm"
+      },
+      {
+        "ref": "AI 4",
+        "name": "powerInputOut",
+        "why": "Electrical input power, W"
+      },
+      {
+        "ref": "BI 13",
+        "name": "errorPresentOut",
+        "why": "Any active error"
+      },
+      {
+        "ref": "MI 1",
+        "name": "warning/errorMessageOut",
+        "why": "Wilo error code"
+      }
+    ],
+    "enable": "Once the CIF-Module is set up, the pump's setpoint, control mode and on/off follow the values held in the module, not the local menu. BI 15 shows when a local action is overriding BMS control. MO 3 selects where the setpoint comes from (1 = IF-Module).",
+    "heartbeat": "MO 1 bus command timer: write SET (2) again before the timeout in AO 8 (default 300 s). If it runs out the local menu is released and the display may show E50/E54; with SET_PRESET (6) the pump also loads the preset (Prs) on/off, control mode and duty point. Writing MANUAL (5) unlocks the local menu permanently; OFF (1) returns to the factory behaviour.",
+    "remote_sensors": "AO 9 / AO 10 accept reference temperatures T1/T2 from an external sensor and AO 11 an external sensor value; the selected values read back on AI 2009-2011.",
+    "setup": [
+      "BACnet MS/TP: the bus address set in the pump menu is the MS/TP MAC; 0-127 = manager (default use), 128-254 = subordinate.",
+      "Baud rate is set with parameter A in the pump menu (9600 to 115200, plus 76800).",
+      "The device instance is entered in the pump menu as parameters C, E and F; how the number is split across them depends on the pump type (Wilo's datapoint list has a calculator).",
+      "CIF-Module Ethernet: extended settings via a web browser on port 80; default hostname is wilo- plus the ETH1 MAC address."
+    ],
+    "gotchas": [
+      "AO 0 is a relative duty point; its range is not always 0-100 % and 0 % does not mean off. AI 33 gives the value that equals 100 %, with its units in MI 33.",
+      "The flow reading (AI 2) is calculated and should not be used for closed-loop control.",
+      "Commandable objects use priority 16 as a floating default; relinquishing every priority returns the static relinquish default (BO 0 = off, AO 0 = 100 %).",
+      "BI 18 actuationLimitOut means the speed output is at a limit, so the pump cannot follow further changes in that direction."
+    ]
+  },
+  "source": {
+    "title": "WILO BACnet - CIF-Module / IF-Module installation and operating instructions with functional description (datapoint list) and CIF-Module EDE files",
+    "doc_number": "wilo194261 (EDE: wilo254515 MS/TP, wilo666820 Ethernet)",
+    "revision_date": "EDE 2024-09-23 (CIF-Module 1.00...6.01)",
+    "url": "https://cms.media.wilo.com/cdndoc/wilo194261/11516096/wilo194261.html"
+  },
+  "points": [
+    {
+      "type": "AI",
+      "instance": 0,
+      "name": "dutyPointRelOut",
+      "description": "Relative duty point the pump is running at",
+      "units": "%",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AI",
+      "instance": 1,
+      "name": "speedP01Out",
+      "description": "Speed of the master pump",
+      "units": "rpm",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AI",
+      "instance": 2,
+      "name": "flowOut",
+      "description": "Flow (calculated; for monitoring only)",
+      "units": "m³/h",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AI",
+      "instance": 3,
+      "name": "pressureOut",
+      "description": "Head/pressure at the pump (may be estimated)",
+      "units": "bar",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AI",
+      "instance": 4,
+      "name": "powerInputOut",
+      "description": "Electrical input power",
+      "units": "W",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AI",
+      "instance": 5,
+      "name": "temperatureFluid@DeviceOut",
+      "description": "Fluid temperature measured at the pump",
+      "units": "°C",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AI",
+      "instance": 6,
+      "name": "operationTimeOut",
+      "description": "Total run time",
+      "units": "min",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AI",
+      "instance": 7,
+      "name": "energyConsumptionOut",
+      "description": "Total electrical energy used",
+      "units": "kWh",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AI",
+      "instance": 8,
+      "name": "speedMivAct",
+      "description": "Lowest speed available for the setpoint",
+      "units": "rpm",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AI",
+      "instance": 9,
+      "name": "speedMavAct",
+      "description": "Highest speed available for the setpoint",
+      "units": "rpm",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AI",
+      "instance": 10,
+      "name": "pressureMinPHdVarAct",
+      "description": "Lowest head for dp-v (variable) control",
+      "units": "bar",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AI",
+      "instance": 11,
+      "name": "pressureMaxPHdVarAct",
+      "description": "Highest head for dp-v (variable) control",
+      "units": "bar",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AI",
+      "instance": 12,
+      "name": "flowMavOut",
+      "description": "Maximum flow (full speed, zero head)",
+      "units": "m³/h",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AI",
+      "instance": 13,
+      "name": "pressureMinPHdConstAct",
+      "description": "Lowest head for dp-c (constant) control",
+      "units": "bar",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AI",
+      "instance": 14,
+      "name": "pressureMaxPHdConstAct",
+      "description": "Highest head for dp-c (constant) control",
+      "units": "bar",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AI",
+      "instance": 15,
+      "name": "powerInputMavOut",
+      "description": "Maximum electrical input power",
+      "units": "W",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AI",
+      "instance": 16,
+      "name": "temperat.FluidFwdOut",
+      "description": "Supply (forward) fluid temperature",
+      "units": "°C",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AI",
+      "instance": 17,
+      "name": "temperat.FluidRetOut",
+      "description": "Return fluid temperature",
+      "units": "°C",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AI",
+      "instance": 18,
+      "name": "analogIn1MeasuredValOut",
+      "description": "Value measured at analog input 1",
+      "units": "",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AI",
+      "instance": 19,
+      "name": "analogIn2MeasuredValOut",
+      "description": "Value measured at analog input 2",
+      "units": "",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AI",
+      "instance": 20,
+      "name": "powerHeatingOut",
+      "description": "Heating power (supply warmer than return)",
+      "units": "W",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AI",
+      "instance": 21,
+      "name": "powerRefrigerationOut",
+      "description": "Cooling power (supply colder than return)",
+      "units": "W",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AI",
+      "instance": 22,
+      "name": "energyHeatRrst.ableOut",
+      "description": "Heat energy meter, resettable",
+      "units": "kWh",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AI",
+      "instance": 23,
+      "name": "energyHeatRrst.ableSttOut",
+      "description": "Start time of resettable heat meter (Unix time)",
+      "units": "s",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AI",
+      "instance": 24,
+      "name": "energyRefrigRrst.ableOut",
+      "description": "Cooling energy meter, resettable",
+      "units": "kWh",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AI",
+      "instance": 25,
+      "name": "energyRefrigRrst.ableSttOut",
+      "description": "Start time of resettable cooling meter (Unix time)",
+      "units": "s",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AI",
+      "instance": 26,
+      "name": "energyHeat.TotalOut",
+      "description": "Heat energy total",
+      "units": "kWh",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AI",
+      "instance": 27,
+      "name": "energyRefrig.TotalOut",
+      "description": "Cooling energy total",
+      "units": "kWh",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AI",
+      "instance": 28,
+      "name": "voltageInputOut",
+      "description": "Mains supply voltage",
+      "units": "V",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AI",
+      "instance": 30,
+      "name": "systemTimeOut",
+      "description": "Pump system time (Unix epoch)",
+      "units": "s",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AI",
+      "instance": 31,
+      "name": "dutyPointRelMioAct",
+      "description": "Lower limit of the active relative duty point",
+      "units": "%",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AI",
+      "instance": 32,
+      "name": "dutyPointRelMaoAct",
+      "description": "Upper limit of the active relative duty point",
+      "units": "%",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AI",
+      "instance": 33,
+      "name": "dutyPoint100%ValAct",
+      "description": "Value that equals 100 % duty point (active)",
+      "units": "",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AI",
+      "instance": 34,
+      "name": "dutyPointRelAct",
+      "description": "Active relative duty point (setpoint in use)",
+      "units": "%",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AI",
+      "instance": 35,
+      "name": "busCmd.TimerTimeRemain.Out",
+      "description": "Time left on the bus command timer",
+      "units": "s",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AI",
+      "instance": 36,
+      "name": "flowLmiAct",
+      "description": "Active lower flow limit",
+      "units": "m³/h",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AI",
+      "instance": 37,
+      "name": "flowLmaAct",
+      "description": "Active upper flow limit",
+      "units": "m³/h",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AI",
+      "instance": 38,
+      "name": "flowLofAct",
+      "description": "Active flow limit value (Lof)",
+      "units": "m³/h",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AI",
+      "instance": 39,
+      "name": "flowNominal4Ctrl.Fun.Act",
+      "description": "Active nominal flow for flow-dependent control",
+      "units": "m³/h",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AI",
+      "instance": 40,
+      "name": "flowZeroSetpointRed.FactorAct",
+      "description": "Active setpoint reduction at zero flow",
+      "units": "%",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AI",
+      "instance": 50,
+      "name": "pressureMavOut",
+      "description": "Maximum head",
+      "units": "bar",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AI",
+      "instance": 51,
+      "name": "flowMivOut",
+      "description": "Minimum flow (operating limit)",
+      "units": "m³/h",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AI",
+      "instance": 1031,
+      "name": "dutyPointRelMioLim",
+      "description": "Lower limit of the duty point setting",
+      "units": "%",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AI",
+      "instance": 1032,
+      "name": "dutyPointRelMaoLim",
+      "description": "Upper limit of the duty point setting",
+      "units": "%",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AI",
+      "instance": 1033,
+      "name": "dutyPoint100%ValLim",
+      "description": "Value that equals 100 % duty point (limit)",
+      "units": "",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AI",
+      "instance": 1034,
+      "name": "dutyPointRelSel",
+      "description": "Selected relative duty point",
+      "units": "%",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AI",
+      "instance": 1131,
+      "name": "dutyPointRelMioPrsLim",
+      "description": "Lower limit of the preset duty point",
+      "units": "%",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AI",
+      "instance": 1132,
+      "name": "dutyPointRelMaoPrsLim",
+      "description": "Upper limit of the preset duty point",
+      "units": "%",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AI",
+      "instance": 1133,
+      "name": "dutyPoint100%ValPrsLim",
+      "description": "Value that equals 100 % (preset duty point)",
+      "units": "",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AI",
+      "instance": 1231,
+      "name": "dutyPointRelMioAuxLim",
+      "description": "Lower limit of the auxiliary duty point",
+      "units": "%",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AI",
+      "instance": 1232,
+      "name": "dutyPointRelMaoAuxLim",
+      "description": "Upper limit of the auxiliary duty point",
+      "units": "%",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AI",
+      "instance": 1233,
+      "name": "dutyPoint100%ValAuxLim",
+      "description": "Value that equals 100 % (auxiliary duty point)",
+      "units": "",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AI",
+      "instance": 2009,
+      "name": "temperat.ReferenceT1Sel",
+      "description": "Selected reference temperature T1",
+      "units": "°C",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AI",
+      "instance": 2010,
+      "name": "temperat.ReferenceT2Sel",
+      "description": "Selected reference temperature T2",
+      "units": "°C",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AI",
+      "instance": 2011,
+      "name": "sensorSignalSel",
+      "description": "Selected external sensor value",
+      "units": "",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AI",
+      "instance": 2031,
+      "name": "dutyPointRelMioSel",
+      "description": "Lower limit of the selected duty point",
+      "units": "%",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AI",
+      "instance": 2032,
+      "name": "dutyPointRelMaoSel",
+      "description": "Upper limit of the selected duty point",
+      "units": "%",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AI",
+      "instance": 2033,
+      "name": "dutyPoint100%ValSel",
+      "description": "Value that equals 100 % (selected duty point)",
+      "units": "",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AO",
+      "instance": 0,
+      "name": "dutyPointRelInp",
+      "description": "Duty point setpoint from the BMS",
+      "units": "%",
+      "access": "C",
+      "states": ""
+    },
+    {
+      "type": "AO",
+      "instance": 5,
+      "name": "pidKpInp,Act",
+      "description": "PID gain (user-defined PID mode)",
+      "units": "",
+      "access": "C",
+      "states": ""
+    },
+    {
+      "type": "AO",
+      "instance": 6,
+      "name": "pidTiInp,Act",
+      "description": "PID integral time",
+      "units": "s",
+      "access": "C",
+      "states": ""
+    },
+    {
+      "type": "AO",
+      "instance": 7,
+      "name": "pidTdInp,Act",
+      "description": "PID derivative time",
+      "units": "s",
+      "access": "C",
+      "states": ""
+    },
+    {
+      "type": "AO",
+      "instance": 8,
+      "name": "busCmd.TimerTimeoutInp,Act",
+      "description": "Bus command timer timeout",
+      "units": "s",
+      "access": "C",
+      "states": ""
+    },
+    {
+      "type": "AO",
+      "instance": 9,
+      "name": "temperat.ReferenceT1Inp",
+      "description": "Reference temperature T1 from external sensor",
+      "units": "°C",
+      "access": "C",
+      "states": ""
+    },
+    {
+      "type": "AO",
+      "instance": 10,
+      "name": "temperat.ReferenceT2Inp",
+      "description": "Reference temperature T2 from external sensor",
+      "units": "°C",
+      "access": "C",
+      "states": ""
+    },
+    {
+      "type": "AO",
+      "instance": 11,
+      "name": "sensorSignalInp",
+      "description": "External sensor value written by the BMS",
+      "units": "",
+      "access": "C",
+      "states": ""
+    },
+    {
+      "type": "AO",
+      "instance": 36,
+      "name": "flowLmiInp",
+      "description": "Lower flow limit setting",
+      "units": "m³/h",
+      "access": "C",
+      "states": ""
+    },
+    {
+      "type": "AO",
+      "instance": 37,
+      "name": "flowLmaInp",
+      "description": "Upper flow limit setting",
+      "units": "m³/h",
+      "access": "C",
+      "states": ""
+    },
+    {
+      "type": "AO",
+      "instance": 38,
+      "name": "flowLofInp",
+      "description": "Flow limit value setting (Lof)",
+      "units": "m³/h",
+      "access": "C",
+      "states": ""
+    },
+    {
+      "type": "AO",
+      "instance": 39,
+      "name": "flowNominal4Ctrl.Fun.Inp",
+      "description": "Nominal flow for flow-dependent control",
+      "units": "m³/h",
+      "access": "C",
+      "states": ""
+    },
+    {
+      "type": "AO",
+      "instance": 40,
+      "name": "flowZeroSetpointRed.FactorInp",
+      "description": "Setpoint reduction at zero flow",
+      "units": "%",
+      "access": "C",
+      "states": ""
+    },
+    {
+      "type": "AO",
+      "instance": 100,
+      "name": "dutyPointRelPrsInp,Lim",
+      "description": "Preset duty point (startup / bus failure)",
+      "units": "%",
+      "access": "C",
+      "states": ""
+    },
+    {
+      "type": "AO",
+      "instance": 200,
+      "name": "dutyPointRelAuxInp",
+      "description": "Duty point for the auxiliary parameter set",
+      "units": "%",
+      "access": "C",
+      "states": ""
+    },
+    {
+      "type": "BI",
+      "instance": 0,
+      "name": "device/functionOnAct",
+      "description": "Active on/off command",
+      "units": "",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "BI",
+      "instance": 1,
+      "name": "overrideOffAct",
+      "description": "Override OFF active (includes local Ext. Off)",
+      "units": "",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "BI",
+      "instance": 2,
+      "name": "overrideMaxAct",
+      "description": "Override MAX active",
+      "units": "",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "BI",
+      "instance": 3,
+      "name": "overrideMinAct",
+      "description": "Override MIN active",
+      "units": "",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "BI",
+      "instance": 4,
+      "name": "lowRegulationLimitOut",
+      "description": "Running at the low control limit",
+      "units": "",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "BI",
+      "instance": 5,
+      "name": "highRegulationLimitOut",
+      "description": "Running at the high control limit",
+      "units": "",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "BI",
+      "instance": 6,
+      "name": "setpointOutOfRangeAct",
+      "description": "Setpoint out of range",
+      "units": "",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "BI",
+      "instance": 7,
+      "name": "setpointDifferenceOut",
+      "description": "Setpoint not reached",
+      "units": "",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "BI",
+      "instance": 8,
+      "name": "autoNightModeOut",
+      "description": "Automatic night setback running",
+      "units": "",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "BI",
+      "instance": 9,
+      "name": "ready4OperationOut",
+      "description": "Ready for operation",
+      "units": "",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "BI",
+      "instance": 10,
+      "name": "device/functionOnOut",
+      "description": "Pump on",
+      "units": "",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "BI",
+      "instance": 11,
+      "name": "serviceRequiredOut",
+      "description": "Service required",
+      "units": "",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "BI",
+      "instance": 12,
+      "name": "warningPresentOut",
+      "description": "Warning present",
+      "units": "",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "BI",
+      "instance": 13,
+      "name": "errorPresentOut",
+      "description": "Error present",
+      "units": "",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "BI",
+      "instance": 15,
+      "name": "localOperationOut",
+      "description": "Local override; BMS commands not in control",
+      "units": "",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "BI",
+      "instance": 16,
+      "name": "externalSetpointOut",
+      "description": "Setpoint from an external or preset source",
+      "units": "",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "BI",
+      "instance": 17,
+      "name": "overrideOnAct",
+      "description": "Override ON active",
+      "units": "",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "BI",
+      "instance": 18,
+      "name": "actuationLimitOut",
+      "description": "Pump at an actuation limit (pause the BMS PID)",
+      "units": "",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "BI",
+      "instance": 19,
+      "name": "autoNightModeAct",
+      "description": "Automatic night setback enabled",
+      "units": "",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "BI",
+      "instance": 2000,
+      "name": "device/functionOnSel",
+      "description": "Selected on/off command",
+      "units": "",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "BO",
+      "instance": 0,
+      "name": "device/functionOnInp",
+      "description": "On/off command from the BMS",
+      "units": "",
+      "access": "C",
+      "states": ""
+    },
+    {
+      "type": "BO",
+      "instance": 1,
+      "name": "overrideOffInp",
+      "description": "Override OFF (duty point 0 %)",
+      "units": "",
+      "access": "C",
+      "states": ""
+    },
+    {
+      "type": "BO",
+      "instance": 2,
+      "name": "overrideMaxInp",
+      "description": "Override MAX (duty point 100 %)",
+      "units": "",
+      "access": "C",
+      "states": ""
+    },
+    {
+      "type": "BO",
+      "instance": 3,
+      "name": "overrideMinInp",
+      "description": "Override MIN (minimum duty point)",
+      "units": "",
+      "access": "C",
+      "states": ""
+    },
+    {
+      "type": "BO",
+      "instance": 8,
+      "name": "autoNightModeInp",
+      "description": "Enable automatic night setback",
+      "units": "",
+      "access": "C",
+      "states": ""
+    },
+    {
+      "type": "BO",
+      "instance": 17,
+      "name": "overrideOnInp",
+      "description": "Override ON",
+      "units": "",
+      "access": "C",
+      "states": ""
+    },
+    {
+      "type": "BO",
+      "instance": 100,
+      "name": "device/functionOnPrsInp,Lim",
+      "description": "Preset on/off (startup / bus failure)",
+      "units": "",
+      "access": "C",
+      "states": ""
+    },
+    {
+      "type": "BO",
+      "instance": 200,
+      "name": "device/functionOnAuxInp",
+      "description": "On/off for the auxiliary parameter set",
+      "units": "",
+      "access": "C",
+      "states": ""
+    },
+    {
+      "type": "MI",
+      "instance": 0,
+      "name": "controlFunctionAct",
+      "description": "Active control mode",
+      "units": "",
+      "access": "R",
+      "states": "1=Gen_Spd, 6=Gen_PHdConst, 7=Gen_PHdVar, 9=Gen_T, 10=Gen_TDiff, 13=Gen_UsrDfd, 15=INVALID, 16=HeatRadiator_PHd, 17=HeatRadiator_DA, 18=HeatRadiator_T, 19=HeatFloor_PHd, 20=HeatFloor_DA, 21=HeatFloor_T, 22=HeatCeiling_PHd, 23=HeatCeiling_DA, 24=HeatCeiling_T, 25=HeatFan_PHd, 26=HeatFan_DA, 27=HeatFan_T, 28=HeatB._T, 29=HeatB._TDiff, 30=HeatB._Acc.Flow, 31=HeatE._T, 32=HeatE._TDiff, 33=HeatE._Acc.Flow, 34=Heat_PHdConst, 35=Heat_PHdVar, 36=Heat_PHdExt, 37=Heat_DA, 38=Heat_VolFlow, 39=Heat_Acc.Flow, 40=Heat_T, 41=Heat_TDiff, 42=Heat_Spd, 43=CoolCeiling_PHd, 44=CoolCeiling_DA, 45=CoolCeiling_T, 46=CoolFloor_PHd, 47=CoolFloor_DA, 48=CoolFloor_T, 49=CoolFan_PHd, 50=CoolFan_DA, 51=CoolFan_T, 52=CoolB._T, 53=CoolB._TDiff, 54=CoolB._Acc.Flow, 55=CoolE._T, 56=CoolE._TDiff, 57=CoolE._Acc.Flow, 58=Cool_PHdConst, 59=Cool_PHdVar, 60=Cool_PHdExt, 61=Cool_DA, 62=Cool_VolFlow, 63=Cool_Acc.Flow, 64=Cool_T, 65=Cool_TDiff, 66=Cool_Spd, 67=San_Circ._T, 68=SanW.Heat._TDiff, 69=SanL.S._T, 70=SanL.S._Acc.Flow, 71=San_PHdConst, 72=San_PHdVar, 73=San_PHdExternal, 74=San_VolFlow, 75=San_Acc.Flow, 76=San_T, 77=San_TDiff, 78=San_Spd, 79=Gen_PHdExt, 80=Gen_DA, 81=Gen_VolFlow, 82=Gen_Acc.Flow, 83=ScndPHdConst, 84=ScndPHdVar, 85=ScndFlow, 86=ScndSpd"
+    },
+    {
+      "type": "MI",
+      "instance": 1,
+      "name": "warning/errorMessageOut",
+      "description": "Current Wilo warning/error code",
+      "units": "",
+      "access": "R",
+      "states": "Wilo error code: 1=NO_ERROR, value n = code E(n-1); full list in the Wilo datapoint list"
+    },
+    {
+      "type": "MI",
+      "instance": 2,
+      "name": "busCmd.TimerAct",
+      "description": "Bus command timer state",
+      "units": "",
+      "access": "R",
+      "states": "1=OFF, 2=SET, 3=ACTIVE, 4=RESET, 5=MANUAL, 6=SET_PRESET, 7=ACTIVE_PRESET, 8=RESET_PRESET, 9=MANUAL_PRESET, 10=INVALID"
+    },
+    {
+      "type": "MI",
+      "instance": 3,
+      "name": "setpointSignalSourceAct",
+      "description": "Active setpoint source",
+      "units": "",
+      "access": "R",
+      "states": "1=IF-Module, 6=Internal, 7=EXT 1, 8=EXT 2, 9=INVALID"
+    },
+    {
+      "type": "MI",
+      "instance": 4,
+      "name": "userTroubleCodeOut",
+      "description": "Current Wilo trouble code (E400-E699)",
+      "units": "",
+      "access": "R",
+      "states": "1=no error (CODE_0); value n = Wilo trouble code E(n-1), E400-E699"
+    },
+    {
+      "type": "MI",
+      "instance": 18,
+      "name": "analogIn1MeasuredValunitsOut",
+      "description": "Units of the analog input 1 value",
+      "units": "",
+      "access": "R",
+      "states": "5=V, 19=kWh, 47=W, 55=bar, 62=Cel, 63=K, 73=s, 80=m3, 95={noUnit}, 104=min-1, 135=m3/h"
+    },
+    {
+      "type": "MI",
+      "instance": 19,
+      "name": "analogIn2MeasuredValunitsOut",
+      "description": "Units of the analog input 2 value",
+      "units": "",
+      "access": "R",
+      "states": "5=V, 19=kWh, 47=W, 55=bar, 62=Cel, 63=K, 73=s, 80=m3, 95={noUnit}, 104=min-1, 135=m3/h"
+    },
+    {
+      "type": "MI",
+      "instance": 33,
+      "name": "dutyPointRelunitsAct",
+      "description": "Units of the active duty point",
+      "units": "",
+      "access": "R",
+      "states": "5=V, 19=kWh, 47=W, 55=bar, 62=Cel, 63=K, 73=s, 80=m3, 95={noUnit}, 104=min-1, 135=m3/h"
+    },
+    {
+      "type": "MI",
+      "instance": 1003,
+      "name": "setpointSignalSourceSel",
+      "description": "Selected setpoint source",
+      "units": "",
+      "access": "R",
+      "states": "1=IF-Module, 6=Internal, 7=EXT 1, 8=EXT 2, 9=INVALID"
+    },
+    {
+      "type": "MI",
+      "instance": 1033,
+      "name": "dutyPointRelunitsLim",
+      "description": "Units of the duty point limits",
+      "units": "",
+      "access": "R",
+      "states": "5=V, 19=kWh, 47=W, 55=bar, 62=Cel, 63=K, 73=s, 80=m3, 95={noUnit}, 104=min-1, 135=m3/h"
+    },
+    {
+      "type": "MI",
+      "instance": 1133,
+      "name": "dutyPointRelunitsPrsLim",
+      "description": "Units of the preset duty point",
+      "units": "",
+      "access": "R",
+      "states": "5=V, 19=kWh, 47=W, 55=bar, 62=Cel, 63=K, 73=s, 80=m3, 95={noUnit}, 104=min-1, 135=m3/h"
+    },
+    {
+      "type": "MI",
+      "instance": 1233,
+      "name": "dutyPointRelunitsAuxLim",
+      "description": "Units of the auxiliary duty point",
+      "units": "",
+      "access": "R",
+      "states": "5=V, 19=kWh, 47=W, 55=bar, 62=Cel, 63=K, 73=s, 80=m3, 95={noUnit}, 104=min-1, 135=m3/h"
+    },
+    {
+      "type": "MI",
+      "instance": 2000,
+      "name": "controlFunctionSel",
+      "description": "Selected control mode",
+      "units": "",
+      "access": "R",
+      "states": "1=Gen_Spd, 6=Gen_PHdConst, 7=Gen_PHdVar, 9=Gen_T, 10=Gen_TDiff, 13=Gen_UsrDfd, 15=INVALID, 16=HeatRadiator_PHd, 17=HeatRadiator_DA, 18=HeatRadiator_T, 19=HeatFloor_PHd, 20=HeatFloor_DA, 21=HeatFloor_T, 22=HeatCeiling_PHd, 23=HeatCeiling_DA, 24=HeatCeiling_T, 25=HeatFan_PHd, 26=HeatFan_DA, 27=HeatFan_T, 28=HeatB._T, 29=HeatB._TDiff, 30=HeatB._Acc.Flow, 31=HeatE._T, 32=HeatE._TDiff, 33=HeatE._Acc.Flow, 34=Heat_PHdConst, 35=Heat_PHdVar, 36=Heat_PHdExt, 37=Heat_DA, 38=Heat_VolFlow, 39=Heat_Acc.Flow, 40=Heat_T, 41=Heat_TDiff, 42=Heat_Spd, 43=CoolCeiling_PHd, 44=CoolCeiling_DA, 45=CoolCeiling_T, 46=CoolFloor_PHd, 47=CoolFloor_DA, 48=CoolFloor_T, 49=CoolFan_PHd, 50=CoolFan_DA, 51=CoolFan_T, 52=CoolB._T, 53=CoolB._TDiff, 54=CoolB._Acc.Flow, 55=CoolE._T, 56=CoolE._TDiff, 57=CoolE._Acc.Flow, 58=Cool_PHdConst, 59=Cool_PHdVar, 60=Cool_PHdExt, 61=Cool_DA, 62=Cool_VolFlow, 63=Cool_Acc.Flow, 64=Cool_T, 65=Cool_TDiff, 66=Cool_Spd, 67=San_Circ._T, 68=SanW.Heat._TDiff, 69=SanL.S._T, 70=SanL.S._Acc.Flow, 71=San_PHdConst, 72=San_PHdVar, 73=San_PHdExternal, 74=San_VolFlow, 75=San_Acc.Flow, 76=San_T, 77=San_TDiff, 78=San_Spd, 79=Gen_PHdExt, 80=Gen_DA, 81=Gen_VolFlow, 82=Gen_Acc.Flow, 83=ScndPHdConst, 84=ScndPHdVar, 85=ScndFlow, 86=ScndSpd"
+    },
+    {
+      "type": "MI",
+      "instance": 2033,
+      "name": "dutyPointRelunitsSel",
+      "description": "Units of the selected duty point",
+      "units": "",
+      "access": "R",
+      "states": "5=V, 19=kWh, 47=W, 55=bar, 62=Cel, 63=K, 73=s, 80=m3, 95={noUnit}, 104=min-1, 135=m3/h"
+    },
+    {
+      "type": "MI",
+      "instance": 2034,
+      "name": "parameterSetSelectorSel",
+      "description": "Parameter set in use",
+      "units": "",
+      "access": "R",
+      "states": "1=norm, 2=aux, 3=preset"
+    },
+    {
+      "type": "MO",
+      "instance": 0,
+      "name": "controlFunctionInp",
+      "description": "Control mode command from the BMS",
+      "units": "",
+      "access": "C",
+      "states": "1=Gen_Spd, 6=Gen_PHdConst, 7=Gen_PHdVar, 9=Gen_T, 10=Gen_TDiff, 13=Gen_UsrDfd, 15=INVALID, 16=HeatRadiator_PHd, 17=HeatRadiator_DA, 18=HeatRadiator_T, 19=HeatFloor_PHd, 20=HeatFloor_DA, 21=HeatFloor_T, 22=HeatCeiling_PHd, 23=HeatCeiling_DA, 24=HeatCeiling_T, 25=HeatFan_PHd, 26=HeatFan_DA, 27=HeatFan_T, 28=HeatB._T, 29=HeatB._TDiff, 30=HeatB._Acc.Flow, 31=HeatE._T, 32=HeatE._TDiff, 33=HeatE._Acc.Flow, 34=Heat_PHdConst, 35=Heat_PHdVar, 36=Heat_PHdExt, 37=Heat_DA, 38=Heat_VolFlow, 39=Heat_Acc.Flow, 40=Heat_T, 41=Heat_TDiff, 42=Heat_Spd, 43=CoolCeiling_PHd, 44=CoolCeiling_DA, 45=CoolCeiling_T, 46=CoolFloor_PHd, 47=CoolFloor_DA, 48=CoolFloor_T, 49=CoolFan_PHd, 50=CoolFan_DA, 51=CoolFan_T, 52=CoolB._T, 53=CoolB._TDiff, 54=CoolB._Acc.Flow, 55=CoolE._T, 56=CoolE._TDiff, 57=CoolE._Acc.Flow, 58=Cool_PHdConst, 59=Cool_PHdVar, 60=Cool_PHdExt, 61=Cool_DA, 62=Cool_VolFlow, 63=Cool_Acc.Flow, 64=Cool_T, 65=Cool_TDiff, 66=Cool_Spd, 67=San_Circ._T, 68=SanW.Heat._TDiff, 69=SanL.S._T, 70=SanL.S._Acc.Flow, 71=San_PHdConst, 72=San_PHdVar, 73=San_PHdExternal, 74=San_VolFlow, 75=San_Acc.Flow, 76=San_T, 77=San_TDiff, 78=San_Spd, 79=Gen_PHdExt, 80=Gen_DA, 81=Gen_VolFlow, 82=Gen_Acc.Flow, 83=ScndPHdConst, 84=ScndPHdVar, 85=ScndFlow, 86=ScndSpd"
+    },
+    {
+      "type": "MO",
+      "instance": 1,
+      "name": "busCmd.TimerInp,Act",
+      "description": "Bus command timer (write SET before timeout)",
+      "units": "",
+      "access": "C",
+      "states": "1=OFF, 2=SET, 3=ACTIVE, 4=RESET, 5=MANUAL, 6=SET_PRESET, 7=ACTIVE_PRESET, 8=RESET_PRESET, 9=MANUAL_PRESET, 10=INVALID"
+    },
+    {
+      "type": "MO",
+      "instance": 3,
+      "name": "setpointSignalSourceInp",
+      "description": "Setpoint source selection",
+      "units": "",
+      "access": "C",
+      "states": "1=IF-Module, 6=Internal, 7=EXT 1, 8=EXT 2, 9=INVALID"
+    },
+    {
+      "type": "MO",
+      "instance": 34,
+      "name": "parameterSetSelectorInp",
+      "description": "Parameter set selection",
+      "units": "",
+      "access": "C",
+      "states": "1=norm, 2=aux, 3=preset"
+    },
+    {
+      "type": "MO",
+      "instance": 100,
+      "name": "controlFunctionPrsInp,Lim",
+      "description": "Preset control mode (startup / bus failure)",
+      "units": "",
+      "access": "C",
+      "states": "1=Gen_Spd, 6=Gen_PHdConst, 7=Gen_PHdVar, 9=Gen_T, 10=Gen_TDiff, 13=Gen_UsrDfd, 15=INVALID, 16=HeatRadiator_PHd, 17=HeatRadiator_DA, 18=HeatRadiator_T, 19=HeatFloor_PHd, 20=HeatFloor_DA, 21=HeatFloor_T, 22=HeatCeiling_PHd, 23=HeatCeiling_DA, 24=HeatCeiling_T, 25=HeatFan_PHd, 26=HeatFan_DA, 27=HeatFan_T, 28=HeatB._T, 29=HeatB._TDiff, 30=HeatB._Acc.Flow, 31=HeatE._T, 32=HeatE._TDiff, 33=HeatE._Acc.Flow, 34=Heat_PHdConst, 35=Heat_PHdVar, 36=Heat_PHdExt, 37=Heat_DA, 38=Heat_VolFlow, 39=Heat_Acc.Flow, 40=Heat_T, 41=Heat_TDiff, 42=Heat_Spd, 43=CoolCeiling_PHd, 44=CoolCeiling_DA, 45=CoolCeiling_T, 46=CoolFloor_PHd, 47=CoolFloor_DA, 48=CoolFloor_T, 49=CoolFan_PHd, 50=CoolFan_DA, 51=CoolFan_T, 52=CoolB._T, 53=CoolB._TDiff, 54=CoolB._Acc.Flow, 55=CoolE._T, 56=CoolE._TDiff, 57=CoolE._Acc.Flow, 58=Cool_PHdConst, 59=Cool_PHdVar, 60=Cool_PHdExt, 61=Cool_DA, 62=Cool_VolFlow, 63=Cool_Acc.Flow, 64=Cool_T, 65=Cool_TDiff, 66=Cool_Spd, 67=San_Circ._T, 68=SanW.Heat._TDiff, 69=SanL.S._T, 70=SanL.S._Acc.Flow, 71=San_PHdConst, 72=San_PHdVar, 73=San_PHdExternal, 74=San_VolFlow, 75=San_Acc.Flow, 76=San_T, 77=San_TDiff, 78=San_Spd, 79=Gen_PHdExt, 80=Gen_DA, 81=Gen_VolFlow, 82=Gen_Acc.Flow, 83=ScndPHdConst, 84=ScndPHdVar, 85=ScndFlow, 86=ScndSpd"
+    },
+    {
+      "type": "MO",
+      "instance": 101,
+      "name": "setpointSignalSourcePrsInp,Lim",
+      "description": "Preset setpoint source (startup / bus failure)",
+      "units": "",
+      "access": "C",
+      "states": "1=IF-Module, 6=Internal, 7=EXT 1, 8=EXT 2, 9=INVALID"
+    },
+    {
+      "type": "MO",
+      "instance": 200,
+      "name": "controlFunctionAuxInp",
+      "description": "Control mode for the auxiliary parameter set",
+      "units": "",
+      "access": "C",
+      "states": "1=Gen_Spd, 6=Gen_PHdConst, 7=Gen_PHdVar, 9=Gen_T, 10=Gen_TDiff, 13=Gen_UsrDfd, 15=INVALID, 16=HeatRadiator_PHd, 17=HeatRadiator_DA, 18=HeatRadiator_T, 19=HeatFloor_PHd, 20=HeatFloor_DA, 21=HeatFloor_T, 22=HeatCeiling_PHd, 23=HeatCeiling_DA, 24=HeatCeiling_T, 25=HeatFan_PHd, 26=HeatFan_DA, 27=HeatFan_T, 28=HeatB._T, 29=HeatB._TDiff, 30=HeatB._Acc.Flow, 31=HeatE._T, 32=HeatE._TDiff, 33=HeatE._Acc.Flow, 34=Heat_PHdConst, 35=Heat_PHdVar, 36=Heat_PHdExt, 37=Heat_DA, 38=Heat_VolFlow, 39=Heat_Acc.Flow, 40=Heat_T, 41=Heat_TDiff, 42=Heat_Spd, 43=CoolCeiling_PHd, 44=CoolCeiling_DA, 45=CoolCeiling_T, 46=CoolFloor_PHd, 47=CoolFloor_DA, 48=CoolFloor_T, 49=CoolFan_PHd, 50=CoolFan_DA, 51=CoolFan_T, 52=CoolB._T, 53=CoolB._TDiff, 54=CoolB._Acc.Flow, 55=CoolE._T, 56=CoolE._TDiff, 57=CoolE._Acc.Flow, 58=Cool_PHdConst, 59=Cool_PHdVar, 60=Cool_PHdExt, 61=Cool_DA, 62=Cool_VolFlow, 63=Cool_Acc.Flow, 64=Cool_T, 65=Cool_TDiff, 66=Cool_Spd, 67=San_Circ._T, 68=SanW.Heat._TDiff, 69=SanL.S._T, 70=SanL.S._Acc.Flow, 71=San_PHdConst, 72=San_PHdVar, 73=San_PHdExternal, 74=San_VolFlow, 75=San_Acc.Flow, 76=San_T, 77=San_TDiff, 78=San_Spd, 79=Gen_PHdExt, 80=Gen_DA, 81=Gen_VolFlow, 82=Gen_Acc.Flow, 83=ScndPHdConst, 84=ScndPHdVar, 85=ScndFlow, 86=ScndSpd"
+    },
+    {
+      "type": "MO",
+      "instance": 203,
+      "name": "setpointSignalSourceAuxInp",
+      "description": "Setpoint source for the auxiliary set",
+      "units": "",
+      "access": "C",
+      "states": "1=IF-Module, 6=Internal, 7=EXT 1, 8=EXT 2, 9=INVALID"
+    }
+  ]
+}

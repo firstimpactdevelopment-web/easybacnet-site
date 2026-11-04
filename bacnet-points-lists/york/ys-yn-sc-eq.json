@@ -1,0 +1,571 @@
+{
+ "manufacturer": "York",
+ "manufacturer_slug": "york",
+ "model": "YS / YS HP / YN Screw Chiller (SC-EQ)",
+ "model_slug": "ys-yn-sc-eq",
+ "short_model": "YS / YN",
+ "aliases": [
+  "YORK YS",
+  "YS HP",
+  "YORK YN",
+  "YS heat pump",
+  "OptiView YS",
+  "SC-EQ",
+  "SE-SCC1001-1"
+ ],
+ "equipment_type": "Water-cooled screw chiller / heat pump (via SC-EQ card)",
+ "applies_to": "YORK YS and YN water-cooled screw chillers and YS HP heat pumps with OptiView controls, fitted with the SC-EQ communication card.",
+ "summary": "YS, YS HP and YN screw chillers reach a BAS through the SC-EQ communication card on BACnet MS/TP (or Modbus RTU / N2). The BAS can run/stop the unit and write the leaving chilled liquid setpoint, motor current limit, leaving hot water setpoint and operating mode. Read-only points cover water temperatures, refrigerant and oil pressures, slide valve position, solid-state starter values, and multistate operation, safety, cycling and warning codes.",
+ "bacnet_transport": [
+  "BACnet MS/TP"
+ ],
+ "firmware": "SC-EQ software 4.2.0.20",
+ "default_device_instance": "5000 + MAC address",
+ "access_inferred": true,
+ "notes": [
+  "Access is inferred: the sheet has no read/write column. The remote block (AV 1-4, BV 1) is treated as commandable and MV 65001 as writable; everything else as read-only.",
+  "The hot water setpoint (AV 3), operational mode (AV 4) and active leaving heated liquid setpoint (AV 39) apply to YS HP heat pump units.",
+  "Starter values (AV 13-18, AV 49-52) only report with a solid-state starter (SSS). kWh = offset x 10,000 + low.",
+  "Status-code MVs (MV 1-4) are the printed code + 1, as the doc's status code tables say. MV 5 and MV 65001 are shown as printed, from 0; BACnet multistate values start at 1, so the card may report the printed number + 1. Confirm by discovery. AV 4 is an analog value and takes the printed mode number (0-2).",
+  "Units shown are the IP units; with MV 65001 set to SI the card reports °C, kPa and so on.",
+  "Spare objects and empty rows are left out."
+ ],
+ "source": {
+  "title": "YS, YS HP, YN SC-EQ BAS Points List",
+  "doc_number": null,
+  "revision_date": "Rev 2.3, 2021-12-08",
+  "url": "https://docs.johnsoncontrols.com/chillers/api/khub/documents/hSI0v36JJxo5NkdS0gNL0w/content"
+ },
+ "integration": {
+  "summary": "Wire the BAS to the SC-EQ J12 RS-485 port and set the MAC address; the card detects BACnet MS/TP. Start/stop the unit with BV 1 and write the leaving chilled liquid setpoint (AV 1) and motor current limit (AV 2); on YS HP units also the hot water setpoint (AV 3) and mode (AV 4). Read MV 1, BV 5, the leaving water temperature and % FLA, and MV 2/MV 3 for shutdowns.",
+  "minimum_points": [
+   {
+    "ref": "BV 1",
+    "name": "REM START STOP CMD",
+    "why": "Remote run/stop (1 = run)"
+   },
+   {
+    "ref": "AV 1",
+    "name": "REM LEAVING CHL TEMP SP",
+    "why": "Remote leaving chilled liquid setpoint"
+   },
+   {
+    "ref": "AV 2",
+    "name": "MOTOR CURRENT REMOTE SP",
+    "why": "Remote motor current limit, %"
+   },
+   {
+    "ref": "MV 1",
+    "name": "UNIT OPERATION CODE",
+    "why": "Operating state (stopped, starting, running)"
+   },
+   {
+    "ref": "BV 5",
+    "name": "COMPR MOTOR STATUS",
+    "why": "Compressor motor running"
+   },
+   {
+    "ref": "MV 5",
+    "name": "UNIT CONTROL SOURCE",
+    "why": "Control source; ISN (BAS) for BMS control"
+   },
+   {
+    "ref": "AV 5",
+    "name": "LEAVING CH LIQ TEMP",
+    "why": "Leaving chilled liquid temperature"
+   },
+   {
+    "ref": "AV 12",
+    "name": "MOTOR CURRENT PCT FLA",
+    "why": "Motor current, % FLA (load indication)"
+   },
+   {
+    "ref": "MV 2",
+    "name": "UNIT SAFETY FAULT CODE",
+    "why": "Safety shutdown code (1 = none)"
+   },
+   {
+    "ref": "MV 3",
+    "name": "UNIT CYCLING FAULT CODE",
+    "why": "Cycling shutdown code (1 = none)"
+   }
+  ],
+  "enable": "BV 1 REM START STOP CMD (0 = Stop, 1 = Run) is the BAS run/stop and AV 1-4 the remote setpoints and mode. MV 5 shows the control source (Local, ISN, Analog, Digital, Modem); it should read ISN for BAS control. The points list has no write-enable point.",
+  "heartbeat": null,
+  "remote_sensors": null,
+  "setup": [
+   "The BAS connects to the SC-EQ J12 port (RS-485: +, -, COM/REF, SHLD). The card detects BACnet MS/TP, Modbus RTU or N2 and the baud rate by itself; allow up to 120 seconds after power-up.",
+   "The MAC address (1-127) is set on DIP switch SW1 (switch 8 unused). Cycle the card's power after changing it.",
+   "The device instance defaults to 5000 + the MAC address (MAC 6 gives 5006). To use another number, set Device Instance Mode to Manual and enter the instance with the SC-AP / MAP tool, or write BV 65000 (mode) and AV 65000 (instance ID).",
+   "MV 65001 Units sets whether the BAS sees IP or SI values, independent of the chiller display; set it to match the chiller."
+  ],
+  "gotchas": [
+   "The remote (commandable) setpoints read as unreliable until the BAS writes them the first time.",
+   "The SC-EQ only exposes the points that apply to the chiller it detects; if it replaces an E-Link, re-discover the device so old non-applicable points don't sit offline.",
+   "On heat pump (YS HP) units also map AV 3 (leaving hot water setpoint) and AV 4 (operating mode)."
+  ]
+ },
+ "points": [
+  {
+   "type": "AV",
+   "instance": 1,
+   "name": "REM LEAVING CHL TEMP SP",
+   "description": "Remote Leaving Chilled Liquid Setpoint",
+   "units": "°F",
+   "access": "C",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 2,
+   "name": "MOTOR CURRENT REMOTE SP",
+   "description": "Motor Current Limit Setpoint",
+   "units": "%",
+   "access": "C",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 3,
+   "name": "HOT WATER REMOTE SP",
+   "description": "Leaving Heated Liquid SP",
+   "units": "°F",
+   "access": "C",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 4,
+   "name": "OPERATIONAL MODE",
+   "description": "Remote operational mode (heat pump units)",
+   "units": "",
+   "access": "C",
+   "states": "0=Cooling, 1=Heating, 2=Cooling & Heating"
+  },
+  {
+   "type": "BV",
+   "instance": 1,
+   "name": "REM START STOP CMD",
+   "description": "Remote Run/Stop",
+   "units": "",
+   "access": "C",
+   "states": "0=Stop, 1=Run"
+  },
+  {
+   "type": "MV",
+   "instance": 65001,
+   "name": "Units",
+   "description": "Unit system reported by the SC-EQ",
+   "units": "",
+   "access": "W",
+   "states": "0=IP (English), 1=SI (Metric)"
+  },
+  {
+   "type": "AV",
+   "instance": 5,
+   "name": "LEAVING CH LIQ TEMP",
+   "description": "Leaving Chilled Liquid Temperature",
+   "units": "°F",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 6,
+   "name": "ENTERING CH LIQ TEMP",
+   "description": "Return Chilled Liquid Temperature",
+   "units": "°F",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 7,
+   "name": "EVAPORATOR PRESSURE",
+   "description": "Evaporator Pressure",
+   "units": "PSIG",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 8,
+   "name": "CONDENSER PRESSURE",
+   "description": "Condenser Pressure",
+   "units": "PSIG",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 9,
+   "name": "OIL PRESSURE DIFERENTIAL",
+   "description": "Oil Pressure Differential",
+   "units": "PSID",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 10,
+   "name": "ENTERING COND WATER TEMP",
+   "description": "Return Condenser Liquid Temperature",
+   "units": "°F",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 11,
+   "name": "LEAVING COND WATER TEMP",
+   "description": "Leaving Condenser Liquid Temperature",
+   "units": "°F",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 12,
+   "name": "MOTOR CURRENT PCT FLA",
+   "description": "Motor Current Percent FLA",
+   "units": "%",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 13,
+   "name": "PHASE A MOTOR CURRENT",
+   "description": "SSS Phase A Current (SSS only)",
+   "units": "Amps",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 14,
+   "name": "PHASE B MOTOR CURRENT",
+   "description": "SSS Phase B Current (SSS only)",
+   "units": "Amps",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 15,
+   "name": "PHASE C MOTOR CURRENT",
+   "description": "SSS Phase C Current (SSS only)",
+   "units": "Amps",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 16,
+   "name": "PHASE A_B LINE VOLTS",
+   "description": "SSS Phase A Voltage (SSS only)",
+   "units": "Volts",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 17,
+   "name": "PHASE B_C LINE VOLTS",
+   "description": "SSS Phase B Voltage (SSS only)",
+   "units": "Volts",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 18,
+   "name": "PHASE C_A LINE VOLTS",
+   "description": "SSS Phase C Voltage (SSS only)",
+   "units": "Volts",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 19,
+   "name": "LEAVING CHW TEMP ACT SP",
+   "description": "Leaving Chilled Liquid Setpoint - Active",
+   "units": "°F",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 20,
+   "name": "MOTOR CURRENT ACTUAL SP",
+   "description": "Motor Current Limit Setpoint - Selected",
+   "units": "%",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 21,
+   "name": "EVAP SATURATION TEMP",
+   "description": "Evaporator Saturation Temperature",
+   "units": "°F",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 22,
+   "name": "COND SATURATION TEMP",
+   "description": "Condenser Saturation Temperature",
+   "units": "°F",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 23,
+   "name": "DISCHARGE TEMP",
+   "description": "Discharge Temperature",
+   "units": "°F",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 24,
+   "name": "OIL SUMP TEMPERATURE",
+   "description": "Oil Sump Temperature",
+   "units": "°F",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 26,
+   "name": "ACCUM OPERATING HOURS",
+   "description": "Unit Operating Hours",
+   "units": "Hr",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 27,
+   "name": "ACCUM SYSTEM STARTS",
+   "description": "Unit System Starts",
+   "units": "",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "BV",
+   "instance": 5,
+   "name": "COMPR MOTOR STATUS",
+   "description": "Motor Run Contacts",
+   "units": "",
+   "access": "R",
+   "states": "0=Off, 1=On"
+  },
+  {
+   "type": "BV",
+   "instance": 6,
+   "name": "OIL RETURN SOLENOID",
+   "description": "Oil Return Solenoid",
+   "units": "",
+   "access": "R",
+   "states": "0=Off, 1=On"
+  },
+  {
+   "type": "BV",
+   "instance": 7,
+   "name": "CHW PUMP STAT",
+   "description": "Chilled Liquid Pump",
+   "units": "",
+   "access": "R",
+   "states": "0=Off, 1=On"
+  },
+  {
+   "type": "BV",
+   "instance": 8,
+   "name": "STOP SWITCH STATUS",
+   "description": "Panel stop switch (start enabled / stop)",
+   "units": "",
+   "access": "R",
+   "states": "0=Off, 1=On"
+  },
+  {
+   "type": "BV",
+   "instance": 9,
+   "name": "CHW FLOW SWITCH STAT",
+   "description": "Chiller Liquid Flow Switch",
+   "units": "",
+   "access": "R",
+   "states": "0=Off, 1=On"
+  },
+  {
+   "type": "BV",
+   "instance": 11,
+   "name": "LOW SEPARATOR OIL SWITCH",
+   "description": "Low Separator Oil Switch",
+   "units": "",
+   "access": "R",
+   "states": "0=Off, 1=On"
+  },
+  {
+   "type": "BV",
+   "instance": 24,
+   "name": "ICE STORAGE MODE",
+   "description": "Ice Storage Mode",
+   "units": "",
+   "access": "R",
+   "states": "0=Disabled, 1=Enabled"
+  },
+  {
+   "type": "MV",
+   "instance": 1,
+   "name": "UNIT OPERATION CODE",
+   "description": "Operation Code",
+   "units": "",
+   "access": "R",
+   "states": "1=Unit Stopped - Ready To Start, 2=Unit Stopped - Local Shutdown, 3=Unit Stopped - Remote Shutdown, 4=Unit Stopped - Warning Active, 5=Unit Stopped - Cycling Shutdown, 6=Unit Stopped - Safety Shutdown, 7=Unit Start Inhibit, 8=Unit Starting, 9=Unit Running - No Abnormal Condition, 10=Unit Running - Warning Active, 11=Unit Running - Chiller Unload Before Shutdown, 12=Unit Lockout Delay, 13=Unit Running- Modified Run, 14=Unit Stopped- Internal Shutdown"
+  },
+  {
+   "type": "MV",
+   "instance": 2,
+   "name": "UNIT SAFETY FAULT CODE",
+   "description": "Unit Safety Fault Code",
+   "units": "",
+   "access": "R",
+   "states": "1=No Safety Faults Present, 2=Evaporator - Low Pressure, 3=Evaporator - Transducer Or Leaving Liquid Probe, 4=Evaporator - Transducer Or Temperature Sensor, 5=Condenser - High Pressure Contacts Open, 6=Condenser - High Pressure, 7=Condenser - Pressure Transducer Out Of Range, 8=Auxiliary Safety - Contacts Closed, 9=Discharge - Low Temperature, 10=Discharge - High Temperature, 11=Oil - High Temperature, 12=Oil - Low Differential Pressure, 13=Oil - High Differential Pressure, 14=Oil - Pump Pressure Transducer Out Of Range, 15=Oil - Sump Pressure Transducer Out Of Range, 16=Oil - High Pressure, 17=Oil - Clogged Filter, 18=Oil - Low Differential Seal Pressure, 19=Oil - Differential Pressure Calibration, 20=Oil Separator - Low Level, 21=Oil - Variable Speed Pump - Setpoint Not Achieved, 22=Control Panel - Power Failure, 23=Motor Controller Fault, 24=Motor Or Starter - Current Imbalance, 25=Thrust Bearing - Proximity Probe Clearance, 26=Thrust Bearing - Proximity Probe Uncalibrated, 27=Thrust Bearing - Proximity Probe Out Of Range, 28=High Oil Temperature, 29=Oil Temperature Probe - Out of Range, 39=LCSSS - Phase Rotation, 40=LCSSS - Motor Or Starter - Current Imbalance, 41=LCSSS - 105% Motor Current Overload, 42=LCSSS - High Instantaneous Current, 43=LCSSS - Open SCR, 44=LCSSS - Shorted Phase A SCR, 45=LCSSS - Shorted Phase B SCR, 46=LCSSS - Shorted Phase C SCR, 47=LCSSS - High Phase A Heatsink Temp - Running, 48=LCSSS - High Phase B Heatsink Temp - Running, 49=LCSSS - High Phase C Heatsink Temp- Running, 50=Starter - Invalid Motor Selection, 51=Oil Or Condenser Transducer Error, 52=Evaporator - Low Pressure, 53=Evaporator - Low Pressure - Smart Freeze, 54=Surge Protection - Excess Surge, 57=Thrust Bearing - Proximity Probe Clearance, 58=Thrust Bearing - Limit Switch Open, 59=Motor - Phase Rotation, 60=Motor - High Temperature, 61=Discharge - High Pressure, 62=High Motor Winding Temperature, 63=High Motor Bearing Temperature, 68=Condenser High Pressure Stopped, 69=Motor - Ground Fault, 70=Excessive Bearing Vibration, 71=Low Discharge Superheat, 72=LCSSS - Phase A Open SCR, 73=LCSSS - Phase B Open SCR, 74=LCSSS - Phase C Open SCR"
+  },
+  {
+   "type": "MV",
+   "instance": 3,
+   "name": "UNIT CYCLING FAULT CODE",
+   "description": "Unit Cycling Fault Code",
+   "units": "",
+   "access": "R",
+   "states": "1=No Cycling Faults Present, 2=Multi-Unit Cycling - Contacts Open, 3=System Cycling - Contacts Open, 4=Oil - Low Temperature Differential, 5=Oil - Low Temperature, 6=Control Panel - Power Failure, 7=Leaving Chilled Liquid - Low Temperature, 8=Leaving Chilled Liquid - Flow Switch Open, 9=Condenser - Flow Switch Open, 10=Motor Controller - Contacts Open, 11=Motor Controller - Loss Of Current, 12=Power Fault, 13=Control Panel - Schedule, 14=Starter - Low Supply Line Voltage, 15=Starter - High Supply Line Voltage, 16=Proximity Probe - Low Supply Voltage, 17=Oil - Variable Speed Pump - Drive Contacts Open, 57=LCSSS Initialization Failed, 58=LCSSS Shutdown - Requesting Fault Data…, 59=LCSSS - Low Phase A Temperature Sensor, 60=LCSSS - Low Phase B Temperature Sensor, 61=LCSSS - Low Phase C Temperature Sensor, 62=LCSSS - Phase Locked Loop, 63=LCSSS - Power Fault, 64=LCSSS - High Supply Line Voltage, 65=LCSSS - Low Supply Line Voltage, 66=LCSSS - Invalid Current Scale Selection, 67=LCSSS - Run Signal, 68=LCSSS - Serial Communications, 69=LCSSS - Stop Contacts Open, 70=LCSSS - Invalid FLA, 71=LCSSS - Logic Board Processor, 72=LCSSS - DSP Communication Failure, 73=LCSSS - Logic Board Power Supply, 75=LCSSS - Serial Communications, 76=LCSSS - Phase Loss, 78=Motor High Winding Temperature, 82=SSS Shutdown - Requesting Fault Data…"
+  },
+  {
+   "type": "MV",
+   "instance": 4,
+   "name": "UNIT WARNING FAULT CODE",
+   "description": "Unit Warning Fault Code",
+   "units": "",
+   "access": "R",
+   "states": "1=No Warnings Present, 2=Real-Time Clock Failure, 3=Setpoint Override, 4=Condenser Or Evaporator Transducer Error, 5=Evaporator - Low Pressure Limit, 6=Condenser - High Pressure Limit, 7=Condenser Transducer Error, 8=Freeze Threat From Operating Chiller, 9=Refrigerant Level Out Of Range, 10=Standby Lube - Low Oil Pressure, 11=Purge - High Pressure, 12=Purge - Float Switch Error, 13=Purge - Excess Purge, 14=Oil - High Temperature, 15=Oil - Low Pressure Limit, 16=Vanes Uncalibrated, 17=Vanes Uncalibrated - Fixed Speed, 21=Oil - Dirty Filter, 22=Discharge - High Pressure Limit, 24=Low Discharge Superheat Limit, 25=Low Discharge Superheat Detected, 26=Seal Lubrication In Process, 27=External I/O - Serial Communications, 28=Slide Valve Uncalibrated, 29=Freeze Threat - Condenser Flow Switch, 30=Surge Protection - Excess Surge Limit, 31=Excess Surge Detected, 32=Purge - Canister #1 Full, 33=Oil Recovery Limit"
+  },
+  {
+   "type": "MV",
+   "instance": 5,
+   "name": "UNIT CONTROL SOURCE",
+   "description": "Unit Control Source",
+   "units": "",
+   "access": "R",
+   "states": "0=Local, 1=ISN, 2=Analog, 3=Digital, 4=Modem"
+  },
+  {
+   "type": "AV",
+   "instance": 32,
+   "name": "LVNG CHW TEMP ACT SP",
+   "description": "Leaving Chilled Liquid Temperature SP Active",
+   "units": "°F",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 35,
+   "name": "ANTI RECYCLE TIME REMAIN",
+   "description": "Anti-Recycle Time Remaining",
+   "units": "Min",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 37,
+   "name": "SEAL PRESS DIFFERENTIAL",
+   "description": "Seal Pressure Differential",
+   "units": "PSID",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 38,
+   "name": "FILTER DIFF PRESSURE",
+   "description": "Filter Pressure Differential",
+   "units": "PSID",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 39,
+   "name": "LEAV COND HW TEMP ACT SP",
+   "description": "Leaving Heated Liquid Setpoint - Active",
+   "units": "°F",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 41,
+   "name": "MIN LOAD CTL MTR FLA LIM",
+   "description": "Minimum Load Control Motor FLA Limit",
+   "units": "%",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 42,
+   "name": "SLIDE VALVE POSITION",
+   "description": "Slide Valve Position",
+   "units": "%",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 49,
+   "name": "INPUT POWER",
+   "description": "Input Power (SSS only)",
+   "units": "kW",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 50,
+   "name": "INPUT KWH",
+   "description": "Input Kilowatt Hours (SSS only)",
+   "units": "kWh",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 51,
+   "name": "INPUT KWH LO SSS",
+   "description": "Input kWh low part (SSS only)",
+   "units": "",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 52,
+   "name": "INPUT KWH OFFSET SSS",
+   "description": "Input kWh offset part (SSS only)",
+   "units": "",
+   "access": "R",
+   "states": ""
+  }
+ ],
+ "page": "https://easybacnet.com/bacnet-points-lists/york/ys-yn-sc-eq",
+ "note": "Re-typed from the manufacturer's public documentation (see source). Point availability varies by firmware and options; verify against the live device."
+}

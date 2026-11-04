@@ -1,0 +1,741 @@
+{
+ "manufacturer": "ABB",
+ "manufacturer_slug": "abb",
+ "model": "ACS355 HVAC with BACnet (+N831)",
+ "model_slug": "acs355-n831",
+ "aliases": [
+  "ACS355",
+  "ACS355 +N831",
+  "ACS355 HVAC",
+  "ACS355 BACnet",
+  "3AXD50000024172"
+ ],
+ "equipment_type": "Variable frequency drive (HVAC)",
+ "applies_to": "ABB ACS355 machinery drives with the HVAC with BACnet firmware (option +N831, firmware 6502 or later).",
+ "summary": "ACS355 drives ordered with option +N831 carry HVAC firmware with BACnet MS/TP on the built-in RS-485 (EFB) port. The object list follows the older ABB ACH550 style: relay and digital I/O status, run/stop, direction, run enable and fault reset commands, two references, PID values, energy, fault history and mailbox access to any parameter.",
+ "bacnet_transport": [
+  "BACnet MS/TP"
+ ],
+ "firmware": "HVAC with BACnet firmware 6502 or later (parameter 3301)",
+ "default_device_instance": "Equal to the MAC ID while 5311 and 5317 are both 0 (default)",
+ "access_inferred": false,
+ "notes": [
+  "BO 1-3 and BI 1-3 need the MREL-01 relay option; writing BO 1-3 without it returns a value-out-of-range error.",
+  "Each command object only works when the matching drive parameter points at COMM (shown in the description).",
+  "The manual reuses the AI 0 text (Analog Input 1, parameter 0120) for AI 1 ANALOG INPUT 2; it is taken here as analog input 2.",
+  "Gaps in instance numbers (BI 4-5, BI 11, BO 4-5, AV 22) are not in the manual and not listed.",
+  "C = commandable (priority array and relinquish default), per the manual."
+ ],
+ "integration": {
+  "summary": "Set 9802 COMM PROT SEL to BACnet, then 5302 station ID (MAC), baud on the EFB baud parameter (default 38400) and the device instance with 5311/5317. Point 1001 (EXT1 commands) and 1103 (REF1 source) at COMM, then write BV 10 and AV 16. Set 3018/3019 for communication loss.",
+  "minimum_points": [
+   {
+    "ref": "BV 10",
+    "why": "Start/stop from the BMS",
+    "name": "RUN/STOP CMD"
+   },
+   {
+    "ref": "AV 16",
+    "why": "Speed reference in %",
+    "name": "INPUT REF 1"
+   },
+   {
+    "ref": "BV 14",
+    "why": "Reset a tripped drive",
+    "name": "FAULT RESET"
+   },
+   {
+    "ref": "BV 0",
+    "why": "Running status",
+    "name": "RUN/STOP ACT"
+   },
+   {
+    "ref": "BV 4",
+    "why": "Shows if the panel has the drive in Hand",
+    "name": "HAND/AUTO ACT"
+   },
+   {
+    "ref": "AV 1",
+    "why": "Output frequency in Hz",
+    "name": "OUTPUT FREQ"
+   },
+   {
+    "ref": "AV 4",
+    "why": "Motor amps",
+    "name": "CURRENT"
+   },
+   {
+    "ref": "AV 6",
+    "why": "Drive power in kW",
+    "name": "POWER"
+   },
+   {
+    "ref": "BV 2",
+    "why": "Any active drive fault",
+    "name": "FAULT ACT"
+   },
+   {
+    "ref": "AV 18",
+    "why": "Most recent fault code",
+    "name": "LAST FLT"
+   }
+  ],
+  "enable": "Set 1001 EXT1 COMMANDS (and/or 1002 EXT2) = COMM so BV 10 starts and stops the drive; 1003 = REQUEST lets BV 11 change direction. 1103 REF1 SELECT = COMM makes AV 16 the reference; 1106 = COMM uses AV 17 as reference 2 (or as the process PID setpoint with 1106 = PID1 OUT and 4010 = COMM). 1601 = COMM for BV 12 run enable, 1102 = COMM for BV 13 EXT1/EXT2, 1604 = COMM for BV 14 fault reset. BV 18 control override takes control, but panel HAND still wins.",
+  "heartbeat": "3018 COMM FAULT FUNC sets the reaction to lost communication (0 not selected, 1 fault, 2 constant speed 7, 3 last speed) and 3019 COMM FAULT TIME the delay (0-600 s, default 10 s).",
+  "remote_sensors": "AV 27 EXT PID STPT sets the external PID setpoint (4210 = 19). AO 0 drives analog output 1 when 1501 = 135; BO 0-3 and BO 6 drive the relays/transistor output when their source parameter is COMM.",
+  "setup": [
+   "9802 COMM PROT SEL = BACnet enables the protocol on the EFB port.",
+   "5302 EFB STATION ID sets the MS/TP MAC (default 1); a non-zero value latches the settings.",
+   "Baud: default 38400 when BACnet is selected; 9600, 19200, 38400 and 76800 are supported.",
+   "Device instance: 5311 alone for 1-65535, or 5311 + 10000 x 5317 for larger IDs; both 0 = instance equals MAC.",
+   "5312 Max Info Frames (default 1) and 5313 Max Master (default 127); 5316 counts tokens received.",
+   "After changing communication settings cycle power, reset the station ID, or use ReinitializeDevice."
+  ],
+  "gotchas": [
+   "Panel HAND mode beats BACnet control override (BV 18).",
+   "BV 14 fault reset is rising-edge triggered.",
+   "Last speed and constant speed comm-loss reactions keep the motor running.",
+   "No segmentation; services are limited to ReadProperty/WriteProperty (no ReadPropertyMultiple listed)."
+  ]
+ },
+ "source": {
+  "title": "ACS355 User Manual Supplement - HVAC with BACnet (+N831)",
+  "doc_number": "3AXD50000024172 Rev B",
+  "revision_date": "2015-12-15",
+  "url": "https://library.e.abb.com/public/93dd4631ba224263a5430ccb316251c6/3AXD50000024172_REVB.pdf"
+ },
+ "points": [
+  {
+   "type": "BI",
+   "instance": 0,
+   "name": "RO 1 ACT",
+   "description": "Relay output 1 status",
+   "units": "",
+   "access": "R",
+   "states": "ON/OFF"
+  },
+  {
+   "type": "BI",
+   "instance": 1,
+   "name": "RO 2 ACT",
+   "description": "Relay output 2 status (MREL-01 option)",
+   "units": "",
+   "access": "R",
+   "states": "ON/OFF"
+  },
+  {
+   "type": "BI",
+   "instance": 2,
+   "name": "RO 3 ACT",
+   "description": "Relay output 3 status (MREL-01 option)",
+   "units": "",
+   "access": "R",
+   "states": "ON/OFF"
+  },
+  {
+   "type": "BI",
+   "instance": 3,
+   "name": "RO 4 ACT",
+   "description": "Relay output 4 status (MREL-01 option)",
+   "units": "",
+   "access": "R",
+   "states": "ON/OFF"
+  },
+  {
+   "type": "BI",
+   "instance": 6,
+   "name": "DI 1 ACT",
+   "description": "Digital input 1 status",
+   "units": "",
+   "access": "R",
+   "states": "ON/OFF"
+  },
+  {
+   "type": "BI",
+   "instance": 7,
+   "name": "DI 2 ACT",
+   "description": "Digital input 2 status",
+   "units": "",
+   "access": "R",
+   "states": "ON/OFF"
+  },
+  {
+   "type": "BI",
+   "instance": 8,
+   "name": "DI 3 ACT",
+   "description": "Digital input 3 status",
+   "units": "",
+   "access": "R",
+   "states": "ON/OFF"
+  },
+  {
+   "type": "BI",
+   "instance": 9,
+   "name": "DI 4 ACT",
+   "description": "Digital input 4 status",
+   "units": "",
+   "access": "R",
+   "states": "ON/OFF"
+  },
+  {
+   "type": "BI",
+   "instance": 10,
+   "name": "DI 5 ACT",
+   "description": "Digital input 5 status",
+   "units": "",
+   "access": "R",
+   "states": "ON/OFF"
+  },
+  {
+   "type": "BI",
+   "instance": 12,
+   "name": "TO ACT",
+   "description": "Transistor output status",
+   "units": "",
+   "access": "R",
+   "states": "ON/OFF"
+  },
+  {
+   "type": "BO",
+   "instance": 0,
+   "name": "RO1 CMD",
+   "description": "Relay 1 command (needs 1401 = COMM)",
+   "units": "",
+   "access": "C",
+   "states": "ON/OFF"
+  },
+  {
+   "type": "BO",
+   "instance": 1,
+   "name": "RO2 CMD",
+   "description": "Relay 2 command (1402 = COMM, MREL-01)",
+   "units": "",
+   "access": "C",
+   "states": "ON/OFF"
+  },
+  {
+   "type": "BO",
+   "instance": 2,
+   "name": "RO3 CMD",
+   "description": "Relay 3 command (1403 = COMM, MREL-01)",
+   "units": "",
+   "access": "C",
+   "states": "ON/OFF"
+  },
+  {
+   "type": "BO",
+   "instance": 3,
+   "name": "RO4 CMD",
+   "description": "Relay 4 command (1410 = COMM, MREL-01)",
+   "units": "",
+   "access": "C",
+   "states": "ON/OFF"
+  },
+  {
+   "type": "BO",
+   "instance": 6,
+   "name": "TO CMD",
+   "description": "Transistor output command (1805 = COMM)",
+   "units": "",
+   "access": "C",
+   "states": "ON/OFF"
+  },
+  {
+   "type": "BV",
+   "instance": 0,
+   "name": "RUN/STOP ACT",
+   "description": "Drive run status",
+   "units": "",
+   "access": "R",
+   "states": "RUN/STOP"
+  },
+  {
+   "type": "BV",
+   "instance": 1,
+   "name": "FWD/REV ACT",
+   "description": "Rotation direction",
+   "units": "",
+   "access": "R",
+   "states": "REV/FWD"
+  },
+  {
+   "type": "BV",
+   "instance": 2,
+   "name": "FAULT ACT",
+   "description": "Drive fault status",
+   "units": "",
+   "access": "R",
+   "states": "FAULT/OK"
+  },
+  {
+   "type": "BV",
+   "instance": 3,
+   "name": "EXT 1/2 ACT",
+   "description": "Active control source EXT1 or EXT2",
+   "units": "",
+   "access": "R",
+   "states": "EXT2/EXT1"
+  },
+  {
+   "type": "BV",
+   "instance": 4,
+   "name": "HAND/AUTO ACT",
+   "description": "Hand or Auto control",
+   "units": "",
+   "access": "R",
+   "states": "HAND/AUTO"
+  },
+  {
+   "type": "BV",
+   "instance": 5,
+   "name": "ALARM ACT",
+   "description": "Drive alarm status",
+   "units": "",
+   "access": "R",
+   "states": "ALARM/OK"
+  },
+  {
+   "type": "BV",
+   "instance": 6,
+   "name": "MAINT REQ",
+   "description": "Maintenance due (group 29)",
+   "units": "",
+   "access": "R",
+   "states": "MAINT/OK"
+  },
+  {
+   "type": "BV",
+   "instance": 7,
+   "name": "DRIVE READY",
+   "description": "Ready to accept a run command",
+   "units": "",
+   "access": "R",
+   "states": "READY/NOT READY"
+  },
+  {
+   "type": "BV",
+   "instance": 8,
+   "name": "AT SETPOINT",
+   "description": "At commanded setpoint",
+   "units": "",
+   "access": "R",
+   "states": "YES/NO"
+  },
+  {
+   "type": "BV",
+   "instance": 9,
+   "name": "RUN ENA ACT",
+   "description": "Run enable status",
+   "units": "",
+   "access": "R",
+   "states": "ENABLE/DISABLE"
+  },
+  {
+   "type": "BV",
+   "instance": 10,
+   "name": "RUN/STOP CMD",
+   "description": "Start/stop command (1001/1002 = COMM)",
+   "units": "",
+   "access": "C",
+   "states": "RUN/STOP"
+  },
+  {
+   "type": "BV",
+   "instance": 11,
+   "name": "FWD/REV CMD",
+   "description": "Direction command (1003 = REQUEST)",
+   "units": "",
+   "access": "C",
+   "states": "REV/FWD"
+  },
+  {
+   "type": "BV",
+   "instance": 12,
+   "name": "RUN ENA CMD",
+   "description": "Run enable command (1601 = COMM)",
+   "units": "",
+   "access": "C",
+   "states": "ENABLE/DISABLE"
+  },
+  {
+   "type": "BV",
+   "instance": 13,
+   "name": "EXT 1/2 CMD",
+   "description": "Select EXT1/EXT2 (1102 = COMM)",
+   "units": "",
+   "access": "C",
+   "states": "EXT2/EXT1"
+  },
+  {
+   "type": "BV",
+   "instance": 14,
+   "name": "FAULT RESET",
+   "description": "Fault reset, rising edge (1604 = COMM)",
+   "units": "",
+   "access": "C",
+   "states": "RESET/NO"
+  },
+  {
+   "type": "BV",
+   "instance": 15,
+   "name": "MBOX READ",
+   "description": "Read the parameter in AV 25 into AV 26",
+   "units": "",
+   "access": "W",
+   "states": "READ/RESET"
+  },
+  {
+   "type": "BV",
+   "instance": 16,
+   "name": "MBOX WRITE",
+   "description": "Write AV 26 to the parameter in AV 25",
+   "units": "",
+   "access": "W",
+   "states": "WRITE/RESET"
+  },
+  {
+   "type": "BV",
+   "instance": 17,
+   "name": "LOCK PANEL",
+   "description": "Lock panel parameter changes (1602)",
+   "units": "",
+   "access": "W",
+   "states": "LOCK/UNLOCK"
+  },
+  {
+   "type": "BV",
+   "instance": 18,
+   "name": "CTL OVERRIDE CMD",
+   "description": "BACnet control override",
+   "units": "",
+   "access": "C",
+   "states": "ON/OFF"
+  },
+  {
+   "type": "BV",
+   "instance": 19,
+   "name": "CTL OVERRIDE ACT",
+   "description": "Control override active",
+   "units": "",
+   "access": "R",
+   "states": "ON/OFF"
+  },
+  {
+   "type": "BV",
+   "instance": 20,
+   "name": "START ENABLE 1",
+   "description": "Start enable 1 (1608 = COMM)",
+   "units": "",
+   "access": "C",
+   "states": "ENABLE/DISABLE"
+  },
+  {
+   "type": "BV",
+   "instance": 21,
+   "name": "START ENABLE 2",
+   "description": "Start enable 2 (1609 = COMM)",
+   "units": "",
+   "access": "C",
+   "states": "ENABLE/DISABLE"
+  },
+  {
+   "type": "BV",
+   "instance": 22,
+   "name": "HEATING CMD",
+   "description": "Motor pre-heat on/off",
+   "units": "",
+   "access": "C",
+   "states": "ON/OFF"
+  },
+  {
+   "type": "BV",
+   "instance": 23,
+   "name": "HEATING STS",
+   "description": "Motor pre-heat status",
+   "units": "",
+   "access": "R",
+   "states": "ON/OFF"
+  },
+  {
+   "type": "AI",
+   "instance": 0,
+   "name": "ANALOG INPUT 1",
+   "description": "Analog input 1 value (0120)",
+   "units": "%",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "AI",
+   "instance": 1,
+   "name": "ANALOG INPUT 2",
+   "description": "Analog input 2 value",
+   "units": "%",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "AO",
+   "instance": 0,
+   "name": "AO 1 COMMAND",
+   "description": "Analog output 1 command (1501 = 135)",
+   "units": "%",
+   "access": "C",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 0,
+   "name": "OUTPUT SPEED",
+   "description": "Calculated motor speed (0102)",
+   "units": "rpm",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 1,
+   "name": "OUTPUT FREQ",
+   "description": "Output frequency (0103)",
+   "units": "Hz",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 2,
+   "name": "DC BUS VOLT",
+   "description": "DC bus voltage (0107)",
+   "units": "V",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 3,
+   "name": "OUTPUT VOLT",
+   "description": "Output voltage (0109)",
+   "units": "V",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 4,
+   "name": "CURRENT",
+   "description": "Output current (0104)",
+   "units": "A",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 5,
+   "name": "TORQUE",
+   "description": "Motor torque, % of nominal (0105)",
+   "units": "%",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 6,
+   "name": "POWER",
+   "description": "Output power (0106)",
+   "units": "kW",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 7,
+   "name": "DRIVE TEMP",
+   "description": "Heatsink temperature (0110)",
+   "units": "°C",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 8,
+   "name": "KWH (R)",
+   "description": "Resettable energy counter (0115)",
+   "units": "kWh",
+   "access": "W",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 9,
+   "name": "KWH (NR)",
+   "description": "Non-resettable energy counter",
+   "units": "kWh",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 10,
+   "name": "PRC PID FBCK",
+   "description": "Process PID feedback (0130)",
+   "units": "%",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 11,
+   "name": "PRC PID DEV",
+   "description": "Process PID deviation (0132)",
+   "units": "%",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 12,
+   "name": "EXT PID FBCK",
+   "description": "External PID feedback (0131)",
+   "units": "%",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 13,
+   "name": "EXT PID DEV",
+   "description": "External PID deviation (0133)",
+   "units": "%",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 14,
+   "name": "RUN TIME (R)",
+   "description": "Resettable run time (0114)",
+   "units": "h",
+   "access": "W",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 15,
+   "name": "MOTOR TEMP",
+   "description": "Motor temperature (0145)",
+   "units": "°C",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 16,
+   "name": "INPUT REF 1",
+   "description": "Reference 1 (1103 = COMM)",
+   "units": "%",
+   "access": "C",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 17,
+   "name": "INPUT REF 2",
+   "description": "Reference 2 or process PID setpoint (1106)",
+   "units": "%",
+   "access": "C",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 18,
+   "name": "LAST FLT",
+   "description": "Most recent fault (0401)",
+   "units": "",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 19,
+   "name": "PREV FLT 1",
+   "description": "Second most recent fault (0412)",
+   "units": "",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 20,
+   "name": "PREV FLT 2",
+   "description": "Third most recent fault (0413)",
+   "units": "",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 21,
+   "name": "AO 1 ACT",
+   "description": "Analog output 1 level (0124)",
+   "units": "mA",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 23,
+   "name": "ACCEL1 TIME",
+   "description": "Ramp 1 acceleration time (2202)",
+   "units": "s",
+   "access": "W",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 24,
+   "name": "DECEL1 TIME",
+   "description": "Ramp 1 deceleration time (2203)",
+   "units": "s",
+   "access": "W",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 25,
+   "name": "MBOX PARAM",
+   "description": "Parameter number for mailbox read/write",
+   "units": "",
+   "access": "W",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 26,
+   "name": "MBOX DATA",
+   "description": "Mailbox parameter value",
+   "units": "",
+   "access": "W",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 27,
+   "name": "EXT PID STPT",
+   "description": "External PID setpoint (4210 = 19)",
+   "units": "%",
+   "access": "C",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 28,
+   "name": "HEATING CURRENT",
+   "description": "Motor heating current, % of nominal",
+   "units": "%",
+   "access": "W",
+   "states": ""
+  }
+ ],
+ "page": "https://easybacnet.com/bacnet-points-lists/abb/acs355-n831",
+ "note": "Re-typed from the manufacturer's public documentation (see source). Point availability varies by firmware and options; verify against the live device."
+}

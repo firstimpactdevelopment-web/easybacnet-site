@@ -1,0 +1,3629 @@
+{
+ "manufacturer": "APC",
+ "manufacturer_slug": "apc",
+ "model": "Smart-UPS with Network Management Card 2 / 3 (BACnet IP)",
+ "model_slug": "smart-ups-nmc2-nmc3",
+ "aliases": [
+  "APC Smart-UPS BACnet",
+  "NMC2 BACnet",
+  "NMC3 BACnet",
+  "AP9630",
+  "AP9631",
+  "AP9635",
+  "AP9640",
+  "AP9641",
+  "SMT",
+  "SMX",
+  "SRT",
+  "SURT",
+  "990-5916C",
+  "APC UPS BACnet application map"
+ ],
+ "equipment_type": "UPS (uninterruptible power supply) network card",
+ "applies_to": "APC Smart-UPS units (SMT, SMX, SRT, SURT, SURTD and others) fitted with a Network Management Card 2 (firmware 6.5.6 or later) or Network Management Card 3.",
+ "summary": "The APC Network Management Card in a Smart-UPS serves BACnet IP. The object list is fixed by the card firmware: Analog Values for runtime, battery, input, output and load readings plus outlet-group and shutdown settings; Binary Values for outlet states, test commands, option enables and about 170 UPS alarm flags; Character String Values for identity text; and Multi-state Values for UPS state, UPS control and outlet-group control. Each object is only present on the UPS families marked in the table.",
+ "bacnet_transport": [
+  "BACnet IP"
+ ],
+ "firmware": "NMC2 application firmware 6.5.6 or later (sumx); NMC3 below 3.0 (su). See notes for NMC3 3.1.",
+ "default_device_instance": null,
+ "access_inferred": false,
+ "notes": [
+  "Instances are the NMC2 / NMC3 (< v3.0) index column. NMC3 firmware 3.1 renumbers some objects: BV 51-68 move up by 1 and BV 69-237 (alarm flags) move up by 2; MV 13-14 move up by 1; CSV 27-34 move up by 2. Index 47 'UIO probe 1 contact 1 severity' prints as 48 in the v3.1 column.",
+  "NMC3 v3.1 also adds objects that have no index on older cards: spot fluid sensor enables, alarms (BV 240-241 in v3.1), name/location text values and status MVs. They are not listed here.",
+  "Bracketed text in a description names the UPS families that support the object; objects marked for an AP9631/AP9635 card need the Universal I/O probe port. Alarm flags (BV 69-237) carry no model column in the document.",
+  "Multi-state option lists are given in the printed order; the document does not print state numbers.",
+  "Alarm flag BVs send event notifications to the recipients in the Default Notification Class (NC 0).",
+  "Some names are printed with typos (e.g. 'AbnormaOutputVoltage', 'ParalletlCommCondition2', 'Outlet group switched 3load shed runtime remaining'); they are kept as printed."
+ ],
+ "source": {
+  "title": "BACnet Application Map for Network Management Card 2 and 3 (Smart-UPS)",
+  "doc_number": "990-5916C",
+  "revision_date": "2024-04",
+  "url": "https://download.se.com/files?p_Doc_Ref=SPD_CCON-AUTEZG_EN"
+ },
+ "integration": {
+  "summary": "Enable BACnet on the Network Management Card (sumx/su firmware) and give the card a unique device instance. Read UPS state (MV 5), runtime remaining (AV 0), battery charge (AV 66), load (AV 19) and the alarm flags such as OnBattery, LowBattery and Overload. UPS Control (MV 6) and the outlet-group control MVs switch the UPS or its outlets, so restrict who can write them.",
+  "minimum_points": [
+   {
+    "ref": "MV 6",
+    "name": "UPS Control",
+    "why": "UPS on/off/reboot/sleep/bypass command"
+   },
+   {
+    "ref": "MV 5",
+    "name": "UPS state",
+    "why": "Online, on battery, bypass, fault and so on"
+   },
+   {
+    "ref": "AV 0",
+    "name": "Runtime remaining",
+    "why": "Battery runtime left, s"
+   },
+   {
+    "ref": "AV 66",
+    "name": "Battery state of charge",
+    "why": "Battery charge, %"
+   },
+   {
+    "ref": "AV 19",
+    "name": "Output watts phase 1",
+    "why": "Load as % of the watt rating"
+   },
+   {
+    "ref": "AV 10",
+    "name": "Output voltage 1",
+    "why": "Output voltage, V"
+   },
+   {
+    "ref": "BV 73",
+    "name": "OnBattery",
+    "why": "UPS is running on battery"
+   },
+   {
+    "ref": "BV 72",
+    "name": "LowBattery",
+    "why": "Battery low alarm"
+   },
+   {
+    "ref": "BV 70",
+    "name": "Overload",
+    "why": "Output overload alarm"
+   },
+   {
+    "ref": "BV 69",
+    "name": "LostUPSComm",
+    "why": "Card lost communication with the UPS"
+   }
+  ],
+  "enable": "BACnet IP is part of the NMC2 'sumx' and NMC3 'su' application firmware and is turned on in the card's configuration. No BMS enable point is needed; UPS Control (MV 6) acts directly on the UPS.",
+  "heartbeat": null,
+  "remote_sensors": null,
+  "setup": [
+   "BACnet IP only; BACnet is configured on the Network Management Card (device instance and related settings are covered in the NMC User Guide).",
+   "Check the UPS model prefix on the UPS label (SMT/SMX/SRT, SURT, SURTD) to know which objects it will have.",
+   "On NMC3 firmware 3.1, read the object list again: several BV, MV and CSV instances shift (see notes).",
+   "Alarm BVs can send event notifications; add the BMS as a recipient of NC 0 DefaultNotifier."
+  ],
+  "gotchas": [
+   "Writing UPS Control or an outlet-group control MV can switch off the protected load.",
+   "BV 23-26 start real UPS tests (self test, alarm tests, runtime calibration); BV 27 cancels a running test.",
+   "Universal I/O probe objects exist only with an AP9631/AP9635 card and a probe fitted.",
+   "Instances differ between NMC2/NMC3 below 3.0 and NMC3 3.1 for alarm flags; remap after a card firmware upgrade."
+  ]
+ },
+ "points": [
+  {
+   "type": "AV",
+   "instance": 0,
+   "name": "Runtime remaining",
+   "description": "Battery runtime left at the present load [SMT/SMX/SRT, SURT, SURTD, other models]",
+   "units": "s",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 1,
+   "name": "Battery Temperature",
+   "description": "Battery compartment temperature [SMT/SMX/SRT, SURT, SURTD, other models]",
+   "units": "°C",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 2,
+   "name": "Utility voltage 1",
+   "description": "Input voltage, phase 1 [SURTD, other models]",
+   "units": "V",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 3,
+   "name": "Utility voltage 2",
+   "description": "Input voltage, phase 2 [SURTD, other models]",
+   "units": "V",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 4,
+   "name": "Utility voltage 3",
+   "description": "Input voltage, phase 3 [other models]",
+   "units": "V",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 5,
+   "name": "Utility current 1",
+   "description": "Input current, phase 1 [other models]",
+   "units": "A",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 6,
+   "name": "Utility current 2",
+   "description": "Input current, phase 2 [other models]",
+   "units": "A",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 7,
+   "name": "Utility current 3",
+   "description": "Input current, phase 3 [other models]",
+   "units": "A",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 8,
+   "name": "Utility Input frequency",
+   "description": "Input frequency [SURT]",
+   "units": "Hz",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 9,
+   "name": "Output frequency",
+   "description": "Output frequency [SURT]",
+   "units": "Hz",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 10,
+   "name": "Output voltage 1",
+   "description": "Output voltage, phase 1 [SMT/SMX/SRT, SURT, SURTD, other models]",
+   "units": "V",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 11,
+   "name": "Output voltage 2",
+   "description": "Output voltage, phase 2 [SMT/SMX/SRT, SURT, SURTD, other models]",
+   "units": "V",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 12,
+   "name": "Output voltage 3",
+   "description": "Output voltage, phase 3 [other models]",
+   "units": "V",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 13,
+   "name": "Output VA phase 1",
+   "description": "Load as % of VA rating, phase 1 [SURTD, other models]",
+   "units": "%",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 14,
+   "name": "Output VA phase 2",
+   "description": "Load as % of VA rating, phase 2 [SURTD, other models]",
+   "units": "%",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 15,
+   "name": "Output VA phase 3",
+   "description": "Load as % of VA rating, phase 3 [other models]",
+   "units": "%",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 16,
+   "name": "Output load current 1",
+   "description": "Output current, phase 1 [SMT/SMX/SRT, SURT, SURTD, other models]",
+   "units": "A",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 17,
+   "name": "Output load current 2",
+   "description": "Output current, phase 2 [SURTD, other models]",
+   "units": "A",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 18,
+   "name": "Output load current 3",
+   "description": "Output current, phase 3 [other models]",
+   "units": "A",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 19,
+   "name": "Output watts phase 1",
+   "description": "Load as % of watt rating, phase 1 [SMT/SMX/SRT, SURT, SURTD, other models]",
+   "units": "%",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 20,
+   "name": "Output watts phase 2",
+   "description": "Load as % of watt rating, phase 2 [SURTD, other models]",
+   "units": "%",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 21,
+   "name": "Output watts phase 3",
+   "description": "Load as % of watt rating, phase 3 [other models]",
+   "units": "%",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 22,
+   "name": "Output efficiency",
+   "description": "Share of input power delivered to the load [SMT/SMX/SRT, SURT]",
+   "units": "%",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 23,
+   "name": "Output energy usage",
+   "description": "Load energy since last reset to defaults [SMT/SMX/SRT, SURT]",
+   "units": "kWh",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 24,
+   "name": "Outlet group main power off delay",
+   "description": "Delay before the outlet group turns off [SMT/SMX/SRT, SURT]",
+   "units": "s",
+   "access": "W",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 25,
+   "name": "Outlet group switched 1 power off delay",
+   "description": "Delay before the outlet group turns off [SMT/SMX/SRT, SURT]",
+   "units": "s",
+   "access": "W",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 26,
+   "name": "Outlet group switched 2 power off delay",
+   "description": "Delay before the outlet group turns off [SMT/SMX/SRT, SURT]",
+   "units": "s",
+   "access": "W",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 27,
+   "name": "Outlet group switched 3 power off delay",
+   "description": "Delay before the outlet group turns off [SMT/SMX/SRT, SURT]",
+   "units": "s",
+   "access": "W",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 28,
+   "name": "Outlet group main reboot duration",
+   "description": "Off time during an outlet group reboot [SMT/SMX/SRT, SURT]",
+   "units": "s",
+   "access": "W",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 29,
+   "name": "Outlet group switched 1 reboot duration",
+   "description": "Off time during an outlet group reboot [SMT/SMX/SRT, SURT]",
+   "units": "s",
+   "access": "W",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 30,
+   "name": "Outlet group switched 2 reboot duration",
+   "description": "Off time during an outlet group reboot [SMT/SMX/SRT, SURT]",
+   "units": "s",
+   "access": "W",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 31,
+   "name": "Outlet group switched 3 reboot duration",
+   "description": "Off time during an outlet group reboot [SMT/SMX/SRT, SURT]",
+   "units": "s",
+   "access": "W",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 32,
+   "name": "Outlet group main power on delay",
+   "description": "Delay before the outlet group turns on [SMT/SMX/SRT, SURT]",
+   "units": "s",
+   "access": "W",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 33,
+   "name": "Outlet group switched 1 power on delay",
+   "description": "Delay before the outlet group turns on [SMT/SMX/SRT, SURT]",
+   "units": "s",
+   "access": "W",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 34,
+   "name": "Outlet group switched 2 power on delay",
+   "description": "Delay before the outlet group turns on [SMT/SMX/SRT, SURT]",
+   "units": "s",
+   "access": "W",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 35,
+   "name": "Outlet group switched 3 power on delay",
+   "description": "Delay before the outlet group turns on [SMT/SMX/SRT, SURT]",
+   "units": "s",
+   "access": "W",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 36,
+   "name": "Outlet group main minimum return runtime",
+   "description": "Runtime needed before the group turns back on [SMT/SMX/SRT, SURT]",
+   "units": "s",
+   "access": "W",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 37,
+   "name": "Outlet group switched 1 minimum return runtime",
+   "description": "Runtime needed before the group turns back on [SMT/SMX/SRT, SURT]",
+   "units": "s",
+   "access": "W",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 38,
+   "name": "Outlet group switched 2 minimum return runtime",
+   "description": "Runtime needed before the group turns back on [SMT/SMX/SRT, SURT]",
+   "units": "s",
+   "access": "W",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 39,
+   "name": "Outlet group switched 3 minimum return runtime",
+   "description": "Runtime needed before the group turns back on [SMT/SMX/SRT, SURT]",
+   "units": "s",
+   "access": "W",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 40,
+   "name": "Outlet group main load shed runtime remaining",
+   "description": "Group turns off when runtime falls to this [SMT/SMX/SRT, SURT]",
+   "units": "s",
+   "access": "W",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 41,
+   "name": "Outlet group switched 1 load shed runtime remaining",
+   "description": "Group turns off when runtime falls to this [SMT/SMX/SRT, SURT]",
+   "units": "s",
+   "access": "W",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 42,
+   "name": "Outlet group switched 2 load shed runtime remaining",
+   "description": "Group turns off when runtime falls to this [SMT/SMX/SRT, SURT]",
+   "units": "s",
+   "access": "W",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 43,
+   "name": "Outlet group switched 3load shed runtime remaining",
+   "description": "Group turns off when runtime falls to this [SMT/SMX/SRT, SURT]",
+   "units": "s",
+   "access": "W",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 44,
+   "name": "Outlet group main load shed time on battery",
+   "description": "Group turns off after this time on battery [SMT/SMX/SRT, SURT]",
+   "units": "s",
+   "access": "W",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 45,
+   "name": "Outlet group switched 1 load shed time on battery",
+   "description": "Group turns off after this time on battery [SMT/SMX/SRT, SURT]",
+   "units": "s",
+   "access": "W",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 46,
+   "name": "Outlet group switched 2 load shed time on battery",
+   "description": "Group turns off after this time on battery [SMT/SMX/SRT, SURT]",
+   "units": "s",
+   "access": "W",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 47,
+   "name": "Outlet group switched 3 load shed time on battery",
+   "description": "Group turns off after this time on battery [SMT/SMX/SRT, SURT]",
+   "units": "s",
+   "access": "W",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 48,
+   "name": "Output upper limit",
+   "description": "Upper transfer voltage [SMT/SMX/SRT, SURT, SURTD, other models]",
+   "units": "V",
+   "access": "W",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 49,
+   "name": "Output lower limit",
+   "description": "Lower transfer voltage [SMT/SMX/SRT, SURT, SURTD, other models]",
+   "units": "V",
+   "access": "W",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 50,
+   "name": "Bypass upper limit",
+   "description": "Upper bypass voltage limit [SURT, SURTD, other models]",
+   "units": "V",
+   "access": "W",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 51,
+   "name": "Bypass lower limit",
+   "description": "Lower bypass voltage limit [SURT, SURTD, other models]",
+   "units": "V",
+   "access": "W",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 52,
+   "name": "Low Battery duration",
+   "description": "Runtime left that raises the low-battery alarm [SMT/SMX/SRT, SURT, SURTD, other models]",
+   "units": "s",
+   "access": "W",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 53,
+   "name": "Basic low battery duration",
+   "description": "Basic low-battery warning time [SMT/SMX/SRT, SURT, SURTD, other models]",
+   "units": "s",
+   "access": "W",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 54,
+   "name": "Sleep time",
+   "description": "Sleep duration for a sleep command [SMT/SMX/SRT, SURT, SURTD, other models]",
+   "units": "h",
+   "access": "W",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 55,
+   "name": "Shutdown Delay",
+   "description": "Delay before the UPS shuts down [other models]",
+   "units": "s",
+   "access": "W",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 56,
+   "name": "Minimum return capacity",
+   "description": "Battery charge needed before restart [other models]",
+   "units": "%",
+   "access": "W",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 57,
+   "name": "Return Delay",
+   "description": "Delay before restart after power returns [other models]",
+   "units": "s",
+   "access": "W",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 58,
+   "name": "Maximum required delay",
+   "description": "Longest shutdown delay needed by clients [other models]",
+   "units": "min",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 59,
+   "name": "Bypass input frequency",
+   "description": "Bypass input frequency [SURT, SURTD, other models]",
+   "units": "Hz",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 60,
+   "name": "Bypass input voltage 1",
+   "description": "Bypass input voltage, phase 1 [other models]",
+   "units": "V",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 61,
+   "name": "Bypass input voltage 2",
+   "description": "Bypass input voltage, phase 2 [other models]",
+   "units": "V",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 62,
+   "name": "Bypass input voltage 3",
+   "description": "Bypass input voltage, phase 3 [other models]",
+   "units": "V",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 63,
+   "name": "Positive battery voltage",
+   "description": "Battery voltage (positive bus) [SMT/SMX/SRT, SURT, SURTD, other models]",
+   "units": "V",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 64,
+   "name": "Negative battery voltage",
+   "description": "Battery voltage (negative bus) [SURT]",
+   "units": "V",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 65,
+   "name": "Nominal battery voltage",
+   "description": "Nominal battery voltage [other models]",
+   "units": "V",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 66,
+   "name": "Battery state of charge",
+   "description": "Battery charge level [SMT/SMX/SRT, SURT, SURTD, other models]",
+   "units": "%",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 67,
+   "name": "Battery current",
+   "description": "Battery current [other models]",
+   "units": "A",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 68,
+   "name": "Number of external batteries",
+   "description": "Count of external battery packs [other models]",
+   "units": "",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 69,
+   "name": "Controlled Early Shutdown Time On Battery",
+   "description": "Early shutdown threshold (time on battery) [other models]",
+   "units": "min",
+   "access": "W",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 70,
+   "name": "Controlled Early Shutdown Runtime Remaining",
+   "description": "Early shutdown threshold (runtime remaining) [other models]",
+   "units": "min",
+   "access": "W",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 71,
+   "name": "Controlled Early Shutdown Battery Capacity",
+   "description": "Early shutdown threshold (battery capacity) [other models]",
+   "units": "min",
+   "access": "W",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 72,
+   "name": "Controlled Early Shutdown Load Percentage",
+   "description": "Early shutdown threshold (load percentage) [other models]",
+   "units": "min",
+   "access": "W",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 73,
+   "name": "UIO probe 1 temperature",
+   "description": "Universal I/O probe reading [SMT/SMX/SRT with AP9631/AP9635 NMC]",
+   "units": "°C",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 74,
+   "name": "UIO probe 1 humidity",
+   "description": "Universal I/O probe reading [SMT/SMX/SRT with AP9631/AP9635 NMC]",
+   "units": "%",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 75,
+   "name": "UIO probe 1 temperature maximum",
+   "description": "Probe alarm threshold [SMT/SMX/SRT with AP9631/AP9635 NMC]",
+   "units": "°C",
+   "access": "W",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 76,
+   "name": "UIO probe 1 temperature high",
+   "description": "Probe alarm threshold [SMT/SMX/SRT with AP9631/AP9635 NMC]",
+   "units": "°C",
+   "access": "W",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 77,
+   "name": "UIO probe 1 temperature low",
+   "description": "Probe alarm threshold [SMT/SMX/SRT with AP9631/AP9635 NMC]",
+   "units": "°C",
+   "access": "W",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 78,
+   "name": "UIO probe 1 temperature minimum",
+   "description": "Probe alarm threshold [SMT/SMX/SRT with AP9631/AP9635 NMC]",
+   "units": "°C",
+   "access": "W",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 79,
+   "name": "UIO probe 1 temperature hysteresis",
+   "description": "Probe alarm hysteresis [SMT/SMX/SRT with AP9631/AP9635 NMC]",
+   "units": "°C",
+   "access": "W",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 80,
+   "name": "UIO probe 1 humidity maximum",
+   "description": "Probe alarm threshold [SMT/SMX/SRT with AP9631/AP9635 NMC]",
+   "units": "%",
+   "access": "W",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 81,
+   "name": "UIO probe 1 humidity high",
+   "description": "Probe alarm threshold [SMT/SMX/SRT with AP9631/AP9635 NMC]",
+   "units": "%",
+   "access": "W",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 82,
+   "name": "UIO probe 1 humidity low",
+   "description": "Probe alarm threshold [SMT/SMX/SRT with AP9631/AP9635 NMC]",
+   "units": "%",
+   "access": "W",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 83,
+   "name": "UIO probe 1 humidity minimum",
+   "description": "Probe alarm threshold [SMT/SMX/SRT with AP9631/AP9635 NMC]",
+   "units": "%",
+   "access": "W",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 84,
+   "name": "UIO probe 1 humidity hysteresis",
+   "description": "Probe alarm hysteresis [SMT/SMX/SRT with AP9631/AP9635 NMC]",
+   "units": "%",
+   "access": "W",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 85,
+   "name": "UIO probe 1 output relay 1 delay",
+   "description": "Time a condition must last before the relay acts [SMT/SMX/SRT with AP9631/AP9635 NMC]",
+   "units": "s",
+   "access": "W",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 86,
+   "name": "UIO probe 1 output relay 1 hold",
+   "description": "Minimum relay hold time after an alarm [SMT/SMX/SRT with AP9631/AP9635 NMC]",
+   "units": "s",
+   "access": "W",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 87,
+   "name": "UIO probe 2 temperature",
+   "description": "Universal I/O probe reading [SMT/SMX/SRT with AP9631 NMC]",
+   "units": "°C",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 88,
+   "name": "UIO probe 2 humidity",
+   "description": "Universal I/O probe reading [SMT/SMX/SRT with AP9631 NMC]",
+   "units": "%",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 89,
+   "name": "UIO probe 2 temperature maximum",
+   "description": "Probe alarm threshold [SMT/SMX/SRT with AP9631 NMC]",
+   "units": "°C",
+   "access": "W",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 90,
+   "name": "UIO probe 2 temperature high",
+   "description": "Probe alarm threshold [SMT/SMX/SRT with AP9631 NMC]",
+   "units": "°C",
+   "access": "W",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 91,
+   "name": "UIO probe 2 temperature low",
+   "description": "Probe alarm threshold [SMT/SMX/SRT with AP9631 NMC]",
+   "units": "°C",
+   "access": "W",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 92,
+   "name": "UIO probe 2 temperature minimum",
+   "description": "Probe alarm threshold [SMT/SMX/SRT with AP9631 NMC]",
+   "units": "°C",
+   "access": "W",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 93,
+   "name": "UIO probe 2 temperature hysteresis",
+   "description": "Probe alarm hysteresis [SMT/SMX/SRT with AP9631 NMC]",
+   "units": "°C",
+   "access": "W",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 94,
+   "name": "UIO probe 2 humidity maximum",
+   "description": "Probe alarm threshold [SMT/SMX/SRT with AP9631 NMC]",
+   "units": "%",
+   "access": "W",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 95,
+   "name": "UIO probe 2 humidity high",
+   "description": "Probe alarm threshold [SMT/SMX/SRT with AP9631 NMC]",
+   "units": "%",
+   "access": "W",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 96,
+   "name": "UIO probe 2 humidity low",
+   "description": "Probe alarm threshold [SMT/SMX/SRT with AP9631 NMC]",
+   "units": "%",
+   "access": "W",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 97,
+   "name": "UIO probe 2 humidity minimum",
+   "description": "Probe alarm threshold [SMT/SMX/SRT with AP9631 NMC]",
+   "units": "%",
+   "access": "W",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 98,
+   "name": "UIO probe 2 humidity hysteresis",
+   "description": "Probe alarm hysteresis [SMT/SMX/SRT with AP9631 NMC]",
+   "units": "%",
+   "access": "W",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 99,
+   "name": "UIO probe 2 output relay 1 delay",
+   "description": "Time a condition must last before the relay acts [SMT/SMX/SRT with AP9631 NMC]",
+   "units": "s",
+   "access": "W",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 100,
+   "name": "UIO probe 2 output relay 1 hold",
+   "description": "Minimum relay hold time after an alarm [SMT/SMX/SRT with AP9631 NMC]",
+   "units": "s",
+   "access": "W",
+   "states": ""
+  },
+  {
+   "type": "BV",
+   "instance": 0,
+   "name": "Outlet group main state",
+   "description": "Outlet group on/off state [SMT/SMX/SRT, SURT]",
+   "units": "",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "BV",
+   "instance": 1,
+   "name": "Outlet group switched 1 state",
+   "description": "Outlet group on/off state [SMT/SMX/SRT, SURT]",
+   "units": "",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "BV",
+   "instance": 2,
+   "name": "Outlet group switched 2 state",
+   "description": "Outlet group on/off state [SMT/SMX/SRT, SURT]",
+   "units": "",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "BV",
+   "instance": 3,
+   "name": "Outlet group switched 3 state",
+   "description": "Outlet group on/off state [SMT/SMX/SRT, SURT]",
+   "units": "",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "BV",
+   "instance": 4,
+   "name": "Outlet group main load shed runtime remaining enable",
+   "description": "Enables the matching threshold or action [SMT/SMX/SRT, SURT]",
+   "units": "",
+   "access": "W",
+   "states": ""
+  },
+  {
+   "type": "BV",
+   "instance": 5,
+   "name": "Outlet group switched 1 load shed runtime remaining enable",
+   "description": "Enables the matching threshold or action [SMT/SMX/SRT, SURT]",
+   "units": "",
+   "access": "W",
+   "states": ""
+  },
+  {
+   "type": "BV",
+   "instance": 6,
+   "name": "Outlet group switched 2 load shed runtime remaining enable",
+   "description": "Enables the matching threshold or action [SMT/SMX/SRT, SURT]",
+   "units": "",
+   "access": "W",
+   "states": ""
+  },
+  {
+   "type": "BV",
+   "instance": 7,
+   "name": "Outlet group switched 3 load shed runtime remaining enable",
+   "description": "Enables the matching threshold or action [SMT/SMX/SRT, SURT]",
+   "units": "",
+   "access": "W",
+   "states": ""
+  },
+  {
+   "type": "BV",
+   "instance": 8,
+   "name": "Outlet group main load shed time on battery enable",
+   "description": "Enables the matching threshold or action [SMT/SMX/SRT, SURT]",
+   "units": "",
+   "access": "W",
+   "states": ""
+  },
+  {
+   "type": "BV",
+   "instance": 9,
+   "name": "Outlet group switched 1 load shed time on battery enable",
+   "description": "Enables the matching threshold or action [SMT/SMX/SRT, SURT]",
+   "units": "",
+   "access": "W",
+   "states": ""
+  },
+  {
+   "type": "BV",
+   "instance": 10,
+   "name": "Outlet group switched 2 load shed time on battery enable",
+   "description": "Enables the matching threshold or action [SMT/SMX/SRT, SURT]",
+   "units": "",
+   "access": "W",
+   "states": ""
+  },
+  {
+   "type": "BV",
+   "instance": 11,
+   "name": "Outlet group switched 3 load shed time on battery enable",
+   "description": "Enables the matching threshold or action [SMT/SMX/SRT, SURT]",
+   "units": "",
+   "access": "W",
+   "states": ""
+  },
+  {
+   "type": "BV",
+   "instance": 12,
+   "name": "Outlet group main load shed skip off delay",
+   "description": "Load shed option for the outlet group [SMT/SMX/SRT, SURT]",
+   "units": "",
+   "access": "W",
+   "states": ""
+  },
+  {
+   "type": "BV",
+   "instance": 13,
+   "name": "Outlet group switched 1 load shed skip off delay",
+   "description": "Load shed option for the outlet group [SMT/SMX/SRT, SURT]",
+   "units": "",
+   "access": "W",
+   "states": ""
+  },
+  {
+   "type": "BV",
+   "instance": 14,
+   "name": "Outlet group switched 2 load shed skip off delay",
+   "description": "Load shed option for the outlet group [SMT/SMX/SRT, SURT]",
+   "units": "",
+   "access": "W",
+   "states": ""
+  },
+  {
+   "type": "BV",
+   "instance": 15,
+   "name": "Outlet group switched 3 load shed skip off delay",
+   "description": "Load shed option for the outlet group [SMT/SMX/SRT, SURT]",
+   "units": "",
+   "access": "W",
+   "states": ""
+  },
+  {
+   "type": "BV",
+   "instance": 16,
+   "name": "Outlet group main load shed stay off after power returns",
+   "description": "Load shed option for the outlet group [SMT/SMX/SRT, SURT]",
+   "units": "",
+   "access": "W",
+   "states": ""
+  },
+  {
+   "type": "BV",
+   "instance": 17,
+   "name": "Outlet group switched 1 load shed stay off after power returns",
+   "description": "Load shed option for the outlet group [SMT/SMX/SRT, SURT]",
+   "units": "",
+   "access": "W",
+   "states": ""
+  },
+  {
+   "type": "BV",
+   "instance": 18,
+   "name": "Outlet group switched 2 load shed stay off after power returns",
+   "description": "Load shed option for the outlet group [SMT/SMX/SRT, SURT]",
+   "units": "",
+   "access": "W",
+   "states": ""
+  },
+  {
+   "type": "BV",
+   "instance": 19,
+   "name": "Outlet group switched 3 load shed stay off after power returns",
+   "description": "Load shed option for the outlet group [SMT/SMX/SRT, SURT]",
+   "units": "",
+   "access": "W",
+   "states": ""
+  },
+  {
+   "type": "BV",
+   "instance": 20,
+   "name": "Outlet group switched 1 load shed overload",
+   "description": "Load shed option for the outlet group [SMT/SMX/SRT, SURT]",
+   "units": "",
+   "access": "W",
+   "states": ""
+  },
+  {
+   "type": "BV",
+   "instance": 21,
+   "name": "Outlet group switched 2 load shed overload",
+   "description": "Load shed option for the outlet group [SMT/SMX/SRT, SURT]",
+   "units": "",
+   "access": "W",
+   "states": ""
+  },
+  {
+   "type": "BV",
+   "instance": 22,
+   "name": "Outlet group switched 3 load shed overload",
+   "description": "Load shed option for the outlet group [SMT/SMX/SRT, SURT]",
+   "units": "",
+   "access": "W",
+   "states": ""
+  },
+  {
+   "type": "BV",
+   "instance": 23,
+   "name": "Run UPS self test",
+   "description": "Command: run ups self test [SMT/SMX/SRT, SURT, SURTD, other models]",
+   "units": "",
+   "access": "W",
+   "states": ""
+  },
+  {
+   "type": "BV",
+   "instance": 24,
+   "name": "Run UPS alarm test",
+   "description": "Command: run ups alarm test [SMT/SMX/SRT, SURT, SURTD, other models]",
+   "units": "",
+   "access": "W",
+   "states": ""
+  },
+  {
+   "type": "BV",
+   "instance": 25,
+   "name": "Run UPS alarm test continuous",
+   "description": "Command: run ups alarm test continuous [SMT/SMX/SRT, SURT]",
+   "units": "",
+   "access": "W",
+   "states": ""
+  },
+  {
+   "type": "BV",
+   "instance": 26,
+   "name": "Run UPS runtime calibration",
+   "description": "Command: run ups runtime calibration [SMT/SMX/SRT, SURT, SURTD, other models]",
+   "units": "",
+   "access": "W",
+   "states": ""
+  },
+  {
+   "type": "BV",
+   "instance": 27,
+   "name": "Cancel Test",
+   "description": "Command: cancel test [SMT/SMX/SRT, SURT]",
+   "units": "",
+   "access": "W",
+   "states": ""
+  },
+  {
+   "type": "BV",
+   "instance": 28,
+   "name": "Controlled Early Shutdown Time On Battery Enable",
+   "description": "Enables the matching threshold or action [SMT/SMX/SRT, SURT, SURTD, other models]",
+   "units": "",
+   "access": "W",
+   "states": ""
+  },
+  {
+   "type": "BV",
+   "instance": 29,
+   "name": "Controlled Early Shutdown Runtime Remaining Enable",
+   "description": "Enables the matching threshold or action [SMT/SMX/SRT, SURT, SURTD, other models]",
+   "units": "",
+   "access": "W",
+   "states": ""
+  },
+  {
+   "type": "BV",
+   "instance": 30,
+   "name": "Controlled Early Shutdown Battery Capacity Enable",
+   "description": "Enables the matching threshold or action [SMT/SMX/SRT, SURT, SURTD, other models]",
+   "units": "",
+   "access": "W",
+   "states": ""
+  },
+  {
+   "type": "BV",
+   "instance": 31,
+   "name": "Controlled Early Shutdown Load Percentage Enable",
+   "description": "Enables the matching threshold or action [SMT/SMX/SRT, SURT, SURTD, other models]",
+   "units": "",
+   "access": "W",
+   "states": ""
+  },
+  {
+   "type": "BV",
+   "instance": 32,
+   "name": "Controlled Early Shutdown Stay Off After Power Return Enable",
+   "description": "Enables the matching threshold or action [SMT/SMX/SRT, SURT, SURTD, other models]",
+   "units": "",
+   "access": "W",
+   "states": ""
+  },
+  {
+   "type": "BV",
+   "instance": 33,
+   "name": "UIO probe 1 temperature maximum enable",
+   "description": "Enables the matching threshold or action [SMT/SMX/SRT with AP9631/AP9635 NMC]",
+   "units": "",
+   "access": "W",
+   "states": ""
+  },
+  {
+   "type": "BV",
+   "instance": 34,
+   "name": "UIO probe 1 temperature high enable",
+   "description": "Enables the matching threshold or action [SMT/SMX/SRT with AP9631/AP9635 NMC]",
+   "units": "",
+   "access": "W",
+   "states": ""
+  },
+  {
+   "type": "BV",
+   "instance": 35,
+   "name": "UIO probe 1 temperature low enable",
+   "description": "Enables the matching threshold or action [SMT/SMX/SRT with AP9631/AP9635 NMC]",
+   "units": "",
+   "access": "W",
+   "states": ""
+  },
+  {
+   "type": "BV",
+   "instance": 36,
+   "name": "UIO probe 1 temperature minimum enable",
+   "description": "Enables the matching threshold or action [SMT/SMX/SRT with AP9631/AP9635 NMC]",
+   "units": "",
+   "access": "W",
+   "states": ""
+  },
+  {
+   "type": "BV",
+   "instance": 37,
+   "name": "UIO probe 1 humidity maximum enable",
+   "description": "Enables the matching threshold or action [SMT/SMX/SRT with AP9631/AP9635 NMC]",
+   "units": "",
+   "access": "W",
+   "states": ""
+  },
+  {
+   "type": "BV",
+   "instance": 38,
+   "name": "UIO probe 1 humidity high enable",
+   "description": "Enables the matching threshold or action [SMT/SMX/SRT with AP9631/AP9635 NMC]",
+   "units": "",
+   "access": "W",
+   "states": ""
+  },
+  {
+   "type": "BV",
+   "instance": 39,
+   "name": "UIO probe 1 humidity low enable",
+   "description": "Enables the matching threshold or action [SMT/SMX/SRT with AP9631/AP9635 NMC]",
+   "units": "",
+   "access": "W",
+   "states": ""
+  },
+  {
+   "type": "BV",
+   "instance": 40,
+   "name": "UIO probe 1 humidity minimum enable",
+   "description": "Enables the matching threshold or action [SMT/SMX/SRT with AP9631/AP9635 NMC]",
+   "units": "",
+   "access": "W",
+   "states": ""
+  },
+  {
+   "type": "BV",
+   "instance": 41,
+   "name": "UIO probe 1 contact 1enable",
+   "description": "Enables the matching threshold or action [SMT/SMX/SRT with AP9631/AP9635 NMC]",
+   "units": "",
+   "access": "W",
+   "states": ""
+  },
+  {
+   "type": "BV",
+   "instance": 42,
+   "name": "UIO probe 1 contact 2 enable",
+   "description": "Enables the matching threshold or action [SMT/SMX/SRT with AP9631/AP9635 NMC]",
+   "units": "",
+   "access": "W",
+   "states": ""
+  },
+  {
+   "type": "BV",
+   "instance": 43,
+   "name": "UIO probe 1 input contact 1 state",
+   "description": "Input contact state [SMT/SMX/SRT with AP9631/AP9635 NMC]",
+   "units": "",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "BV",
+   "instance": 44,
+   "name": "UIO probe 1 input contact 2",
+   "description": "Input contact state [SMT/SMX/SRT with AP9631/AP9635 NMC]",
+   "units": "",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "BV",
+   "instance": 45,
+   "name": "UIO probe 1 input contact 1 normal state",
+   "description": "Sets the contact/relay normal state [SMT/SMX/SRT with AP9631/AP9635 NMC]",
+   "units": "",
+   "access": "W",
+   "states": ""
+  },
+  {
+   "type": "BV",
+   "instance": 46,
+   "name": "UIO probe 1 input contact 2 normal state",
+   "description": "Sets the contact/relay normal state [SMT/SMX/SRT with AP9631/AP9635 NMC]",
+   "units": "",
+   "access": "W",
+   "states": ""
+  },
+  {
+   "type": "BV",
+   "instance": 47,
+   "name": "UIO probe 1 contact 1 severity",
+   "description": "Alarm severity for the contact [SMT/SMX/SRT with AP9631/AP9635 NMC]",
+   "units": "",
+   "access": "W",
+   "states": ""
+  },
+  {
+   "type": "BV",
+   "instance": 48,
+   "name": "UIO probe 1 contact 2 severity",
+   "description": "Alarm severity for the contact [SMT/SMX/SRT with AP9631/AP9635 NMC]",
+   "units": "",
+   "access": "W",
+   "states": ""
+  },
+  {
+   "type": "BV",
+   "instance": 49,
+   "name": "UIO probe 1 output relay 1 state",
+   "description": "Output relay state [SMT/SMX/SRT with AP9631/AP9635 NMC]",
+   "units": "",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "BV",
+   "instance": 50,
+   "name": "UIO probe 1 output relay 1 normal state",
+   "description": "Sets the contact/relay normal state [SMT/SMX/SRT with AP9631/AP9635 NMC]",
+   "units": "",
+   "access": "W",
+   "states": ""
+  },
+  {
+   "type": "BV",
+   "instance": 51,
+   "name": "UIO probe 2 temperature maximum enable",
+   "description": "Enables the matching threshold or action [SMT/SMX/SRT with AP9631 NMC]",
+   "units": "",
+   "access": "W",
+   "states": ""
+  },
+  {
+   "type": "BV",
+   "instance": 52,
+   "name": "UIO probe 2 temperature high enable",
+   "description": "Enables the matching threshold or action [SMT/SMX/SRT with AP9631 NMC]",
+   "units": "",
+   "access": "W",
+   "states": ""
+  },
+  {
+   "type": "BV",
+   "instance": 53,
+   "name": "UIO probe 2 temperature low enable",
+   "description": "Enables the matching threshold or action [SMT/SMX/SRT with AP9631 NMC]",
+   "units": "",
+   "access": "W",
+   "states": ""
+  },
+  {
+   "type": "BV",
+   "instance": 54,
+   "name": "UIO probe 2 temperature minimum enable",
+   "description": "Enables the matching threshold or action [SMT/SMX/SRT with AP9631 NMC]",
+   "units": "",
+   "access": "W",
+   "states": ""
+  },
+  {
+   "type": "BV",
+   "instance": 55,
+   "name": "UIO probe 2 humidity maximum enable",
+   "description": "Enables the matching threshold or action [SMT/SMX/SRT with AP9631 NMC]",
+   "units": "",
+   "access": "W",
+   "states": ""
+  },
+  {
+   "type": "BV",
+   "instance": 56,
+   "name": "UIO probe 2 humidity high enable",
+   "description": "Enables the matching threshold or action [SMT/SMX/SRT with AP9631 NMC]",
+   "units": "",
+   "access": "W",
+   "states": ""
+  },
+  {
+   "type": "BV",
+   "instance": 57,
+   "name": "UIO probe 2 humidity low enable",
+   "description": "Enables the matching threshold or action [SMT/SMX/SRT with AP9631 NMC]",
+   "units": "",
+   "access": "W",
+   "states": ""
+  },
+  {
+   "type": "BV",
+   "instance": 58,
+   "name": "UIO probe 2 humidity minimum enable",
+   "description": "Enables the matching threshold or action [SMT/SMX/SRT with AP9631 NMC]",
+   "units": "",
+   "access": "W",
+   "states": ""
+  },
+  {
+   "type": "BV",
+   "instance": 59,
+   "name": "UIO probe 2 contact 1enable",
+   "description": "Enables the matching threshold or action [SMT/SMX/SRT with AP9631 NMC]",
+   "units": "",
+   "access": "W",
+   "states": ""
+  },
+  {
+   "type": "BV",
+   "instance": 60,
+   "name": "UIO probe 2 contact 2 enable",
+   "description": "Enables the matching threshold or action [SMT/SMX/SRT with AP9631 NMC]",
+   "units": "",
+   "access": "W",
+   "states": ""
+  },
+  {
+   "type": "BV",
+   "instance": 61,
+   "name": "UIO probe 2 input contact 1 state",
+   "description": "Input contact state [SMT/SMX/SRT with AP9631 NMC]",
+   "units": "",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "BV",
+   "instance": 62,
+   "name": "UIO probe 2 input contact 2 state",
+   "description": "Input contact state [SMT/SMX/SRT with AP9631 NMC]",
+   "units": "",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "BV",
+   "instance": 63,
+   "name": "UIO probe 2 input contact 1 normal state",
+   "description": "Sets the contact/relay normal state [SMT/SMX/SRT with AP9631 NMC]",
+   "units": "",
+   "access": "W",
+   "states": ""
+  },
+  {
+   "type": "BV",
+   "instance": 64,
+   "name": "UIO probe 2 input contact 2 normal state",
+   "description": "Sets the contact/relay normal state [SMT/SMX/SRT with AP9631 NMC]",
+   "units": "",
+   "access": "W",
+   "states": ""
+  },
+  {
+   "type": "BV",
+   "instance": 65,
+   "name": "UIO probe 2 contact 1 severity",
+   "description": "Alarm severity for the contact [SMT/SMX/SRT with AP9631 NMC]",
+   "units": "",
+   "access": "W",
+   "states": ""
+  },
+  {
+   "type": "BV",
+   "instance": 66,
+   "name": "UIO probe 2 contact 2 severity",
+   "description": "Alarm severity for the contact [SMT/SMX/SRT with AP9631 NMC]",
+   "units": "",
+   "access": "W",
+   "states": ""
+  },
+  {
+   "type": "BV",
+   "instance": 67,
+   "name": "UIO probe 2 output relay 1 state",
+   "description": "Output relay state [SMT/SMX/SRT with AP9631 NMC]",
+   "units": "",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "BV",
+   "instance": 68,
+   "name": "UIO probe 2 output relay 1 normal state",
+   "description": "Sets the contact/relay normal state [SMT/SMX/SRT with AP9631 NMC]",
+   "units": "",
+   "access": "W",
+   "states": ""
+  },
+  {
+   "type": "BV",
+   "instance": 69,
+   "name": "LostUPSComm",
+   "description": "UPS alarm/event flag",
+   "units": "",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "BV",
+   "instance": 70,
+   "name": "Overload",
+   "description": "UPS alarm/event flag",
+   "units": "",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "BV",
+   "instance": 71,
+   "name": "SelfTestFailed",
+   "description": "UPS alarm/event flag",
+   "units": "",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "BV",
+   "instance": 72,
+   "name": "LowBattery",
+   "description": "UPS alarm/event flag",
+   "units": "",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "BV",
+   "instance": 73,
+   "name": "OnBattery",
+   "description": "UPS alarm/event flag",
+   "units": "",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "BV",
+   "instance": 74,
+   "name": "LowInputVoltage",
+   "description": "UPS alarm/event flag",
+   "units": "",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "BV",
+   "instance": 75,
+   "name": "HighInputVoltage",
+   "description": "UPS alarm/event flag",
+   "units": "",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "BV",
+   "instance": 76,
+   "name": "MainInputBad",
+   "description": "UPS alarm/event flag",
+   "units": "",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "BV",
+   "instance": 77,
+   "name": "LowBattery2",
+   "description": "UPS alarm/event flag",
+   "units": "",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "BV",
+   "instance": 78,
+   "name": "OutputOff",
+   "description": "UPS alarm/event flag",
+   "units": "",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "BV",
+   "instance": 79,
+   "name": "ShutdownWaitingForPowerReturn",
+   "description": "UPS alarm/event flag",
+   "units": "",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "BV",
+   "instance": 80,
+   "name": "BadBattery",
+   "description": "UPS alarm/event flag",
+   "units": "",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "BV",
+   "instance": 81,
+   "name": "InBypassInternalHardwareCondition",
+   "description": "UPS alarm/event flag",
+   "units": "",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "BV",
+   "instance": 82,
+   "name": "InBypassFrontPanelSoftware",
+   "description": "UPS alarm/event flag",
+   "units": "",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "BV",
+   "instance": 83,
+   "name": "InBypassBypassSwitch",
+   "description": "UPS alarm/event flag",
+   "units": "",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "BV",
+   "instance": 84,
+   "name": "BypassPowerSupplyProblem",
+   "description": "UPS alarm/event flag",
+   "units": "",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "BV",
+   "instance": 85,
+   "name": "FanProblem",
+   "description": "UPS alarm/event flag",
+   "units": "",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "BV",
+   "instance": 86,
+   "name": "LostBattComm",
+   "description": "UPS alarm/event flag",
+   "units": "",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "BV",
+   "instance": 87,
+   "name": "RuntimeCalStarted",
+   "description": "UPS alarm/event flag",
+   "units": "",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "BV",
+   "instance": 88,
+   "name": "GracefulShutdownInProgress",
+   "description": "UPS alarm/event flag",
+   "units": "",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "BV",
+   "instance": 89,
+   "name": "AvrRelayInoperable",
+   "description": "UPS alarm/event flag",
+   "units": "",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "BV",
+   "instance": 90,
+   "name": "AbnormaOutputVoltage",
+   "description": "UPS alarm/event flag",
+   "units": "",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "BV",
+   "instance": 91,
+   "name": "BatteryChargerInoperable",
+   "description": "UPS alarm/event flag",
+   "units": "",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "BV",
+   "instance": 92,
+   "name": "InternalBattTempHigh",
+   "description": "UPS alarm/event flag",
+   "units": "",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "BV",
+   "instance": 93,
+   "name": "BatteryDisconnected",
+   "description": "UPS alarm/event flag",
+   "units": "",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "BV",
+   "instance": 94,
+   "name": "OutletGroupOff",
+   "description": "UPS alarm/event flag",
+   "units": "",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "BV",
+   "instance": 95,
+   "name": "DcImbalance",
+   "description": "UPS alarm/event flag",
+   "units": "",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "BV",
+   "instance": 96,
+   "name": "MainRelayInoperable",
+   "description": "UPS alarm/event flag",
+   "units": "",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "BV",
+   "instance": 97,
+   "name": "BypassRelayInoperable",
+   "description": "UPS alarm/event flag",
+   "units": "",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "BV",
+   "instance": 98,
+   "name": "LostUPSCommOnBat",
+   "description": "UPS alarm/event flag",
+   "units": "",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "BV",
+   "instance": 99,
+   "name": "PFCInputRelayInoperable",
+   "description": "UPS alarm/event flag",
+   "units": "",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "BV",
+   "instance": 100,
+   "name": "UPSTempCritical",
+   "description": "UPS alarm/event flag",
+   "units": "",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "BV",
+   "instance": 101,
+   "name": "BattVoltageHigh",
+   "description": "UPS alarm/event flag",
+   "units": "",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "BV",
+   "instance": 102,
+   "name": "EepromInoperable",
+   "description": "UPS alarm/event flag",
+   "units": "",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "BV",
+   "instance": 103,
+   "name": "BattTempSensorIssue",
+   "description": "UPS alarm/event flag",
+   "units": "",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "BV",
+   "instance": 104,
+   "name": "BattBusSoftStartInoperable",
+   "description": "UPS alarm/event flag",
+   "units": "",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "BV",
+   "instance": 105,
+   "name": "BattVoltageSenseIssue",
+   "description": "UPS alarm/event flag",
+   "units": "",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "BV",
+   "instance": 106,
+   "name": "OutputShortCircuit",
+   "description": "UPS alarm/event flag",
+   "units": "",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "BV",
+   "instance": 107,
+   "name": "OutputRelayInoperable",
+   "description": "UPS alarm/event flag",
+   "units": "",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "BV",
+   "instance": 108,
+   "name": "PfcInoperable",
+   "description": "UPS alarm/event flag",
+   "units": "",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "BV",
+   "instance": 109,
+   "name": "DcBusOvervoltage",
+   "description": "UPS alarm/event flag",
+   "units": "",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "BV",
+   "instance": 110,
+   "name": "InverterInoperable",
+   "description": "UPS alarm/event flag",
+   "units": "",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "BV",
+   "instance": 111,
+   "name": "OvercurrentTrip",
+   "description": "UPS alarm/event flag",
+   "units": "",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "BV",
+   "instance": 112,
+   "name": "BypassPfcRelayInoperable",
+   "description": "UPS alarm/event flag",
+   "units": "",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "BV",
+   "instance": 113,
+   "name": "DcBusSoftStartInoperable",
+   "description": "UPS alarm/event flag",
+   "units": "",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "BV",
+   "instance": 114,
+   "name": "GreenRelayCondition",
+   "description": "UPS alarm/event flag",
+   "units": "",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "BV",
+   "instance": 115,
+   "name": "DcOutputCondition",
+   "description": "UPS alarm/event flag",
+   "units": "",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "BV",
+   "instance": 116,
+   "name": "DcBusCondition",
+   "description": "UPS alarm/event flag",
+   "units": "",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "BV",
+   "instance": 117,
+   "name": "PowerSystemSensorCondition",
+   "description": "UPS alarm/event flag",
+   "units": "",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "BV",
+   "instance": 118,
+   "name": "AdConverterInoperable",
+   "description": "UPS alarm/event flag",
+   "units": "",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "BV",
+   "instance": 119,
+   "name": "LogicPowerSupplyInoperable",
+   "description": "UPS alarm/event flag",
+   "units": "",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "BV",
+   "instance": 120,
+   "name": "BackfeedRelayInoperable",
+   "description": "UPS alarm/event flag",
+   "units": "",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "BV",
+   "instance": 121,
+   "name": "UpsInternalCommError",
+   "description": "UPS alarm/event flag",
+   "units": "",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "BV",
+   "instance": 122,
+   "name": "FirmwareTransferToUpsDidNotSucceed",
+   "description": "UPS alarm/event flag",
+   "units": "",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "BV",
+   "instance": 123,
+   "name": "UpsInvalidFirmware",
+   "description": "UPS alarm/event flag",
+   "units": "",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "BV",
+   "instance": 124,
+   "name": "WarrantyExpiringSoon",
+   "description": "UPS alarm/event flag",
+   "units": "",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "BV",
+   "instance": 125,
+   "name": "TechnicalCheckRecommended",
+   "description": "UPS alarm/event flag",
+   "units": "",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "BV",
+   "instance": 126,
+   "name": "BatteryNearEndOfLife",
+   "description": "UPS alarm/event flag",
+   "units": "",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "BV",
+   "instance": 127,
+   "name": "BatteryMeasureLifeNearEnd",
+   "description": "UPS alarm/event flag",
+   "units": "",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "BV",
+   "instance": 128,
+   "name": "BatteryLifeExceeded",
+   "description": "UPS alarm/event flag",
+   "units": "",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "BV",
+   "instance": 129,
+   "name": "BatteryTempWarning",
+   "description": "UPS alarm/event flag",
+   "units": "",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "BV",
+   "instance": 130,
+   "name": "BatteryGeneralCondition",
+   "description": "UPS alarm/event flag",
+   "units": "",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "BV",
+   "instance": 131,
+   "name": "BatteryCommLost",
+   "description": "UPS alarm/event flag",
+   "units": "",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "BV",
+   "instance": 132,
+   "name": "BatteryPackDisconnected",
+   "description": "UPS alarm/event flag",
+   "units": "",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "BV",
+   "instance": 133,
+   "name": "BatteryFirmwareMismatch",
+   "description": "UPS alarm/event flag",
+   "units": "",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "BV",
+   "instance": 134,
+   "name": "BatteryTempSensorNotOperating",
+   "description": "UPS alarm/event flag",
+   "units": "",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "BV",
+   "instance": 135,
+   "name": "LocalDisplayButtonIssue",
+   "description": "UPS alarm/event flag",
+   "units": "",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "BV",
+   "instance": 136,
+   "name": "UpsNeedsFactorySetup",
+   "description": "UPS alarm/event flag",
+   "units": "",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "BV",
+   "instance": 137,
+   "name": "EpoActive",
+   "description": "UPS alarm/event flag",
+   "units": "",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "BV",
+   "instance": 138,
+   "name": "FirmwareMismatch",
+   "description": "UPS alarm/event flag",
+   "units": "",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "BV",
+   "instance": 139,
+   "name": "OscillatorInoperable",
+   "description": "UPS alarm/event flag",
+   "units": "",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "BV",
+   "instance": 140,
+   "name": "MeasureMismatch",
+   "description": "UPS alarm/event flag",
+   "units": "",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "BV",
+   "instance": 141,
+   "name": "GeneralSubsystemCondition",
+   "description": "UPS alarm/event flag",
+   "units": "",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "BV",
+   "instance": 142,
+   "name": "LogicPowerSuppyRelayCondition",
+   "description": "UPS alarm/event flag",
+   "units": "",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "BV",
+   "instance": 143,
+   "name": "PowerSystemCondition",
+   "description": "UPS alarm/event flag",
+   "units": "",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "BV",
+   "instance": 144,
+   "name": "MaintenanceModeForFan",
+   "description": "UPS alarm/event flag",
+   "units": "",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "BV",
+   "instance": 145,
+   "name": "ServiceBypassInBypass",
+   "description": "UPS alarm/event flag",
+   "units": "",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "BV",
+   "instance": 146,
+   "name": "ServiceBypassDisconnected",
+   "description": "UPS alarm/event flag",
+   "units": "",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "BV",
+   "instance": 147,
+   "name": "ServiceBypassOutputCondition",
+   "description": "UPS alarm/event flag",
+   "units": "",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "BV",
+   "instance": 148,
+   "name": "ServiceBypassInternalCondition",
+   "description": "UPS alarm/event flag",
+   "units": "",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "BV",
+   "instance": 149,
+   "name": "InTemporaryBypass",
+   "description": "UPS alarm/event flag",
+   "units": "",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "BV",
+   "instance": 150,
+   "name": "PowerModuleInoperable",
+   "description": "UPS alarm/event flag",
+   "units": "",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "BV",
+   "instance": 151,
+   "name": "BatteryInoperable",
+   "description": "UPS alarm/event flag",
+   "units": "",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "BV",
+   "instance": 152,
+   "name": "LoadKvaAlarmViolation",
+   "description": "UPS alarm/event flag",
+   "units": "",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "BV",
+   "instance": 153,
+   "name": "InputVoltageFreqPreventsBypass",
+   "description": "UPS alarm/event flag",
+   "units": "",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "BV",
+   "instance": 154,
+   "name": "BypassDueToInternalHardwareCondition",
+   "description": "UPS alarm/event flag",
+   "units": "",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "BV",
+   "instance": 155,
+   "name": "BypassDueToOverload",
+   "description": "UPS alarm/event flag",
+   "units": "",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "BV",
+   "instance": 156,
+   "name": "BypassDueToMaintenance",
+   "description": "UPS alarm/event flag",
+   "units": "",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "BV",
+   "instance": 157,
+   "name": "SystemFanInoperable",
+   "description": "UPS alarm/event flag",
+   "units": "",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "BV",
+   "instance": 158,
+   "name": "RuntimeAlarmViolation",
+   "description": "UPS alarm/event flag",
+   "units": "",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "BV",
+   "instance": 159,
+   "name": "ExtendedRunFrameInoperable",
+   "description": "UPS alarm/event flag",
+   "units": "",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "BV",
+   "instance": 160,
+   "name": "OutputVoltageOutsideLimits",
+   "description": "UPS alarm/event flag",
+   "units": "",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "BV",
+   "instance": 161,
+   "name": "PhaseSyncCondition",
+   "description": "UPS alarm/event flag",
+   "units": "",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "BV",
+   "instance": 162,
+   "name": "BatteryNotInstalledProperly",
+   "description": "UPS alarm/event flag",
+   "units": "",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "BV",
+   "instance": 163,
+   "name": "BatteryVoltageExceedsNominal",
+   "description": "UPS alarm/event flag",
+   "units": "",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "BV",
+   "instance": 164,
+   "name": "SiteWiringFault",
+   "description": "UPS alarm/event flag",
+   "units": "",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "BV",
+   "instance": 165,
+   "name": "NumBatteriesIncreased",
+   "description": "UPS alarm/event flag",
+   "units": "",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "BV",
+   "instance": 166,
+   "name": "NumBatteryDecreased",
+   "description": "UPS alarm/event flag",
+   "units": "",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "BV",
+   "instance": 167,
+   "name": "ExtendedRunFramesIncreased",
+   "description": "UPS alarm/event flag",
+   "units": "",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "BV",
+   "instance": 168,
+   "name": "ExtendedRunFramesDecreased",
+   "description": "UPS alarm/event flag",
+   "units": "",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "BV",
+   "instance": 169,
+   "name": "ExternalSwitchQ001Closed",
+   "description": "UPS alarm/event flag",
+   "units": "",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "BV",
+   "instance": 170,
+   "name": "ExternalSwitchQ002Closed",
+   "description": "UPS alarm/event flag",
+   "units": "",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "BV",
+   "instance": 171,
+   "name": "ExternalSwitchQ003Closed",
+   "description": "UPS alarm/event flag",
+   "units": "",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "BV",
+   "instance": 172,
+   "name": "ExternalSwitchQ004Closed",
+   "description": "UPS alarm/event flag",
+   "units": "",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "BV",
+   "instance": 173,
+   "name": "ExternalSwitchQ005Closed",
+   "description": "UPS alarm/event flag",
+   "units": "",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "BV",
+   "instance": 174,
+   "name": "ExternalSwitchQ006Closed",
+   "description": "UPS alarm/event flag",
+   "units": "",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "BV",
+   "instance": 175,
+   "name": "ExternalSwitchQ007Closed",
+   "description": "UPS alarm/event flag",
+   "units": "",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "BV",
+   "instance": 176,
+   "name": "ExternalSwitchQ008Closed",
+   "description": "UPS alarm/event flag",
+   "units": "",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "BV",
+   "instance": 177,
+   "name": "ExternalSwitchQ009Closed",
+   "description": "UPS alarm/event flag",
+   "units": "",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "BV",
+   "instance": 178,
+   "name": "ExternalSwitchQ0010Closed",
+   "description": "UPS alarm/event flag",
+   "units": "",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "BV",
+   "instance": 179,
+   "name": "EpoActive2",
+   "description": "UPS alarm/event flag",
+   "units": "",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "BV",
+   "instance": 180,
+   "name": "StaticBypassSwitchInoperable",
+   "description": "UPS alarm/event flag",
+   "units": "",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "BV",
+   "instance": 181,
+   "name": "SystemStartupConfigProblem",
+   "description": "UPS alarm/event flag",
+   "units": "",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "BV",
+   "instance": 182,
+   "name": "PsuInoperable",
+   "description": "UPS alarm/event flag",
+   "units": "",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "BV",
+   "instance": 183,
+   "name": "WeakBattery",
+   "description": "UPS alarm/event flag",
+   "units": "",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "BV",
+   "instance": 184,
+   "name": "HighBatteryTemperature",
+   "description": "UPS alarm/event flag",
+   "units": "",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "BV",
+   "instance": 185,
+   "name": "InternalMechanicalBypass",
+   "description": "UPS alarm/event flag",
+   "units": "",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "BV",
+   "instance": 186,
+   "name": "LostParallelRedundancy",
+   "description": "UPS alarm/event flag",
+   "units": "",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "BV",
+   "instance": 187,
+   "name": "ParallelCommCondition1",
+   "description": "UPS alarm/event flag",
+   "units": "",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "BV",
+   "instance": 188,
+   "name": "ParalletlCommCondition2",
+   "description": "UPS alarm/event flag",
+   "units": "",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "BV",
+   "instance": 189,
+   "name": "AuxCommCondition",
+   "description": "UPS alarm/event flag",
+   "units": "",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "BV",
+   "instance": 190,
+   "name": "ParallelTerminationCondition1",
+   "description": "UPS alarm/event flag",
+   "units": "",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "BV",
+   "instance": 191,
+   "name": "ParallelTerminationCondition2",
+   "description": "UPS alarm/event flag",
+   "units": "",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "BV",
+   "instance": 192,
+   "name": "AuxTerminationCondition",
+   "description": "UPS alarm/event flag",
+   "units": "",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "BV",
+   "instance": 193,
+   "name": "NoMasterPresent",
+   "description": "UPS alarm/event flag",
+   "units": "",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "BV",
+   "instance": 194,
+   "name": "ParallelOverload",
+   "description": "UPS alarm/event flag",
+   "units": "",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "BV",
+   "instance": 195,
+   "name": "ParallelConfigCondition",
+   "description": "UPS alarm/event flag",
+   "units": "",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "BV",
+   "instance": 196,
+   "name": "ChangeDustFilterSoon",
+   "description": "UPS alarm/event flag",
+   "units": "",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "BV",
+   "instance": 197,
+   "name": "ChangeDustFilterNow",
+   "description": "UPS alarm/event flag",
+   "units": "",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "BV",
+   "instance": 198,
+   "name": "UioInputContact1Critical1",
+   "description": "UPS alarm/event flag",
+   "units": "",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "BV",
+   "instance": 199,
+   "name": "UioInputContact1Critical2",
+   "description": "UPS alarm/event flag",
+   "units": "",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "BV",
+   "instance": 200,
+   "name": "UioInputContact2Critical1",
+   "description": "UPS alarm/event flag",
+   "units": "",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "BV",
+   "instance": 201,
+   "name": "UioInputContact2Critical2",
+   "description": "UPS alarm/event flag",
+   "units": "",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "BV",
+   "instance": 202,
+   "name": "UioTempMinThresholdViolation1",
+   "description": "UPS alarm/event flag",
+   "units": "",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "BV",
+   "instance": 203,
+   "name": "UioTempMinThresholdViolation2",
+   "description": "UPS alarm/event flag",
+   "units": "",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "BV",
+   "instance": 204,
+   "name": "UioTempLowThresholdViolation1",
+   "description": "UPS alarm/event flag",
+   "units": "",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "BV",
+   "instance": 205,
+   "name": "UioTempLowThresholdViolation2",
+   "description": "UPS alarm/event flag",
+   "units": "",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "BV",
+   "instance": 206,
+   "name": "UioTempHighThresholdViolation1",
+   "description": "UPS alarm/event flag",
+   "units": "",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "BV",
+   "instance": 207,
+   "name": "UioTempHighThresholdViolation2",
+   "description": "UPS alarm/event flag",
+   "units": "",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "BV",
+   "instance": 208,
+   "name": "UioTempMaxThresholdViolation1",
+   "description": "UPS alarm/event flag",
+   "units": "",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "BV",
+   "instance": 209,
+   "name": "UioTempMaxThresholdViolation2",
+   "description": "UPS alarm/event flag",
+   "units": "",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "BV",
+   "instance": 210,
+   "name": "UioHumidMinThresholdViolation1",
+   "description": "UPS alarm/event flag",
+   "units": "",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "BV",
+   "instance": 211,
+   "name": "UioHumidMinThresholdViolation2",
+   "description": "UPS alarm/event flag",
+   "units": "",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "BV",
+   "instance": 212,
+   "name": "UioHumidLowThresholdViolation1",
+   "description": "UPS alarm/event flag",
+   "units": "",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "BV",
+   "instance": 213,
+   "name": "UioHumidLowThresholdViolation2",
+   "description": "UPS alarm/event flag",
+   "units": "",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "BV",
+   "instance": 214,
+   "name": "UioHumidHighThresholdViolation1",
+   "description": "UPS alarm/event flag",
+   "units": "",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "BV",
+   "instance": 215,
+   "name": "UioHumidHighThresholdViolation2",
+   "description": "UPS alarm/event flag",
+   "units": "",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "BV",
+   "instance": 216,
+   "name": "UioHumidMaxThresholdViolation1",
+   "description": "UPS alarm/event flag",
+   "units": "",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "BV",
+   "instance": 217,
+   "name": "UioHumidMaxThresholdViolation2",
+   "description": "UPS alarm/event flag",
+   "units": "",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "BV",
+   "instance": 218,
+   "name": "UioLostComm1",
+   "description": "UPS alarm/event flag",
+   "units": "",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "BV",
+   "instance": 219,
+   "name": "UioLostComm2",
+   "description": "UPS alarm/event flag",
+   "units": "",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "BV",
+   "instance": 220,
+   "name": "UioCriticalFault",
+   "description": "UPS alarm/event flag",
+   "units": "",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "BV",
+   "instance": 221,
+   "name": "UioOutputRelayAbnormalState1",
+   "description": "UPS alarm/event flag",
+   "units": "",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "BV",
+   "instance": 222,
+   "name": "UioOutputRelayAbnormalState2",
+   "description": "UPS alarm/event flag",
+   "units": "",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "BV",
+   "instance": 223,
+   "name": "UioInputContact1Warning1",
+   "description": "UPS alarm/event flag",
+   "units": "",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "BV",
+   "instance": 224,
+   "name": "UioInputContact1Warning2",
+   "description": "UPS alarm/event flag",
+   "units": "",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "BV",
+   "instance": 225,
+   "name": "UioInputContact2Warning1",
+   "description": "UPS alarm/event flag",
+   "units": "",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "BV",
+   "instance": 226,
+   "name": "UioInputContact2Warning2",
+   "description": "UPS alarm/event flag",
+   "units": "",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "BV",
+   "instance": 227,
+   "name": "InputContactOutputRelayFault",
+   "description": "UPS alarm/event flag",
+   "units": "",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "BV",
+   "instance": 228,
+   "name": "AirFilterWarning",
+   "description": "UPS alarm/event flag",
+   "units": "",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "BV",
+   "instance": 229,
+   "name": "BatteryPackIncompatible",
+   "description": "UPS alarm/event flag",
+   "units": "",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "BV",
+   "instance": 230,
+   "name": "UpsInputContact1AbnormalState",
+   "description": "UPS alarm/event flag",
+   "units": "",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "BV",
+   "instance": 231,
+   "name": "UpsInputContact2AbnormalState",
+   "description": "UPS alarm/event flag",
+   "units": "",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "BV",
+   "instance": 232,
+   "name": "UpsOutputRelay1AbnormalState",
+   "description": "UPS alarm/event flag",
+   "units": "",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "BV",
+   "instance": 233,
+   "name": "UpsOutputRelay2AbnormalState",
+   "description": "UPS alarm/event flag",
+   "units": "",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "BV",
+   "instance": 234,
+   "name": "UpsOutputRelay3AbnormalState",
+   "description": "UPS alarm/event flag",
+   "units": "",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "BV",
+   "instance": 235,
+   "name": "UpsOutputRelay4AbnormalState",
+   "description": "UPS alarm/event flag",
+   "units": "",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "BV",
+   "instance": 236,
+   "name": "UpsOutputRelay5AbnormalState",
+   "description": "UPS alarm/event flag",
+   "units": "",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "BV",
+   "instance": 237,
+   "name": "UpsOutputRelay6AbnormalState",
+   "description": "UPS alarm/event flag",
+   "units": "",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "CSV",
+   "instance": 0,
+   "name": "UPS model",
+   "description": "Text, up to 24 characters [SMT/SMX/SRT, SURT, SURTD, other models]",
+   "units": "",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "CSV",
+   "instance": 1,
+   "name": "UPS serial number",
+   "description": "Text, up to 16 characters [SMT/SMX/SRT, SURT, SURTD, other models]",
+   "units": "",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "CSV",
+   "instance": 2,
+   "name": "UPS manufacture date",
+   "description": "Text, up to 16 characters [SMT/SMX/SRT, SURT, SURTD, other models]",
+   "units": "",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "CSV",
+   "instance": 3,
+   "name": "User-specified battery replacement date",
+   "description": "Text, up to 16 characters [SMT/SMX/SRT, SURT, SURTD, other models]",
+   "units": "",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "CSV",
+   "instance": 4,
+   "name": "UPS apparent power rating",
+   "description": "Text, up to 16 characters [SMT/SMX/SRT, SURT]",
+   "units": "",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "CSV",
+   "instance": 5,
+   "name": "UPS real power rating",
+   "description": "Text, up to 16 characters [SMT/SMX/SRT, SURT]",
+   "units": "",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "CSV",
+   "instance": 6,
+   "name": "UPS external battery SKU",
+   "description": "Text, up to 16 characters [SMT/SMX/SRT, SURT]",
+   "units": "",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "CSV",
+   "instance": 7,
+   "name": "UPS SKU",
+   "description": "Text, up to 16 characters [SMT/SMX/SRT, SURT]",
+   "units": "",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "CSV",
+   "instance": 8,
+   "name": "UPS Firmware Revision",
+   "description": "Text, up to 16 characters [SMT/SMX/SRT, SURT, SURTD, other models]",
+   "units": "",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "CSV",
+   "instance": 9,
+   "name": "UPS Internal Battery SKU",
+   "description": "Text, up to 16 characters [SMT/SMX/SRT, SURT]",
+   "units": "",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "CSV",
+   "instance": 10,
+   "name": "Outlet group main name",
+   "description": "Text, up to 16 characters [SMT/SMX/SRT, SURT, SURTD, other models]",
+   "units": "",
+   "access": "W",
+   "states": ""
+  },
+  {
+   "type": "CSV",
+   "instance": 11,
+   "name": "Outlet group switched 1 name",
+   "description": "Text, up to 16 characters [SMT/SMX/SRT, SURT, SURTD, other models]",
+   "units": "",
+   "access": "W",
+   "states": ""
+  },
+  {
+   "type": "CSV",
+   "instance": 12,
+   "name": "Outlet group switched 2 name",
+   "description": "Text, up to 16 characters [SMT/SMX/SRT, SURT, SURTD, other models]",
+   "units": "",
+   "access": "W",
+   "states": ""
+  },
+  {
+   "type": "CSV",
+   "instance": 13,
+   "name": "Outlet group switched 3 name",
+   "description": "Text, up to 16 characters [SMT/SMX/SRT, SURT, SURTD, other models]",
+   "units": "",
+   "access": "W",
+   "states": ""
+  },
+  {
+   "type": "CSV",
+   "instance": 14,
+   "name": "Output frequency setting",
+   "description": "Output frequency setting as text [SURT]",
+   "units": "",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "CSV",
+   "instance": 15,
+   "name": "UPS name",
+   "description": "Text, up to 24 characters [SMT/SMX/SRT, SURT, SURTD, other models]",
+   "units": "",
+   "access": "W",
+   "states": ""
+  },
+  {
+   "type": "CSV",
+   "instance": 16,
+   "name": "Next battery replacement date",
+   "description": "Text, up to 16 characters [SMT/SMX/SRT, SURT]",
+   "units": "",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "CSV",
+   "instance": 17,
+   "name": "Self test result",
+   "description": "Text, up to 100 characters [SMT/SMX/SRT, SURT, SURTD, other models]",
+   "units": "",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "CSV",
+   "instance": 18,
+   "name": "Runtime calibration result",
+   "description": "Text, up to 100 characters [SMT/SMX/SRT, SURT, SURTD, other models]",
+   "units": "",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "CSV",
+   "instance": 19,
+   "name": "UIO probe 1 temperature and humidity name",
+   "description": "Text, up to 20 characters [SMT/SMX/SRT with AP9631/AP9635 NMC]",
+   "units": "",
+   "access": "W",
+   "states": ""
+  },
+  {
+   "type": "CSV",
+   "instance": 20,
+   "name": "UIO probe 1 temperature and humidity location",
+   "description": "Text, up to 20 characters [SMT/SMX/SRT with AP9631/AP9635 NMC]",
+   "units": "",
+   "access": "W",
+   "states": ""
+  },
+  {
+   "type": "CSV",
+   "instance": 21,
+   "name": "UIO probe 1 contact 1 name",
+   "description": "Text, up to 20 characters [SMT/SMX/SRT with AP9631/AP9635 NMC]",
+   "units": "",
+   "access": "W",
+   "states": ""
+  },
+  {
+   "type": "CSV",
+   "instance": 22,
+   "name": "UIO probe 1 contact 2 name",
+   "description": "Text, up to 20 characters [SMT/SMX/SRT with AP9631/AP9635 NMC]",
+   "units": "",
+   "access": "W",
+   "states": ""
+  },
+  {
+   "type": "CSV",
+   "instance": 23,
+   "name": "UIO probe 1 contact 1 location",
+   "description": "Text, up to 20 characters [SMT/SMX/SRT with AP9631/AP9635 NMC]",
+   "units": "",
+   "access": "W",
+   "states": ""
+  },
+  {
+   "type": "CSV",
+   "instance": 24,
+   "name": "UIO probe 1 contact 2 location",
+   "description": "Text, up to 20 characters [SMT/SMX/SRT with AP9631/AP9635 NMC]",
+   "units": "",
+   "access": "W",
+   "states": ""
+  },
+  {
+   "type": "CSV",
+   "instance": 25,
+   "name": "UIO probe 1 output relay 1 name",
+   "description": "Text, up to 20 characters [SMT/SMX/SRT with AP9631/AP9635 NMC]",
+   "units": "",
+   "access": "W",
+   "states": ""
+  },
+  {
+   "type": "CSV",
+   "instance": 26,
+   "name": "UIO probe 1 output relay 1 location",
+   "description": "Text, up to 20 characters [SMT/SMX/SRT with AP9631/AP9635 NMC]",
+   "units": "",
+   "access": "W",
+   "states": ""
+  },
+  {
+   "type": "CSV",
+   "instance": 27,
+   "name": "UIO probe 2 temperature and humidity name",
+   "description": "Text, up to 20 characters [SMT/SMX/SRT with AP9631 NMC]",
+   "units": "",
+   "access": "W",
+   "states": ""
+  },
+  {
+   "type": "CSV",
+   "instance": 28,
+   "name": "UIO probe 2 temperature and humidity location",
+   "description": "Text, up to 20 characters [SMT/SMX/SRT with AP9631 NMC]",
+   "units": "",
+   "access": "W",
+   "states": ""
+  },
+  {
+   "type": "CSV",
+   "instance": 29,
+   "name": "UIO probe 2 contact 1 name",
+   "description": "Text, up to 20 characters [SMT/SMX/SRT with AP9631 NMC]",
+   "units": "",
+   "access": "W",
+   "states": ""
+  },
+  {
+   "type": "CSV",
+   "instance": 30,
+   "name": "UIO probe 2 contact 2 name",
+   "description": "Text, up to 20 characters [SMT/SMX/SRT with AP9631 NMC]",
+   "units": "",
+   "access": "W",
+   "states": ""
+  },
+  {
+   "type": "CSV",
+   "instance": 31,
+   "name": "UIO probe 2 contact 1 location",
+   "description": "Text, up to 20 characters [SMT/SMX/SRT with AP9631 NMC]",
+   "units": "",
+   "access": "W",
+   "states": ""
+  },
+  {
+   "type": "CSV",
+   "instance": 32,
+   "name": "UIO probe 2 contact 2 location",
+   "description": "Text, up to 20 characters [SMT/SMX/SRT with AP9631 NMC]",
+   "units": "",
+   "access": "W",
+   "states": ""
+  },
+  {
+   "type": "CSV",
+   "instance": 33,
+   "name": "UIO probe 2 output relay 1 name",
+   "description": "Text, up to 20 characters [SMT/SMX/SRT with AP9631 NMC]",
+   "units": "",
+   "access": "W",
+   "states": ""
+  },
+  {
+   "type": "CSV",
+   "instance": 34,
+   "name": "UIO probe 2 output relay 1 location",
+   "description": "Text, up to 20 characters [SMT/SMX/SRT with AP9631 NMC]",
+   "units": "",
+   "access": "W",
+   "states": ""
+  },
+  {
+   "type": "MV",
+   "instance": 0,
+   "name": "Last battery transfer",
+   "description": "Cause of the last transfer to battery [SMT/SMX/SRT, SURT, SURTD, other models]",
+   "units": "",
+   "access": "R",
+   "states": "Options in printed order: none, unknown, high input voltage, low input voltage, distorted input, rapid change input voltage, high input frequency, low input frequency, freq and/or phase difference, test, general error, power system error, battery system error, distorted inverter output, epo interface, graceful shutdown"
+  },
+  {
+   "type": "MV",
+   "instance": 1,
+   "name": "Rated Output voltage setting",
+   "description": "Rated output voltage setting [SMT/SMX/SRT, SURT, SURTD, other models]",
+   "units": "",
+   "access": "R",
+   "states": "Options in printed order: 100, 120, 200, 208, 220, 230, 240, 380, 400, 415, 480, 110, 127, Auto_120, 120/208, 120/240, 100/200, 225, 115"
+  },
+  {
+   "type": "MV",
+   "instance": 2,
+   "name": "Sensitivity",
+   "description": "Input power sensitivity [SMT/SMX/SRT, SURT, SURTD, other models]",
+   "units": "",
+   "access": "W",
+   "states": "Options in printed order: normal, reduced, low"
+  },
+  {
+   "type": "MV",
+   "instance": 3,
+   "name": "Audible Alarm",
+   "description": "When the UPS beeper sounds [SMT/SMX/SRT, SURT, SURTD, other models]",
+   "units": "",
+   "access": "W",
+   "states": "Options in printed order: at power outage, at low battery, mute, never"
+  },
+  {
+   "type": "MV",
+   "instance": 4,
+   "name": "Self test schedule",
+   "description": "Automatic self-test schedule [SMT/SMX/SRT, SURT, SURTD, other models]",
+   "units": "",
+   "access": "W",
+   "states": "Options in printed order: never, startup, every 7, every 14, startup and every 7 since test, startup and every 14 since test"
+  },
+  {
+   "type": "MV",
+   "instance": 5,
+   "name": "UPS state",
+   "description": "Present UPS operating state [SMT/SMX/SRT, SURT, SURTD, other models]",
+   "units": "",
+   "access": "R",
+   "states": "Options in printed order: unknown, online, online green, on battery, sleep, shutdown, fault, self test, calibration, bypass, low battery"
+  },
+  {
+   "type": "MV",
+   "instance": 6,
+   "name": "UPS Control",
+   "description": "Command to switch the UPS on, off, bypass, reboot or sleep [all models]",
+   "units": "",
+   "access": "W",
+   "states": "Options in printed order: do nothing, on immediately, on delayed, off immediately, off delayed, bypass, return from bypass, reboot immediately, reboot delayed, sleep immediately, sleep delayed"
+  },
+  {
+   "type": "MV",
+   "instance": 7,
+   "name": "Main Outlet Group control",
+   "description": "Command for the main outlet group [SMT/SMX/SRT, SURT]",
+   "units": "",
+   "access": "W",
+   "states": "Options in printed order: do nothing, cancel, on immediately, on delayed, off immediately, off delayed, reboot immediately, reboot delayed, shutdown immediately with ac restart, shutdown delayed with ac restart"
+  },
+  {
+   "type": "MV",
+   "instance": 8,
+   "name": "Switched Outlet group 1 control",
+   "description": "Command for switched outlet group 1 [SMT/SMX/SRT, SURT]",
+   "units": "",
+   "access": "W",
+   "states": "Options in printed order: do nothing, cancel, on immediately, on delayed, off immediately, off delayed, reboot immediately, reboot delayed, shutdown immediately with ac restart, shutdown delayed with ac restart"
+  },
+  {
+   "type": "MV",
+   "instance": 9,
+   "name": "Switched Outlet group 2 control",
+   "description": "Command for switched outlet group 2 [SMT/SMX/SRT, SURT]",
+   "units": "",
+   "access": "W",
+   "states": "Options in printed order: do nothing, cancel, on immediately, on delayed, off immediately, off delayed, reboot immediately, reboot delayed, shutdown immediately with ac restart, shutdown delayed with ac restart"
+  },
+  {
+   "type": "MV",
+   "instance": 10,
+   "name": "Switched Outlet group 3 control",
+   "description": "Command for switched outlet group 3 [SMT/SMX/SRT, SURT]",
+   "units": "",
+   "access": "W",
+   "states": "Options in printed order: do nothing, cancel, on immediately, on delayed, off immediately, off delayed, reboot immediately, reboot delayed, shutdown immediately with ac restart, shutdown delayed with ac restart"
+  },
+  {
+   "type": "MV",
+   "instance": 11,
+   "name": "UIO probe 1 temperature and humidity status",
+   "description": "Probe status [SMT/SMX/SRT with AP9631/AP9635 NMC]",
+   "units": "",
+   "access": "R",
+   "states": "Options in printed order: not present, ok, warning, critical"
+  },
+  {
+   "type": "MV",
+   "instance": 12,
+   "name": "UIO probe 1 contact status",
+   "description": "Probe status [SMT/SMX/SRT with AP9631/AP9635 NMC]",
+   "units": "",
+   "access": "R",
+   "states": "Options in printed order: not present, ok, warning, critical"
+  },
+  {
+   "type": "MV",
+   "instance": 13,
+   "name": "UIO probe 2 temperature and humidity status",
+   "description": "Probe status [SMT/SMX/SRT with AP9631 NMC]",
+   "units": "",
+   "access": "R",
+   "states": "Options in printed order: not present, ok, warning, critical"
+  },
+  {
+   "type": "MV",
+   "instance": 14,
+   "name": "UIO probe 2 contact status",
+   "description": "Probe status [SMT/SMX/SRT with AP9631 NMC]",
+   "units": "",
+   "access": "R",
+   "states": "Options in printed order: not present, ok, warning, critical"
+  },
+  {
+   "type": "NC",
+   "instance": 0,
+   "name": "DefaultNotifier",
+   "description": "Default notification class for UPS alarm BVs",
+   "units": "",
+   "access": "W",
+   "states": ""
+  }
+ ],
+ "page": "https://easybacnet.com/bacnet-points-lists/apc/smart-ups-nmc2-nmc3",
+ "note": "Re-typed from the manufacturer's public documentation (see source). Point availability varies by firmware and options; verify against the live device."
+}

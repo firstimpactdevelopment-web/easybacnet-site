@@ -1,0 +1,619 @@
+{
+ "manufacturer": "Schneider Electric",
+ "manufacturer_slug": "schneider-electric",
+ "model": "SE7200 Series PIR Ready Zoning Controller",
+ "model_slug": "se7200-zoning-controller",
+ "aliases": [
+  "SE7200",
+  "SE7200C5x45B",
+  "SE7200F5x45B",
+  "SE7200C5045B",
+  "SE7200F5045B"
+ ],
+ "equipment_type": "Zone controller (room thermostat)",
+ "applies_to": "Schneider Electric PIR-ready SE7200 series 24 Vac zoning controllers (SE7200C5x45B, SE7200F5x45B).",
+ "summary": "The SE7200 is a 24 Vac PIR-ready room controller for zoning (on/off or floating outputs). With the BACnet module it is a BACnet MS/TP application specific controller (B-ASC) with about 55 objects: room and outdoor temperature, setpoints, system mode, occupancy, PI demands, output status and configuration objects.",
+ "bacnet_transport": [
+  "BACnet MS/TP"
+ ],
+ "firmware": null,
+ "default_device_instance": "72000 + MAC address",
+ "access_inferred": false,
+ "notes": [
+  "Access comes from the objects table (Present_Value R or R,W). Writable AV, BV and MV objects are marked commandable 'C'.",
+  "Group objects (GRP) are listed as type 'Other'; they only bundle related objects. Schneider suggests removing configuration objects from the BAS after setup to cut polling.",
+  "State texts and ranges come from the guide's enumeration tables where the object name and instance match; a few enumeration rows use different instances than the objects table and were not applied.",
+  "The PIR cover and the humidity sensor are model options: objects marked 'only ...' exist only on the listed part numbers.",
+  "Fan Mode, Fan Mode Sequence and Auto Fan are SE7300-only and not listed here; the table still ticks MV 28 Fan Status for the SE7200.",
+  "The objects table prints 'General Options 2' as GRP 45, the same instance as 'General Options 1'; the SER7300 table and the configuration section give GRP 55. It is listed once here as GRP 45 General Options 1.",
+  "In this table the alarms are BI 36 Window, BI 37 Filter and BI 38 Service Alarm; the enumeration table and GUI list call them BI 35-37. Other slips: the GUI list gives Unoccupied Cool Setpoint as 'AV34' and Output 1 as 'MV28', Figure 1 calls System Mode 'AV16', and the sample program writes occupancy to 'MV13'; the objects table has AV 44, MV 27, MV 16 and MV 18."
+ ],
+ "source": {
+  "title": "BACnet Integration Manual: PIR Ready SE7200, SE7300 & SER7300 Series (24 Vac zoning, fan coil and line-voltage fan coil controllers)",
+  "doc_number": "IG-SE7000-BNET24VAC-A4.EN.4.2013.v1",
+  "revision_date": "April 2013",
+  "url": "https://download.se.com/files?p_Doc_Ref=IG-SE7000-BNET24VAC-A4"
+ },
+ "integration": {
+  "summary": "Command occupancy with MV 18 and the mode with MV 16, and write the occupied setpoints AV 39/AV 40. Read AV 7 room temperature, MV 33 effective occupancy and the PI demands AV 21/AV 22. The BMS can also send outdoor temperature to AV 9.",
+  "minimum_points": [
+   {
+    "ref": "MV 18",
+    "name": "Occupancy Command",
+    "why": "BMS occupancy: local, occupied or unoccupied"
+   },
+   {
+    "ref": "MV 16",
+    "name": "System Mode",
+    "why": "Off / auto / cool / heat"
+   },
+   {
+    "ref": "AV 39",
+    "name": "Occupied Heat Setpoint",
+    "why": "Occupied heating setpoint"
+   },
+   {
+    "ref": "AV 40",
+    "name": "Occupied Cool Setpoint",
+    "why": "Occupied cooling setpoint"
+   },
+   {
+    "ref": "MV 33",
+    "name": "Effective Occupancy",
+    "why": "Actual occupancy state"
+   },
+   {
+    "ref": "AV 7",
+    "name": "Room Temperature",
+    "why": "Space temperature"
+   },
+   {
+    "ref": "AV 21",
+    "name": "PI Heating Demand",
+    "why": "Heating demand, 0-100 %"
+   },
+   {
+    "ref": "AV 22",
+    "name": "PI Cooling Demand",
+    "why": "Cooling demand, 0-100 %"
+   },
+   {
+    "ref": "BI 38",
+    "name": "Service Alarm",
+    "why": "Service alarm from an input set to Service"
+   }
+  ],
+  "enable": "BACnet stays off until the MAC address is changed from the factory 254 to 0-127. MV 18 Occupancy Command: 1 = Local Occupancy, 2 = Occupied, 3 = Unoccupied.",
+  "heartbeat": null,
+  "remote_sensors": "The BMS can write Outdoor Temperature (AV 9) and, for testing or override, Room Temperature (AV 7); AV 7 only accepts writes while BV 8 Room Temp Override is set to Override. Written room temperature, outdoor temperature and occupancy are released if the controller goes offline.",
+  "setup": [
+   "Controllers ship with MAC address 254, which keeps BACnet communication off. Set the MAC address (0-127) at the controller to enable BACnet MS/TP.",
+   "Default Device ID is 72000 + MAC address.",
+   "Baud rate auto-detects (9600, 19200, 38400, 76800) at power-up; after a network speed change the device keeps the old speed for 10 minutes unless re-powered.",
+   "Default Device Name is the model number plus the MAC address; Device Name and Device ID are writable.",
+   "No COV support: poll at 5 seconds or slower and write on change ('if once' or every few minutes), not every program scan."
+  ],
+  "gotchas": [
+   "If the controller goes offline, values the BMS wrote to Room Temperature, Outdoor Temperature and Occupancy are released.",
+   "Segmented requests and responses are not supported; keep Read Property Multiple requests small.",
+   "The device object has no Local_Time or Local_Date, so the controller cannot claim DM-TS-B even though time sync over the network works."
+  ]
+ },
+ "points": [
+  {
+   "type": "AV",
+   "instance": 7,
+   "name": "Room Temperature",
+   "description": "Range -39.9°F (-40°C) to 121.9°F (50°C)",
+   "units": "°F/°C",
+   "access": "C",
+   "states": ""
+  },
+  {
+   "type": "BV",
+   "instance": 8,
+   "name": "Room Temp Override",
+   "description": "Default Normal",
+   "units": "",
+   "access": "C",
+   "states": "0=Normal, 1=Override"
+  },
+  {
+   "type": "AV",
+   "instance": 9,
+   "name": "Outdoor Temperature",
+   "description": "Range -39°F (-40°C) to 121.9°F (50°C)",
+   "units": "°F/°C",
+   "access": "C",
+   "states": ""
+  },
+  {
+   "type": "AI",
+   "instance": 12,
+   "name": "Supply Temperature",
+   "description": "Range -39.9°F (-40°C) to 121.9°F (50°C)",
+   "units": "°F/°C",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "BV",
+   "instance": 14,
+   "name": "AUX Command",
+   "description": "Default Off",
+   "units": "",
+   "access": "C",
+   "states": "0=Off, 1=On"
+  },
+  {
+   "type": "MV",
+   "instance": 15,
+   "name": "Sequence of Operation",
+   "description": "",
+   "units": "",
+   "access": "C",
+   "states": "1=Cooling Only, 2=Heating Only, 3=Cooling & Reheat, 4=Heating & Reheat, 5=Cool/Heat4P, 6=Cool/Heat4P&Reht"
+  },
+  {
+   "type": "MV",
+   "instance": 16,
+   "name": "System Mode",
+   "description": "",
+   "units": "",
+   "access": "C",
+   "states": "1=Off, 2=Auto, 3=Cool, 4=Heat"
+  },
+  {
+   "type": "MV",
+   "instance": 18,
+   "name": "Occupancy Command",
+   "description": "",
+   "units": "",
+   "access": "C",
+   "states": "1=Local Occupancy, 2=Occupied, 3=Unoccupied"
+  },
+  {
+   "type": "MV",
+   "instance": 19,
+   "name": "Keypad Lockout",
+   "description": "",
+   "units": "",
+   "access": "C",
+   "states": "1=Level 0, 2=Level 1, 3=Level 2, 4=Level 3, 5=Level 4, 6=Level 5"
+  },
+  {
+   "type": "Other",
+   "instance": 20,
+   "name": "Control Output",
+   "description": "Group object (bundles related objects)",
+   "units": "",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 21,
+   "name": "PI Heating Demand",
+   "description": "Range 0% to 100%; default 0%",
+   "units": "%",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 22,
+   "name": "PI Cooling Demand",
+   "description": "Range 0% to 100%; default 0%",
+   "units": "%",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "Other",
+   "instance": 24,
+   "name": "Controller Status",
+   "description": "Group object (bundles related objects)",
+   "units": "",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "BI",
+   "instance": 25,
+   "name": "AUX Status",
+   "description": "Default Off",
+   "units": "",
+   "access": "R",
+   "states": "0=Off, 1=On"
+  },
+  {
+   "type": "MV",
+   "instance": 26,
+   "name": "Output 2",
+   "description": "",
+   "units": "",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "MV",
+   "instance": 27,
+   "name": "Output 1",
+   "description": "",
+   "units": "",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "MV",
+   "instance": 28,
+   "name": "Fan Status",
+   "description": "",
+   "units": "",
+   "access": "R",
+   "states": "1=Off, 2=Low, 3=Med, 4=High"
+  },
+  {
+   "type": "BI",
+   "instance": 30,
+   "name": "BI 2 Status",
+   "description": "Default Deactivated",
+   "units": "",
+   "access": "R",
+   "states": "0=Deactivated, 1=Activated"
+  },
+  {
+   "type": "BI",
+   "instance": 31,
+   "name": "UI 3 Status",
+   "description": "Default Deactivated",
+   "units": "",
+   "access": "R",
+   "states": "0=Deactivated, 1=Activated"
+  },
+  {
+   "type": "BI",
+   "instance": 32,
+   "name": "Local Motion",
+   "description": "Default No Motion",
+   "units": "",
+   "access": "R",
+   "states": "0=No Motion, 1=Motion"
+  },
+  {
+   "type": "MV",
+   "instance": 33,
+   "name": "Effective Occupancy",
+   "description": "",
+   "units": "",
+   "access": "R",
+   "states": "1=Occupied, 2=Unoccupied, 3=Temporary Occupied, 4=Stand-by"
+  },
+  {
+   "type": "Other",
+   "instance": 34,
+   "name": "Controller Alarms",
+   "description": "Group object (bundles related objects)",
+   "units": "",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "BI",
+   "instance": 36,
+   "name": "Window Alarm",
+   "description": "",
+   "units": "",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "BI",
+   "instance": 37,
+   "name": "Filter Alarm",
+   "description": "",
+   "units": "",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "BI",
+   "instance": 38,
+   "name": "Service Alarm",
+   "description": "",
+   "units": "",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "Other",
+   "instance": 38,
+   "name": "Temperature Setpoints",
+   "description": "Group object (bundles related objects)",
+   "units": "",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 39,
+   "name": "Occupied Heat Setpoint",
+   "description": "Range 40°F (4.5°C) to 90°F (32°C); default 72°F (22°C)",
+   "units": "°F/°C",
+   "access": "C",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 40,
+   "name": "Occupied Cool Setpoint",
+   "description": "Range 54°F (12°C) to 100°F (37.5°C); default 74°F (24°C)",
+   "units": "°F/°C",
+   "access": "C",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 41,
+   "name": "Stand-by Heat Setpoint",
+   "description": "Range 40°F (4.5°C) to 90°F (32°C); default 72°F (22°C)",
+   "units": "°F/°C",
+   "access": "C",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 42,
+   "name": "Stand-by Cool Setpoint",
+   "description": "Range 54°F (12°C) to 100°F (37.5°C); default 74°F (24°C)",
+   "units": "°F/°C",
+   "access": "C",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 43,
+   "name": "Unoccupied Heat Setpoint",
+   "description": "Range 40°F (4.5°C) to 90°F (32°C); default 62°F (16.5°C)",
+   "units": "°F/°C",
+   "access": "C",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 44,
+   "name": "Unoccupied Cool Setpoint",
+   "description": "Range 54°F (12°C) to 100°F (37.5°C); default 80°F (26.5°C)",
+   "units": "°F/°C",
+   "access": "C",
+   "states": ""
+  },
+  {
+   "type": "Other",
+   "instance": 45,
+   "name": "General Options 1",
+   "description": "Group object (bundles related objects)",
+   "units": "",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "MV",
+   "instance": 46,
+   "name": "BI 1 Configuration",
+   "description": "",
+   "units": "",
+   "access": "C",
+   "states": "1=None, 2=Rem NSB, 3=Motion NO, 4=Motion NC, 5=Window"
+  },
+  {
+   "type": "MV",
+   "instance": 47,
+   "name": "BI 2 Configuration",
+   "description": "",
+   "units": "",
+   "access": "C",
+   "states": "1=None, 2=Door Dry, 3=Override, 4=Filter, 5=Service"
+  },
+  {
+   "type": "MV",
+   "instance": 48,
+   "name": "UI 3 configuration",
+   "description": "",
+   "units": "",
+   "access": "C",
+   "states": "1=None, 2=COC/NH, 3=COC/NC, 4=COS, 5=SS"
+  },
+  {
+   "type": "BV",
+   "instance": 49,
+   "name": "Menu Scroll",
+   "description": "Default Scroll Active",
+   "units": "",
+   "access": "C",
+   "states": "0=No Scroll, 1=Scroll Active"
+  },
+  {
+   "type": "BV",
+   "instance": 50,
+   "name": "Auto Mode Enable",
+   "description": "Default Enabled",
+   "units": "",
+   "access": "C",
+   "states": "0=Disabled, 1=Enabled"
+  },
+  {
+   "type": "BV",
+   "instance": 51,
+   "name": "Temperature Scale",
+   "description": "Default °F",
+   "units": "",
+   "access": "C",
+   "states": "0=°C, 1=°F"
+  },
+  {
+   "type": "MV",
+   "instance": 52,
+   "name": "Pipe Number",
+   "description": "",
+   "units": "",
+   "access": "C",
+   "states": ""
+  },
+  {
+   "type": "MV",
+   "instance": 53,
+   "name": "Out#1 Config",
+   "description": "",
+   "units": "",
+   "access": "C",
+   "states": ""
+  },
+  {
+   "type": "MV",
+   "instance": 54,
+   "name": "AUX Configuration",
+   "description": "",
+   "units": "",
+   "access": "C",
+   "states": "1=Not used, 2=NO with Occ, 3=NC with Occ, 4=NO with Occ & Fan, 5=NC with Occ & Fan, 6=Network controlled"
+  },
+  {
+   "type": "AV",
+   "instance": 56,
+   "name": "Password Value",
+   "description": "Range 0 to 1000",
+   "units": "",
+   "access": "C",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 58,
+   "name": "Heating Setpoint Limit",
+   "description": "Range 40°F (4.5°C) to 90°F (32°C); default 90°F (32°C)",
+   "units": "°F/°C",
+   "access": "C",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 59,
+   "name": "Cooling Setpoint Limit",
+   "description": "Range 54°F (12°C) to 100°F (37.5°C); default 54°F (12°C)",
+   "units": "°F/°C",
+   "access": "C",
+   "states": ""
+  },
+  {
+   "type": "BV",
+   "instance": 60,
+   "name": "Setpoint Type",
+   "description": "Default Permanent",
+   "units": "",
+   "access": "C",
+   "states": "0=Permanent, 1=Temporary"
+  },
+  {
+   "type": "MV",
+   "instance": 62,
+   "name": "Temporary Occupancy Time",
+   "description": "",
+   "units": "",
+   "access": "C",
+   "states": "1=0 hour, 2=1 hour, 3=2 hours, 4=3 hours, 5=4 hours, 6=5 hours, 7=6 hours, 8=7 hours, 9=8 hours, 10=9 hours, 11=10 hours, 12=11 hours, 13=12 hours, 14=13 hours, 15=14 hours, 16=15 hours, 17=16 hours, 18=17 hours, 19=18 hours, 20=19 hours, 21=20 hours, 22=21 hours, 23=22 hours, 24=23 hours, 25=24 hours"
+  },
+  {
+   "type": "AV",
+   "instance": 63,
+   "name": "Deadband",
+   "description": "Range 2°F (1°C) to 5°F (2.5°C); default 2°F (1°C)",
+   "units": "°F/°C",
+   "access": "C",
+   "states": ""
+  },
+  {
+   "type": "BV",
+   "instance": 64,
+   "name": "Reheat Time Base",
+   "description": "Default 15 minutes",
+   "units": "",
+   "access": "C",
+   "states": "0=15 minutes, 1=10 seconds"
+  },
+  {
+   "type": "MV",
+   "instance": 65,
+   "name": "Proportional Band",
+   "description": "",
+   "units": "",
+   "access": "C",
+   "states": "1=3 °F (1.2 °C), 2=4 °F (1.7 °C), 3=5 °F (2.2 °C), 4=6 °F (2.8 °C), 5=7 °F (3.3 °C), 6=8 °F (3.9 °C), 7=9 °F (5.0 °C), 8=10 °F (5.6 °C)"
+  },
+  {
+   "type": "AV",
+   "instance": 67,
+   "name": "Stand-by Time",
+   "description": "Range 0.5 Hours to 24.0 Hours; default 0.5 Hours",
+   "units": "h",
+   "access": "C",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 68,
+   "name": "Unoccupied Time",
+   "description": "Range 0.0 Hours to 24.0 Hours; default 0.0 Hours",
+   "units": "h",
+   "access": "C",
+   "states": ""
+  },
+  {
+   "type": "Other",
+   "instance": 74,
+   "name": "Output Configuration Options",
+   "description": "Group object (bundles related objects)",
+   "units": "",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "BV",
+   "instance": 75,
+   "name": "Control type",
+   "description": "Default On/Off; only SE7200",
+   "units": "",
+   "access": "C",
+   "states": "0=On/Off, 1=Floating"
+  },
+  {
+   "type": "MV",
+   "instance": 76,
+   "name": "Floating Motor timing",
+   "description": "only SE7200",
+   "units": "",
+   "access": "C",
+   "states": "1=0.5 minute, 2=1 minute, 3=1.5 minutes, 4=2 minutes, 5=2.5 minutes, 6=3 minutes, 7=3.5 minutes, 8=4 minutes, 9=4.5 minutes, 10=5 minutes, 11=5.5 minutes, 12=6 minutes, 13=6.5 minutes, 14=7 minutes, 15=7.5 minutes, 16=8 minutes, 17=8.5 minutes, 18=9 minutes"
+  },
+  {
+   "type": "MV",
+   "instance": 77,
+   "name": "On Off Control CPH",
+   "description": "only SE7200",
+   "units": "",
+   "access": "C",
+   "states": "1=3 CPH, 2=4 CPH, 3=5 CPH, 4=6 CPH, 5=7 CPH, 6=8 CPH"
+  },
+  {
+   "type": "BV",
+   "instance": 78,
+   "name": "Direct Reverse Acting",
+   "description": "Default Direct Acting; only SE7200",
+   "units": "",
+   "access": "C",
+   "states": "0=Direct Acting, 1=Reverse Acting"
+  }
+ ],
+ "page": "https://easybacnet.com/bacnet-points-lists/schneider-electric/se7200-zoning-controller",
+ "note": "Re-typed from the manufacturer's public documentation (see source). Point availability varies by firmware and options; verify against the live device."
+}

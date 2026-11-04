@@ -1,0 +1,1161 @@
+{
+  "manufacturer": "Trane",
+  "manufacturer_slug": "trane",
+  "model": "Symbio 210 VAV",
+  "model_slug": "symbio-210-vav",
+  "aliases": [
+    "Symbio 210",
+    "Symbio210",
+    "Symbio 210 VAV controller",
+    "BAS-SVP043"
+  ],
+  "equipment_type": "VAV box controller",
+  "applies_to": "Trane VAV terminal units with the Symbio 210 programmable controller running the factory VAV programs (space temperature, ventilation flow and flow tracking control).",
+  "summary": "The Symbio 210 is Trane's programmable VAV box controller. With the factory VAV program it exposes about 120 objects with short instances (AI 1, AV 14, MV 6...). The BAS sends setpoints, sensor values and occupancy through the '... BAS' and '... Request' objects; the BAS value objects ship Out of Service and must be put In Service before the controller uses them. Which objects exist depends on the application (STC, VFC or FTC) and the heat and fan options.",
+  "bacnet_transport": [
+    "BACnet MS/TP"
+  ],
+  "firmware": null,
+  "default_device_instance": null,
+  "access_inferred": true,
+  "notes": [
+    "The guide has no read/write column. Access is inferred: inputs, hardware outputs and Active/Status/Diagnostic/auto-commissioning results are read-only; the BAS, Request, Override, setpoint and configuration value objects are writable.",
+    "Point availability depends on the application (Space Temperature Control, Ventilation Flow Control, Flow Tracking Control) and the heat type; the guide's Table 9 marks which applications use each point.",
+    "Units follow the controller's system units (IP or SI). AV 2 and AV 8 are printed with pressure units although they hold airflow values; they are kept as printed.",
+    "The PDF at this URL prints document number BAS-SVP043A-EN, June 2021, on its pages.",
+    "Alarm objects: AI 1, AI 2, AI 4 and AI 5 go to fault when the sensor fails, and the Diagnostic BVs (BV 3, 7, 9, 10, 12, 13) carry notification classes 2-4."
+  ],
+  "source": {
+    "title": "Integration Guide: Symbio 210 Programmable Controller for Variable-Air-Volume (VAV) Boxes",
+    "doc_number": "BAS-SVP043A-EN",
+    "revision_date": "June 2021",
+    "url": "https://elibrary.tranetechnologies.com/public/commercial-hvac/Literature/Integration/BAS-SVP043B-EN_11242021.pdf"
+  },
+  "integration": {
+    "summary": "Write occupancy to MV 6 Occupancy Request and the space setpoint to AV 27 Space Temperature Setpoint BAS after putting it In Service. Read AV 59 Space Temperature Active, AV 20 Discharge Air Flow and AV 13 Air Flow Setpoint Active. If the BMS supplies space temperature or CO2, put AV 14/AV 22 In Service and rewrite them every 15 minutes.",
+    "minimum_points": [
+      {
+        "ref": "MV 6",
+        "name": "Occupancy Request",
+        "why": "Occupancy command from the BMS"
+      },
+      {
+        "ref": "MV 4",
+        "name": "Heat Cool Mode Request",
+        "why": "Heat/cool mode command from the BMS"
+      },
+      {
+        "ref": "AV 27",
+        "name": "Space Temperature Setpoint BAS",
+        "why": "Space setpoint; put In Service before writing"
+      },
+      {
+        "ref": "MV 7",
+        "name": "Occupancy Status",
+        "why": "Confirms the occupancy in effect"
+      },
+      {
+        "ref": "MV 5",
+        "name": "Heat Cool Mode Status",
+        "why": "Current heat/cool mode"
+      },
+      {
+        "ref": "AV 59",
+        "name": "Space Temperature Active",
+        "why": "Space temperature used for control"
+      },
+      {
+        "ref": "AV 13",
+        "name": "Air Flow Setpoint Active",
+        "why": "Airflow setpoint in use"
+      },
+      {
+        "ref": "AV 20",
+        "name": "Discharge Air Flow",
+        "why": "Measured box airflow"
+      },
+      {
+        "ref": "BV 13",
+        "name": "Diagnostic: Flow Sensor Failure",
+        "why": "Flow (pressure) sensor fault"
+      }
+    ],
+    "enable": "No enable point. The '... BAS' value objects ship Out of Service and are ignored until the BMS (or Tracer SC) puts them In Service. Symbio UI (Tools > BAS Control Selection) chooses BAS or Local as the source for each sensor and setpoint.",
+    "heartbeat": "AV 14 Space Temperature BAS and AV 22 Space CO2 Concentration BAS must be written at least every 15 minutes while In Service; otherwise the controller puts the point in fault.",
+    "remote_sensors": "Space temperature goes to AV 14, CO2 to AV 22 and supply air temperature to AV 29, each after putting the object In Service. AV 59, AV 50 and AV 60 show the values in use. Select BAS as the source in Symbio UI BAS Control Selection.",
+    "setup": [
+      "Three rotary switches set a three-digit address used as both the MS/TP MAC address and the Device ID; valid MAC addresses are 001-127.",
+      "Symbio UI is a web page served over the USB service port at http://198.80.18.1; it sets protocol, IP settings, name, time and system units.",
+      "Changing system units (IP/SI) or protocol settings restarts the controller."
+    ],
+    "gotchas": [
+      "Writes to BAS objects do nothing while they are Out of Service (the factory default).",
+      "MV 2 Air Flow Override and MV 3 Water Valve Override force the box; release them when done.",
+      "AV 37 Space Temp Setpoint Default and the airflow min/max setpoints are commissioning values, not for cyclic writes."
+    ]
+  },
+  "points": [
+    {
+      "type": "AI",
+      "instance": 1,
+      "name": "Space Temperature Local",
+      "description": "Temperature sensor in the space",
+      "units": "°F or °C",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AI",
+      "instance": 2,
+      "name": "Space Temperature Setpoint Local",
+      "description": "Zone sensor thumbwheel",
+      "units": "°F or °C",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AI",
+      "instance": 3,
+      "name": "Pressure 1",
+      "description": "Pressure across the flow ring (120% flow = 2 in. H2O)",
+      "units": "in. H2O or Pa",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AI",
+      "instance": 4,
+      "name": "Discharge Air Temperature",
+      "description": "Discharge air temperature sensor wired to the controller",
+      "units": "°F or °C",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AI",
+      "instance": 5,
+      "name": "Supply Air Temperature Local",
+      "description": "Supply air temperature sensor wired to the controller",
+      "units": "°F or °C",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AI",
+      "instance": 6,
+      "name": "Actual Air Valve Position",
+      "description": "Air valve position, % open",
+      "units": "%",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AI",
+      "instance": 7,
+      "name": "Actual Reheat Position",
+      "description": "Reheat valve position, % open",
+      "units": "%",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AI",
+      "instance": 8,
+      "name": "Space CO2 Concentration Local",
+      "description": "Space CO2 concentration in ppm",
+      "units": "ppm",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AI",
+      "instance": 9,
+      "name": "Air Valve 1 Stroke Time",
+      "description": "Air valve stroke time, milliseconds",
+      "units": "",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AI",
+      "instance": 10,
+      "name": "Minimum Actuator Time",
+      "description": "Air valve minimum actuator time, ms (minimum 500)",
+      "units": "",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AI",
+      "instance": 11,
+      "name": "Water Valve Maximum Stroke Time",
+      "description": "Modulating water heat valve stroke time, ms",
+      "units": "",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AI",
+      "instance": 12,
+      "name": "Water Valve Minimum Actuator Time",
+      "description": "Water valve minimum actuator time, ms",
+      "units": "",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AO",
+      "instance": 1,
+      "name": "Air Valve Drive Command",
+      "description": "Requested air valve position, % open",
+      "units": "%",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AO",
+      "instance": 2,
+      "name": "Supply Fan Speed",
+      "description": "Supply fan output; single-speed fans 0% = off, 100% = on",
+      "units": "%",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AO",
+      "instance": 3,
+      "name": "Heating Valve Command",
+      "description": "Requested modulating reheat valve position",
+      "units": "%",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 2,
+      "name": "Air Flow Minimum Setpoint Active",
+      "description": "Minimum airflow setpoint in use",
+      "units": "in. H2O or Pa",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 8,
+      "name": "Air Flow Nominal Status",
+      "description": "Nominal airflow set by configurator based on the unit size selected",
+      "units": "in. H2O or Pa",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 9,
+      "name": "Reheat Enable Point",
+      "description": "",
+      "units": "°F or °C",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 10,
+      "name": "Auto Changeover Point",
+      "description": "",
+      "units": "°F or °C",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 12,
+      "name": "Heat Output Secondary Status",
+      "description": "Secondary heat output, % (valve position, PWM capacity or stage)",
+      "units": "%",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 13,
+      "name": "Air Flow Setpoint Active",
+      "description": "",
+      "units": "cfm or L/s",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 14,
+      "name": "Space Temperature BAS",
+      "description": "Space temperature from the BAS; Out of Service by default",
+      "units": "°F or °C",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 15,
+      "name": "Air Flow Override Percent",
+      "description": "",
+      "units": "",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 16,
+      "name": "Discharge Air Temperature Setpoint BAS",
+      "description": "Discharge air setpoint from the BAS (VFC only)",
+      "units": "°F or °C",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 18,
+      "name": "Air Flow Gain",
+      "description": "Airflow gain from air balancing, default 1.0",
+      "units": "",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 19,
+      "name": "Air Flow Measurement Offset",
+      "description": "Set when air balancing",
+      "units": "%",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 20,
+      "name": "Discharge Air Flow",
+      "description": "Pressure sensor 1 value converted to flow",
+      "units": "cfm or L/s",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 21,
+      "name": "Outdoor Air Low Limit",
+      "description": "VFC freeze protection",
+      "units": "°F or °C",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 22,
+      "name": "Space CO2 Concentration BAS",
+      "description": "Space CO2 from the BAS; Out of Service by default",
+      "units": "ppm",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 23,
+      "name": "Unoccupied Cooling Setpoint",
+      "description": "",
+      "units": "°F or °C",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 24,
+      "name": "Unoccupied Heating Setpoint",
+      "description": "",
+      "units": "°F or °C",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 25,
+      "name": "Air Flow Setpoint BAS",
+      "description": "Communicated airflow setpoint used for flow tracking units",
+      "units": "cfm or L/s",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 26,
+      "name": "Air Flow Offset",
+      "description": "Flow set point of Flow Tracking box relative to supply air VAV box",
+      "units": "cfm or L/s",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 27,
+      "name": "Space Temperature Setpoint BAS",
+      "description": "Space setpoint from the BAS; Out of Service by default",
+      "units": "°F or °C",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 28,
+      "name": "Space Temperature Setpoint Active",
+      "description": "Space temperature setpoint being used by algorithm",
+      "units": "°F or °C",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 29,
+      "name": "Supply Air Temperature BAS",
+      "description": "Supply air temperature from the BAS; Out of Service by default",
+      "units": "°F or °C",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 30,
+      "name": "Occupied Offset",
+      "description": "Setpoint offset used during occupied mode",
+      "units": "Δ°F or Δ°C",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 31,
+      "name": "Air Flow Setpoint Minimum Local Heat",
+      "description": "Reheat minimum used when local heat is On",
+      "units": "cfm or L/s",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 33,
+      "name": "Occupied Bypass Time",
+      "description": "Minutes in occupied bypass after a timed override",
+      "units": "",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 34,
+      "name": "Standby Offset",
+      "description": "Setpoint offset used during occupied standby mode",
+      "units": "Δ°F or Δ°C",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 35,
+      "name": "Ventilation Setpoint Active",
+      "description": "",
+      "units": "cfm or L/s",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 36,
+      "name": "Ventilation Ratio",
+      "description": "Required outdoor-air to primary-air ratio, 0-100%",
+      "units": "%",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 37,
+      "name": "Space Temp Setpoint Default",
+      "description": "Default space temperature setpoint stored in the controller and set by service tool",
+      "units": "°F or °C",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 38,
+      "name": "Ventilation Setpoint Local",
+      "description": "",
+      "units": "cfm or L/s",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 39,
+      "name": "Discharge Air Temp Setpoint Local",
+      "description": "Discharge air setpoint from the wired sensor (VFC only)",
+      "units": "°F or °C",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 40,
+      "name": "Space CO2 Limit",
+      "description": "Point where CO2 demand ventilation ends in ppm",
+      "units": "ppm",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 41,
+      "name": "Space CO2 Low Limit",
+      "description": "Point where CO2 demand ventilation begins in ppm",
+      "units": "ppm",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 42,
+      "name": "Air Flow Setpoint Minimum",
+      "description": "",
+      "units": "cfm or L/s",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 43,
+      "name": "Air Flow Setpoint Minimum Standby",
+      "description": "",
+      "units": "cfm or L/s",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 44,
+      "name": "Air Flow Setpoint Minimum Standby Heat",
+      "description": "",
+      "units": "cfm or L/s",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 45,
+      "name": "Air Flow Setpoint Minimum Heat",
+      "description": "",
+      "units": "cfm or L/s",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 46,
+      "name": "Air Flow Setpoint Maximum Heat",
+      "description": "",
+      "units": "cfm or L/s",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 47,
+      "name": "Air Flow Setpoint Maximum",
+      "description": "",
+      "units": "cfm or L/s",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 48,
+      "name": "Ventilation Setpoint BAS",
+      "description": "Ventilation setpoint from the BAS; Out of Service by default",
+      "units": "cfm or L/s",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 49,
+      "name": "Ventilation Standby Setpoint",
+      "description": "",
+      "units": "cfm or L/s",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 50,
+      "name": "Space CO2 Concentration Active",
+      "description": "Space CO2 concentration in ppm, used by algorithm",
+      "units": "ppm",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 51,
+      "name": "Ventilation Ratio Limit BAS",
+      "description": "Ventilation ratio limit from the BAS; Out of Service by default",
+      "units": "%",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 52,
+      "name": "PD Mode Min Air Valve Position",
+      "description": "Minimum air valve position in percent when using pressure dependent control",
+      "units": "%",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 53,
+      "name": "ECM Fan Correction Factor",
+      "description": "ECM fan correction factor (ECM fan only)",
+      "units": "",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 54,
+      "name": "ECM Fan Maximum Flow",
+      "description": "ECM fan maximum flow, factory set",
+      "units": "cfm or L/s",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 55,
+      "name": "ECM Fan Minimum Flow",
+      "description": "ECM fan minimum flow, factory set",
+      "units": "cfm or L/s",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 56,
+      "name": "ECM Fan Flow Setpoint",
+      "description": "ECM fan flow setpoint",
+      "units": "cfm or L/s",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 57,
+      "name": "Parallel Fan Flow Enable Point",
+      "description": "",
+      "units": "cfm or L/s",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 58,
+      "name": "Parallel Fan Temp Enable Point",
+      "description": "",
+      "units": "Δ°F or Δ°C",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 59,
+      "name": "Space Temperature Active",
+      "description": "Space temperature being used by algorithm",
+      "units": "°F or °C",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 60,
+      "name": "Supply Air Temperature Active",
+      "description": "",
+      "units": "°F or °C",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 66,
+      "name": "Cabinet Style",
+      "description": "",
+      "units": "",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 67,
+      "name": "Auxiliary Heat Control Request",
+      "description": "Auxiliary heat enable - reheat enable",
+      "units": "%",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 68,
+      "name": "Fan Override BAS",
+      "description": "Fan override: 0% off, 1-100% on/ECM speed, 101% = no override",
+      "units": "%",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 69,
+      "name": "Pressure Sensor Calibration Offset",
+      "description": "Zero pressure reading saved during calibration",
+      "units": "cfm or L/s",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 70,
+      "name": "Fan Air Flow Rating",
+      "description": "Fan airflow rating for ECM fan balancing, factory set",
+      "units": "cfm or L/s",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 74,
+      "name": "Auto Commissioning Air Valve 40",
+      "description": "Percent air valve position at 40%",
+      "units": "%",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 75,
+      "name": "Auto Commissioning Air Valve 100",
+      "description": "Percent air valve position at 100%",
+      "units": "%",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 76,
+      "name": "Auto Commissioning Discharge Air Temperature Fan Off",
+      "description": "Discharge air temp is recorded during auto commissioning",
+      "units": "°F or °C",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 77,
+      "name": "Auto Commissioning Discharge Air Temperature Fan On",
+      "description": "Auto commissioning discharge air temperature, fan on",
+      "units": "°F or °C",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 78,
+      "name": "Auto Commissioning Discharge Air Temperature Reheat",
+      "description": "Auto commissioning discharge air temperature, reheat on",
+      "units": "°F or °C",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 79,
+      "name": "Auto Commissioning Discharge Air Temperature Water Valve",
+      "description": "Auto commissioning discharge air temperature, water valve open",
+      "units": "°F or °C",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 80,
+      "name": "Auto Commissioning Discharge Air Temperature Stage 1 Heat",
+      "description": "Auto commissioning discharge air temperature, 1 heat stage on",
+      "units": "°F or °C",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 81,
+      "name": "Auto Commissioning Discharge Air Temperature Stage 2 Heat",
+      "description": "Auto commissioning discharge air temperature, 2 heat stages on",
+      "units": "°F or °C",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 82,
+      "name": "Auto Commissioning Discharge Air Temperature Stage 3 Heat",
+      "description": "Auto commissioning discharge air temperature, 3 heat stages on",
+      "units": "°F or °C",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 83,
+      "name": "Cool Type",
+      "description": "",
+      "units": "",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 84,
+      "name": "Preheat Type",
+      "description": "",
+      "units": "",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 85,
+      "name": "Reheat Type",
+      "description": "",
+      "units": "",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 86,
+      "name": "Supply Fan Type",
+      "description": "",
+      "units": "",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 87,
+      "name": "Cooling Setpoint High Limit",
+      "description": "High limit for cooling setpoint",
+      "units": "°F or °C",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 88,
+      "name": "Cooling Setpoint Low Limit",
+      "description": "Low limit for cooling setpoint",
+      "units": "°F or °C",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 89,
+      "name": "Heating Setpoint High Limit",
+      "description": "High limit for heating setpoint",
+      "units": "°F or °C",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 90,
+      "name": "Heating Setpoint Low Limit",
+      "description": "Low limit for heating setpoint",
+      "units": "°F or °C",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "BI",
+      "instance": 1,
+      "name": "Occupancy Input",
+      "description": "Occupancy sensor",
+      "units": "",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "BO",
+      "instance": 1,
+      "name": "ECM Fan Output",
+      "description": "ECM fan on/off",
+      "units": "",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "BO",
+      "instance": 2,
+      "name": "Fan Output",
+      "description": "Fan on/off (standard motor)",
+      "units": "",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "BO",
+      "instance": 5,
+      "name": "Heat Output 3",
+      "description": "Heat stage 3",
+      "units": "",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "BO",
+      "instance": 6,
+      "name": "Heat Output 2",
+      "description": "Heat stage 2",
+      "units": "",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "BO",
+      "instance": 7,
+      "name": "Heat Output 1",
+      "description": "Heat stage 1",
+      "units": "",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "BV",
+      "instance": 1,
+      "name": "Air Valve Position Control",
+      "description": "Pressure independent or position (pressure dependent) control",
+      "units": "",
+      "access": "W",
+      "states": "0 = Pressure independent, 1 = Position control / pressure dependent"
+    },
+    {
+      "type": "BV",
+      "instance": 2,
+      "name": "Default Supply Air Temperature Mode",
+      "description": "Default supply air temperature mode",
+      "units": "",
+      "access": "W",
+      "states": "0 = Cold (cooling, default), 1 = Hot (heating)"
+    },
+    {
+      "type": "BV",
+      "instance": 3,
+      "name": "Diagnostic: Air Flow Override Local",
+      "description": "Local thumbwheel is in override position of * or **",
+      "units": "",
+      "access": "R",
+      "states": "0 = Inactive, 1 = Active"
+    },
+    {
+      "type": "BV",
+      "instance": 5,
+      "name": "Reheat Priority",
+      "description": "Reheat priority of local and remote heat",
+      "units": "",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "BV",
+      "instance": 6,
+      "name": "Pressure Dependent Mode Reheat Enable",
+      "description": "",
+      "units": "",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "BV",
+      "instance": 7,
+      "name": "Diagnostic: Flow Sensor Calibration Failure",
+      "description": "",
+      "units": "",
+      "access": "R",
+      "states": "0 = Inactive, 1 = Active"
+    },
+    {
+      "type": "BV",
+      "instance": 8,
+      "name": "Auto Calibrate",
+      "description": "",
+      "units": "",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "BV",
+      "instance": 9,
+      "name": "Diagnostic: Low Primary Air Flow",
+      "description": "Low primary airflow diagnostic (electric heat only)",
+      "units": "",
+      "access": "R",
+      "states": "0 = Inactive, 1 = Active"
+    },
+    {
+      "type": "BV",
+      "instance": 10,
+      "name": "Diagnostic: Freeze Protection",
+      "description": "Freeze protection diagnostic (only for ventilation flow control units)",
+      "units": "",
+      "access": "R",
+      "states": "0 = Inactive, 1 = Active"
+    },
+    {
+      "type": "BV",
+      "instance": 11,
+      "name": "Auto Commissioning Command",
+      "description": "Auto commissioning command",
+      "units": "",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "BV",
+      "instance": 12,
+      "name": "Diagnostic: High Air Flow",
+      "description": "Flow sensor reads above 120% of nominal flow",
+      "units": "",
+      "access": "R",
+      "states": "0 = Inactive, 1 = Active"
+    },
+    {
+      "type": "BV",
+      "instance": 13,
+      "name": "Diagnostic: Flow Sensor Failure",
+      "description": "Pressure sensor faulted diagnostic",
+      "units": "",
+      "access": "R",
+      "states": "0 = Inactive, 1 = Active"
+    },
+    {
+      "type": "MI",
+      "instance": 1,
+      "name": "Timed Override Status",
+      "description": "Timed override button push detected",
+      "units": "",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "MI",
+      "instance": 2,
+      "name": "Air Flow Override Local",
+      "description": "Thumbwheel at * or **",
+      "units": "",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "MV",
+      "instance": 1,
+      "name": "Air Flow Minimum Setpoint Source",
+      "description": "",
+      "units": "",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "MV",
+      "instance": 2,
+      "name": "Air Flow Override",
+      "description": "",
+      "units": "",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "MV",
+      "instance": 3,
+      "name": "Water Valve Override",
+      "description": "",
+      "units": "",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "MV",
+      "instance": 4,
+      "name": "Heat Cool Mode Request",
+      "description": "Heat/cool mode request from the BAS",
+      "units": "",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "MV",
+      "instance": 5,
+      "name": "Heat Cool Mode Status",
+      "description": "",
+      "units": "",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "MV",
+      "instance": 6,
+      "name": "Occupancy Request",
+      "description": "Occupancy request from the BAS",
+      "units": "",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "MV",
+      "instance": 7,
+      "name": "Occupancy Status",
+      "description": "",
+      "units": "",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "MV",
+      "instance": 8,
+      "name": "Auto Commissioning State",
+      "description": "",
+      "units": "",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "MV",
+      "instance": 9,
+      "name": "Emergency Override BAS",
+      "description": "Emergency override request",
+      "units": "",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "MV",
+      "instance": 12,
+      "name": "Manual Test Sequence",
+      "description": "Manual Test Sequence number",
+      "units": "",
+      "access": "W",
+      "states": ""
+    }
+  ]
+}

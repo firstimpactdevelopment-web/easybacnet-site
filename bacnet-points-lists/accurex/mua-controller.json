@@ -1,0 +1,629 @@
+{
+ "manufacturer": "Accurex",
+ "manufacturer_slug": "accurex",
+ "model": "Make-Up Air (MUA) controller (MUA_01.001)",
+ "model_slug": "mua-controller",
+ "aliases": [
+  "Accurex MUA",
+  "Accurex make-up air",
+  "MUA_01.001",
+  "485941",
+  "Accurex makeup air unit"
+ ],
+ "equipment_type": "Make-up air unit controller",
+ "applies_to": "Accurex make-up air units with the factory microprocessor controller (program MUA_01.001 and later) and the BACnet license enabled.",
+ "summary": "Accurex make-up air units use the same controller family and layout as the Accurex DOAS, with BACnet once the BACnet license is installed (the guide covers BACnet IP settings such as BBMD). The fixed points list covers enable, occupancy, reset modes and setpoints, BMS-written sensors and fan/damper overrides behind a watchdog, plus bit-packed status and alarm words.",
+ "bacnet_transport": [
+  "BACnet IP"
+ ],
+ "firmware": "MUA_01.001 and later",
+ "default_device_instance": null,
+ "access_inferred": true,
+ "notes": [
+  "This is Accurex's integration guide list, not every object in the controller; not all points apply to every unit.",
+  "The guide has no read/write column; access is inferred from the guide text (commands, setpoints and BMS inputs writable, the rest read-only).",
+  "IV 10-15 are 32-bit words with one status or alarm per bit (bit 0 = lowest); the states field lists every bit the guide prints for each word (unlisted bits are unused). The guide also prints some bits as separate rows, e.g. IV-15 bit 20 Cooling_is_On, bit 21 Heating_is_On, IV-13 bit 3 Filter_Alarm_Digital_Input, IV-10 bits 3-4 compressor 1-2.",
+  "The guide titles the unit status bit table \"IV-11\", but the status rows and the object list put Unit_Status_Word on IV-15; IV-11 is the cooling alarm word.",
+  "AV 41 shows a numeric mode from the status mode table (e.g. 10 System On, 20 Economizing); IV 9 returns an alarm table code (0 = none, 19 = BMS offline).",
+  "Object numbers differ from the Accurex DOAS guide even where names match."
+ ],
+ "integration": {
+  "summary": "With the BACnet license installed, set the BACnet network settings at the controller. Write BV 2 to enable the unit and BV 3 for occupancy, and adjust setpoints such as AV 1. To command the supply fan, damper or sensor values, set the matching BMS-source BV and write BV 1 watchdog repeatedly.",
+  "minimum_points": [
+   {
+    "ref": "BV 2",
+    "why": "Unit enable (1 = enabled)",
+    "name": "System_Enable"
+   },
+   {
+    "ref": "BV 3",
+    "why": "Occupancy: 0 = occupied, 1 = unoccupied",
+    "name": "BMS_Occupancy_Command"
+   },
+   {
+    "ref": "AV 1",
+    "why": "Occupied temperature setpoint, °F",
+    "name": "Temperature_Setpoint"
+   },
+   {
+    "ref": "BV 1",
+    "why": "Watchdog; write 1 regularly when BMS commands",
+    "name": "BMS_Watchdog"
+   },
+   {
+    "ref": "BV 4",
+    "why": "Resets alarms",
+    "name": "Reset_All_Alarms"
+   },
+   {
+    "ref": "AV 41",
+    "why": "Unit mode number (status mode table)",
+    "name": "Unit_Status_Mode"
+   },
+   {
+    "ref": "AI 2",
+    "why": "Supply air temperature, °F",
+    "name": "Supply_Temp_Analog_Input"
+   },
+   {
+    "ref": "BI 2",
+    "why": "Supply fan running",
+    "name": "Supply_Fan_1_Status_Digital_Input"
+   },
+   {
+    "ref": "BV 19",
+    "why": "Any active alarm",
+    "name": "Global_Alarm"
+   },
+   {
+    "ref": "IV 9",
+    "why": "Latest alarm code; 0 = none",
+    "name": "LatestAlm"
+   }
+  ],
+  "enable": "BV 2 System_Enable enables or disables the unit, and BV 3 BMS_Occupancy_Command sets occupancy (default occupancy mode expects the BMS command; schedule, digital input or fixed modes can be chosen at the controller).",
+  "heartbeat": "BV 1 BMS_Watchdog must be written True regularly whenever the BMS commands the fan, damper or sensor values. If it stays False longer than the timeout (default 15 min, adjustable), an alarm is raised (alarm 19) and the controller goes back to local control and sensors. With Enable Relinquish Default on, commandable points are cleared 5 minutes after the watchdog drops.",
+  "remote_sensors": "Set the source BV to BMS (BV 6, 9, 10, 12, 13) and write the value to AV 30 outside temperature, AV 33 space CO2, AV 34 return CO2, AV 36 space static or AV 37 space temperature. Keep the watchdog alive or the controller falls back to its local sensor.",
+  "setup": [
+   "BACnet needs a license on the controller; contact the rep if it is not enabled.",
+   "BBMD, foreign device, COV increments and relinquish default options are in the BACnet Advanced Settings menu."
+  ],
+  "gotchas": [
+   "BV 3 is 1 = Unoccupied, 0 = Occupied.",
+   "For BMS supply temperature reset, set IV 1 to No Reset and write AV 1.",
+   "Integer words must be unpacked bit by bit in the BMS."
+  ]
+ },
+ "source": {
+  "title": "BACnet Integration Guide for Makeup Air Systems",
+  "doc_number": "485941 (MUA_01.001)",
+  "revision_date": "10/2022",
+  "url": "https://content.accurex.com/accurex-cms-prod/docs/default-source/brochures/485941-bacnet-integration-guide-mua_01.001.pdf"
+ },
+ "points": [
+  {
+   "type": "BV",
+   "instance": 1,
+   "name": "BMS_Watchdog",
+   "description": "BMS watchdog; write 1 regularly",
+   "units": "",
+   "access": "W",
+   "states": "Active/Inactive"
+  },
+  {
+   "type": "BV",
+   "instance": 2,
+   "name": "System_Enable",
+   "description": "Master system enable/disable",
+   "units": "",
+   "access": "W",
+   "states": "Enabled/Disabled"
+  },
+  {
+   "type": "BV",
+   "instance": 3,
+   "name": "BMS_Occupancy_Command",
+   "description": "Building occupancy command",
+   "units": "",
+   "access": "W",
+   "states": "Unoccupied/Occupied"
+  },
+  {
+   "type": "BV",
+   "instance": 4,
+   "name": "Reset_All_Alarms",
+   "description": "Alarm reset command",
+   "units": "",
+   "access": "W",
+   "states": "Reset/Normal"
+  },
+  {
+   "type": "BV",
+   "instance": 6,
+   "name": "Outside_Temp_Source_BMS",
+   "description": "Use outside temp from BMS (AV 30)",
+   "units": "",
+   "access": "W",
+   "states": "BMS/Local"
+  },
+  {
+   "type": "BV",
+   "instance": 9,
+   "name": "Space_1_CO2_Source_BMS",
+   "description": "Use space 1 CO2 from BMS (AV 33)",
+   "units": "",
+   "access": "W",
+   "states": "BMS/Local"
+  },
+  {
+   "type": "BV",
+   "instance": 10,
+   "name": "Return_CO2_Source_BMS",
+   "description": "Use return CO2 from BMS (AV 34)",
+   "units": "",
+   "access": "W",
+   "states": "BMS/Local"
+  },
+  {
+   "type": "BV",
+   "instance": 12,
+   "name": "Space_Static_Source_BMS",
+   "description": "Use space static from BMS (AV 36)",
+   "units": "",
+   "access": "W",
+   "states": "BMS/Local"
+  },
+  {
+   "type": "BV",
+   "instance": 13,
+   "name": "Space_Temp_Source_BMS",
+   "description": "Use space temp from BMS (AV 37)",
+   "units": "",
+   "access": "W",
+   "states": "BMS/Local"
+  },
+  {
+   "type": "BV",
+   "instance": 14,
+   "name": "SF_Control_Source_BMS",
+   "description": "BMS controls supply fan speed (AV 38)",
+   "units": "",
+   "access": "W",
+   "states": "BMS/Local"
+  },
+  {
+   "type": "BV",
+   "instance": 15,
+   "name": "OAD_Control_Source_BMS",
+   "description": "BMS controls outside air damper (AV 39)",
+   "units": "",
+   "access": "W",
+   "states": "BMS/Local"
+  },
+  {
+   "type": "BV",
+   "instance": 19,
+   "name": "Global_Alarm",
+   "description": "Any alarm active",
+   "units": "",
+   "access": "R",
+   "states": "Alarm/Normal"
+  },
+  {
+   "type": "BV",
+   "instance": 20,
+   "name": "BMS_Watchdog_Active",
+   "description": "Watchdog status",
+   "units": "",
+   "access": "R",
+   "states": "Active/Inactive"
+  },
+  {
+   "type": "BI",
+   "instance": 1,
+   "name": "Exhaust_Fan_1_Status_Digital_Input",
+   "description": "Exhaust fan 1 status",
+   "units": "",
+   "access": "R",
+   "states": "Active/Inactive"
+  },
+  {
+   "type": "BI",
+   "instance": 2,
+   "name": "Supply_Fan_1_Status_Digital_Input",
+   "description": "Supply fan 1 status",
+   "units": "",
+   "access": "R",
+   "states": "Active/Inactive"
+  },
+  {
+   "type": "IV",
+   "instance": 1,
+   "name": "Temperature_Reset_Mode",
+   "description": "Occupied supply temperature reset mode",
+   "units": "",
+   "access": "W",
+   "states": "1=No Reset, 2=Space Reset, 3=Return Reset, 4=Outside Reset"
+  },
+  {
+   "type": "IV",
+   "instance": 2,
+   "name": "Temperature_Reset_Mode_Unoccupied",
+   "description": "Unoccupied reset mode",
+   "units": "",
+   "access": "W",
+   "states": "1=No Reset, 2=Space Reset, 3=Return Reset, 4=Outside Reset"
+  },
+  {
+   "type": "IV",
+   "instance": 9,
+   "name": "LatestAlm",
+   "description": "Most recent active alarm code (alarm table), 0 = none",
+   "units": "",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "IV",
+   "instance": 10,
+   "name": "Digital_Output_Word",
+   "description": "Bit-packed digital output enables",
+   "units": "",
+   "access": "R",
+   "states": "Bit 0=Supply Fan Start, 1=Exhaust Fan Start, 2=Exhaust Relief Enable, 3=Compressor 1 Start, 4=Compressor 2 Start, 5=Condenser Fan Start, 7=Furnace 1 Start, 8=Furnace 1 Stage 2 Start, 9=Furnace 2 Start, 10=Furnace 2 Stage 2 Start, 11=Furnace 3 Start, 13=Damper Actuator Power Enable, 14=Direct Gas Start, 15=Electric Heat Start, 16=Evaporative Cooling Valve Enable, 17=Evaporative Cooling Pump Enable"
+  },
+  {
+   "type": "IV",
+   "instance": 11,
+   "name": "Cooling_Alarm_Word",
+   "description": "Bit-packed cooling alarms",
+   "units": "",
+   "access": "R",
+   "states": "Bit 0=Circuit A High Low Pressure Switch Alarm, 1=Circuit B High Low Pressure Switch Alarm"
+  },
+  {
+   "type": "IV",
+   "instance": 12,
+   "name": "Device_Offline_Word",
+   "description": "Bit-packed device communication alarms",
+   "units": "",
+   "access": "R",
+   "states": "Bit 0=Space TStat 1 Offline, 1=Space TStat 2 Offline, 2=Space TStat 3 Offline, 3=Space TStat 4 Offline, 4=IG Furnace Controller 1 Offline, 5=IG Furnace Controller 2 Offline, 6=Cooling Controller Offline, 7=GreenTrol Outside Air Offline, 8=BMS Offline Alarm, 9=Permanent Memory - Too Many Writes"
+  },
+  {
+   "type": "IV",
+   "instance": 13,
+   "name": "Device_Alarm_Word",
+   "description": "Bit-packed device alarms",
+   "units": "",
+   "access": "R",
+   "states": "Bit 0=Supply Fan Alarm, 1=Exhaust Fan Alarm, 2=Drain Pan Alarm, 3=Filter Alarm, 4=GreenTrol OAD AFMS Alarm, 5=Outside Air Temp Sensor Alarm, 6=Space CO2 Sensor Alarm, 7=Supply Air Temp Sensor Alarm, 8=Space Temperature Sensor Alarm, 9=Supply Temp Low Limit Alarm, 10=Supply Temp High Limit Alarm, 11=Supply High Duct Static Alarm, 12=Supply Duct Static Sensor Alarm, 13=Space Static Pressure Sensor Alarm, 14=Space High Static Alarm, 15=Return CO2 Sensor Alarm, 17=Shutdown Input Alarm"
+  },
+  {
+   "type": "IV",
+   "instance": 14,
+   "name": "Heating_Alarm_Word",
+   "description": "Bit-packed heating alarms",
+   "units": "",
+   "access": "R",
+   "states": "Bit 0=DG Flame Safeguard General Reference, 1=DG Flame Safeguard Manual Reset at FSG, 2=DG Pilot Flame Alarm Did Not Prove, 3=DG Heating Safety Check Circuit, 4=DG Flame Safeguard Check Functionality, 5=DG Burner Differential Check Pressure, 6=General IG Furnace Alarm, 7=IG Furnace 1 No flame Alarm After 3 Tries, 8=IG Furnace 1 Large No Flame After 3 Tries, 9=IG Furnace 1 Combust Fan High Pressure Sw, 10=IG Furnace 1 Ignition Controller Alarm, 11=IG Furnace 1 Pressure Switch Fault Alarm, 12=IG Furnace 1 Combust Fan Proving Alarm, 13=IG Furnace 1 Max Retries, 14=IG Furnace 1 High Limit Trip, 15=IG Furnace 1 IC fault Check Furnace Wiring, 16=IG Furnace 1 Combustion Fan Alarm, 17=IG Furnace 2-No Flame Alarm After 3 Tries, 18=IG Furnace 2 Max Retries, 19=IG Furnace 2 Ignition Controller Alarm, 20=IG Furnace 3-No Flame Alarm After 3 Tries, 21=IG Furnace 3 Max Retries, 22=IG Furnace 3 Ignition Controller Alarm"
+  },
+  {
+   "type": "IV",
+   "instance": 15,
+   "name": "Unit_Status_Word",
+   "description": "Bit-packed unit status word",
+   "units": "",
+   "access": "R",
+   "states": "Bit 0=Off/Standby, 1=Unoccupied Start, 2=Occupied Start, 3=Opening Dampers, 4=Dampers Open, 5=Fan Start Delay, 6=Exhaust Fan On, 7=Supply Fan On, 8=System On, 9=Soft Shutdown, 10=System Disabled, 11=Remote Off, 12=System Shutdown Alarm, 13=Supply Fan Only, 14=Exhaust Fan Only, 15=Purge Mode (Supply and Exhaust Only), 16=Case Heat Active, 17=Fans Only, 18=Economizing, 19=Energy Recovery Active, 20=Cooling, 21=Heating, 22=Dehumidifying, 23=Hot Gas Reheat Active, 24=HGRH Purging, 25=Dehum w/Heat, 26=Energy Recovery Defrost Active, 27=Heat Pump Defrost Active, 28=Morning Warm Up/Cool Down Active, 29=Winter Ramp Active, 31=Overrides Active"
+  },
+  {
+   "type": "AV",
+   "instance": 1,
+   "name": "Temperature_Setpoint",
+   "description": "Occupied setpoint (space, return or supply per reset mode), default 72",
+   "units": "°F",
+   "access": "W",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 2,
+   "name": "Temperature_Heat_Cool_Deadband",
+   "description": "Occupied heat/cool deadband, default 4",
+   "units": "°F",
+   "access": "W",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 3,
+   "name": "Temperature_Setpoint_Unoccupied",
+   "description": "Unoccupied setpoint, default 72.5",
+   "units": "°F",
+   "access": "W",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 4,
+   "name": "Temperature_Heat_Cool_Deadband_Unoccupied",
+   "description": "Unoccupied deadband, default 15",
+   "units": "°F",
+   "access": "W",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 16,
+   "name": "Space_Static_Pressure_Setpoint",
+   "description": "Space static setpoint, default 0.05",
+   "units": "inH2O",
+   "access": "W",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 17,
+   "name": "Supply_Duct_Static_Pressure_Setpoint",
+   "description": "Supply duct static setpoint, default 1.0",
+   "units": "inH2O",
+   "access": "W",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 18,
+   "name": "Space_CO2_Setpoint",
+   "description": "Space CO2 setpoint, default 1000",
+   "units": "ppm",
+   "access": "W",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 19,
+   "name": "Outside_Air_Damper_Minimum_Setpoint_Occ",
+   "description": "Occupied minimum OA damper, default 35",
+   "units": "%",
+   "access": "W",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 30,
+   "name": "Outside_Temp_from_BMS",
+   "description": "Outside temperature from BMS",
+   "units": "°F",
+   "access": "W",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 33,
+   "name": "Space_1_CO2_from_BMS",
+   "description": "Space 1 CO2 from BMS",
+   "units": "ppm",
+   "access": "W",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 34,
+   "name": "Return_CO2_from_BMS",
+   "description": "Return CO2 from BMS",
+   "units": "ppm",
+   "access": "W",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 36,
+   "name": "Space_Static_from_BMS",
+   "description": "Space static pressure from BMS",
+   "units": "inH2O",
+   "access": "W",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 37,
+   "name": "Space_Temp_from_BMS",
+   "description": "Space temperature from BMS",
+   "units": "°F",
+   "access": "W",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 38,
+   "name": "SF_Control_Signal_BMS",
+   "description": "Supply fan speed command (with BV 14)",
+   "units": "%",
+   "access": "W",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 39,
+   "name": "OAD_Control_Signal_BMS",
+   "description": "Outside air damper command (with BV 15)",
+   "units": "%",
+   "access": "W",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 41,
+   "name": "Unit_Status_Mode",
+   "description": "Unit operating mode/state (status mode table)",
+   "units": "",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 42,
+   "name": "Supply_Temperature_Calculated_Setpoint",
+   "description": "Active supply temperature setpoint",
+   "units": "°F",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 43,
+   "name": "Cooling_1_Ramp_Capacity",
+   "description": "Cooling ramp 1",
+   "units": "%",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 46,
+   "name": "Heating_Capacity",
+   "description": "Heating ramp",
+   "units": "%",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 56,
+   "name": "OAD_CFM_BMS",
+   "description": "Outside air damper airflow",
+   "units": "cfm",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 58,
+   "name": "Chilled_Water_1_Valve_Analog_Output",
+   "description": "Chilled water valve output",
+   "units": "%",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 59,
+   "name": "Electric_Heater_1_Analog_Output",
+   "description": "Electric heater output",
+   "units": "%",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 60,
+   "name": "Hot_Water_Valve_1_Analog_Output",
+   "description": "Hot water valve output",
+   "units": "%",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 61,
+   "name": "Mod_Gas_Furnace_1_Analog_Output",
+   "description": "Modulating gas furnace output",
+   "units": "%",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 62,
+   "name": "Outside_Airflow_Mask",
+   "description": "Outside airflow percentage",
+   "units": "%",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 63,
+   "name": "Supply_Fan_Speed_Analog_Output",
+   "description": "Supply fan speed output",
+   "units": "%",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 64,
+   "name": "Modulating_Compressor_Analog_Output_BMS",
+   "description": "Modulating compressor output",
+   "units": "%",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "AI",
+   "instance": 1,
+   "name": "Space_Temp_Analog_Input",
+   "description": "Space air temperature",
+   "units": "°F",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "AI",
+   "instance": 2,
+   "name": "Supply_Temp_Analog_Input",
+   "description": "Supply (discharge) air temperature",
+   "units": "°F",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "AI",
+   "instance": 3,
+   "name": "Outside_Air_Temp_Analog_Input",
+   "description": "Outside air temperature",
+   "units": "°F",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "AI",
+   "instance": 9,
+   "name": "Space_Static_Pressure_Analog_Input",
+   "description": "Space static pressure",
+   "units": "inH2O",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "AI",
+   "instance": 10,
+   "name": "Supply_Duct_Static_Pressure_Analog_Input",
+   "description": "Supply duct static pressure",
+   "units": "inH2O",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "AI",
+   "instance": 11,
+   "name": "Space_CO2_1_Analog_Input",
+   "description": "Space 1 CO2",
+   "units": "ppm",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "AI",
+   "instance": 12,
+   "name": "Return_CO2_Analog_Input",
+   "description": "Return CO2",
+   "units": "ppm",
+   "access": "R",
+   "states": ""
+  }
+ ],
+ "page": "https://easybacnet.com/bacnet-points-lists/accurex/mua-controller",
+ "note": "Re-typed from the manufacturer's public documentation (see source). Point availability varies by firmware and options; verify against the live device."
+}

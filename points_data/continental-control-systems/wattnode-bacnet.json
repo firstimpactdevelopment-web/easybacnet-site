@@ -1,0 +1,1065 @@
+{
+  "manufacturer": "Continental Control Systems",
+  "manufacturer_slug": "continental-control-systems",
+  "model": "WattNode BACnet electric power meter (WNC-...-BN)",
+  "model_slug": "wattnode-bacnet",
+  "aliases": [
+    "WattNode BACnet",
+    "WNC-3Y-208-BN",
+    "WNC-3Y-480-BN",
+    "WNC-3D-240-BN",
+    "RWNC-3Y-208-BN",
+    "WattNode Revenue BACnet",
+    "CCS WattNode",
+    "WattNode BACnet object list"
+  ],
+  "equipment_type": "Power and energy meter (BACnet MS/TP)",
+  "applies_to": "WattNode BACnet meters WNC-3Y-xxx-BN and WNC-3D-xxx-BN, plus the revenue-grade RWNC-...-BN models, firmware 1.13 and 1.20.",
+  "summary": "The WattNode BACnet is a three-phase power and energy meter with BACnet MS/TP on board. It has a fixed object list: Analog Inputs for energy, power, voltage, current, frequency, power factor and demand; Analog Values for error history, diagnostics and setup (CT amps, demand period, PT ratio, gain and phase trims); Binary Values for CT polarity and reset commands; and Multi-state Values for service type, averaging and demand reset.",
+  "bacnet_transport": [
+    "BACnet MS/TP"
+  ],
+  "firmware": "1.13 and 1.20 (manual WNC-BN-1.20)",
+  "default_device_instance": "Meter serial number",
+  "access_inferred": false,
+  "notes": [
+    "Objects the manual marks as kept across power failures include the energy totals, error history, CT and demand setup, PhaseOffset and Averaging; energy is saved to non-volatile flash.",
+    "AI 58 ThermistorTemp and AV 35-37 thermistor coefficients exist only on meters with Option TM1 (firmware 1.20).",
+    "Energy objects AI 38-57 and the demand objects can be zeroed or preset by writing them; AI 0-2 (NR) can never be reset.",
+    "Access: W marks objects the manual's PICS lists as writable, the presettable energy objects (AI 36-57) and the BV/MV commands. Demand (AI 31-35), ErrorStatus (AV 0-7) and the RS-485 counters are R: they are reset only through ZeroDemand (MV 2) or ClearErrors (BV 3). Access cross-checked with Continental's object spreadsheet, https://ctlsys.com/wp-content/uploads/2017/09/WattNode-BACnet-Objects-V120.xls.",
+    "The manual's table prints AI 42 as 'EnerygB' (typo); the spreadsheet names it EnergyB. AI 31 is 'DemandSum' in the manual and 'Demand' in the spreadsheet.",
+    "The manual lists DemandApp (AI 32) in W although it is the apparent power demand."
+  ],
+  "source": {
+    "title": "WattNode BACnet Electric Power Meter - Reference Manual",
+    "doc_number": "WNC-BN-1.20",
+    "revision_date": "2017-08-25",
+    "url": "https://ctlsys.com/wp-content/uploads/2017/09/WNC-BACnet-Manual-V1_20.pdf"
+  },
+  "integration": {
+    "summary": "Set the MS/TP address and baud rate on the DIP switch, then set CtAmpsA/B/C (AV 12-14) to the rated amps of the CTs and pick the service type (MV 0). After that, read total power (AI 3), net energy (AI 0 or the resettable AI 38), demand (AI 31) and the phase voltages and currents. ErrorStatus1 (AV 0) holds the newest error code.",
+    "minimum_points": [
+      {
+        "ref": "AI 3",
+        "name": "PowerSum",
+        "why": "Total real power, W"
+      },
+      {
+        "ref": "AI 0",
+        "name": "EnergySumNR",
+        "why": "Net energy total, kWh, never resets"
+      },
+      {
+        "ref": "AI 31",
+        "name": "DemandSum",
+        "why": "Real power demand, W"
+      },
+      {
+        "ref": "AI 15",
+        "name": "VoltAvgLN",
+        "why": "Average line-to-neutral voltage"
+      },
+      {
+        "ref": "AI 24",
+        "name": "CurrentA",
+        "why": "Phase A current, A"
+      },
+      {
+        "ref": "AI 27",
+        "name": "PowerFactorAvg",
+        "why": "Average power factor"
+      },
+      {
+        "ref": "AI 23",
+        "name": "Freq",
+        "why": "Line frequency, Hz"
+      },
+      {
+        "ref": "AV 0",
+        "name": "ErrorStatus1",
+        "why": "Newest error code, 0 = no errors"
+      }
+    ],
+    "enable": null,
+    "heartbeat": null,
+    "remote_sensors": null,
+    "setup": [
+      "MS/TP MAC address 0-63 set with DIP switches 1-6 (factory default 0).",
+      "Baud rate on DIP switches 7 and 8: 9600 (default), 19200, 38400 or 76800.",
+      "The device instance defaults to the meter serial number and can be changed over the network; the change survives power loss.",
+      "After a DIP switch change the meter drops offline until the switches have been stable for five seconds.",
+      "Set CtAmpsA/B/C (AV 12-14), and PtRatio (AV 24) if potential transformers are used; wrong values make every reading wrong."
+    ],
+    "gotchas": [
+      "Writing ZeroEnergy (BV 4) zeroes all resettable energy objects; the NR totals (AI 0-2) keep counting.",
+      "Changing the demand setup (AV 15-16) or the CT setup (CtAmps, InvertCt) zeroes the demand readings.",
+      "A ConfigPasscode (AV 11) locks configuration writes until the passcode is written again.",
+      "Calibrate (AV 25) is a factory object; do not write it."
+    ]
+  },
+  "points": [
+    {
+      "type": "AI",
+      "instance": 0,
+      "name": "EnergySumNR",
+      "description": "Net energy, all phases, not resettable",
+      "units": "kWh",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AI",
+      "instance": 1,
+      "name": "EnergyPosSumNR",
+      "description": "Positive energy, all phases, not resettable",
+      "units": "kWh",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AI",
+      "instance": 2,
+      "name": "EnergyNegSumNR",
+      "description": "Negative energy, all phases, not resettable",
+      "units": "kWh",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AI",
+      "instance": 3,
+      "name": "PowerSum",
+      "description": "Real power, sum of phases",
+      "units": "W",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AI",
+      "instance": 4,
+      "name": "PowerA",
+      "description": "Real power, phase A",
+      "units": "W",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AI",
+      "instance": 5,
+      "name": "PowerB",
+      "description": "Real power, phase B",
+      "units": "W",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AI",
+      "instance": 6,
+      "name": "PowerC",
+      "description": "Real power, phase C",
+      "units": "W",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AI",
+      "instance": 7,
+      "name": "PowerReacSum",
+      "description": "Reactive power, sum of phases",
+      "units": "VAR",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AI",
+      "instance": 8,
+      "name": "PowerReacA",
+      "description": "Reactive power, phase A",
+      "units": "VAR",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AI",
+      "instance": 9,
+      "name": "PowerReacB",
+      "description": "Reactive power, phase B",
+      "units": "VAR",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AI",
+      "instance": 10,
+      "name": "PowerReacC",
+      "description": "Reactive power, phase C",
+      "units": "VAR",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AI",
+      "instance": 11,
+      "name": "PowerAppSum",
+      "description": "Apparent power, sum of phases",
+      "units": "VA",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AI",
+      "instance": 12,
+      "name": "PowerAppA",
+      "description": "Apparent power, phase A",
+      "units": "VA",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AI",
+      "instance": 13,
+      "name": "PowerAppB",
+      "description": "Apparent power, phase B",
+      "units": "VA",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AI",
+      "instance": 14,
+      "name": "PowerAppC",
+      "description": "Apparent power, phase C",
+      "units": "VA",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AI",
+      "instance": 15,
+      "name": "VoltAvgLN",
+      "description": "Average line-to-neutral voltage",
+      "units": "V",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AI",
+      "instance": 16,
+      "name": "VoltA",
+      "description": "Voltage, phase A to neutral",
+      "units": "V",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AI",
+      "instance": 17,
+      "name": "VoltB",
+      "description": "Voltage, phase B to neutral",
+      "units": "V",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AI",
+      "instance": 18,
+      "name": "VoltC",
+      "description": "Voltage, phase C to neutral",
+      "units": "V",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AI",
+      "instance": 19,
+      "name": "VoltAvgLL",
+      "description": "Average line-to-line voltage",
+      "units": "V",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AI",
+      "instance": 20,
+      "name": "VoltAB",
+      "description": "Voltage, A to B",
+      "units": "V",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AI",
+      "instance": 21,
+      "name": "VoltBC",
+      "description": "Voltage, B to C",
+      "units": "V",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AI",
+      "instance": 22,
+      "name": "VoltAC",
+      "description": "Voltage, A to C",
+      "units": "V",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AI",
+      "instance": 23,
+      "name": "Freq",
+      "description": "Line frequency",
+      "units": "Hz",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AI",
+      "instance": 24,
+      "name": "CurrentA",
+      "description": "Current, phase A",
+      "units": "A",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AI",
+      "instance": 25,
+      "name": "CurrentB",
+      "description": "Current, phase B",
+      "units": "A",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AI",
+      "instance": 26,
+      "name": "CurrentC",
+      "description": "Current, phase C",
+      "units": "A",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AI",
+      "instance": 27,
+      "name": "PowerFactorAvg",
+      "description": "Average power factor",
+      "units": "",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AI",
+      "instance": 28,
+      "name": "PowerFactorA",
+      "description": "Power factor, phase A",
+      "units": "",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AI",
+      "instance": 29,
+      "name": "PowerFactorB",
+      "description": "Power factor, phase B",
+      "units": "",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AI",
+      "instance": 30,
+      "name": "PowerFactorC",
+      "description": "Power factor, phase C",
+      "units": "",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AI",
+      "instance": 31,
+      "name": "DemandSum",
+      "description": "Real power demand, sum of phases",
+      "units": "W",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AI",
+      "instance": 32,
+      "name": "DemandApp",
+      "description": "Apparent power demand, sum of phases",
+      "units": "W",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AI",
+      "instance": 33,
+      "name": "DemandA",
+      "description": "Real power demand, phase A",
+      "units": "W",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AI",
+      "instance": 34,
+      "name": "DemandB",
+      "description": "Real power demand, phase B",
+      "units": "W",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AI",
+      "instance": 35,
+      "name": "DemandC",
+      "description": "Real power demand, phase C",
+      "units": "W",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AI",
+      "instance": 36,
+      "name": "DemandMin",
+      "description": "Lowest power sum demand (resettable)",
+      "units": "W",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "AI",
+      "instance": 37,
+      "name": "DemandMax",
+      "description": "Highest power sum demand (resettable)",
+      "units": "W",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "AI",
+      "instance": 38,
+      "name": "EnergySum",
+      "description": "Net energy, all phases; resettable, can be preset",
+      "units": "kWh",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "AI",
+      "instance": 39,
+      "name": "EnergyPosSum",
+      "description": "Positive energy, all phases; resettable, can be preset",
+      "units": "kWh",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "AI",
+      "instance": 40,
+      "name": "EnergyNegSum",
+      "description": "Negative energy, all phases; resettable, can be preset",
+      "units": "kWh",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "AI",
+      "instance": 41,
+      "name": "EnergyA",
+      "description": "Net energy, phase A; resettable, can be preset",
+      "units": "kWh",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "AI",
+      "instance": 42,
+      "name": "EnergyB",
+      "description": "Net energy, phase B; resettable, can be preset",
+      "units": "kWh",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "AI",
+      "instance": 43,
+      "name": "EnergyC",
+      "description": "Net energy, phase C; resettable, can be preset",
+      "units": "kWh",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "AI",
+      "instance": 44,
+      "name": "EnergyPosA",
+      "description": "Positive energy, phase A; resettable, can be preset",
+      "units": "kWh",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "AI",
+      "instance": 45,
+      "name": "EnergyPosB",
+      "description": "Positive energy, phase B; resettable, can be preset",
+      "units": "kWh",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "AI",
+      "instance": 46,
+      "name": "EnergyPosC",
+      "description": "Positive energy, phase C; resettable, can be preset",
+      "units": "kWh",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "AI",
+      "instance": 47,
+      "name": "EnergyNegA",
+      "description": "Negative energy, phase A; resettable, can be preset",
+      "units": "kWh",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "AI",
+      "instance": 48,
+      "name": "EnergyNegB",
+      "description": "Negative energy, phase B; resettable, can be preset",
+      "units": "kWh",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "AI",
+      "instance": 49,
+      "name": "EnergyNegC",
+      "description": "Negative energy, phase C; resettable, can be preset",
+      "units": "kWh",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "AI",
+      "instance": 50,
+      "name": "EnergyReacSum",
+      "description": "Reactive energy, sum of phases; resettable, can be preset",
+      "units": "kVARh",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "AI",
+      "instance": 51,
+      "name": "EnergyReacA",
+      "description": "Reactive energy, phase A; resettable, can be preset",
+      "units": "kVARh",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "AI",
+      "instance": 52,
+      "name": "EnergyReacB",
+      "description": "Reactive energy, phase B; resettable, can be preset",
+      "units": "kVARh",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "AI",
+      "instance": 53,
+      "name": "EnergyReacC",
+      "description": "Reactive energy, phase C; resettable, can be preset",
+      "units": "kVARh",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "AI",
+      "instance": 54,
+      "name": "EnergyAppSum",
+      "description": "Apparent energy, sum of phases; resettable, can be preset",
+      "units": "kVAh",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "AI",
+      "instance": 55,
+      "name": "EnergyAppA",
+      "description": "Apparent energy, phase A; resettable, can be preset",
+      "units": "kVAh",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "AI",
+      "instance": 56,
+      "name": "EnergyAppB",
+      "description": "Apparent energy, phase B; resettable, can be preset",
+      "units": "kVAh",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "AI",
+      "instance": 57,
+      "name": "EnergyAppC",
+      "description": "Apparent energy, phase C; resettable, can be preset",
+      "units": "kVAh",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "AI",
+      "instance": 58,
+      "name": "ThermistorTemp",
+      "description": "External thermistor temperature (Option TM1 only)",
+      "units": "°C",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 0,
+      "name": "ErrorStatus1",
+      "description": "Newest error code (0 = no errors)",
+      "units": "",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 1,
+      "name": "ErrorStatus2",
+      "description": "Error history entry 2",
+      "units": "",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 2,
+      "name": "ErrorStatus3",
+      "description": "Error history entry 3",
+      "units": "",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 3,
+      "name": "ErrorStatus4",
+      "description": "Error history entry 4",
+      "units": "",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 4,
+      "name": "ErrorStatus5",
+      "description": "Error history entry 5",
+      "units": "",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 5,
+      "name": "ErrorStatus6",
+      "description": "Error history entry 6",
+      "units": "",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 6,
+      "name": "ErrorStatus7",
+      "description": "Error history entry 7",
+      "units": "",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 7,
+      "name": "ErrorStatus8",
+      "description": "Oldest stored error code",
+      "units": "",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 8,
+      "name": "UptimeSecs",
+      "description": "Seconds since last power-up",
+      "units": "s",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 9,
+      "name": "TotalSecs",
+      "description": "Total seconds of operation",
+      "units": "s",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 10,
+      "name": "PowerFailCount",
+      "description": "Number of power cycles",
+      "units": "",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 11,
+      "name": "ConfigPasscode",
+      "description": "Optional passcode that locks configuration",
+      "units": "",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 12,
+      "name": "CtAmpsA",
+      "description": "CT rated current, phase A (0-60000, default 5)",
+      "units": "A",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 13,
+      "name": "CtAmpsB",
+      "description": "CT rated current, phase B (0-60000, default 5)",
+      "units": "A",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 14,
+      "name": "CtAmpsC",
+      "description": "CT rated current, phase C (0-60000, default 5)",
+      "units": "A",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 15,
+      "name": "DemPerMins",
+      "description": "Demand period, 1-720 (default 15)",
+      "units": "min",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 16,
+      "name": "DemSubints",
+      "description": "Number of demand subintervals, 1-10 (default 1)",
+      "units": "",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 17,
+      "name": "GainAdjustA",
+      "description": "Power/energy gain trim, phase A (5000-20000)",
+      "units": "1/10000",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 18,
+      "name": "GainAdjustB",
+      "description": "Power/energy gain trim, phase B (5000-20000)",
+      "units": "1/10000",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 19,
+      "name": "GainAdjustC",
+      "description": "Power/energy gain trim, phase C (5000-20000)",
+      "units": "1/10000",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 20,
+      "name": "PhaseAdjustA",
+      "description": "CT phase angle trim, phase A (-8000 to 8000)",
+      "units": "0.001 deg",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 21,
+      "name": "PhaseAdjustB",
+      "description": "CT phase angle trim, phase B (-8000 to 8000)",
+      "units": "0.001 deg",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 22,
+      "name": "PhaseAdjustC",
+      "description": "CT phase angle trim, phase C (-8000 to 8000)",
+      "units": "0.001 deg",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 23,
+      "name": "CreepLimit",
+      "description": "Minimum power for non-zero readings (default 1500)",
+      "units": "",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 24,
+      "name": "PtRatio",
+      "description": "Potential transformer ratio (default 1.0)",
+      "units": "",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 25,
+      "name": "Calibrate",
+      "description": "Factory calibration object; not for customer use",
+      "units": "",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 26,
+      "name": "Rs485CollisionCount",
+      "description": "RS-485 collision count",
+      "units": "",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 27,
+      "name": "Rs485FramingErrorCount",
+      "description": "RS-485 framing error count",
+      "units": "",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 28,
+      "name": "FrameSizeErrorCount",
+      "description": "Invalid MS/TP frame data length count",
+      "units": "",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 29,
+      "name": "HeaderCRCErrorCount",
+      "description": "Header CRC error count",
+      "units": "",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 30,
+      "name": "DataCRCErrorCount",
+      "description": "Data CRC error count",
+      "units": "",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 31,
+      "name": "IncompleteFrameCount",
+      "description": "Received frames missing bytes",
+      "units": "",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 32,
+      "name": "Rs485BreakCount",
+      "description": "RS-485 break condition count",
+      "units": "",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 33,
+      "name": "BadByteCount",
+      "description": "Unexpected received bytes count",
+      "units": "",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 34,
+      "name": "LostToken",
+      "description": "Token not received (timeout) count",
+      "units": "",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 35,
+      "name": "ThermistorCoeffA",
+      "description": "Steinhart-Hart coefficient A (Option TM1)",
+      "units": "",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 36,
+      "name": "ThermistorCoeffB",
+      "description": "Steinhart-Hart coefficient B (Option TM1)",
+      "units": "",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 37,
+      "name": "ThermistorCoeffC",
+      "description": "Steinhart-Hart coefficient C (Option TM1)",
+      "units": "",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "BV",
+      "instance": 0,
+      "name": "InvertCtA",
+      "description": "Invert CT polarity, phase A",
+      "units": "",
+      "access": "W",
+      "states": "0=Inactive, 1=Active"
+    },
+    {
+      "type": "BV",
+      "instance": 1,
+      "name": "InvertCtB",
+      "description": "Invert CT polarity, phase B",
+      "units": "",
+      "access": "W",
+      "states": "0=Inactive, 1=Active"
+    },
+    {
+      "type": "BV",
+      "instance": 2,
+      "name": "InvertCtC",
+      "description": "Invert CT polarity, phase C",
+      "units": "",
+      "access": "W",
+      "states": "0=Inactive, 1=Active"
+    },
+    {
+      "type": "BV",
+      "instance": 3,
+      "name": "ClearErrors",
+      "description": "Write active to clear all ErrorStatus objects",
+      "units": "",
+      "access": "W",
+      "states": "0=Inactive, 1=Active"
+    },
+    {
+      "type": "BV",
+      "instance": 4,
+      "name": "ZeroEnergy",
+      "description": "Write active to zero all resettable energy objects",
+      "units": "",
+      "access": "W",
+      "states": "0=Inactive, 1=Active"
+    },
+    {
+      "type": "BV",
+      "instance": 5,
+      "name": "Wink",
+      "description": "Shows a special LED pattern to find the meter",
+      "units": "",
+      "access": "W",
+      "states": "0=Inactive, 1=Active"
+    },
+    {
+      "type": "MV",
+      "instance": 0,
+      "name": "PhaseOffset",
+      "description": "Service type used for line-to-line voltages (default 4)",
+      "units": "",
+      "access": "W",
+      "states": "1=Single-Phase, 2=3-Ph Grounded Delta, 3=3-Ph High-Leg Delta, 4=3-Ph Balanced, 5=1-Ph Center Neutral"
+    },
+    {
+      "type": "MV",
+      "instance": 1,
+      "name": "Averaging",
+      "description": "Measurement averaging mode (default 2)",
+      "units": "",
+      "access": "W",
+      "states": "1=Fastest, 2=Fast, 3=Medium, 4=Slow"
+    },
+    {
+      "type": "MV",
+      "instance": 2,
+      "name": "ZeroDemand",
+      "description": "Restart or reset demand measurements",
+      "units": "",
+      "access": "W",
+      "states": "1=No Change, 2=Reset Min Max, 3=Start New Interval, 4=Reset and Start"
+    },
+    {
+      "type": "FILE",
+      "instance": 0,
+      "name": "FirmwareImage",
+      "description": "File object for field firmware upgrades",
+      "units": "",
+      "access": "W",
+      "states": ""
+    }
+  ]
+}

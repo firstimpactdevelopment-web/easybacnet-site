@@ -1,0 +1,764 @@
+{
+ "manufacturer": "Schneider Electric",
+ "manufacturer_slug": "schneider-electric",
+ "model": "SER7300 Series PIR Ready Line Voltage Fan Coil Controller",
+ "model_slug": "ser7300-fan-coil-controller",
+ "aliases": [
+  "SER7300",
+  "SER7305",
+  "SER7350",
+  "SER7355",
+  "SER7300A5x45B",
+  "SER7350A5x45B"
+ ],
+ "equipment_type": "Fan coil unit controller (room thermostat)",
+ "applies_to": "Schneider Electric PIR-ready SER7300 series line-voltage fan coil controllers: SER7300, SER7305, SER7350 and SER7355 (A versions).",
+ "summary": "The SER7300 series are line-voltage PIR-ready fan coil room controllers. With the BACnet module they are BACnet MS/TP application specific controllers (B-ASC). The object list covers room, outdoor and supply temperature, setpoints, system and fan mode, occupancy, PI demands, fan and valve status, alarms and the SER configuration objects (CPH, NO/NC valves, demand limits); humidity objects exist only on the SER7350/SER7355.",
+ "bacnet_transport": [
+  "BACnet MS/TP"
+ ],
+ "firmware": null,
+ "default_device_instance": null,
+ "access_inferred": false,
+ "notes": [
+  "Access comes from the objects table (Present_Value R or R,W). Writable AV, BV and MV objects are marked commandable 'C'.",
+  "Group objects (GRP) are listed as type 'Other'; they only bundle related objects. Schneider suggests removing configuration objects from the BAS after setup to cut polling.",
+  "State texts and ranges come from the guide's enumeration tables where the object name and instance match; a few enumeration rows use different instances than the objects table and were not applied.",
+  "The PIR cover and the humidity sensor are model options: objects marked 'only ...' exist only on the listed part numbers.",
+  "The guide gives default Device ID rules only for the SE7200 (72000 + MAC) and SE73xx (73000 + MAC) models, not for the SER models.",
+  "MV 95 Fan Control is printed with the states None/Filter/Service, which look copied from the input configuration tables; listed as printed.",
+  "MV 83 RBI 2 Configuration's state list is cut off in the guide, so no states are given.",
+  "The guide's sample program writes occupancy to 'MV13' and its GUI list gives Unoccupied Cool Setpoint as 'AV34'; the objects table has MV 18 Occupancy Command and AV 44."
+ ],
+ "source": {
+  "title": "BACnet Integration Manual: PIR Ready SE7200, SE7300 & SER7300 Series (24 Vac zoning, fan coil and line-voltage fan coil controllers)",
+  "doc_number": "IG-SE7000-BNET24VAC-A4.EN.4.2013.v1",
+  "revision_date": "April 2013",
+  "url": "https://download.se.com/files?p_Doc_Ref=IG-SE7000-BNET24VAC-A4"
+ },
+ "integration": {
+  "summary": "Command occupancy with MV 18 and the mode with MV 16, fan mode with MV 17, and write the occupied setpoints AV 39/AV 40. Read AV 7 room temperature, MV 33 effective occupancy and MV 28 fan status. The BMS can also send outdoor temperature to AV 9.",
+  "minimum_points": [
+   {
+    "ref": "MV 18",
+    "name": "Occupancy Command",
+    "why": "BMS occupancy: local, occupied or unoccupied"
+   },
+   {
+    "ref": "MV 16",
+    "name": "System Mode",
+    "why": "Off / auto / cool / heat"
+   },
+   {
+    "ref": "MV 17",
+    "name": "Fan Mode",
+    "why": "Fan mode command"
+   },
+   {
+    "ref": "AV 39",
+    "name": "Occupied Heat Setpoint",
+    "why": "Occupied heating setpoint"
+   },
+   {
+    "ref": "AV 40",
+    "name": "Occupied Cool Setpoint",
+    "why": "Occupied cooling setpoint"
+   },
+   {
+    "ref": "MV 33",
+    "name": "Effective Occupancy",
+    "why": "Actual occupancy state"
+   },
+   {
+    "ref": "AV 7",
+    "name": "Room Temperature",
+    "why": "Space temperature"
+   },
+   {
+    "ref": "MV 28",
+    "name": "Fan Status",
+    "why": "Fan speed status: off / low / med / high"
+   },
+   {
+    "ref": "BI 37",
+    "name": "Service Alarm",
+    "why": "Service alarm from an input set to Service"
+   }
+  ],
+  "enable": "BACnet stays off until the MAC address is changed from the factory 254 to 0-127. MV 18 Occupancy Command: 1 = Local Occupancy, 2 = Occupied, 3 = Unoccupied.",
+  "heartbeat": null,
+  "remote_sensors": "The BMS can write Outdoor Temperature (AV 9) and, for testing or override, Room Temperature (AV 7); AV 7 only accepts writes while BV 8 Room Temp Override is set to Override. On the humidity models, Room Humidity (AV 10) likewise needs BV 11 Room Humid Override. Written room temperature, outdoor temperature and occupancy are released if the controller goes offline.",
+  "setup": [
+   "Controllers ship with MAC address 254, which keeps BACnet communication off. Set the MAC address (0-127) at the controller to enable BACnet MS/TP.",
+   "Baud rate auto-detects (9600, 19200, 38400, 76800) at power-up; after a network speed change the device keeps the old speed for 10 minutes unless re-powered.",
+   "Default Device Name is the model number plus the MAC address; Device Name and Device ID are writable.",
+   "No COV support: poll at 5 seconds or slower and write on change ('if once' or every few minutes), not every program scan."
+  ],
+  "gotchas": [
+   "If the controller goes offline, values the BMS wrote to Room Temperature, Outdoor Temperature and Occupancy are released.",
+   "Segmented requests and responses are not supported; keep Read Property Multiple requests small.",
+   "The device object has no Local_Time or Local_Date, so the controller cannot claim DM-TS-B even though time sync over the network works."
+  ]
+ },
+ "points": [
+  {
+   "type": "AV",
+   "instance": 7,
+   "name": "Room Temperature",
+   "description": "Range -39.9°F (-40°C) to 121.9°F (50°C)",
+   "units": "°F/°C",
+   "access": "C",
+   "states": ""
+  },
+  {
+   "type": "BV",
+   "instance": 8,
+   "name": "Room Temp Override",
+   "description": "Default Normal",
+   "units": "",
+   "access": "C",
+   "states": "0=Normal, 1=Override"
+  },
+  {
+   "type": "AV",
+   "instance": 9,
+   "name": "Outdoor Temperature",
+   "description": "Range -39°F (-40°C) to 121.9°F (50°C)",
+   "units": "°F/°C",
+   "access": "C",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 10,
+   "name": "Room Humidity",
+   "description": "Range 5% to 90%; only SER7350, SER7355",
+   "units": "%",
+   "access": "C",
+   "states": ""
+  },
+  {
+   "type": "BV",
+   "instance": 11,
+   "name": "Room Humid Override",
+   "description": "only SER7350, SER7355",
+   "units": "",
+   "access": "C",
+   "states": ""
+  },
+  {
+   "type": "AI",
+   "instance": 12,
+   "name": "Supply Temperature",
+   "description": "Range -39.9°F (-40°C) to 121.9°F (50°C)",
+   "units": "°F/°C",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "BV",
+   "instance": 13,
+   "name": "Dehumidification Lockout",
+   "description": "Default Enabled; only SER7350, SER7355",
+   "units": "",
+   "access": "C",
+   "states": "0=Disabled, 1=Enabled"
+  },
+  {
+   "type": "MV",
+   "instance": 15,
+   "name": "Sequence of Operation",
+   "description": "",
+   "units": "",
+   "access": "C",
+   "states": "1=Cooling Only, 2=Heating Only, 3=Cooling & Reheat, 4=Heating & Reheat, 5=Cool/Heat4P, 6=Cool/Heat4P&Reht"
+  },
+  {
+   "type": "MV",
+   "instance": 16,
+   "name": "System Mode",
+   "description": "",
+   "units": "",
+   "access": "C",
+   "states": "1=Off, 2=Auto, 3=Cool, 4=Heat"
+  },
+  {
+   "type": "MV",
+   "instance": 17,
+   "name": "Fan Mode",
+   "description": "",
+   "units": "",
+   "access": "C",
+   "states": ""
+  },
+  {
+   "type": "MV",
+   "instance": 18,
+   "name": "Occupancy Command",
+   "description": "",
+   "units": "",
+   "access": "C",
+   "states": "1=Local Occupancy, 2=Occupied, 3=Unoccupied"
+  },
+  {
+   "type": "MV",
+   "instance": 19,
+   "name": "Keypad Lockout",
+   "description": "",
+   "units": "",
+   "access": "C",
+   "states": "1=Level 0, 2=Level 1, 3=Level 2, 4=Level 3, 5=Level 4, 6=Level 5"
+  },
+  {
+   "type": "Other",
+   "instance": 20,
+   "name": "Control Output",
+   "description": "Group object (bundles related objects)",
+   "units": "",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 21,
+   "name": "PI Heating Demand",
+   "description": "Range 0% to 100%; default 0%",
+   "units": "%",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 22,
+   "name": "PI Cooling Demand",
+   "description": "Range 0% to 100%; default 0%",
+   "units": "%",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "BI",
+   "instance": 23,
+   "name": "Dehumidification Status",
+   "description": "Default Off; only SER7350, SER7355",
+   "units": "",
+   "access": "R",
+   "states": "0=Off, 1=On"
+  },
+  {
+   "type": "Other",
+   "instance": 24,
+   "name": "Controller Status",
+   "description": "Group object (bundles related objects)",
+   "units": "",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "MV",
+   "instance": 28,
+   "name": "Fan Status",
+   "description": "",
+   "units": "",
+   "access": "R",
+   "states": "1=Off, 2=Low, 3=Med, 4=High"
+  },
+  {
+   "type": "BI",
+   "instance": 29,
+   "name": "BI 1 Status",
+   "description": "Default Deactivated",
+   "units": "",
+   "access": "R",
+   "states": "0=Deactivated, 1=Activated"
+  },
+  {
+   "type": "BI",
+   "instance": 30,
+   "name": "BI 2 Status",
+   "description": "Default Deactivated",
+   "units": "",
+   "access": "R",
+   "states": "0=Deactivated, 1=Activated"
+  },
+  {
+   "type": "BI",
+   "instance": 32,
+   "name": "Local Motion",
+   "description": "Default No Motion",
+   "units": "",
+   "access": "R",
+   "states": "0=No Motion, 1=Motion"
+  },
+  {
+   "type": "MV",
+   "instance": 33,
+   "name": "Effective Occupancy",
+   "description": "",
+   "units": "",
+   "access": "R",
+   "states": "1=Occupied, 2=Unoccupied, 3=Temporary Occupied, 4=Stand-by"
+  },
+  {
+   "type": "Other",
+   "instance": 34,
+   "name": "Controller Alarms",
+   "description": "Group object (bundles related objects)",
+   "units": "",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "BI",
+   "instance": 35,
+   "name": "Window Alarm",
+   "description": "Default Off",
+   "units": "",
+   "access": "R",
+   "states": "0=Off, 1=On"
+  },
+  {
+   "type": "BI",
+   "instance": 36,
+   "name": "Filter Alarm",
+   "description": "Default Off",
+   "units": "",
+   "access": "R",
+   "states": "0=Off, 1=On"
+  },
+  {
+   "type": "BI",
+   "instance": 37,
+   "name": "Service Alarm",
+   "description": "Default Off",
+   "units": "",
+   "access": "R",
+   "states": "0=Off, 1=On"
+  },
+  {
+   "type": "Other",
+   "instance": 38,
+   "name": "Temperature Setpoints",
+   "description": "Group object (bundles related objects)",
+   "units": "",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 39,
+   "name": "Occupied Heat Setpoint",
+   "description": "Range 40°F (4.5°C) to 90°F (32°C); default 72°F (22°C)",
+   "units": "°F/°C",
+   "access": "C",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 40,
+   "name": "Occupied Cool Setpoint",
+   "description": "Range 54°F (12°C) to 100°F (37.5°C); default 74°F (24°C)",
+   "units": "°F/°C",
+   "access": "C",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 41,
+   "name": "Stand-by Heat Setpoint",
+   "description": "Range 40°F (4.5°C) to 90°F (32°C); default 72°F (22°C)",
+   "units": "°F/°C",
+   "access": "C",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 42,
+   "name": "Stand-by Cool Setpoint",
+   "description": "Range 54°F (12°C) to 100°F (37.5°C); default 74°F (24°C)",
+   "units": "°F/°C",
+   "access": "C",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 43,
+   "name": "Unoccupied Heat Setpoint",
+   "description": "Range 40°F (4.5°C) to 90°F (32°C); default 62°F (16.5°C)",
+   "units": "°F/°C",
+   "access": "C",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 44,
+   "name": "Unoccupied Cool Setpoint",
+   "description": "Range 54°F (12°C) to 100°F (37.5°C); default 80°F (26.5°C)",
+   "units": "°F/°C",
+   "access": "C",
+   "states": ""
+  },
+  {
+   "type": "Other",
+   "instance": 45,
+   "name": "General Options 1",
+   "description": "Group object (bundles related objects)",
+   "units": "",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "MV",
+   "instance": 46,
+   "name": "BI 1 Configuration",
+   "description": "",
+   "units": "",
+   "access": "C",
+   "states": "1=None, 2=Rem NSB, 3=Motion NO, 4=Motion NC, 5=Window"
+  },
+  {
+   "type": "MV",
+   "instance": 47,
+   "name": "BI 2 Configuration",
+   "description": "",
+   "units": "",
+   "access": "C",
+   "states": "1=None, 2=Door Dry, 3=Override, 4=Filter, 5=Service"
+  },
+  {
+   "type": "BV",
+   "instance": 49,
+   "name": "Menu Scroll",
+   "description": "Default Scroll Active",
+   "units": "",
+   "access": "C",
+   "states": "0=No Scroll, 1=Scroll Active"
+  },
+  {
+   "type": "BV",
+   "instance": 50,
+   "name": "Auto Mode Enable",
+   "description": "Default Enabled",
+   "units": "",
+   "access": "C",
+   "states": "0=Disabled, 1=Enabled"
+  },
+  {
+   "type": "BV",
+   "instance": 51,
+   "name": "Temperature Scale",
+   "description": "Default °F",
+   "units": "",
+   "access": "C",
+   "states": "0=°C, 1=°F"
+  },
+  {
+   "type": "MV",
+   "instance": 52,
+   "name": "Pipe Number",
+   "description": "",
+   "units": "",
+   "access": "C",
+   "states": ""
+  },
+  {
+   "type": "Other",
+   "instance": 55,
+   "name": "General Options 2",
+   "description": "Group object (bundles related objects)",
+   "units": "",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 56,
+   "name": "Password Value",
+   "description": "Range 0 to 1000",
+   "units": "",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "MV",
+   "instance": 57,
+   "name": "Fan Mode Sequence",
+   "description": "",
+   "units": "",
+   "access": "C",
+   "states": "1=Low-Med-High, 2=Low-High, 3=Low-Med-High-Auto, 4=Low-High-Auto, 5=On-Auto"
+  },
+  {
+   "type": "AV",
+   "instance": 58,
+   "name": "Heating Setpoint Limit",
+   "description": "Range 40°F (4.5°C) to 90°F (32°C); default 90°F (32°C)",
+   "units": "°F/°C",
+   "access": "C",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 59,
+   "name": "Cooling Setpoint Limit",
+   "description": "Range 54°F (12°C) to 100°F (37.5°C); default 54°F (12°C)",
+   "units": "°F/°C",
+   "access": "C",
+   "states": ""
+  },
+  {
+   "type": "BV",
+   "instance": 60,
+   "name": "Setpoint Type",
+   "description": "Default Permanent",
+   "units": "",
+   "access": "C",
+   "states": "0=Permanent, 1=Temporary"
+  },
+  {
+   "type": "BV",
+   "instance": 61,
+   "name": "Setpoint Function",
+   "description": "Default Dual Setpoints",
+   "units": "",
+   "access": "C",
+   "states": "0=Dual Setpoints, 1=Attached Setpoints"
+  },
+  {
+   "type": "MV",
+   "instance": 62,
+   "name": "Temporary Occupancy Time",
+   "description": "",
+   "units": "",
+   "access": "C",
+   "states": "1=0 hour, 2=1 hour, 3=2 hours, 4=3 hours, 5=4 hours, 6=5 hours, 7=6 hours, 8=7 hours, 9=8 hours, 10=9 hours, 11=10 hours, 12=11 hours, 13=12 hours, 14=13 hours, 15=14 hours, 16=15 hours, 17=16 hours, 18=17 hours, 19=18 hours, 20=19 hours, 21=20 hours, 22=21 hours, 23=22 hours, 24=23 hours, 25=24 hours"
+  },
+  {
+   "type": "AV",
+   "instance": 63,
+   "name": "Deadband",
+   "description": "Range 2°F (1°C) to 5°F (2.5°C); default 2°F (1°C)",
+   "units": "°F/°C",
+   "access": "C",
+   "states": ""
+  },
+  {
+   "type": "MV",
+   "instance": 65,
+   "name": "Proportional Band",
+   "description": "",
+   "units": "",
+   "access": "C",
+   "states": "1=3 °F (1.2 °C), 2=4 °F (1.7 °C), 3=5 °F (2.2 °C), 4=6 °F (2.8 °C), 5=7 °F (3.3 °C), 6=8 °F (3.9 °C), 7=9 °F (5.0 °C), 8=10 °F (5.6 °C)"
+  },
+  {
+   "type": "BV",
+   "instance": 66,
+   "name": "Auto Fan",
+   "description": "",
+   "units": "",
+   "access": "C",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 67,
+   "name": "Stand-by Time",
+   "description": "Range 0.5 Hours to 24.0 Hours; default 0.5 Hours",
+   "units": "h",
+   "access": "C",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 68,
+   "name": "Unoccupied Time",
+   "description": "Range 0.0 Hours to 24.0 Hours; default 0.0 Hours",
+   "units": "h",
+   "access": "C",
+   "states": ""
+  },
+  {
+   "type": "Other",
+   "instance": 69,
+   "name": "Humidity Models Config Options",
+   "description": "Group object (bundles related objects); only SER7350, SER7355",
+   "units": "",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "BV",
+   "instance": 70,
+   "name": "RH Display",
+   "description": "Default Disabled; only SER7350, SER7355",
+   "units": "",
+   "access": "C",
+   "states": "0=Disabled, 1=Enabled"
+  },
+  {
+   "type": "AV",
+   "instance": 71,
+   "name": "RH Setpoint",
+   "description": "Range 30% to 95%; default 50%; only SER7350, SER7355",
+   "units": "%",
+   "access": "C",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 72,
+   "name": "Dehumidification Hysterisys",
+   "description": "Range 2% to 20%; default 5%; only SER7350, SER7355",
+   "units": "%",
+   "access": "C",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 73,
+   "name": "Dehumidification MAX Cooling",
+   "description": "Range 20% to 100%; default 100 %; only SER7350, SER7355",
+   "units": "%",
+   "access": "C",
+   "states": ""
+  },
+  {
+   "type": "Other",
+   "instance": 81,
+   "name": "SER models Configuration Options and Status",
+   "description": "Group object (bundles related objects)",
+   "units": "",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "MV",
+   "instance": 82,
+   "name": "RUI 1 Configuration",
+   "description": "",
+   "units": "",
+   "access": "C",
+   "states": "0=None, 1=Filter, 2=Service, 3=COC/NH, 4=COC/NC, 5=COS"
+  },
+  {
+   "type": "MV",
+   "instance": 83,
+   "name": "RBI 2 Configuration",
+   "description": "",
+   "units": "",
+   "access": "C",
+   "states": ""
+  },
+  {
+   "type": "MV",
+   "instance": 84,
+   "name": "Heat CPH",
+   "description": "",
+   "units": "",
+   "access": "C",
+   "states": "3=3 CPH, 4=4 CPH, 5=5 CPH, 6=6 CPH, 7=7 CPH, 8=8 CPH"
+  },
+  {
+   "type": "MV",
+   "instance": 85,
+   "name": "Cool CPH",
+   "description": "",
+   "units": "",
+   "access": "C",
+   "states": "3=3 CPH, 4=4 CPH, 5=5 CPH, 6=6 CPH, 7=7 CPH, 8=8 CPH"
+  },
+  {
+   "type": "BV",
+   "instance": 86,
+   "name": "Heat NO NC",
+   "description": "Default Normally Closed",
+   "units": "",
+   "access": "C",
+   "states": "0=Normally Opened, 1=Normally Closed"
+  },
+  {
+   "type": "BV",
+   "instance": 87,
+   "name": "Cool NO NC",
+   "description": "Default Normally Closed",
+   "units": "",
+   "access": "C",
+   "states": "0=Normally Opened, 1=Normally Closed"
+  },
+  {
+   "type": "AV",
+   "instance": 88,
+   "name": "Heat Demand Limit",
+   "description": "Range 0% to 100%",
+   "units": "%",
+   "access": "C",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 89,
+   "name": "Cool Demand Limit",
+   "description": "Range 0% to 100%",
+   "units": "%",
+   "access": "C",
+   "states": ""
+  },
+  {
+   "type": "MV",
+   "instance": 90,
+   "name": "Pulsed Heat",
+   "description": "",
+   "units": "",
+   "access": "C",
+   "states": "0=Off, 1=On, 2=Occupancy Output"
+  },
+  {
+   "type": "BI",
+   "instance": 91,
+   "name": "RUI 1 Status",
+   "description": "Default Deactivated",
+   "units": "",
+   "access": "R",
+   "states": "0=Deactivated, 1=Activated"
+  },
+  {
+   "type": "BI",
+   "instance": 92,
+   "name": "RBI 2 Status",
+   "description": "Default Deactivated",
+   "units": "",
+   "access": "R",
+   "states": "0=Deactivated, 1=Activated"
+  },
+  {
+   "type": "BI",
+   "instance": 93,
+   "name": "Cooling Valve Status",
+   "description": "Default Off",
+   "units": "",
+   "access": "R",
+   "states": "0=Off, 1=On"
+  },
+  {
+   "type": "BI",
+   "instance": 94,
+   "name": "Heating Valve Status",
+   "description": "Default Off",
+   "units": "",
+   "access": "R",
+   "states": "0=Off, 1=On"
+  },
+  {
+   "type": "MV",
+   "instance": 95,
+   "name": "Fan Control",
+   "description": "",
+   "units": "",
+   "access": "C",
+   "states": "0=None, 1=Filter, 2=Service"
+  }
+ ],
+ "page": "https://easybacnet.com/bacnet-points-lists/schneider-electric/ser7300-fan-coil-controller",
+ "note": "Re-typed from the manufacturer's public documentation (see source). Point availability varies by firmware and options; verify against the live device."
+}

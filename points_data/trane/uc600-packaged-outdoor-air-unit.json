@@ -1,0 +1,1680 @@
+{
+  "manufacturer": "Trane",
+  "manufacturer_slug": "trane",
+  "model": "Tracer UC600 Packaged Outdoor Air Unit",
+  "model_slug": "uc600-packaged-outdoor-air-unit",
+  "aliases": [
+    "Tracer UC600",
+    "UC600 DOAS",
+    "Packaged Outdoor Air Unit",
+    "BAS-SVP18"
+  ],
+  "equipment_type": "Dedicated outdoor air unit (DOAS) controller",
+  "applies_to": "Trane packaged outdoor air units controlled by a Tracer UC600 running the packaged outdoor air unit program.",
+  "summary": "The Tracer UC600 is a programmable B-AAC controller; on packaged outdoor air units it runs a Trane program exposing about 175 objects with short instances (AI 1, AV 20, BV 16...). The BMS commands occupancy with MV 1 and writes '... BAS' values for sensors and setpoints, which ship Out of Service and must be put In Service first. Which objects are used depends on the unit type and options (space, discharge or VAV control, heat pump, gas heat, ERV).",
+  "bacnet_transport": [
+    "BACnet MS/TP"
+  ],
+  "firmware": null,
+  "default_device_instance": null,
+  "access_inferred": true,
+  "notes": [
+    "The guide has no read/write column. Access is inferred: inputs, hardware outputs, Active/Status values and diagnostics are read-only; setpoints, '... BAS' values, configuration values, Alarm Reset and Occupancy Request are writable.",
+    "Each object is printed twice in the guide (by type in Tables 3-9 and by name in Table 10); names here come from the by-type tables. Table 10 calls AV 50 'Space CO2 Concentration Setpoint' and BV 43 'Ventilation Mode'.",
+    "'When the point exists' conditions are shown in brackets where they fit; points marked 'All Units' have no bracket.",
+    "BI 1 Supply Fan Status is printed with inverted states (0 = On, 1 = Off).",
+    "The UC600 hardware also has an Ethernet port, but this guide covers BACnet MS/TP only."
+  ],
+  "source": {
+    "title": "Integration Guide: Tracer UC600 Programmable Controller, Packaged Outdoor Air Unit",
+    "doc_number": "BAS-SVP18E-EN",
+    "revision_date": "July 2022",
+    "url": "https://elibrary.tranetechnologies.com/public/commercial-hvac/Literature/Integration/BAS-SVP18E-EN_07012022.pdf"
+  },
+  "integration": {
+    "summary": "Command occupancy with MV 1 Occupancy Request and send setpoints (AV 25 space setpoint, AV 30/AV 32 discharge setpoints, AV 67 on multizone VAV). If the BMS supplies sensor values, put the '... BAS' objects In Service and keep refreshing them. Read MV 2, BI 1, AV 5 and the diagnostic BVs; clear latching lockouts with BV 16 Alarm Reset.",
+    "minimum_points": [
+      {
+        "ref": "MV 1",
+        "name": "Occupancy Request",
+        "why": "Occupancy command (1 = Occupied, 2 = Unoccupied, 5 = Auto)"
+      },
+      {
+        "ref": "AV 25",
+        "name": "Space Temperature Setpoint BAS",
+        "why": "Space setpoint (space control / single zone VAV)"
+      },
+      {
+        "ref": "AV 30",
+        "name": "Discharge Air Cooling Setpoint",
+        "why": "Discharge air cooling setpoint (discharge control)"
+      },
+      {
+        "ref": "AV 32",
+        "name": "Discharge Air Heating Setpoint",
+        "why": "Discharge air heating setpoint (discharge control)"
+      },
+      {
+        "ref": "BV 16",
+        "name": "Alarm Reset",
+        "why": "1 = reset diagnostics and lockouts; return to 0 after"
+      },
+      {
+        "ref": "MV 2",
+        "name": "Occupancy Status",
+        "why": "Confirms the occupancy in effect"
+      },
+      {
+        "ref": "BI 1",
+        "name": "Supply Fan Status",
+        "why": "Supply fan proof (0 = On, 1 = Off)"
+      },
+      {
+        "ref": "AV 5",
+        "name": "Discharge Air Temperature Active",
+        "why": "Discharge air temperature in use"
+      },
+      {
+        "ref": "BV 17",
+        "name": "System LOCKOUT",
+        "why": "Unit locked out; needs Alarm Reset"
+      },
+      {
+        "ref": "BV 1",
+        "name": "Diagnostic: Supply Fan Failure",
+        "why": "Supply fan failure (latching)"
+      }
+    ],
+    "enable": "No enable point is described. The BAS controls the unit by writing values and putting points In or Out of Service. MV 1 Occupancy Request sets occupancy.",
+    "heartbeat": "The guide says the BAS must routinely refresh BAS-supplied sensor values to protect against a communication loss, but gives no timeout value.",
+    "remote_sensors": "Space Temperature BAS (AV 20), Space RH BAS (AV 8), Outdoor Air Temperature BAS (AV 75), Outdoor Air Humidity BAS (AV 81) and Discharge Air Temperature BAS (AV 4) are Out of Service from the factory; put them In Service to use them and keep rewriting them. The matching '... Active' AVs show the value in use.",
+    "setup": [
+      "Three rotary switches set the MS/TP MAC address (1-127; 0 is reserved for a Tracer SC) and, by default, the Device ID.",
+      "For a Device ID above 127, enable 'Use Software Device ID' in Tracer TU or the BACnet Setup Tool, then cycle power.",
+      "MS/TP baud rates 9600, 19200, 38400 and 76800 (default 76800); set with Tracer TU or the BACnet Setup Tool along with the communicated units, then cycle power.",
+      "The controller is BTL listed as a B-AAC and supports COV, alarm summary and trend retrieval."
+    ],
+    "gotchas": [
+      "BV 16 Alarm Reset resets ALL diagnostics and lockouts; the BMS must set it back to inactive afterwards.",
+      "Latching diagnostics (supply fan failure, OAD proving, temperature lockouts, System LOCKOUT) stay active until reset.",
+      "BAS sensor objects are ignored while Out of Service (the factory default)."
+    ]
+  },
+  "points": [
+    {
+      "type": "AI",
+      "instance": 1,
+      "name": "Space Temperature Local",
+      "description": "Local space temperature sensor [Units with Space Temperature Sensor Installed]",
+      "units": "°F",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AI",
+      "instance": 2,
+      "name": "Space Relative Humidity Local",
+      "description": "Local space relative humidity sensor [Units with Space Humidity Sensor Installed]",
+      "units": "%",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AI",
+      "instance": 3,
+      "name": "Supply Fan Pressure Local",
+      "description": "Local supply fan piezo ring pressure [Units with Piezo Ring on Supply Fan]",
+      "units": "in. w.c.",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AI",
+      "instance": 4,
+      "name": "Circuit 1 Condenser Coil Temperature Local",
+      "description": "Local condenser coil temperature sensor on circuit 1",
+      "units": "°F",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AI",
+      "instance": 5,
+      "name": "Circuit 2 Condenser Coil Temperature Local",
+      "description": "Local condenser coil temperature sensor on circuit 2",
+      "units": "°F",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AI",
+      "instance": 6,
+      "name": "Return Air Temperature Local",
+      "description": "Local return air temperature sensor [Units with Modulating Dampers]",
+      "units": "°F",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AI",
+      "instance": 7,
+      "name": "OAD Position Local",
+      "description": "Local outside air damper position [Units with Modulating Dampers]",
+      "units": "%",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AI",
+      "instance": 8,
+      "name": "Zone CO2 Local",
+      "description": "Local Space CO2 concentration [Units with a CO2 Sensor Installed]",
+      "units": "ppm",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AI",
+      "instance": 9,
+      "name": "Exhaust Fan Pressure Local",
+      "description": "Local exhaust fan piezo ring pressure [Units with Piezo Ring on Exhaust Fan]",
+      "units": "in. w.c.",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AI",
+      "instance": 10,
+      "name": "Outdoor Air Flow Local",
+      "description": "Local outside air flow [Units with Outside air flow Monitoring]",
+      "units": "cfm",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AI",
+      "instance": 11,
+      "name": "Discharge Air Temperature Local",
+      "description": "Local discharge air temperature sensor",
+      "units": "°F",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AI",
+      "instance": 12,
+      "name": "Return Duct/Space Pressure Local",
+      "description": "Local return duct or space pressure sensor [Units with Powered Exhaust and Modulating Dampers]",
+      "units": "in. w.c.",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AI",
+      "instance": 13,
+      "name": "Exhaust Leaving Temperature Local",
+      "description": "Local exhaust leaving temperature sensor [Units with an ERV]",
+      "units": "°F",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AI",
+      "instance": 14,
+      "name": "Return Air Humidity Local",
+      "description": "Local return air humidity sensor [Units with Modulating Dampers]",
+      "units": "%",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AI",
+      "instance": 15,
+      "name": "Evaporator Coil Leaving Temperature Local",
+      "description": "Local evaporator leaving air temperature sensor [Units with Compressors]",
+      "units": "°F",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AI",
+      "instance": 16,
+      "name": "Space Occupancy Request Override",
+      "description": "Local input that overrides Occupancy Request",
+      "units": "",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AI",
+      "instance": 17,
+      "name": "ERV Supply Side Leaving Temperature Local",
+      "description": "Local temperature sensor located post ERV on the supply air side",
+      "units": "°F",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AI",
+      "instance": 18,
+      "name": "Circuit 1 Liquid Line Pressure Local",
+      "description": "Local refrigerant pressure sensor on circuit 1",
+      "units": "psi",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AI",
+      "instance": 19,
+      "name": "Circuit 2 Liquid Line Pressure Local",
+      "description": "Local refrigerant pressure sensor on circuit 2",
+      "units": "psi",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AI",
+      "instance": 20,
+      "name": "Space Temperature Setpoint Local",
+      "description": "Local thumbwheel input [Units with Thumbwheel Installed]",
+      "units": "°F",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AI",
+      "instance": 21,
+      "name": "Outdoor Air Temperature Local",
+      "description": "Local outside air temperature sensor",
+      "units": "°F",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AI",
+      "instance": 22,
+      "name": "Outdoor Air Relative Humidity Local",
+      "description": "Local outside air humidity sensor",
+      "units": "%",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AI",
+      "instance": 23,
+      "name": "Duct Static Pressure Local",
+      "description": "Local supply duct pressure sensor [Unit with Multizone VAV]",
+      "units": "in. w.c.",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AO",
+      "instance": 1,
+      "name": "HGRH Command",
+      "description": "Analog HGRH output command [Units with Modulating Hot Gas Reheat]",
+      "units": "%",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AO",
+      "instance": 2,
+      "name": "IVFD Command",
+      "description": "Analog supply fan VFD speed",
+      "units": "%",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AO",
+      "instance": 3,
+      "name": "Circuit 1 Digital Scroll/ Variable Speed Command",
+      "description": "Analog digital scroll or variable speed output command",
+      "units": "%",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AO",
+      "instance": 4,
+      "name": "PEVFD Command",
+      "description": "Analog exhaust fan VFD speed [Units with Powered Exhaust]",
+      "units": "%",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AO",
+      "instance": 5,
+      "name": "OAD Position Command",
+      "description": "Analog outdoor air damper command [Units with Modulating Dampers]",
+      "units": "%",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AO",
+      "instance": 6,
+      "name": "ERV Bypass Position Command",
+      "description": "Analog ERV bypass damper command [Units with ERV]",
+      "units": "%",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AO",
+      "instance": 7,
+      "name": "Condenser Fan Speed Command",
+      "description": "Analog condenser fan speed command [Units with Head Pressure Control]",
+      "units": "%",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AO",
+      "instance": 8,
+      "name": "Circuit 2 Digital Scroll/ Variable Speed Command",
+      "description": "Analog digital scroll or variable speed output command",
+      "units": "%",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AO",
+      "instance": 11,
+      "name": "Heating Output Command",
+      "description": "Analog heating output command [Units with any type of Primary Heat]",
+      "units": "%",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 1,
+      "name": "Occupied Cooling Setpoint",
+      "description": "Space cooling setpoint used in occupied mode [Units with Space Control or Single Zone VAV]",
+      "units": "°F",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 2,
+      "name": "Occupied Heating Setpoint",
+      "description": "Space heating setpoint used in occupied mode [Units with Space Control or Single Zone VAV]",
+      "units": "°F",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 3,
+      "name": "Occupied Offset",
+      "description": "Offset used to calculate occupied heating/cooling setpoints",
+      "units": "Δ°F",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 4,
+      "name": "Discharge Air Temperature BAS",
+      "description": "Communicated discharge air temperature",
+      "units": "°F",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 5,
+      "name": "Discharge Air Temperature Active",
+      "description": "Actively used discharge air temperature",
+      "units": "°F",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 6,
+      "name": "DAT High Temp Cutout",
+      "description": "Discharge air high limit; alarm after AV 16 minutes above it",
+      "units": "°F",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 7,
+      "name": "Space RH Active",
+      "description": "Actively used space relative humidity [Units with Space Humidity Sensor Installed]",
+      "units": "%",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 8,
+      "name": "Space RH BAS",
+      "description": "Communicated space relative humidity",
+      "units": "%",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 9,
+      "name": "Occupied Bypass Time",
+      "description": "Unoccupied delay after the occupied button is pressed",
+      "units": "",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 10,
+      "name": "Outdoor Air Dewpoint Setpoint (OADS)",
+      "description": "If the outdoor air dewpoint is greater than OADS",
+      "units": "°F",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 11,
+      "name": "Outdoor Air Dewpoint Active",
+      "description": "Dewpoint of the outdoor air",
+      "units": "°F",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 12,
+      "name": "Liquid Line Pressure Setpoint",
+      "description": "Pressure setpoint used to modulate condenser fan(s) [Air Source Heat Pumps with Head Pressure Control]",
+      "units": "psi",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 13,
+      "name": "Outdoor Air Minimum Flow Setpoint BAS",
+      "description": "Air flow setpoint used to modulate dampers",
+      "units": "cfm",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 14,
+      "name": "Evaporator Leaving Temperature Setpoint",
+      "description": "Evaporator leaving air temperature setpoint during dehumidification mode or Single Zone VAV",
+      "units": "°F",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 15,
+      "name": "DAT Low Temp Cutout",
+      "description": "Discharge air low limit; alarm after AV 16 minutes below it",
+      "units": "°F",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 16,
+      "name": "DAT Temp Cutout Time",
+      "description": "Minutes beyond a discharge air limit before alarm",
+      "units": "",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 17,
+      "name": "IVFD Signal",
+      "description": "Supply fan speed setpoint",
+      "units": "%",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 18,
+      "name": "Compressor Heating Capacity",
+      "description": "Compressor Heating source capacity [Units that are Air Source or Water Source Heat Pumps]",
+      "units": "%",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 20,
+      "name": "Space Temperature BAS",
+      "description": "Communicated space temperature",
+      "units": "°F",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 23,
+      "name": "Space Temperature Active",
+      "description": "Actively used space temperature",
+      "units": "°F",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 24,
+      "name": "Condenser Coil Temperature Setpoint",
+      "description": "Temperature setpoint used to modulate condenser fan(s)",
+      "units": "°F",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 25,
+      "name": "Space Temperature Setpoint BAS",
+      "description": "Communicated space temperature setpoint [Units that are Space Control or Single Zone VAV]",
+      "units": "°F",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 26,
+      "name": "Unoccupied Cooling Setpoint",
+      "description": "Space cooling setpoint used in unoccupied mode [Units with Space Temperature/Humidity Sensor Installed]",
+      "units": "°F",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 27,
+      "name": "Unoccupied Heating Setpoint",
+      "description": "Space heating setpoint used in unoccupied mode [Units with Space Temperature/Humidity Sensor Installed]",
+      "units": "°F",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 28,
+      "name": "Unoccupied Dewpoint Setpoint",
+      "description": "Unoccupied space dewpoint above which dehumidification starts",
+      "units": "°F",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 29,
+      "name": "Outdoor Air Cooling Setpoint (OACS)",
+      "description": "Setpoint used to enable cooling [Units with Space Control, Discharge Control, or Single Zone VAV]",
+      "units": "°F",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 30,
+      "name": "Discharge Air Cooling Setpoint",
+      "description": "Discharge air setpoint during cooling mode [Units with Discharge Air Control]",
+      "units": "°F",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 31,
+      "name": "Compressor Count",
+      "description": "Number of compressors installed in the unit [Units with DX Cooling]",
+      "units": "",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 32,
+      "name": "Discharge Air Heating Setpoint",
+      "description": "Discharge air setpoing during heating mode [Units with Discharge Air Control]",
+      "units": "°F",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 33,
+      "name": "Outdoor Air Heating Setpoint (OAHS)",
+      "description": "Setpoint used to enable heating [Units with Space Control, Discharge Control, or Single Zone VAV]",
+      "units": "°F",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 34,
+      "name": "Space Dewpoint Setpoint (SPDS)",
+      "description": "Space dewpoint setpoint for dehumidification",
+      "units": "°F",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 35,
+      "name": "Space Dewpoint Active",
+      "description": "Actively used space dewpoint",
+      "units": "°F",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 36,
+      "name": "Minimum Discharge Air Cooling Setpoint",
+      "description": "Cooling capacity is limited in order to not fall below this temperature",
+      "units": "°F",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 37,
+      "name": "Space Temperature Setpoint Active",
+      "description": "Actively used space temperature setpoint [Units that are Space Control or Single Zone VAV]",
+      "units": "°F",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 38,
+      "name": "Outdoor Air Flow Active",
+      "description": "Actively used outside air flow [Units with Outside Air Flow Monitoring]",
+      "units": "cfm",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 39,
+      "name": "Supply Air Flow Setpoint",
+      "description": "Setpoint used to modulate the indoor fan speed",
+      "units": "cfm",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 40,
+      "name": "PEVFD Setpoint",
+      "description": "Fan speed setpoint used to control the indoor fan speed",
+      "units": "%",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 41,
+      "name": "Supply Air Flow Active",
+      "description": "Actively used supply airflow [Units with Piezo Ring on Supply Fan]",
+      "units": "cfm",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 43,
+      "name": "Minimum Discharge Air Heating Setpoint",
+      "description": "Primary or Compressor Heating Capacity is limited in order to not fall below",
+      "units": "°F",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 44,
+      "name": "Heat Capacity",
+      "description": "Primary heating source capacity [Units with Primary Heat]",
+      "units": "%",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 45,
+      "name": "Maximum Supply Air Temperature",
+      "description": "Primary or Compressor Heating Capacity is limited in order to not exceed this",
+      "units": "°F",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 46,
+      "name": "Duct Static Pressure Setpoint BAS",
+      "description": "Communicated duct static pressure setpoint [Unit with Multizone VAV]",
+      "units": "in. w.c.",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 47,
+      "name": "Maximum OA Damper Position",
+      "description": "Maximum outdoor air damper position [Units with Modulating Dampers]",
+      "units": "%",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 48,
+      "name": "Minimum OA Damper Position",
+      "description": "Minimum outdoor air damper position [Units with Modulating Dampers]",
+      "units": "%",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 49,
+      "name": "Duct Static Pressure Setpoint",
+      "description": "Setpoint used to modulate indoor fan [Units with Multi Zone VAV]",
+      "units": "in. w.c.",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 50,
+      "name": "Space CO2 Concentration Setpoints",
+      "description": "",
+      "units": "ppm",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 52,
+      "name": "Cooling Capacity",
+      "description": "Primary cooling source capacity [Units with DX Cooling]",
+      "units": "%",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 53,
+      "name": "Duct Static Pressure Setpoint Active",
+      "description": "Actively used duct static pressure setpoint [Unit with Multizone VAV]",
+      "units": "in. w.c.",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 54,
+      "name": "Exhaust Air Flow Active",
+      "description": "Amount of air delivered by the exhaust fan [Units with Piezo Ring on the Exhaust Fan]",
+      "units": "cfm",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 56,
+      "name": "Return Duct/Space Pressure Setpoint",
+      "description": "Setpoint used to modulate exhaust fan speed [Units with Modulating Dampers and Exhaust Fan(s)]",
+      "units": "in. w.c.",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 57,
+      "name": "Exhaust Air Flow Setpoint",
+      "description": "Setpoint used to modulate exhaust fan speed",
+      "units": "cfm",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 58,
+      "name": "Pre-Heat Enable Temperature",
+      "description": "Below this temperature pre-heat will be enabled [Units with an ERV and an Electric Pre-Heater]",
+      "units": "°F",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 59,
+      "name": "Minimum Supply Air Flow Setpoint",
+      "description": "Supply air flow is limited to not fall below this number",
+      "units": "cfm",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 64,
+      "name": "Duct Static Pressure BAS",
+      "description": "Communicated duct static pressure [Units with Multi Zone VAV]",
+      "units": "in. w.c.",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 65,
+      "name": "Duct Static Pressure Active",
+      "description": "Actively used duct static pressure [Units with Multi Zone VAV]",
+      "units": "in. w.c.",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 66,
+      "name": "Discharge Air Temperature Setpoint Active",
+      "description": "Actively used discharge air temperature setpoint [Units with Multi Zone VAV]",
+      "units": "°F",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 67,
+      "name": "Discharge Air Temperature Setpoint BAS",
+      "description": "Communicated discharge air temperature setpoint [Units with Multi Zone VAV]",
+      "units": "°F",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 68,
+      "name": "Discharge Air Temperature Setpoint",
+      "description": "[Units with Multi Zone VAV]",
+      "units": "°F",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 69,
+      "name": "Heat/Cool Mode Deadband",
+      "description": "Deadband between heat and cool mode around discharge setpoint",
+      "units": "°F",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 70,
+      "name": "Maximum Supply Air Flow Setpoint",
+      "description": "Supply air flow is limited to not exceed this number",
+      "units": "cfm",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 71,
+      "name": "Outdoor Air Minimum Flow Setpoint",
+      "description": "Setpoint to modulate the dampers",
+      "units": "cfm",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 72,
+      "name": "Outdoor Air Minimum Flow Setpoint Active",
+      "description": "Actively used setpoint to modulate the dampers",
+      "units": "cfm",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 75,
+      "name": "Outdoor Air Temperature BAS",
+      "description": "Communicated outdoor air temperature",
+      "units": "°F",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 76,
+      "name": "Outdoor Air Temperature Active",
+      "description": "Actively used outdoor air temperature",
+      "units": "°F",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 81,
+      "name": "Outdoor Air Humidity BAS",
+      "description": "Communicated outdoor air relative humidity",
+      "units": "%",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 82,
+      "name": "Outdoor Air Humidity Active",
+      "description": "Actively used outdoor air relative humidity",
+      "units": "%",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "BI",
+      "instance": 1,
+      "name": "Supply Fan Status",
+      "description": "Normally Closed Input",
+      "units": "",
+      "access": "R",
+      "states": "0 = On, 1 = Off"
+    },
+    {
+      "type": "BI",
+      "instance": 2,
+      "name": "ESTOP",
+      "description": "Emergency stop input, normally open (auto-reset)",
+      "units": "",
+      "access": "R",
+      "states": "0 = Normal, 1 = ESTOP"
+    },
+    {
+      "type": "BI",
+      "instance": 3,
+      "name": "Filter Status",
+      "description": "Normally open input",
+      "units": "",
+      "access": "R",
+      "states": "0 = Clean, 1 = Clogged"
+    },
+    {
+      "type": "BI",
+      "instance": 4,
+      "name": "Occupancy Input",
+      "description": "Normally open input",
+      "units": "",
+      "access": "R",
+      "states": "0 = Unoccupied, 1 = Occupied"
+    },
+    {
+      "type": "BI",
+      "instance": 5,
+      "name": "OA Damper End Switch",
+      "description": "Normally open input",
+      "units": "",
+      "access": "R",
+      "states": "0 = Not Proven, 1 = Proven"
+    },
+    {
+      "type": "BI",
+      "instance": 6,
+      "name": "Gas Valve Status",
+      "description": "Normally open input [Units with Gas as the Primary Heat]",
+      "units": "",
+      "access": "R",
+      "states": "0 = Off, 1 = On"
+    },
+    {
+      "type": "BI",
+      "instance": 7,
+      "name": "Exhaust Damper Endswitch",
+      "description": "Normally open input [Units with Isolation Dampers]",
+      "units": "",
+      "access": "R",
+      "states": "0 = Not Proven, 1 = Proven"
+    },
+    {
+      "type": "BI",
+      "instance": 8,
+      "name": "Water Flow",
+      "description": "Normally open input [Units that are Water Source Heat Pump]",
+      "units": "",
+      "access": "R",
+      "states": "0 = Off, 1 = On"
+    },
+    {
+      "type": "BI",
+      "instance": 9,
+      "name": "Water Coil Low Temp Switch",
+      "description": "Normally closed input [Units that are Water Source Heat Pump]",
+      "units": "",
+      "access": "R",
+      "states": "0 = Open, 1 = Closed"
+    },
+    {
+      "type": "BO",
+      "instance": 1,
+      "name": "Supply Fan Start Stop Command",
+      "description": "Supply fan start/stop output",
+      "units": "",
+      "access": "R",
+      "states": "0 = Off, 1 = On"
+    },
+    {
+      "type": "BO",
+      "instance": 2,
+      "name": "Outdoor Air Damper Command",
+      "description": "Outdoor air damper output",
+      "units": "",
+      "access": "R",
+      "states": "0 = Open, 1 = Closed"
+    },
+    {
+      "type": "BO",
+      "instance": 3,
+      "name": "Heat 1 Command",
+      "description": "[Units with Primary Heat]",
+      "units": "",
+      "access": "R",
+      "states": "0 = Off, 1 = On"
+    },
+    {
+      "type": "BO",
+      "instance": 4,
+      "name": "Inducer Command",
+      "description": "[Units with Gas as the Primary Heat]",
+      "units": "",
+      "access": "R",
+      "states": "0 = Off, 1 = On"
+    },
+    {
+      "type": "BO",
+      "instance": 5,
+      "name": "Compressor 3 Command",
+      "description": "[Units with 3+ Compressors]",
+      "units": "",
+      "access": "R",
+      "states": "0 = Off, 1 = On"
+    },
+    {
+      "type": "BO",
+      "instance": 6,
+      "name": "Compressor 4 Command",
+      "description": "[Units with 4+ Compressors]",
+      "units": "",
+      "access": "R",
+      "states": "0 = Off, 1 = On"
+    },
+    {
+      "type": "BO",
+      "instance": 7,
+      "name": "Heat 2 Command",
+      "description": "[Units with Gas as the Primary Heat and is a Split Manifold Burner]",
+      "units": "",
+      "access": "R",
+      "states": "0 = Off, 1 = On"
+    },
+    {
+      "type": "BO",
+      "instance": 8,
+      "name": "Heat 3 Command",
+      "description": "[Units with Gas as the Primary Heat and has Two Heaters]",
+      "units": "",
+      "access": "R",
+      "states": "0 = Off, 1 = On"
+    },
+    {
+      "type": "BO",
+      "instance": 9,
+      "name": "Exhaust Damper Actuators",
+      "description": "[Units with Isolation Dampers]",
+      "units": "",
+      "access": "R",
+      "states": "0 = Off, 1 = On"
+    },
+    {
+      "type": "BO",
+      "instance": 10,
+      "name": "Powered Exhaust Enable",
+      "description": "[Units with Isolation Dampers or has Dual Point Power]",
+      "units": "",
+      "access": "R",
+      "states": "0 = Off, 1 = On"
+    },
+    {
+      "type": "BO",
+      "instance": 11,
+      "name": "Compressor 1 Command",
+      "description": "[Units with 1+ Compressors]",
+      "units": "",
+      "access": "R",
+      "states": "0 = Off, 1 = On"
+    },
+    {
+      "type": "BO",
+      "instance": 12,
+      "name": "Compressor 2 Command",
+      "description": "[Units with 2+ Compressors]",
+      "units": "",
+      "access": "R",
+      "states": "0 = Off, 1 = On"
+    },
+    {
+      "type": "BO",
+      "instance": 13,
+      "name": "Pre-Heat Enable",
+      "description": "[Units with Pre-Heat]",
+      "units": "",
+      "access": "R",
+      "states": "0 = Off, 1 = On"
+    },
+    {
+      "type": "BO",
+      "instance": 14,
+      "name": "Condenser Fan Command",
+      "description": "[Units with Sound Attenuation Package or an Air Source Heat Pump]",
+      "units": "",
+      "access": "R",
+      "states": "0 = Off, 1 = On"
+    },
+    {
+      "type": "BO",
+      "instance": 15,
+      "name": "ERV Command",
+      "description": "[Units with an ERV]",
+      "units": "",
+      "access": "R",
+      "states": "0 = Off, 1 = On"
+    },
+    {
+      "type": "BO",
+      "instance": 16,
+      "name": "Circuit 1 Reversing Valve",
+      "description": "[Units that are Heat Pump]",
+      "units": "",
+      "access": "R",
+      "states": "0 = Off, 1 = On"
+    },
+    {
+      "type": "BO",
+      "instance": 17,
+      "name": "Circuit 2 Reversing Valve",
+      "description": "[Units that are Heat Pump and Two Circuits]",
+      "units": "",
+      "access": "R",
+      "states": "0 = Off, 1 = On"
+    },
+    {
+      "type": "BV",
+      "instance": 1,
+      "name": "Diagnostic: Supply Fan Failure",
+      "description": "Latching; cleared with Alarm Reset (BV 16)",
+      "units": "",
+      "access": "R",
+      "states": "0 = Normal, 1 = Fail"
+    },
+    {
+      "type": "BV",
+      "instance": 2,
+      "name": "Diagnostic: Space Temperature Setpoint Failure",
+      "description": "Auto-reset diagnostic",
+      "units": "",
+      "access": "R",
+      "states": "0 = Normal, 1 = Fail"
+    },
+    {
+      "type": "BV",
+      "instance": 3,
+      "name": "Diagnostic: OAD Proving Switch",
+      "description": "Latching; cleared with Alarm Reset (BV 16)",
+      "units": "",
+      "access": "R",
+      "states": "0 = Normal, 1 = Fail"
+    },
+    {
+      "type": "BV",
+      "instance": 4,
+      "name": "Defrost Mode",
+      "description": "[Units that are Heat Pump]",
+      "units": "",
+      "access": "R",
+      "states": "0 = Disabled, 1 = Enabled"
+    },
+    {
+      "type": "BV",
+      "instance": 5,
+      "name": "HGRH Purge Mode",
+      "description": "[Units with Hot Gas Reheat]",
+      "units": "",
+      "access": "R",
+      "states": "0 = Disabled, 1 = Enabled"
+    },
+    {
+      "type": "BV",
+      "instance": 6,
+      "name": "Diagnostic: Discharge Air Temperature Source Failure",
+      "description": "Auto-reset diagnostic",
+      "units": "",
+      "access": "R",
+      "states": "0 = Normal, 1 = Fail"
+    },
+    {
+      "type": "BV",
+      "instance": 7,
+      "name": "Auxiliary Heating Mode",
+      "description": "[Units that are Heat Pump]",
+      "units": "",
+      "access": "R",
+      "states": "0 = Disabled, 1 = Enabled"
+    },
+    {
+      "type": "BV",
+      "instance": 9,
+      "name": "Economizer Mode",
+      "description": "[Units with Modulating Dampers]",
+      "units": "",
+      "access": "R",
+      "states": "0 = Disabled, 1 = Enabled"
+    },
+    {
+      "type": "BV",
+      "instance": 10,
+      "name": "Low Temp Lockout",
+      "description": "Latching; cleared with Alarm Reset (BV 16)",
+      "units": "",
+      "access": "R",
+      "states": "0 = Normal, 1 = Fail"
+    },
+    {
+      "type": "BV",
+      "instance": 11,
+      "name": "Diagnostic: Space Temperature Source Failure",
+      "description": "Auto-reset diagnostic",
+      "units": "",
+      "access": "R",
+      "states": "0 = Normal, 1 = Fail"
+    },
+    {
+      "type": "BV",
+      "instance": 12,
+      "name": "Diagnostic: Space Humidity Source Failure",
+      "description": "Auto-reset diagnostic",
+      "units": "",
+      "access": "R",
+      "states": "0 = Normal, 1 = Fail"
+    },
+    {
+      "type": "BV",
+      "instance": 13,
+      "name": "Diagnostic: Outdoor Air Temperature Source Failure",
+      "description": "Auto-reset diagnostic",
+      "units": "",
+      "access": "R",
+      "states": "0 = Normal, 1 = Fail"
+    },
+    {
+      "type": "BV",
+      "instance": 14,
+      "name": "Diagnostic: Outdoor Air Humidity Source Failure",
+      "description": "Auto-reset diagnostic",
+      "units": "",
+      "access": "R",
+      "states": "0 = Normal, 1 = Fail"
+    },
+    {
+      "type": "BV",
+      "instance": 15,
+      "name": "High Temp Lockout",
+      "description": "Latching; cleared with Alarm Reset (BV 16)",
+      "units": "",
+      "access": "R",
+      "states": "0 = Normal, 1 = Fail"
+    },
+    {
+      "type": "BV",
+      "instance": 16,
+      "name": "Alarm Reset",
+      "description": "1 = reset all diagnostics and lockouts",
+      "units": "",
+      "access": "W",
+      "states": "1 = Reset"
+    },
+    {
+      "type": "BV",
+      "instance": 17,
+      "name": "System LOCKOUT",
+      "description": "Latching; cleared with Alarm Reset (BV 16)",
+      "units": "",
+      "access": "R",
+      "states": "0 = Normal, 1 = Fail"
+    },
+    {
+      "type": "BV",
+      "instance": 18,
+      "name": "Return Air Damper Option",
+      "description": "",
+      "units": "",
+      "access": "W",
+      "states": "0 = Not Installed, 1 = Installed"
+    },
+    {
+      "type": "BV",
+      "instance": 19,
+      "name": "Diagnostic: Space RH Source Failure",
+      "description": "Auto-reset diagnostic",
+      "units": "",
+      "access": "R",
+      "states": "0 = Normal, 1 = Fail"
+    },
+    {
+      "type": "BV",
+      "instance": 20,
+      "name": "Space Temp/Humidity Sensor Installed",
+      "description": "[Units that are Space Control or Single Zone VAV]",
+      "units": "",
+      "access": "W",
+      "states": "0 = Not Installed, 1 = Installed"
+    },
+    {
+      "type": "BV",
+      "instance": 21,
+      "name": "Heat Cool Mode Active",
+      "description": "",
+      "units": "",
+      "access": "R",
+      "states": "0 = Heat, 1 = Cool"
+    },
+    {
+      "type": "BV",
+      "instance": 22,
+      "name": "Unoccupied Cooling Mode BAS",
+      "description": "",
+      "units": "",
+      "access": "W",
+      "states": "0 = Disabled, 1 = Enabled"
+    },
+    {
+      "type": "BV",
+      "instance": 23,
+      "name": "Unoccupied Cooling Mode",
+      "description": "",
+      "units": "",
+      "access": "R",
+      "states": "0 = Disabled, 1 = Enabled"
+    },
+    {
+      "type": "BV",
+      "instance": 25,
+      "name": "Compressor Stage 1 Request",
+      "description": "[Units with 1+ Compressors]",
+      "units": "",
+      "access": "R",
+      "states": "0 = Off, 1 = On"
+    },
+    {
+      "type": "BV",
+      "instance": 26,
+      "name": "Cooling Lockout BAS",
+      "description": "[Units with DX Cooling]",
+      "units": "",
+      "access": "W",
+      "states": "0 = Normal, 1 = Lockout"
+    },
+    {
+      "type": "BV",
+      "instance": 27,
+      "name": "Dehumidification Command",
+      "description": "[Units that are Space Control, Single Zone VAV, or Discharge Control]",
+      "units": "",
+      "access": "R",
+      "states": "0 = Disabled, 1 = Enabled"
+    },
+    {
+      "type": "BV",
+      "instance": 28,
+      "name": "Thumbwheel Installed",
+      "description": "",
+      "units": "",
+      "access": "W",
+      "states": "0 = Not Installed, 1 = Installed"
+    },
+    {
+      "type": "BV",
+      "instance": 29,
+      "name": "Compressor Stage 2 Request",
+      "description": "[Units with 2+ Compressors]",
+      "units": "",
+      "access": "R",
+      "states": "0 = Off, 1 = On"
+    },
+    {
+      "type": "BV",
+      "instance": 30,
+      "name": "Compressor Stage 3 Request",
+      "description": "[Units with 3+ Compressors]",
+      "units": "",
+      "access": "R",
+      "states": "0 = Off, 1 = On"
+    },
+    {
+      "type": "BV",
+      "instance": 31,
+      "name": "Compressor Stage 4 Request",
+      "description": "[Units with 4 Compressors]",
+      "units": "",
+      "access": "R",
+      "states": "0 = Off, 1 = On"
+    },
+    {
+      "type": "BV",
+      "instance": 32,
+      "name": "Diagnostic: ERV Leaving Air Conditions Failure",
+      "description": "Auto-reset diagnostic",
+      "units": "",
+      "access": "R",
+      "states": "0 = Normal, 1 = Fail"
+    },
+    {
+      "type": "BV",
+      "instance": 33,
+      "name": "Pre-Purge Status",
+      "description": "[Units with Gas as the Primary Heat]",
+      "units": "",
+      "access": "R",
+      "states": "0 = Disabled, 1 = Enabled"
+    },
+    {
+      "type": "BV",
+      "instance": 34,
+      "name": "Diagnostic: Evap Temp Source Failure",
+      "description": "Auto-reset diagnostic",
+      "units": "",
+      "access": "R",
+      "states": "0 = Normal, 1 = Fail"
+    },
+    {
+      "type": "BV",
+      "instance": 35,
+      "name": "Y1 Space Lockout",
+      "description": "[Units that are Space Control or Single Zone VAV]",
+      "units": "",
+      "access": "R",
+      "states": "0 = Disabled, 1 = Enabled"
+    },
+    {
+      "type": "BV",
+      "instance": 36,
+      "name": "Diagnostic: Duct Static Pressure Failure",
+      "description": "Auto-reset diagnostic",
+      "units": "",
+      "access": "R",
+      "states": "0 = Normal, 1 = Fail"
+    },
+    {
+      "type": "BV",
+      "instance": 37,
+      "name": "Unoccupied Dehumid Mode BAS",
+      "description": "",
+      "units": "",
+      "access": "W",
+      "states": "0 = Disabled, 1 = Enabled"
+    },
+    {
+      "type": "BV",
+      "instance": 38,
+      "name": "Unoccupied Heating Mode BAS",
+      "description": "",
+      "units": "",
+      "access": "W",
+      "states": "0 = Disabled, 1 = Enabled"
+    },
+    {
+      "type": "BV",
+      "instance": 39,
+      "name": "Unoccupied Heating Mode",
+      "description": "",
+      "units": "",
+      "access": "R",
+      "states": "0 = Disabled, 1 = Enabled"
+    },
+    {
+      "type": "BV",
+      "instance": 40,
+      "name": "Unoccupied Dehumid Mode",
+      "description": "",
+      "units": "",
+      "access": "R",
+      "states": "0 = Disabled, 1 = Enabled"
+    },
+    {
+      "type": "BV",
+      "instance": 42,
+      "name": "Diagnostic: Heat Failure",
+      "description": "Auto-reset diagnostic",
+      "units": "",
+      "access": "R",
+      "states": "0 = Normal, 1 = Fail"
+    },
+    {
+      "type": "BV",
+      "instance": 43,
+      "name": "Ventilation",
+      "description": "[Units that are Space Control, Single Zone VAV, or Discharge Control]",
+      "units": "",
+      "access": "R",
+      "states": "0 = Disabled, 1 = Enabled"
+    },
+    {
+      "type": "BV",
+      "instance": 45,
+      "name": "Economizer Control Type",
+      "description": "",
+      "units": "",
+      "access": "W",
+      "states": "0 = Dry Bulb, 1 = Dry Bulb and Enthalpy"
+    },
+    {
+      "type": "MV",
+      "instance": 1,
+      "name": "Occupancy Request",
+      "description": "Occupancy command",
+      "units": "",
+      "access": "W",
+      "states": "1 = Occupied, 2 = Unoccupied, 3 = Occupied Bypass, 4 = Occupied Standby, 5 = Auto"
+    },
+    {
+      "type": "MV",
+      "instance": 2,
+      "name": "Occupancy Status",
+      "description": "Occupancy in effect",
+      "units": "",
+      "access": "R",
+      "states": "1 = Occupied, 2 = Unoccupied, 3 = Occupied Bypass, 4 = Occupied Standby, 5 = Unknown"
+    },
+    {
+      "type": "MV",
+      "instance": 4,
+      "name": "Heat Cool Mode Status",
+      "description": "",
+      "units": "",
+      "access": "R",
+      "states": "1 = Auto, 2 = Heat, 3 = Morning Warm-up, 4 = Cool, 5 = Night Purge, 6 = Pre Cool, 7 = Off"
+    },
+    {
+      "type": "MV",
+      "instance": 7,
+      "name": "Compressor Stage 3 Status",
+      "description": "[Units with 3+ Compressors]",
+      "units": "",
+      "access": "R",
+      "states": "1 = Off, 2 = On, 3 = Not Present"
+    },
+    {
+      "type": "MV",
+      "instance": 8,
+      "name": "Compressor Stage 4 Status",
+      "description": "[Units with 4 Compressors]",
+      "units": "",
+      "access": "R",
+      "states": "1 = Off, 2 = On, 3 = Not Present"
+    },
+    {
+      "type": "MV",
+      "instance": 9,
+      "name": "Heat Type",
+      "description": "",
+      "units": "",
+      "access": "R",
+      "states": "1 = No Heat, 2 = Indirect Fired Gas Heat, 3 = Electric Heat, 4 = Other, 5 = Direct Fired Gas Heat, 6 = Hot Water/Steam"
+    },
+    {
+      "type": "MV",
+      "instance": 13,
+      "name": "Program Control Type",
+      "description": "Configured control program type",
+      "units": "",
+      "access": "R",
+      "states": "1 = Space Control, 2 = Discharge Control, 3 = Single Zone VAV, 4 = Multi Zone VAV"
+    },
+    {
+      "type": "MV",
+      "instance": 16,
+      "name": "Dehumidification System Status",
+      "description": "",
+      "units": "",
+      "access": "R",
+      "states": "1 = Off, 2 = On, 3 = Not Present"
+    },
+    {
+      "type": "MV",
+      "instance": 21,
+      "name": "Compressor Stage 1 Status",
+      "description": "[Units with 1+ Compressors]",
+      "units": "",
+      "access": "R",
+      "states": "1 = Off, 2 = On, 3 = Not Present"
+    },
+    {
+      "type": "MV",
+      "instance": 22,
+      "name": "Compressor Stage 2 Status",
+      "description": "[Units with 2+ Compressors]",
+      "units": "",
+      "access": "R",
+      "states": "1 = Off, 2 = On, 3 = Not Present"
+    }
+  ]
+}

@@ -1,0 +1,975 @@
+{
+  "manufacturer": "Daikin Applied",
+  "manufacturer_slug": "daikin-applied",
+  "model": "EWAK-CZ / EWYK-CZ air-to-water heat pump and chiller (Daikin Applied Europe)",
+  "model_slug": "ewyk-cz-bacnet",
+  "short_model": "EWAK-CZ / EWYK-CZ",
+  "aliases": [
+    "EWYK-CZ",
+    "EWAK-CZ",
+    "EWYK CZ",
+    "EWAK CZ",
+    "EWA(Y)K-CZ",
+    "ICARO",
+    "D-EIGOC00104"
+  ],
+  "equipment_type": "Air-to-water heat pump / air-cooled chiller controller",
+  "applies_to": "Daikin Applied Europe EWAK-CZ air-cooled chillers and EWYK-CZ reversible air-to-water heat pumps running the ICARO control software.",
+  "summary": "The EWAK-CZ chillers and EWYK-CZ heat pumps use a MicroTech controller running the ICARO software. BACnet MS/TP comes from a POL904 module and BACnet IP from a POL908 module. The list covers unit enable, cool/heat mode and network setpoints, capacity and current limits, domestic hot water, bivalent (boiler backup) and collective housing functions, variable-flow pump data, per-circuit compressor data, alarm words and master/slave status.",
+  "bacnet_transport": [
+    "BACnet IP",
+    "BACnet MS/TP"
+  ],
+  "firmware": null,
+  "default_device_instance": "1 (BACnet IP module); MS/TP module derives it from the production number and date code",
+  "access_inferred": false,
+  "notes": [
+    "Objects marked _red in the guide are 'reduced' objects: no priority array, Present Value only. The type is shown without the suffix and the description ends in (reduced).",
+    "Access 'W (Prio 8)' in the guide is shown as C; plain W as W. Units '°Dc' (temperature difference) are shown as dK.",
+    "Alarm words (AV 295-299, 396-399, 496-499) are bit fields decoded with Annex A of the guide.",
+    "The guide prints the object name UnitAlarmsWord4 for both AV 295 (Unit Alarm Word #5) and AV 296; kept as printed.",
+    "Domestic hot water, bivalent, collective housing, variable-flow pump and master/slave objects only apply when those functions are configured.",
+    "AI 151 (master/slave leaving water temperature) and AV 151 (pump fixed speed 2) share an instance number but are different object types."
+  ],
+  "source": {
+    "title": "BAS integration guide - BACnet protocol (EWAK-CZ/EWYK-CZ, ICARO)",
+    "doc_number": "D-EIGOC00104-26_00EN-EWYK-CZ",
+    "revision_date": null,
+    "url": "https://www.daikinapplied.uk/hubfs/portale-documentale/D_EIGOC00104_26_00EN_EWYK_CZ.pdf"
+  },
+  "integration": {
+    "summary": "Set the unit to network control, then enable it with ChillerEnableStp (BV 2) and write the operating mode (MV 3) and the cool or heat setpoint at priority 8. Monitor unit status, leaving water temperature, the general alarm and the fault code.",
+    "minimum_points": [
+      {
+        "ref": "BV 2",
+        "name": "ChillerEnableStp",
+        "why": "Network enable/disable of the unit"
+      },
+      {
+        "ref": "MV 3",
+        "name": "ChillerOperationMode",
+        "why": "Cool / heat mode command"
+      },
+      {
+        "ref": "AV 4",
+        "name": "NetworkCoolTempSetpoint",
+        "why": "Leaving water cool setpoint from the BMS"
+      },
+      {
+        "ref": "AV 6",
+        "name": "NetworkHeatTempSetpoint",
+        "why": "Leaving water heat setpoint from the BMS"
+      },
+      {
+        "ref": "AV 3",
+        "name": "CapacityLimitSetpt",
+        "why": "Capacity limit from the BMS"
+      },
+      {
+        "ref": "BV 8",
+        "name": "ClearAlarm",
+        "why": "Clear alarms from the network"
+      },
+      {
+        "ref": "BI 3",
+        "name": "ChillerLocalRemote",
+        "why": "Shows whether network control is active"
+      },
+      {
+        "ref": "MV 1",
+        "name": "UnitStatus",
+        "why": "Unit run state"
+      },
+      {
+        "ref": "AI 2",
+        "name": "LvgEvapWaterTempUnit",
+        "why": "Leaving water temperature"
+      },
+      {
+        "ref": "BI 10",
+        "name": "AlarmDigitalOutput",
+        "why": "Any active unit alarm"
+      }
+    ],
+    "enable": "ChillerLocalRemote (BI 3) shows 0 = Local / 1 = Network and is read-only; the guide lists no writable local/network selector, so network control is chosen at the unit. With network control active the BMS writes ChillerEnableStp (BV 2) = Enable, then the mode (MV 3) and the network setpoints.",
+    "heartbeat": null,
+    "remote_sensors": null,
+    "setup": [
+      "BACnet MS/TP comes from the POL904 module: MAC address 24, 38400 baud, Max Master 127, Max Info Frames 1 by default; the device instance is derived from the production number and date code. Cycle power after changing the address.",
+      "BACnet IP comes from the POL908 module: device instance 1, UDP port 47808, DHCP off by default. Set Apply Changes = Yes after editing, which restarts the controller.",
+      "Both are set from the unit keypad under Commissioning > BACnet with the service password."
+    ],
+    "gotchas": [
+      "Write the enable, alarm-reset, mode and main network setpoints at priority 8, as the guide states.",
+      "Reduced (_red) objects have no priority array; write Present Value directly.",
+      "The guide warns that writing Clear Alarms continuously can be hazardous; send it once.",
+      "Compressor starts and run-hour AVs are marked writable; don't write them from the BMS."
+    ]
+  },
+  "points": [
+    {
+      "type": "BI",
+      "instance": 3,
+      "name": "ChillerLocalRemote",
+      "description": "Local/Network Source",
+      "units": "",
+      "access": "R",
+      "states": "0=Local; 1=Network"
+    },
+    {
+      "type": "BI",
+      "instance": 7,
+      "name": "ChillerEnableOutput",
+      "description": "Enabled State",
+      "units": "",
+      "access": "R",
+      "states": "0=Disabled; 1=Enabled"
+    },
+    {
+      "type": "BI",
+      "instance": 6,
+      "name": "ChillerLimited",
+      "description": "Capacity Limited",
+      "units": "",
+      "access": "R",
+      "states": "0=No; 1=Yes"
+    },
+    {
+      "type": "BI",
+      "instance": 10,
+      "name": "AlarmDigitalOutput",
+      "description": "Unit general alarm",
+      "units": "",
+      "access": "R",
+      "states": "0=No; 1=Yes"
+    },
+    {
+      "type": "BI",
+      "instance": 4,
+      "name": "ThermostatStatus",
+      "description": "Thermoregulation State",
+      "units": "",
+      "access": "R",
+      "states": "0=Off; 1=On"
+    },
+    {
+      "type": "BV",
+      "instance": 2,
+      "name": "ChillerEnableStp",
+      "description": "Unit Enable Setpoint - Network",
+      "units": "",
+      "access": "C",
+      "states": "0=Disable; 1=Enable"
+    },
+    {
+      "type": "BV",
+      "instance": 8,
+      "name": "ClearAlarm",
+      "description": "Clear Alarms - Network",
+      "units": "",
+      "access": "C",
+      "states": "0=Normal; 1=Clear"
+    },
+    {
+      "type": "MV",
+      "instance": 2,
+      "name": "ActiveMode",
+      "description": "Operation Mode (reduced)",
+      "units": "",
+      "access": "R",
+      "states": "1=Not Used; 2=Cool; 3=Heat; 4=Not Used; 5=Defrost"
+    },
+    {
+      "type": "AV",
+      "instance": 5,
+      "name": "ActiveLvgWaterTarget",
+      "description": "Active Setpoint (reduced)",
+      "units": "°C",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 2,
+      "name": "ChillerCapacity",
+      "description": "Actual Capacity (reduced)",
+      "units": "%",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 1,
+      "name": "ActiveCapacityLimit",
+      "description": "Active Capacity Limit Output (reduced)",
+      "units": "%",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "MV",
+      "instance": 1,
+      "name": "UnitStatus",
+      "description": "Status (reduced)",
+      "units": "",
+      "access": "R",
+      "states": "1=Off; 2=Start; 3=Run; 4=Preshutdown; 5=Service"
+    },
+    {
+      "type": "AI",
+      "instance": 1,
+      "name": "EntEvapWaterTemp",
+      "description": "Evaporator Entering Water Temp",
+      "units": "°C",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AI",
+      "instance": 2,
+      "name": "LvgEvapWaterTempUnit",
+      "description": "Evaporator Leaving Water Temp Unit",
+      "units": "°C",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AI",
+      "instance": 5,
+      "name": "OutdoorAirTemp",
+      "description": "Outdoor Air Temperature",
+      "units": "°C",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 903,
+      "name": "AVWarningAlarmCode",
+      "description": "Warning CODE (reduced)",
+      "units": "",
+      "access": "R",
+      "states": "0=No Alarm; 1=External event"
+    },
+    {
+      "type": "AV",
+      "instance": 904,
+      "name": "AVProblemAlarmCode",
+      "description": "Problem CODE (reduced)",
+      "units": "",
+      "access": "R",
+      "states": "0=No Alarm; 1=Circuit Alarm"
+    },
+    {
+      "type": "AV",
+      "instance": 905,
+      "name": "AVFaultAlarmCode",
+      "description": "Fault CODE (reduced)",
+      "units": "",
+      "access": "R",
+      "states": "0=No Alarm; 1=Unit or both Circuit Alarm"
+    },
+    {
+      "type": "MV",
+      "instance": 3,
+      "name": "ChillerOperationMode",
+      "description": "Operation Mode Setpoint - Network",
+      "units": "",
+      "access": "C",
+      "states": "0=NULL; 1=Not Used; 2=Cool; 3=Heat; 4=Not Used"
+    },
+    {
+      "type": "AV",
+      "instance": 4,
+      "name": "NetworkCoolTempSetpoint",
+      "description": "Cool Setpoint - Network",
+      "units": "°C",
+      "access": "C",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 6,
+      "name": "NetworkHeatTempSetpoint",
+      "description": "Heat Setpoint - Network",
+      "units": "°C",
+      "access": "C",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 3,
+      "name": "CapacityLimitSetpt",
+      "description": "Capacity Limit Setpoint - Network",
+      "units": "%",
+      "access": "C",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 39,
+      "name": "CurrentLimitSetpt",
+      "description": "Current Limit Setpoint - Network",
+      "units": "A",
+      "access": "C",
+      "states": ""
+    },
+    {
+      "type": "MV",
+      "instance": 47,
+      "name": "Units",
+      "description": "Unit of Measure (reduced)",
+      "units": "",
+      "access": "W",
+      "states": "1=Metric; 2=Imperial"
+    },
+    {
+      "type": "MV",
+      "instance": 48,
+      "name": "SilentModeSetpt",
+      "description": "Noise Reduction Enable Setpoint (reduced)",
+      "units": "",
+      "access": "W",
+      "states": "1=Off; 2=On"
+    },
+    {
+      "type": "MV",
+      "instance": 62,
+      "name": "DefrostOpState",
+      "description": "Defrost - Operating State (reduced)",
+      "units": "",
+      "access": "R",
+      "states": "0=Off; 1=On"
+    },
+    {
+      "type": "MV",
+      "instance": 70,
+      "name": "BivOpsEnableStp",
+      "description": "Bivalent Operation - Enable Setpoint (reduced)",
+      "units": "",
+      "access": "W",
+      "states": "0=Off; 1=On"
+    },
+    {
+      "type": "AV",
+      "instance": 71,
+      "name": "BivOps'TCutOff",
+      "description": "Bivalent Operation - Temperature Cut-Off (reduced)",
+      "units": "°C",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 72,
+      "name": "BivOps'Tbivalent",
+      "description": "Bivalent Operation - Temperature Bivalent Mode (reduced)",
+      "units": "°C",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 73,
+      "name": "BivOps'BoilerStDelay",
+      "description": "Bivalent Operation - Boiler Start Delay (reduced)",
+      "units": "min",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "MV",
+      "instance": 80,
+      "name": "ColHsng'EnableStp",
+      "description": "Collective Housing - Enable Setpoint (reduced)",
+      "units": "",
+      "access": "W",
+      "states": "0=Off; 1=On"
+    },
+    {
+      "type": "AI",
+      "instance": 81,
+      "name": "CollHsng'TankTemp",
+      "description": "Collective Housing - Tank Temperature",
+      "units": "°C",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 82,
+      "name": "CollHsng'CngovrUpperLim",
+      "description": "Collective Housing - Changeover Upper Limit (reduced)",
+      "units": "°C",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 83,
+      "name": "CollHsng'CngovrLowerLim",
+      "description": "Collective Housing - Changeover Lower Limit (reduced)",
+      "units": "°C",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 84,
+      "name": "CollHsng'TankTempStp",
+      "description": "Collective Housing - Tank Temperature Stp (reduced)",
+      "units": "°C",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "BV",
+      "instance": 90,
+      "name": "DHWRemoteEn",
+      "description": "DHW Enable Setpoint",
+      "units": "",
+      "access": "C",
+      "states": "0=Off; 1=On"
+    },
+    {
+      "type": "AV",
+      "instance": 91,
+      "name": "DHWTempSp",
+      "description": "DHW Temperature Setpoint (reduced)",
+      "units": "°C",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "AI",
+      "instance": 92,
+      "name": "DHWWaterTemp",
+      "description": "DHW Temperature",
+      "units": "°C",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "MV",
+      "instance": 93,
+      "name": "DHW3WVState",
+      "description": "DHW Switching Valve State (reduced)",
+      "units": "",
+      "access": "R",
+      "states": "1=DHW Off; 2=Switching; 3=DHW Run; 4=Error"
+    },
+    {
+      "type": "MV",
+      "instance": 94,
+      "name": "DHWAntiLegCycle",
+      "description": "DHW Anti Legionella Cycle (reduced)",
+      "units": "",
+      "access": "R",
+      "states": "0=Off; 1=On"
+    },
+    {
+      "type": "MV",
+      "instance": 95,
+      "name": "DHWStandbyMode",
+      "description": "DHW Standby Mode (reduced)",
+      "units": "",
+      "access": "W",
+      "states": "0=Off; 1=On"
+    },
+    {
+      "type": "BI",
+      "instance": 101,
+      "name": "EvapPumpSta1",
+      "description": "Evaporator Pump #1 Status",
+      "units": "",
+      "access": "R",
+      "states": "0=Pump Off Request; 1=Pump On Request"
+    },
+    {
+      "type": "AV",
+      "instance": 102,
+      "name": "EvapPumpRunHrs1",
+      "description": "Evaporator Pump #1 Run Hours (reduced)",
+      "units": "h",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 150,
+      "name": "VPF'FixSpeedSetpt1",
+      "description": "Evaporator VFD Pump - Fixed Speed 1 (reduced)",
+      "units": "%",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 151,
+      "name": "VPF'FixSpeedSetpt2",
+      "description": "Evaporator VFD Pump - Fixed Speed 2 (reduced)",
+      "units": "%",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 152,
+      "name": "VPF'StbySpeedSetpt",
+      "description": "Evaporator VFD Pump - Standby Speed (reduced)",
+      "units": "%",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 153,
+      "name": "VPF'ActSpeed",
+      "description": "Evaporator VFD Pump - Actual Speed (reduced)",
+      "units": "%",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 154,
+      "name": "VPF'LoadDifPresSetpt",
+      "description": "Evaporator VFD Pump - Building Differential Pressure Setpoint (reduced)",
+      "units": "kPa",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 155,
+      "name": "VPF'EvapDifPresSetpt",
+      "description": "Evaporator VFD Pump - Unit Differential Pressure Setpoint (reduced)",
+      "units": "kPa",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "AI",
+      "instance": 156,
+      "name": "VPF'LoadDifPres",
+      "description": "Evaporator VFD Pump - Building Differential Pressure",
+      "units": "kPa",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AI",
+      "instance": 157,
+      "name": "VPF'EvapDifPress",
+      "description": "Evaporator VFD Pump - Unit Differential Pressure",
+      "units": "kPa",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "MV",
+      "instance": 158,
+      "name": "VPF'BypVlvSta",
+      "description": "Evaporator VFD Pump - Bypass Valve State (reduced)",
+      "units": "",
+      "access": "R",
+      "states": "1=Closed; 2=Opened"
+    },
+    {
+      "type": "AV",
+      "instance": 159,
+      "name": "VPF'DeltaTempSp",
+      "description": "Evaporator VFD Pump - DeltaTemperature Setpoint (reduced)",
+      "units": "dK",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 160,
+      "name": "VPF'DeltaTemp",
+      "description": "Evaporator VFD Pump - DeltaTemperature (reduced)",
+      "units": "dK",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "MV",
+      "instance": 201,
+      "name": "SiemensController",
+      "description": "Siemens Controller type (reduced)",
+      "units": "",
+      "access": "R",
+      "states": "1=N/A; 2=POL687; 3=POL638; 4=POL687.00; 5=POL687.70; 6=POL688.80; 7=POL688.80UPS; 8=POL468"
+    },
+    {
+      "type": "MV",
+      "instance": 202,
+      "name": "ApplSaveSp",
+      "description": "Application Save (reduced)",
+      "units": "",
+      "access": "W",
+      "states": "1=Off; 2=On"
+    },
+    {
+      "type": "BV",
+      "instance": 288,
+      "name": "ExternalAlarm",
+      "description": "External Alarm",
+      "units": "",
+      "access": "R",
+      "states": "0=No Alarm; 1=InAlarm"
+    },
+    {
+      "type": "BV",
+      "instance": 289,
+      "name": "UnitExternalEvent",
+      "description": "External Event",
+      "units": "",
+      "access": "R",
+      "states": "0=No Event; 1=Event"
+    },
+    {
+      "type": "AV",
+      "instance": 295,
+      "name": "UnitAlarmsWord4",
+      "description": "Unit Alarm Word #5 (reduced)",
+      "units": "",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 296,
+      "name": "UnitAlarmsWord4",
+      "description": "Unit Alarm Word #4 (reduced)",
+      "units": "",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 297,
+      "name": "UnitAlarmsWord3",
+      "description": "Unit Alarm Word #3 (reduced)",
+      "units": "",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 298,
+      "name": "UnitAlarmsWord2",
+      "description": "Unit Alarm Word #2 (reduced)",
+      "units": "",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 299,
+      "name": "UnitAlarmsWord1",
+      "description": "Unit Alarm Word #1 (reduced)",
+      "units": "",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "MV",
+      "instance": 300,
+      "name": "C1State",
+      "description": "Circuit #1 State (reduced)",
+      "units": "",
+      "access": "R",
+      "states": "1=Off; 2=Preopen; 3=Run; 4=Pumpdown"
+    },
+    {
+      "type": "BV",
+      "instance": 321,
+      "name": "C1Comp1Status",
+      "description": "Circuit #1 Comp #1 - Status",
+      "units": "",
+      "access": "R",
+      "states": "0=Off; 1=On"
+    },
+    {
+      "type": "AV",
+      "instance": 322,
+      "name": "C1Comp1Starts",
+      "description": "Circuit #1 Comp #1 - Starts (reduced)",
+      "units": "",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 323,
+      "name": "C1Comp1Hours",
+      "description": "Circuit #1 Comp #1 - Run Hours (reduced)",
+      "units": "",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 325,
+      "name": "C1Comp1ActCap",
+      "description": "Circuit #1 Comp #1 - Actual Capacity (reduced)",
+      "units": "%",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 326,
+      "name": "C1Comp1RLA",
+      "description": "Circuit #1 Comp #1 - Percent RLA (reduced)",
+      "units": "%",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 396,
+      "name": "C1AlarmWord4",
+      "description": "Circuit #1 or Cir1Comp1 Alarm Word #4 (reduced)",
+      "units": "",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 397,
+      "name": "C1AlarmWord3",
+      "description": "Circuit #1 or Cir1Comp1 Alarm Word #3 (reduced)",
+      "units": "",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 398,
+      "name": "C1AlarmWord2",
+      "description": "Circuit #1 or Cir1Comp1 Alarm Word #2 (reduced)",
+      "units": "",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 399,
+      "name": "C1AlarmWord1",
+      "description": "Circuit #1 or Cir1Comp1 Alarm Word #1 (reduced)",
+      "units": "",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "MV",
+      "instance": 400,
+      "name": "C2State",
+      "description": "Circuit #2 State (reduced)",
+      "units": "",
+      "access": "R",
+      "states": "1=Off; 2=Preopen; 3=Run; 4=Pumpdown"
+    },
+    {
+      "type": "BV",
+      "instance": 421,
+      "name": "C2Comp1Status",
+      "description": "Circuit #2 Comp #1 - Status",
+      "units": "",
+      "access": "R",
+      "states": "0=Off; 1=On"
+    },
+    {
+      "type": "AV",
+      "instance": 422,
+      "name": "C2Comp1Starts",
+      "description": "Circuit #2 Comp #1 - Starts (reduced)",
+      "units": "",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 423,
+      "name": "C2Comp1Hours",
+      "description": "Circuit #2 Comp #1 - Run Hours (reduced)",
+      "units": "",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 425,
+      "name": "C2Comp1ActCap",
+      "description": "Circuit #2 Comp #1 - Actual Capacity (reduced)",
+      "units": "%",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 426,
+      "name": "C2Comp1RLA",
+      "description": "Circuit #2 Comp #1 - Percent RLA (reduced)",
+      "units": "%",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 496,
+      "name": "C2AlarmWord4",
+      "description": "Circuit #2 or Cir2Comp1 Alarm Word #4 (reduced)",
+      "units": "",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 497,
+      "name": "C2AlarmWord3",
+      "description": "Circuit #2 or Cir2Comp1 Alarm Word #3 (reduced)",
+      "units": "",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 498,
+      "name": "C2AlarmWord2",
+      "description": "Circuit #2 or Cir2Comp1 Alarm Word #2 (reduced)",
+      "units": "",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 499,
+      "name": "C2AlarmWord1",
+      "description": "Circuit #2 or Cir2Comp1 Alarm Word #1 (reduced)",
+      "units": "",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AI",
+      "instance": 151,
+      "name": "SysCtrlTmp",
+      "description": "M/S Leaving Water Temperature",
+      "units": "°C",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "BV",
+      "instance": 502,
+      "name": "CommonLWTSenf",
+      "description": "M/S LWT Sensor Fault",
+      "units": "",
+      "access": "R",
+      "states": "0=No Alarm; 1=In Alarm"
+    },
+    {
+      "type": "MV",
+      "instance": 5,
+      "name": "StandaloneModeSp",
+      "description": "M/S Disconnect Setpoint (reduced)",
+      "units": "",
+      "access": "W",
+      "states": "1=No; 2=Yes"
+    },
+    {
+      "type": "BV",
+      "instance": 20,
+      "name": "MasterCommErr",
+      "description": "Master Comm Error",
+      "units": "",
+      "access": "R",
+      "states": "0=No Alarm; 1=In Alarm"
+    },
+    {
+      "type": "BV",
+      "instance": 21,
+      "name": "Slave1CommErr",
+      "description": "Slave 1 Comm Error",
+      "units": "",
+      "access": "R",
+      "states": "0=No Alarm; 1=In Alarm"
+    },
+    {
+      "type": "BV",
+      "instance": 22,
+      "name": "Slave2CommErr",
+      "description": "Slave 2 Comm Error",
+      "units": "",
+      "access": "R",
+      "states": "0=No Alarm; 1=In Alarm"
+    },
+    {
+      "type": "BV",
+      "instance": 23,
+      "name": "Slave3CommErr",
+      "description": "Slave 3 Comm Error",
+      "units": "",
+      "access": "R",
+      "states": "0=No Alarm; 1=In Alarm"
+    },
+    {
+      "type": "AV",
+      "instance": 1150,
+      "name": "Slave1Load",
+      "description": "Slave Load #1 (reduced)",
+      "units": "%",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "MV",
+      "instance": 1154,
+      "name": "Slave1State",
+      "description": "Slave State #1 (reduced)",
+      "units": "",
+      "access": "R",
+      "states": "1=Stop; 2=Run; 3=Alarm; 4=ComErr"
+    },
+    {
+      "type": "AV",
+      "instance": 1168,
+      "name": "Slave2Load",
+      "description": "Slave Load #2 (reduced)",
+      "units": "%",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "MV",
+      "instance": 1172,
+      "name": "Slave2State",
+      "description": "Slave State #2 (reduced)",
+      "units": "",
+      "access": "R",
+      "states": "1=Stop; 2=Run; 3=Alarm; 4=ComErr"
+    },
+    {
+      "type": "AV",
+      "instance": 1186,
+      "name": "Slave3Load",
+      "description": "Slave Load #3 (reduced)",
+      "units": "%",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "MV",
+      "instance": 1190,
+      "name": "Slave3State",
+      "description": "Slave State #3 (reduced)",
+      "units": "",
+      "access": "R",
+      "states": "1=Stop; 2=Run; 3=Alarm; 4=ComErr"
+    }
+  ]
+}

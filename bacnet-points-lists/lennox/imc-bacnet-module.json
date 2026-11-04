@@ -1,0 +1,543 @@
+{
+ "manufacturer": "Lennox",
+ "manufacturer_slug": "lennox",
+ "model": "IMC BACnet Module",
+ "model_slug": "imc-bacnet-module",
+ "short_model": "IMC BACnet Module",
+ "aliases": [
+  "Lennox IMC BACnet",
+  "IMC M1-7",
+  "M1-7 BACnet",
+  "0624-L5",
+  "L Series IMC BACnet"
+ ],
+ "equipment_type": "Rooftop unit controller BACnet module",
+ "applies_to": "Lennox rooftop units with the IMC (M1-7, v5.02 or later) unit controller and the IMC BACnet module.",
+ "summary": "The IMC BACnet module mounts on the older Lennox IMC (M1-7) rooftop controller and translates its SysBus data to BACnet MS/TP at a fixed 38.4 kbps. The BMS can act as a zone sensor (setpoint plus space temperature) or as a thermostat (application mode stage commands). It exposes 64 analog and binary objects (two printed ranges are shown as one row each); COV is not supported.",
+ "bacnet_transport": [
+  "BACnet MS/TP"
+ ],
+ "firmware": "IMC M1-7 v5.02 or later",
+ "default_device_instance": null,
+ "access_inferred": false,
+ "notes": [
+  "AI 244 is named 'Outdoor Air Damper' on its per-object page; the summary table (Table 6) calls it 'Outside Air Damper'.",
+  "AI 274-277: the summary table lists only Space CO2 Sensor (Local) at AI 274 and Space Humidity (Local) at AI 276, while the per-object pages put the effective values at 274/276 and the local values at 275/277. The per-object pages are followed here.",
+  "The document prints IMC Version[00]..[07] (AI 200-207) and Most Recent Error 1..10 (AI 255-264) only as patterns; each is listed here as one row at its first instance. The other instances exist but their names are not printed individually.",
+  "AO 102, 127 and 128 hand control back to the IMC when written with 101-255.",
+  "Stage commands 224-236 on AO 101 only work when the IMC is set for remote thermostat operation.",
+  "Alarm code meanings are in the IMC user guide, not this document."
+ ],
+ "source": {
+  "title": "IMC BACnet Module (Service Literature)",
+  "doc_number": "Corp. 0624-L5",
+  "revision_date": "02/2008",
+  "url": "https://www.lennox.com/dA/f33c882a98/0624b.pdf"
+ },
+ "integration": {
+  "summary": "Address each IMC with its DIP switch (1-31), then either send a zone setpoint (AO 109) and space temperature (AO 113) with occupancy, or send thermostat-style commands on Application Mode Control (AO 101). Keep those values refreshed inside 5 minutes. Read Unit Status, Space Temperature and Current Error for monitoring.",
+  "minimum_points": [
+   {
+    "ref": "AO 101",
+    "name": "Application Mode Control",
+    "why": "Mode: 0 auto, 1 heat, 3 cool, 6 off (more codes)"
+   },
+   {
+    "ref": "AO 104",
+    "name": "Occupancy Scheduler Control",
+    "why": "0 = occupied, 1-255 = unoccupied"
+   },
+   {
+    "ref": "AO 109",
+    "name": "Temperature Setpoint (abs)",
+    "why": "Zone temperature setpoint, °F"
+   },
+   {
+    "ref": "AO 113",
+    "name": "Space Temperature Input",
+    "why": "Zone temp from the BMS in BACnet sensor mode"
+   },
+   {
+    "ref": "AI 232",
+    "name": "Unit Status",
+    "why": "Operating mode: heat, cool, off, fan only and more"
+   },
+   {
+    "ref": "AI 241",
+    "name": "Effective Occupancy",
+    "why": "0 occupied, 1 unoccupied, 2 timed override"
+   },
+   {
+    "ref": "AI 239",
+    "name": "Space Temperature",
+    "why": "Zone temperature in use"
+   },
+   {
+    "ref": "AI 240",
+    "name": "Discharge Air Temperature",
+    "why": "Supply air temperature"
+   },
+   {
+    "ref": "AI 250",
+    "name": "Supply Fan Status",
+    "why": "0 off, 1 on, 2-100 speed %"
+   },
+   {
+    "ref": "AI 253",
+    "name": "Current Error",
+    "why": "Active alarm code; 0 = none"
+   }
+  ],
+  "enable": "The IMC must be set locally (ECTO 6.01 / 5.27) for BACnet thermostat or BACnet zone sensor control. Occupancy is the OR of Occupancy Scheduler Control, Occupancy Override Control and Occupancy Sensor Input; no input can force unoccupied. Jumper TB1-8 to 9 so the unit runs occupied backup setpoints if the module link fails.",
+  "heartbeat": "Application Mode Control (AO 101, thermostat mode) and Space Temperature Input (AO 113, BACnet sensor mode) must be rewritten within 5 minutes or the IMC goes to its backup mode; Lennox recommends updating them at least every 2 minutes.",
+  "remote_sensors": "With a BACnet zone sensor, write the space temperature to AO 113 and the setpoint to AO 109 (plus offset AO 110). The IMC derives occupied heat/cool setpoints from the single setpoint and the ECTO 6.15 deadband (default 3 °F). When updates stop it falls back to ECTO backup setpoints and a Lennox zone sensor or the return air sensor.",
+  "setup": [
+   "BACnet MS/TP at a fixed 38.4 kbps; up to 31 modules per network.",
+   "MAC and device ID come from the IMC unit address DIP switch, 1-31 (do not use 0).",
+   "Every module has the device name 'Lennox'; it cannot be changed.",
+   "Terminate only the last module with the supplied 120 ohm resistor."
+  ],
+  "gotchas": [
+   "COV is not supported; poll the values.",
+   "After power-up the unit stays off up to 5 minutes until the BMS sends a setpoint and sensor value or a thermostat command.",
+   "Writing 101-255 to AO 102, 127 or 128 returns that value to local IMC control.",
+   "Unit Status 145-177 are heat pump defrost states, not faults."
+  ]
+ },
+ "points": [
+  {
+   "type": "BI",
+   "instance": 100,
+   "name": "Controller Online",
+   "description": "IMC communicating with the BACnet module",
+   "units": "",
+   "access": "R",
+   "states": "0 = Not communicating, 1 = Communicating"
+  },
+  {
+   "type": "AO",
+   "instance": 101,
+   "name": "Application Mode Control",
+   "description": "Unit application mode command (coded values)",
+   "units": "",
+   "access": "W",
+   "states": "0 = Auto, 1 = Heat, 3 = Cool, 6 = Off, 9 = Fan only, 208 = Fan auto, 209 = Fan on, 216 = Exhaust auto, 217 = Exhaust on, 218 = Exhaust off, 224-236 = remote thermostat stage commands, 254 = Reset, 255 = Null"
+  },
+  {
+   "type": "AO",
+   "instance": 102,
+   "name": "Outdoor Air Min Pos Control",
+   "description": "Minimum economizer damper position; 101-255 = local",
+   "units": "%",
+   "access": "W",
+   "states": ""
+  },
+  {
+   "type": "AO",
+   "instance": 103,
+   "name": "Occupancy Override Control",
+   "description": "Occupancy override",
+   "units": "",
+   "access": "W",
+   "states": "0 = Occupied, 1 = Unoccupied (not supported, auto), 2 = Refresh override timer, 3-255 = Auto"
+  },
+  {
+   "type": "AO",
+   "instance": 104,
+   "name": "Occupancy Scheduler Control",
+   "description": "Scheduled occupancy",
+   "units": "",
+   "access": "W",
+   "states": "0 = Occupied, 1-255 = Unoccupied"
+  },
+  {
+   "type": "AO",
+   "instance": 107,
+   "name": "Occupancy Sensor Input",
+   "description": "Occupancy sensor value from the network",
+   "units": "",
+   "access": "W",
+   "states": "0 = Occupied, 1 = Unoccupied (not supported, auto), 2-255 = Auto"
+  },
+  {
+   "type": "AO",
+   "instance": 108,
+   "name": "Space Dehumidification Setpt",
+   "description": "Zone relative humidity setpoint",
+   "units": "%",
+   "access": "W",
+   "states": ""
+  },
+  {
+   "type": "AO",
+   "instance": 109,
+   "name": "Temperature Setpoint (abs)",
+   "description": "Zone temperature setpoint",
+   "units": "°F",
+   "access": "W",
+   "states": ""
+  },
+  {
+   "type": "AO",
+   "instance": 110,
+   "name": "Temperature Setpoint Offset",
+   "description": "Zone temperature setpoint offset",
+   "units": "°F",
+   "access": "W",
+   "states": ""
+  },
+  {
+   "type": "AO",
+   "instance": 113,
+   "name": "Space Temperature Input",
+   "description": "Zone temperature from a BACnet sensor",
+   "units": "°F",
+   "access": "W",
+   "states": ""
+  },
+  {
+   "type": "AO",
+   "instance": 114,
+   "name": "Emergency Override Control",
+   "description": "Smoke/emergency mode",
+   "units": "",
+   "access": "W",
+   "states": "0 = Normal, 1 = Pressurize, 2 = Depressurize (speed), 3 = Purge (speed), 4 = Shutdown, 5 = Fire, 6 = Depressurize (pressure), 7 = Purge (pressure), >7 = Normal"
+  },
+  {
+   "type": "AO",
+   "instance": 115,
+   "name": "Compressor Enable Control",
+   "description": "Compressor capacity limit; 0 = disabled, 101-255 = full",
+   "units": "%",
+   "access": "W",
+   "states": ""
+  },
+  {
+   "type": "AO",
+   "instance": 117,
+   "name": "Primary Heat Enable Control",
+   "description": "Primary heat capacity limit",
+   "units": "%",
+   "access": "W",
+   "states": ""
+  },
+  {
+   "type": "AO",
+   "instance": 119,
+   "name": "Auxiliary Heat Enable Control",
+   "description": "Auxiliary heat capacity limit",
+   "units": "%",
+   "access": "W",
+   "states": ""
+  },
+  {
+   "type": "AO",
+   "instance": 123,
+   "name": "Duct Static Setpoint",
+   "description": "Duct static pressure setpoint",
+   "units": "inH2O",
+   "access": "W",
+   "states": ""
+  },
+  {
+   "type": "AO",
+   "instance": 124,
+   "name": "Building Static Setpoint",
+   "description": "Building static pressure setpoint",
+   "units": "inH2O",
+   "access": "W",
+   "states": ""
+  },
+  {
+   "type": "AO",
+   "instance": 125,
+   "name": "Discharge Air Cooling Setpoint",
+   "description": "Discharge air cooling setpoint",
+   "units": "°F",
+   "access": "W",
+   "states": ""
+  },
+  {
+   "type": "AO",
+   "instance": 126,
+   "name": "Discharge Air Heating Setpoint",
+   "description": "Discharge air heating setpoint",
+   "units": "°F",
+   "access": "W",
+   "states": ""
+  },
+  {
+   "type": "AO",
+   "instance": 127,
+   "name": "Supply Fan Capacity Input",
+   "description": "Supply fan speed, % of max; 101-255 = local",
+   "units": "%",
+   "access": "W",
+   "states": ""
+  },
+  {
+   "type": "AO",
+   "instance": 128,
+   "name": "Exhaust Fan Capacity Input",
+   "description": "Exhaust fan speed, % of max; 101-255 = local",
+   "units": "%",
+   "access": "W",
+   "states": ""
+  },
+  {
+   "type": "AI",
+   "instance": 200,
+   "name": "IMC Version[00], IMC Version[01], ..., IMC Version[07]",
+   "description": "IMC firmware version characters (null-terminated ASCII); AI 200-207",
+   "units": "",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "AI",
+   "instance": 231,
+   "name": "Unit ID",
+   "description": "Unit type code",
+   "units": "",
+   "access": "R",
+   "states": "48-63 = Gas heat/electric cool, 64-79 = Electric/electric, 80-95 = Heat pump"
+  },
+  {
+   "type": "AI",
+   "instance": 232,
+   "name": "Unit Status",
+   "description": "Unit operating mode",
+   "units": "",
+   "access": "R",
+   "states": "1 = Heat, 2 = Morning warmup, 3 = Cool, 5 = Pre-cool, 6 = Off, 7 = Test, 8 = Emergency heat, 9 = Fan only, 12 = Max heat, 14 = Dehumidification, 129 = Fresh air heating, 131 = Fresh air cooling, 145 = Defrost comp 1, 161 = Defrost comp 2, 177 = Defrost comp 1 & 2"
+  },
+  {
+   "type": "AI",
+   "instance": 239,
+   "name": "Space Temperature",
+   "description": "Zone temperature in use",
+   "units": "°F",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "AI",
+   "instance": 240,
+   "name": "Discharge Air Temperature",
+   "description": "Discharge (supply) air temperature",
+   "units": "°F",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "AI",
+   "instance": 241,
+   "name": "Effective Occupancy",
+   "description": "Resulting occupancy",
+   "units": "",
+   "access": "R",
+   "states": "0 = Occupied, 1 = Unoccupied, 2 = Occupied (timed override)"
+  },
+  {
+   "type": "AI",
+   "instance": 242,
+   "name": "Local Outside Air Temperature",
+   "description": "Outdoor air temperature from IMC sensor",
+   "units": "°F",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "AI",
+   "instance": 243,
+   "name": "Local Space Temperature",
+   "description": "Zone temperature from IMC sensor",
+   "units": "°F",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "AI",
+   "instance": 244,
+   "name": "Outdoor Air Damper",
+   "description": "Economizer damper position; 255 = no damper",
+   "units": "%",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "AI",
+   "instance": 245,
+   "name": "Heat Primary",
+   "description": "Primary heating capacity running",
+   "units": "%",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "AI",
+   "instance": 246,
+   "name": "Heat Secondary",
+   "description": "Secondary (auxiliary) heating capacity running",
+   "units": "%",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "AI",
+   "instance": 247,
+   "name": "Cool Primary",
+   "description": "Cooling capacity running",
+   "units": "%",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "AI",
+   "instance": 248,
+   "name": "Economizer Enabled",
+   "description": "Outdoor air suitable for free cooling",
+   "units": "",
+   "access": "R",
+   "states": "0 = Disabled, 1 = Enabled, 255 = No economizer"
+  },
+  {
+   "type": "AI",
+   "instance": 250,
+   "name": "Supply Fan Status",
+   "description": "Supply fan state or speed",
+   "units": "%",
+   "access": "R",
+   "states": "0 = Off, 1 = On (single speed), 2-100 = speed %"
+  },
+  {
+   "type": "AI",
+   "instance": 252,
+   "name": "Space Temperature Setpt (Eff)",
+   "description": "Zone temperature setpoint in effect",
+   "units": "°F",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "AI",
+   "instance": 253,
+   "name": "Current Error",
+   "description": "Active alarm code; 0 = none",
+   "units": "",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "AI",
+   "instance": 254,
+   "name": "Error Pointer",
+   "description": "Next alarm log location, 0-83",
+   "units": "",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "AI",
+   "instance": 255,
+   "name": "Most Recent Error 1, Most Recent Error 2, ..., Most Recent Error 10",
+   "description": "Ten most recent alarm codes; AI 255-264",
+   "units": "",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "AI",
+   "instance": 274,
+   "name": "Space CO2 Sensor (Eff)",
+   "description": "Zone CO2 in use",
+   "units": "ppm",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "AI",
+   "instance": 275,
+   "name": "Space CO2 Sensor (Local)",
+   "description": "Zone CO2 from IMC sensor",
+   "units": "ppm",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "AI",
+   "instance": 276,
+   "name": "Space Humidity (Eff)",
+   "description": "Zone humidity in use",
+   "units": "%",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "AI",
+   "instance": 277,
+   "name": "Space Humidity (Local)",
+   "description": "Zone humidity from IMC sensor",
+   "units": "%",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "AI",
+   "instance": 278,
+   "name": "Dehumidification Setpt (Eff)",
+   "description": "Humidity setpoint in effect",
+   "units": "%",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "AI",
+   "instance": 279,
+   "name": "Dehumidification Status",
+   "description": "Dehumidification state",
+   "units": "",
+   "access": "R",
+   "states": "0 = Not installed, 1 = Installed, not running, 2 = Running"
+  },
+  {
+   "type": "AI",
+   "instance": 281,
+   "name": "Return Air Temperature",
+   "description": "Return air temperature",
+   "units": "°F",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "AI",
+   "instance": 282,
+   "name": "Building Static Pressure",
+   "description": "Building static pressure",
+   "units": "inH2O",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "AI",
+   "instance": 283,
+   "name": "Duct Static Pressure",
+   "description": "Duct static pressure",
+   "units": "inH2O",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "AI",
+   "instance": 285,
+   "name": "Exhaust Fan Status",
+   "description": "Exhaust fan state or speed",
+   "units": "%",
+   "access": "R",
+   "states": ""
+  }
+ ],
+ "page": "https://easybacnet.com/bacnet-points-lists/lennox/imc-bacnet-module",
+ "note": "Re-typed from the manufacturer's public documentation (see source). Point availability varies by firmware and options; verify against the live device."
+}

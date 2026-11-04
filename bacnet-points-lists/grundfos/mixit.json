@@ -1,0 +1,1200 @@
+{
+ "manufacturer": "Grundfos",
+ "manufacturer_slug": "grundfos",
+ "model": "MIXIT mixing loop unit (BACnet MS/TP and IP)",
+ "model_slug": "mixit",
+ "aliases": [
+  "MIXIT",
+  "Grundfos MIXIT",
+  "MIXIT DYNAMIC",
+  "MIXIT CONNECT",
+  "BACnet for MIXIT"
+ ],
+ "equipment_type": "Mixing loop unit (valve + pump controller)",
+ "applies_to": "Grundfos MIXIT mixing loop units (valve, controller and connected MAGNA3/UPM pump) with the CONNECT upgrade, for heating and cooling loops.",
+ "summary": "MIXIT combines a mixing valve, sensors and a controller that also runs the connected Grundfos pump. With the CONNECT upgrade it speaks BACnet MS/TP on its RS-485 terminals or BACnet IP on its RJ45 port. The object list covers bus control, start/stop, setpoint source and remote setpoint, pump control modes and duty points, limiters, weather curve, energy data and alarm/warning codes.",
+ "bacnet_transport": [
+  "BACnet MS/TP",
+  "BACnet IP"
+ ],
+ "firmware": null,
+ "default_device_instance": 227005,
+ "access_inferred": false,
+ "notes": [
+  "BACnet needs the CONNECT upgrade, and the protocol is selected and set up in Grundfos GO Remote.",
+  "Objects marked \"DYNAMIC variants only\" (energy, flow and limiter points) exist only on MIXIT DYNAMIC.",
+  "The manual prints units in square brackets after many object names (e.g. \"[°C]\"); they are moved to the units field here.",
+  "BO 6 is mentioned as the cooling energy reset but is not in the object tables, so it is not listed.",
+  "Temperatures are written in whole °C on the bus.",
+  "MI 4 has no access column in the manual; it is read-only as an input object."
+ ],
+ "integration": {
+  "summary": "Configure MIXIT and its fieldbus settings in Grundfos GO Remote first, and set a safe fallback setpoint on AV 6. Then write BO 0 = 1 (bus control), MV 0 = 3 (remote setpoint), the setpoint on AO 0 and BO 1 = 1 to start. Keep polling a point such as BI 0 every 30 s or MIXIT returns to its local setpoint.",
+  "minimum_points": [
+   {
+    "ref": "BO 0",
+    "why": "Takes bus control (1) or gives it back (0)",
+    "name": "Set Control Source"
+   },
+   {
+    "ref": "MV 0",
+    "why": "Setpoint source; 3 = remote setpoint on AO 0",
+    "name": "Config Temp Setpoint Source"
+   },
+   {
+    "ref": "BO 1",
+    "why": "Start/stop (1 = start, 0 = stop and close valve)",
+    "name": "Set Start Stop"
+   },
+   {
+    "ref": "AO 0",
+    "why": "Remote temperature setpoint, °C",
+    "name": "Set Temperature Setpoint Remote"
+   },
+   {
+    "ref": "BO 2",
+    "why": "Resets alarms and warnings on a 0-to-1 edge",
+    "name": "Reset fault"
+   },
+   {
+    "ref": "BI 0",
+    "why": "Confirms bus control",
+    "name": "Status Control Source"
+   },
+   {
+    "ref": "MI 2",
+    "why": "System state, e.g. 5 = temperature control",
+    "name": "Status System State"
+   },
+   {
+    "ref": "AI 22",
+    "why": "Actual controlled temperature, °C",
+    "name": "Data Controlled Temp"
+   },
+   {
+    "ref": "BI 4",
+    "why": "System stopped by an alarm",
+    "name": "Status Fault"
+   },
+   {
+    "ref": "AI 37",
+    "why": "MIXIT alarm code",
+    "name": "Status System Alarm Code"
+   }
+  ],
+  "enable": "BO 0 Set Control Source = 1 puts MIXIT under bus control (BI 0 confirms). MV 0 = 3 makes AO 0 the setpoint; MV 0 = 5 uses the internal weather curve with the outdoor temperature written to AO 1. BO 1 starts (1) or stops (0) the system; stop also closes the valve.",
+  "heartbeat": "The manual asks the BMS to keep communicating, e.g. read BI 0 every 30 s. If communication is lost MIXIT falls back to its local setpoint (AV 6). After a power failure it starts in local control, so the BMS must send the full start-up sequence again.",
+  "remote_sensors": "Outdoor temperature can come from the bus on AO 1 (MV 0 = 5). In heating coil and cooling applications the air temperature feedback can come from the bus on AO 2 after BO 7 = 1.",
+  "setup": [
+   "Default device instance 227005; a custom number can be enabled in Grundfos GO Remote and written to AV 0.",
+   "MS/TP: MAC 0-127, default 5; Max Master 1-127 (default 127); baud set in Grundfos GO Remote. Built-in 120 ohm termination on a DIP switch; no bias resistors.",
+   "IP: RJ45 port; static IP or DHCP (wait 1 minute for a DHCP address).",
+   "No segmentation support."
+  ],
+  "gotchas": [
+   "Avoid writing configuration (persistent) objects in the cyclic poll; read instead of rewriting every 30 s.",
+   "Set AV 6 fallback setpoint separately for heating and cooling (switch with MO 4) in combined applications.",
+   "BO 2 reset and BO 5 simulation are edge triggered.",
+   "Pump control mode and duty points are separate for heating (MO 0, AV 7-9) and cooling (MO 3, AV 14-16)."
+  ]
+ },
+ "source": {
+  "title": "BACnet for MIXIT - Functional profile and user manual",
+  "doc_number": "99258495",
+  "revision_date": "11.2024",
+  "url": "https://api.grundfos.com/literature/Grundfosliterature-6012796.pdf"
+ },
+ "points": [
+  {
+   "type": "BI",
+   "instance": 0,
+   "name": "Status Control Source",
+   "description": "Bus control active",
+   "units": "",
+   "access": "R",
+   "states": "0=Local control, 1=Bus control"
+  },
+  {
+   "type": "BI",
+   "instance": 1,
+   "name": "Status Fan and Dampers",
+   "description": "Coil preheated, fan/dampers may run (heating coil)",
+   "units": "",
+   "access": "R",
+   "states": "0=Disabled, 1=Enabled"
+  },
+  {
+   "type": "BI",
+   "instance": 2,
+   "name": "Status Actual Run State Pump",
+   "description": "Actual pump run state",
+   "units": "",
+   "access": "R",
+   "states": "0=Stopped, 1=Started"
+  },
+  {
+   "type": "BI",
+   "instance": 3,
+   "name": "Status Ready",
+   "description": "System ready for operation",
+   "units": "",
+   "access": "R",
+   "states": "0=Not ready, 1=Ready"
+  },
+  {
+   "type": "BI",
+   "instance": 4,
+   "name": "Status Fault",
+   "description": "System stopped by an alarm",
+   "units": "",
+   "access": "R",
+   "states": "0=No fault, 1=Fault"
+  },
+  {
+   "type": "BI",
+   "instance": 5,
+   "name": "Status Alarm Simulation",
+   "description": "Alarm/warning simulation active",
+   "units": "",
+   "access": "R",
+   "states": "0=Inactive, 1=Active"
+  },
+  {
+   "type": "BI",
+   "instance": 6,
+   "name": "Notification Flow Temp High",
+   "description": "Underfloor overheat detected",
+   "units": "",
+   "access": "R",
+   "states": "0=Not detected, 1=Detected"
+  },
+  {
+   "type": "BI",
+   "instance": 7,
+   "name": "Notification Frost Risk Detected",
+   "description": "Frost risk detected",
+   "units": "",
+   "access": "R",
+   "states": "0=Not detected, 1=Detected"
+  },
+  {
+   "type": "BI",
+   "instance": 8,
+   "name": "Notification Supply Flow High",
+   "description": "Supply flow above AV 10 limit for 3600 s (DYNAMIC variants only)",
+   "units": "",
+   "access": "R",
+   "states": "0=Not above, 1=Above"
+  },
+  {
+   "type": "BI",
+   "instance": 9,
+   "name": "Notification Thermal Power High",
+   "description": "Thermal power above AV 11 limit for 3600 s (DYNAMIC variants only)",
+   "units": "",
+   "access": "R",
+   "states": "0=Not above, 1=Above"
+  },
+  {
+   "type": "BI",
+   "instance": 10,
+   "name": "Notification Return Temperature Threshold",
+   "description": "Return temperature past AV 12 limit for 3600 s (DYNAMIC variants only)",
+   "units": "",
+   "access": "R",
+   "states": "0=Not exceeded, 1=Exceeded"
+  },
+  {
+   "type": "BI",
+   "instance": 11,
+   "name": "Notification Differential Temperature High",
+   "description": "Primary delta T past AV 13 limit for 3600 s (DYNAMIC variants only)",
+   "units": "",
+   "access": "R",
+   "states": "0=Not exceeded, 1=Exceeded"
+  },
+  {
+   "type": "BI",
+   "instance": 12,
+   "name": "Bus Feedback Enabled",
+   "description": "Air temperature feedback comes from the bus",
+   "units": "",
+   "access": "R",
+   "states": "0=False, 1=True"
+  },
+  {
+   "type": "BI",
+   "instance": 13,
+   "name": "Heat Curve Slope Factor Enabled",
+   "description": "Weather curve is non-linear",
+   "units": "",
+   "access": "R",
+   "states": "0=False, 1=True"
+  },
+  {
+   "type": "BI",
+   "instance": 14,
+   "name": "Heat Curve Offset Range Exceeded",
+   "description": "Weather curve offset outside -15..15",
+   "units": "",
+   "access": "R",
+   "states": "0=Exceeded, 1=Not exceeded"
+  },
+  {
+   "type": "BI",
+   "instance": 15,
+   "name": "Heat Curve Slope Factor Range Exceeded",
+   "description": "Weather curve slope outside 0.4..2.0",
+   "units": "",
+   "access": "R",
+   "states": "0=Exceeded, 1=Not exceeded"
+  },
+  {
+   "type": "BO",
+   "instance": 0,
+   "name": "Set Control Source",
+   "description": "Take bus control (1) or return to local (0)",
+   "units": "",
+   "access": "W",
+   "states": "0=Local control, 1=Bus control"
+  },
+  {
+   "type": "BO",
+   "instance": 1,
+   "name": "Set Start Stop",
+   "description": "Start/stop the system (stop also closes the valve)",
+   "units": "",
+   "access": "W",
+   "states": "0=Stop, 1=Start"
+  },
+  {
+   "type": "BO",
+   "instance": 2,
+   "name": "Reset fault",
+   "description": "Reset alarms and warnings (rising edge)",
+   "units": "",
+   "access": "W",
+   "states": ""
+  },
+  {
+   "type": "BO",
+   "instance": 3,
+   "name": "Enable Overheat Protection",
+   "description": "Force the underfloor overheat indication",
+   "units": "",
+   "access": "W",
+   "states": "0=Disable, 1=Set"
+  },
+  {
+   "type": "BO",
+   "instance": 4,
+   "name": "Enable Frost Protection, heating",
+   "description": "Frost protection for heating coil application",
+   "units": "",
+   "access": "W",
+   "states": "0=Disable, 1=Enable"
+  },
+  {
+   "type": "BO",
+   "instance": 5,
+   "name": "Set Fault Simulation",
+   "description": "Start (rising edge) or stop alarm simulation",
+   "units": "",
+   "access": "W",
+   "states": ""
+  },
+  {
+   "type": "BO",
+   "instance": 7,
+   "name": "Enable Bus Feedback",
+   "description": "Use air temperature feedback from the bus (AO 2)",
+   "units": "",
+   "access": "W",
+   "states": "0=Disable, 1=Enable"
+  },
+  {
+   "type": "BO",
+   "instance": 8,
+   "name": "Enable Frost Protection Cooling Mode",
+   "description": "Frost protection in cooling mode",
+   "units": "",
+   "access": "W",
+   "states": "0=Disable, 1=Enable"
+  },
+  {
+   "type": "BV",
+   "instance": 0,
+   "name": "Config Supply Flow Limiting, Heating",
+   "description": "Enable supply flow limit (AV 10) (DYNAMIC variants only)",
+   "units": "",
+   "access": "W",
+   "states": "0=Disabled, 1=Enabled"
+  },
+  {
+   "type": "BV",
+   "instance": 1,
+   "name": "Config Thermal Power Limiting, Heating",
+   "description": "Enable thermal power limit (AV 11) (DYNAMIC variants only)",
+   "units": "",
+   "access": "W",
+   "states": "0=Disabled, 1=Enabled"
+  },
+  {
+   "type": "BV",
+   "instance": 2,
+   "name": "Config Return Temp Limiting, Heating",
+   "description": "Enable return temperature limit (AV 12) (DYNAMIC variants only)",
+   "units": "",
+   "access": "W",
+   "states": "0=Disabled, 1=Enabled"
+  },
+  {
+   "type": "BV",
+   "instance": 3,
+   "name": "Config Primary DeltaT Limiting, Heating",
+   "description": "Enable primary delta T limit (AV 13) (DYNAMIC variants only)",
+   "units": "",
+   "access": "W",
+   "states": "0=Disabled, 1=Enabled"
+  },
+  {
+   "type": "BV",
+   "instance": 4,
+   "name": "Config Supply Flow Limiting Cooling",
+   "description": "Enable cooling supply flow limit (AV 17) (DYNAMIC variants only)",
+   "units": "",
+   "access": "W",
+   "states": "0=Disabled, 1=Enabled"
+  },
+  {
+   "type": "BV",
+   "instance": 5,
+   "name": "Config Thermal Power Limiting Cooling",
+   "description": "Enable cooling thermal power limit (AV 18) (DYNAMIC variants only)",
+   "units": "",
+   "access": "W",
+   "states": "0=Disabled, 1=Enabled"
+  },
+  {
+   "type": "BV",
+   "instance": 6,
+   "name": "Config Return Temp Limiting Cooling",
+   "description": "Enable cooling return temperature limit (DYNAMIC variants only)",
+   "units": "",
+   "access": "W",
+   "states": "0=Disabled, 1=Enabled"
+  },
+  {
+   "type": "BV",
+   "instance": 7,
+   "name": "Config Primary Delta T Limiting Cooling",
+   "description": "Enable cooling primary delta T limit (AV 20) (DYNAMIC variants only)",
+   "units": "",
+   "access": "W",
+   "states": "0=Disabled, 1=Enabled"
+  },
+  {
+   "type": "MI",
+   "instance": 0,
+   "name": "Status Pump Control Mode, Heating and Cooling",
+   "description": "Current pump control mode",
+   "units": "",
+   "access": "R",
+   "states": "1=Constant speed, 2=Constant pressure, 3=Proportional pressure, 4=AUTOADAPT, 5=Constant flow"
+  },
+  {
+   "type": "MI",
+   "instance": 1,
+   "name": "Data Application Type Heating",
+   "description": "Heating application type",
+   "units": "",
+   "access": "R",
+   "states": "1=Radiator heating, 2=Underfloor heating, 3=Heating coil"
+  },
+  {
+   "type": "MI",
+   "instance": 2,
+   "name": "Status System State",
+   "description": "System state",
+   "units": "",
+   "access": "R",
+   "states": "1=Powering up, 2=Fault, 3=Ready, 4=Preheating heating coil, 5=Temperature control, 6=Frost protection, 7=Underfloor overheat protection, 8=Shut down (start signal removed), 10=Valve 100 % open (backup), 11=Return temperature control"
+  },
+  {
+   "type": "MI",
+   "instance": 3,
+   "name": "Status Thermal selection",
+   "description": "Heating or cooling active",
+   "units": "",
+   "access": "R",
+   "states": "1=Heating, 2=Cooling"
+  },
+  {
+   "type": "MI",
+   "instance": 4,
+   "name": "Data Application type Cooling",
+   "description": "Cooling application type",
+   "units": "",
+   "access": "R",
+   "states": "1=General cooling"
+  },
+  {
+   "type": "MI",
+   "instance": 5,
+   "name": "Data Valve Mode",
+   "description": "Valve mode",
+   "units": "",
+   "access": "R",
+   "states": "1=Injection 2 way, 2=Mixing 3 way, 3=Injection 3 way"
+  },
+  {
+   "type": "MO",
+   "instance": 0,
+   "name": "Config Pump Control Mode, Heating",
+   "description": "Pump control mode for heating",
+   "units": "",
+   "access": "W",
+   "states": "1=Constant speed, 2=Constant pressure, 3=Proportional pressure, 4=AUTOADAPT, 5=Constant flow"
+  },
+  {
+   "type": "MO",
+   "instance": 1,
+   "name": "Set Manual Valve Function",
+   "description": "Manual valve opening for service",
+   "units": "",
+   "access": "W",
+   "states": "1=Off, 2=100 % open, 3=50 % open, 4=25 % open, 5=0 % (closed)"
+  },
+  {
+   "type": "MO",
+   "instance": 2,
+   "name": "Set Application Type Heating",
+   "description": "Heating application type",
+   "units": "",
+   "access": "W",
+   "states": "1=Radiator heating, 2=Underfloor heating, 3=Heating coil"
+  },
+  {
+   "type": "MO",
+   "instance": 3,
+   "name": "Config Pump Control Mode Cooling",
+   "description": "Pump control mode for cooling",
+   "units": "",
+   "access": "W",
+   "states": "1=Constant speed, 2=Constant pressure, 3=Proportional pressure, 4=AUTOADAPT, 5=Constant flow"
+  },
+  {
+   "type": "MO",
+   "instance": 4,
+   "name": "Config Thermal selection",
+   "description": "Heating/cooling change-over (combined applications)",
+   "units": "",
+   "access": "W",
+   "states": "1=Heating, 2=Cooling"
+  },
+  {
+   "type": "MO",
+   "instance": 5,
+   "name": "Set Application Type Cooling",
+   "description": "Cooling application type",
+   "units": "",
+   "access": "W",
+   "states": "1=General cooling"
+  },
+  {
+   "type": "MO",
+   "instance": 6,
+   "name": "Config Valve Mode",
+   "description": "Valve mode",
+   "units": "",
+   "access": "W",
+   "states": "1=Injection 2 way, 2=Mixing 3 way, 3=Injection 3 way"
+  },
+  {
+   "type": "MO",
+   "instance": 7,
+   "name": "Config Heating Cooling Selection",
+   "description": "Thermal application mode",
+   "units": "",
+   "access": "W",
+   "states": "1=Heating, 2=Cooling, 3=Combined"
+  },
+  {
+   "type": "MV",
+   "instance": 0,
+   "name": "Config Temp Setpoint Source",
+   "description": "Source of the temperature setpoint",
+   "units": "",
+   "access": "W",
+   "states": "1=Default setpoint, 2=Analog input setpoint, 3=Remote setpoint (AO 0), 4=Weather curve with local outdoor sensor, 5=Weather curve with bus outdoor temp (AO 1)"
+  },
+  {
+   "type": "AI",
+   "instance": 0,
+   "name": "Data Temp Setpoint Remote",
+   "description": "Remote temperature setpoint received",
+   "units": "°C",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "AI",
+   "instance": 1,
+   "name": "Data Outdoor Temp Remote",
+   "description": "Remote outdoor temperature received",
+   "units": "°C",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "AI",
+   "instance": 2,
+   "name": "Data Act Temp Setpoint",
+   "description": "Temperature setpoint in use",
+   "units": "°C",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "AI",
+   "instance": 5,
+   "name": "Status Pump Warning Code",
+   "description": "Pump warning code",
+   "units": "",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "AI",
+   "instance": 6,
+   "name": "Status Pump Alarm Code",
+   "description": "Pump alarm code",
+   "units": "",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "AI",
+   "instance": 7,
+   "name": "Data Heating Energy",
+   "description": "Lifetime heating energy (DYNAMIC variants only)",
+   "units": "kWh",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "AI",
+   "instance": 8,
+   "name": "Data Heating Power",
+   "description": "Thermal power in heating mode (DYNAMIC variants only)",
+   "units": "kW",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "AI",
+   "instance": 9,
+   "name": "Data Cooling Energy",
+   "description": "Lifetime cooling energy (DYNAMIC variants only)",
+   "units": "kWh",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "AI",
+   "instance": 10,
+   "name": "Data Cooling Power",
+   "description": "Thermal power in cooling mode (DYNAMIC variants only)",
+   "units": "kW",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "AI",
+   "instance": 11,
+   "name": "Data Heat Temp Difference",
+   "description": "Forward/return temperature difference (DYNAMIC variants only)",
+   "units": "°C",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "AI",
+   "instance": 12,
+   "name": "Data Pump Power",
+   "description": "Pump electrical power",
+   "units": "W",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "AI",
+   "instance": 13,
+   "name": "Data percentage Speed",
+   "description": "Pump speed, % of maximum",
+   "units": "%",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "AI",
+   "instance": 14,
+   "name": "Data Pump Operating Hours",
+   "description": "Pump operating hours",
+   "units": "h",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "AI",
+   "instance": 15,
+   "name": "Data Pump Energy",
+   "description": "Pump energy",
+   "units": "kWh",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "AI",
+   "instance": 16,
+   "name": "Data Flow Temp",
+   "description": "Secondary flow temperature (from pump)",
+   "units": "°C",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "AI",
+   "instance": 17,
+   "name": "Data Supply Temp",
+   "description": "Supply temperature at the valve",
+   "units": "°C",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "AI",
+   "instance": 19,
+   "name": "Data Logical Valve Opening",
+   "description": "Valve opening request",
+   "units": "%",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "AI",
+   "instance": 20,
+   "name": "Data Valve Supply Flow",
+   "description": "Primary flow at the A-port (DYNAMIC variants only)",
+   "units": "m³/h",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "AI",
+   "instance": 21,
+   "name": "Data Return Temperature",
+   "description": "Return temperature at the valve",
+   "units": "°C",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "AI",
+   "instance": 22,
+   "name": "Data Controlled Temp",
+   "description": "Actual controlled temperature",
+   "units": "°C",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "AI",
+   "instance": 23,
+   "name": "Data Supply Source Setpoint",
+   "description": "Supply source temperature reference",
+   "units": "°C",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "AI",
+   "instance": 24,
+   "name": "Data Pump Flow",
+   "description": "Pump flow",
+   "units": "m³/h",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "AI",
+   "instance": 25,
+   "name": "Data Pump Head",
+   "description": "Pump head",
+   "units": "m",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "AI",
+   "instance": 26,
+   "name": "Data Outdoor Temp",
+   "description": "Outdoor temperature at the analog input",
+   "units": "°C",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "AI",
+   "instance": 27,
+   "name": "Data Zone Air Temp",
+   "description": "Air temperature at the analog input",
+   "units": "°C",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "AI",
+   "instance": 28,
+   "name": "Data Bus Temperature Feedback",
+   "description": "Air temperature feedback from the bus",
+   "units": "°C",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "AI",
+   "instance": 35,
+   "name": "Status System Warning Code",
+   "description": "MIXIT warning code",
+   "units": "",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "AI",
+   "instance": 36,
+   "name": "Status System Sub Warning Code",
+   "description": "Warning sub-code",
+   "units": "",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "AI",
+   "instance": 37,
+   "name": "Status System Alarm Code",
+   "description": "MIXIT alarm code",
+   "units": "",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "AI",
+   "instance": 38,
+   "name": "Status System Sub Alarm Code",
+   "description": "Alarm sub-code",
+   "units": "",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "AI",
+   "instance": 39,
+   "name": "Data HeatingVolume",
+   "description": "Total heating volume pumped (DYNAMIC variants only)",
+   "units": "m³",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "AI",
+   "instance": 40,
+   "name": "Data CoolingVolume",
+   "description": "Total cooling volume pumped (DYNAMIC variants only)",
+   "units": "m³",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "AI",
+   "instance": 41,
+   "name": "Data VolWeightAvgT1Heat",
+   "description": "Volume-weighted average T1, heating (DYNAMIC variants only)",
+   "units": "°C·m³",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "AI",
+   "instance": 42,
+   "name": "Data VolWeightAvgT2Heat",
+   "description": "Volume-weighted average T2, heating (DYNAMIC variants only)",
+   "units": "°C·m³",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "AI",
+   "instance": 43,
+   "name": "Data VolWeightAvgT1Cool",
+   "description": "Volume-weighted average T1, cooling (DYNAMIC variants only)",
+   "units": "°C·m³",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "AI",
+   "instance": 44,
+   "name": "Data VolWeightAvgT2Cool",
+   "description": "Volume-weighted average T2, cooling (DYNAMIC variants only)",
+   "units": "°C·m³",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "AI",
+   "instance": 45,
+   "name": "Data MIXIT Operating Hours",
+   "description": "MIXIT operating time",
+   "units": "s",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "AO",
+   "instance": 0,
+   "name": "Set Temperature Setpoint Remote",
+   "description": "Temperature setpoint from the bus (needs MV 0 = 3)",
+   "units": "°C",
+   "access": "W",
+   "states": ""
+  },
+  {
+   "type": "AO",
+   "instance": 1,
+   "name": "Set Outdoor Temperature Remote",
+   "description": "Outdoor temperature from the bus (needs MV 0 = 5)",
+   "units": "°C",
+   "access": "W",
+   "states": ""
+  },
+  {
+   "type": "AO",
+   "instance": 2,
+   "name": "Set Bus Temperature Feedback",
+   "description": "Air temperature feedback from the bus (needs BO 7 = 1)",
+   "units": "°C",
+   "access": "W",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 0,
+   "name": "Config Custom Device Object Instance Number",
+   "description": "Custom device instance (enable in Grundfos GO)",
+   "units": "",
+   "access": "W",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 1,
+   "name": "Config Product time and date",
+   "description": "Clock, UNIX seconds",
+   "units": "",
+   "access": "W",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 2,
+   "name": "Set Simulation Event Code",
+   "description": "Alarm/warning code to simulate",
+   "units": "",
+   "access": "W",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 3,
+   "name": "Set Simulation Event Sub Code",
+   "description": "Sub-code to simulate",
+   "units": "",
+   "access": "W",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 4,
+   "name": "Config Heat curve offset (+/-)",
+   "description": "Weather curve offset, +/-15",
+   "units": "°C",
+   "access": "W",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 5,
+   "name": "Config Heat curve slope (+/-)",
+   "description": "Weather curve slope, 0.4-2",
+   "units": "",
+   "access": "W",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 6,
+   "name": "Config Default Temp Setpoint",
+   "description": "Fallback setpoint if bus or sensor signal is lost",
+   "units": "°C",
+   "access": "W",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 7,
+   "name": "Config Pump Head Duty Point, Heating",
+   "description": "Pump head duty point, heating",
+   "units": "m",
+   "access": "W",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 8,
+   "name": "Config Pump Flow Duty Point, Heating",
+   "description": "Pump flow duty point, heating",
+   "units": "m³/h",
+   "access": "W",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 9,
+   "name": "Config Pump Speed DutyPoint, Heating",
+   "description": "Pump speed in constant speed mode, heating",
+   "units": "%",
+   "access": "W",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 10,
+   "name": "Config Supply Flow Limit Heating",
+   "description": "Primary flow limit, heating (DYNAMIC variants only)",
+   "units": "m³/h",
+   "access": "W",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 11,
+   "name": "Config Thermal Power Limit Heating",
+   "description": "Thermal power limit, heating (DYNAMIC variants only)",
+   "units": "kW",
+   "access": "W",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 12,
+   "name": "Config Return Temp Limit Heating",
+   "description": "Return temperature limit, heating (DYNAMIC variants only)",
+   "units": "°C",
+   "access": "W",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 13,
+   "name": "Config Primary DeltaT Limit Heating",
+   "description": "Primary delta T limit, heating (DYNAMIC variants only)",
+   "units": "°C",
+   "access": "W",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 14,
+   "name": "Config Pump Head Duty Point Cooling",
+   "description": "Pump head duty point, cooling (DYNAMIC variants only)",
+   "units": "m",
+   "access": "W",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 15,
+   "name": "Config Pump Flow Duty Point Cooling",
+   "description": "Pump flow duty point, cooling (DYNAMIC variants only)",
+   "units": "m³/h",
+   "access": "W",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 16,
+   "name": "Config Pump Speed Duty Point Cooling",
+   "description": "Pump speed in constant speed mode, cooling (DYNAMIC variants only)",
+   "units": "%",
+   "access": "W",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 17,
+   "name": "Config Supply Flow Limit Cooling",
+   "description": "Primary flow limit, cooling (DYNAMIC variants only)",
+   "units": "m³/h",
+   "access": "W",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 18,
+   "name": "Config Thermal Power Limit Cooling",
+   "description": "Thermal power limit, cooling (DYNAMIC variants only)",
+   "units": "kW",
+   "access": "W",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 19,
+   "name": "Config Return Temp Limit Cooling",
+   "description": "Return temperature limit, cooling (DYNAMIC variants only)",
+   "units": "°C",
+   "access": "W",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 20,
+   "name": "Config Primary Delta T Limit Cooling",
+   "description": "Primary delta T limit, cooling (DYNAMIC variants only)",
+   "units": "°C",
+   "access": "W",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 21,
+   "name": "Config Kp",
+   "description": "Temperature controller gain, 0.1-20",
+   "units": "",
+   "access": "W",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 22,
+   "name": "Config Ti",
+   "description": "Temperature controller integral time, 0-3600",
+   "units": "",
+   "access": "W",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 23,
+   "name": "Config Kvs",
+   "description": "Valve capacity limit",
+   "units": "",
+   "access": "W",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 24,
+   "name": "Config Outdoor Temperature X1",
+   "description": "Weather curve outdoor point 1",
+   "units": "",
+   "access": "W",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 25,
+   "name": "Config Setpoint Y1",
+   "description": "Weather curve setpoint 1",
+   "units": "",
+   "access": "W",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 26,
+   "name": "Config Outdoor Temperature X2",
+   "description": "Weather curve outdoor point 2",
+   "units": "",
+   "access": "W",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 27,
+   "name": "Config Setpoint Y2",
+   "description": "Weather curve setpoint 2",
+   "units": "",
+   "access": "W",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 28,
+   "name": "Config Outdoor Temperature X3",
+   "description": "Weather curve outdoor point 3",
+   "units": "",
+   "access": "W",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 29,
+   "name": "Config Setpoint Y3",
+   "description": "Weather curve setpoint 3",
+   "units": "",
+   "access": "W",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 30,
+   "name": "Config Outdoor Temperature X4",
+   "description": "Weather curve outdoor point 4",
+   "units": "",
+   "access": "W",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 31,
+   "name": "Config Setpoint Y4",
+   "description": "Weather curve setpoint 4",
+   "units": "",
+   "access": "W",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 32,
+   "name": "Config Outdoor Temperature X5",
+   "description": "Weather curve outdoor point 5",
+   "units": "",
+   "access": "W",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 33,
+   "name": "Config Setpoint Y5",
+   "description": "Weather curve setpoint 5",
+   "units": "",
+   "access": "W",
+   "states": ""
+  }
+ ],
+ "page": "https://easybacnet.com/bacnet-points-lists/grundfos/mixit",
+ "note": "Re-typed from the manufacturer's public documentation (see source). Point availability varies by firmware and options; verify against the live device."
+}

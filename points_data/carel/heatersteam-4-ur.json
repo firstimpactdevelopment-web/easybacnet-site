@@ -1,0 +1,2336 @@
+{
+  "manufacturer": "CAREL",
+  "manufacturer_slug": "carel",
+  "model": "heaterSteam 4 (UR) process / titanium",
+  "model_slug": "heatersteam-4-ur",
+  "aliases": [
+    "heaterSteam",
+    "heaterSteam 4",
+    "heaterSteam process",
+    "heaterSteam titanium",
+    "UR",
+    "URH",
+    "CAREL electric resistance humidifier",
+    "+0300087EN"
+  ],
+  "equipment_type": "Electric resistance steam humidifier",
+  "applies_to": "CAREL heaterSteam UR electric heater steam humidifiers (process and titanium versions) with the c.pHC-based controller, manual +0300087EN.",
+  "summary": "heaterSteam 4 is CAREL's resistance-heated isothermal steam humidifier; this entry covers the heaterSteam 4 generation documented in manual +0300087EN rel. 1.7 (2025). BACnet MS/TP (on the RS485 BMS port) and BACnet IP (on the Ethernet port) are built into the c.pHC controller, one at a time. The object list has positive-integer values for status, hours, probe and scheduler settings, analog values for probes, set points and production, and binary values for on/off commands, level sensors and every alarm.",
+  "bacnet_transport": [
+    "BACnet IP",
+    "BACnet MS/TP"
+  ],
+  "firmware": null,
+  "default_device_instance": 77000,
+  "access_inferred": false,
+  "notes": [
+    "Source: section 11.2.3 'Table of BACnet variables', manual pages 55-59 (106 positive integer values, 51 analog values, 91 binary values).",
+    "The earlier heaterSteam UR manual (+0300080EN rel. 1.4, 2018) lists 188 objects; most share instance and name with this list, but SV_Command/SV_CommandResult sit at PIV 92/93 there (PIV 72/73 here), a few names differ and 60 objects here are new. See the separate heaterSteam UR (2018) entry.",
+    "Temperature, production and probe units follow the unit-of-measure setting (UoM, PIV 45: 1 = °C and kg/h, 2 = °F and lb/h).",
+    "Objects ending in NetStatus / Alrm_NetUnit only report in Main/Secondary networks; wireless probe objects only with CAREL wireless probes.",
+    "UnitStatus and NetStatus codes are the footnote list printed under the table."
+  ],
+  "source": {
+    "title": "heaterSteam - UR Electric resistance humidifier - User manual",
+    "doc_number": "+0300087EN rel. 1.7",
+    "revision_date": "2025-04-18",
+    "url": "https://www.carel.com/documents/10191/0/%2B0300087EN/14647f23-54fd-4503-99a0-b2399a24cc60?version=1.16"
+  },
+  "integration": {
+    "summary": "Pick the port and protocol (Eh01 for the BMS port, Eh06 for Ethernet), set the device instance and UDP port on Eh04, then enable on/off and control from supervisor on Eh07/Eh08. The BMS starts and stops the unit with OnBySV (BV 6) and either sends a production request on SV_PwrReq (AV 11) or writes the humidity set point (AV 14). Monitor OnOffStatus, UnitStatus, current production and the summary alarm BVs.",
+    "minimum_points": [
+      {
+        "ref": "BV 6",
+        "name": "OnBySV",
+        "why": "Unit on/off from the BMS"
+      },
+      {
+        "ref": "AV 11",
+        "name": "SV_PwrReq",
+        "why": "Production request from the BMS, 0-100 %"
+      },
+      {
+        "ref": "AV 14",
+        "name": "GlbSetP_Hum",
+        "why": "Humidity set point, %RH (own probe control)"
+      },
+      {
+        "ref": "BV 5",
+        "name": "OnOffStatus",
+        "why": "Unit on/off status"
+      },
+      {
+        "ref": "PIV 12",
+        "name": "UnitStatus",
+        "why": "Operating state code"
+      },
+      {
+        "ref": "AV 0",
+        "name": "MainPrb",
+        "why": "Main probe reading"
+      },
+      {
+        "ref": "AV 12",
+        "name": "CurrProdPh",
+        "why": "Current steam production, kg/h or lb/h"
+      },
+      {
+        "ref": "BV 14",
+        "name": "CurrBlkAlrm.IsPresent",
+        "why": "Resettable alarm active"
+      },
+      {
+        "ref": "BV 13",
+        "name": "CurrBlkAlrm.IsBlocker",
+        "why": "Shutdown alarm active"
+      }
+    ],
+    "enable": "On screens Eh07/Eh08 select the supervisor port and enable 'On/Off signal from supervisor' and 'control from supervisor' (the BMS-port Eh01 settings 'On/Off from SV' and 'Control from SV' default to No). Without them the unit ignores the supervisor on/off and production request.",
+    "heartbeat": "Eh08 can enable a supervisor-offline alarm (Alrm_SVOffline.Active, BV 93). The manual does not describe what the unit does with its output when the supervisor goes offline.",
+    "remote_sensors": "With control from supervisor the BMS sends the production request on SV_PwrReq (AV 11) instead of the unit using its own probe. Up to four CAREL wireless probes can also feed the unit.",
+    "setup": [
+      "Device instance default 77000, UDP port default 47808 (screen Eh04).",
+      "BACnet MS/TP on the BMS port: Eh03 sets the MAC address (default 0), max masters (127) and max info frames (10).",
+      "Ethernet IP settings (DHCP, IP, mask, gateway, DNS) are on the Ethernet settings screen; select BACnet for the Ethernet port on Eh06.",
+      "Only one BACnet instance exists, so BACnet cannot run on the BMS port and Ethernet at the same time."
+    ],
+    "gotchas": [
+      "Scheduler, probe range and drain-to-dilute settings are configuration; avoid cyclic writes.",
+      "SV_Command (PIV 72) is a one-shot reset (1 = alarms, 2 = hour counter), not a value to hold."
+    ]
+  },
+  "points": [
+    {
+      "type": "PIV",
+      "instance": 0,
+      "name": "SV_SWVer",
+      "description": "Software version",
+      "units": "",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "PIV",
+      "instance": 1,
+      "name": "SV_OSVer",
+      "description": "OS version",
+      "units": "",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "PIV",
+      "instance": 2,
+      "name": "UnitModel",
+      "description": "Model version",
+      "units": "",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "PIV",
+      "instance": 3,
+      "name": "Conductivity",
+      "description": "Inlet water conductivity reading",
+      "units": "µS/cm",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "PIV",
+      "instance": 4,
+      "name": "WirelessPrbInfo_1.BattLev",
+      "description": "Wireless probe 1 reading: battery level",
+      "units": "",
+      "access": "R",
+      "states": "0=Empty, 1=25%, 2=50%, 3=75%, 4=100%"
+    },
+    {
+      "type": "PIV",
+      "instance": 5,
+      "name": "WirelessPrbInfo_1.RadioSignalLev",
+      "description": "Wireless probe 1 reading: radio signal level",
+      "units": "",
+      "access": "R",
+      "states": "0=Absent, 1-7=Very poor, 8-14=Poor, 15-30=Good, 31-100=Excellent"
+    },
+    {
+      "type": "PIV",
+      "instance": 6,
+      "name": "WirelessPrbInfo_2.BattLev",
+      "description": "Wireless probe 2 reading: battery level",
+      "units": "",
+      "access": "R",
+      "states": "0=Empty, 1=25%, 2=50%, 3=75%, 4=100%"
+    },
+    {
+      "type": "PIV",
+      "instance": 7,
+      "name": "WirelessPrbInfo_2.RadioSignalLev",
+      "description": "Wireless probe 2 reading: radio signal level",
+      "units": "",
+      "access": "R",
+      "states": "0=Absent, 1-7=Very poor, 8-14=Poor, 15-30=Good, 31-100=Excellent"
+    },
+    {
+      "type": "PIV",
+      "instance": 8,
+      "name": "WirelessPrbInfo_3.BattLev",
+      "description": "Wireless probe 3 reading: battery level",
+      "units": "",
+      "access": "R",
+      "states": "0=Empty, 1=25%, 2=50%, 3=75%, 4=100%"
+    },
+    {
+      "type": "PIV",
+      "instance": 9,
+      "name": "WirelessPrbInfo_3.RadioSignalLev",
+      "description": "Wireless probe 3 reading: radio signal level",
+      "units": "",
+      "access": "R",
+      "states": "0=Absent, 1-7=Very poor, 8-14=Poor, 15-30=Good, 31-100=Excellent"
+    },
+    {
+      "type": "PIV",
+      "instance": 10,
+      "name": "WirelessPrbInfo_4.BattLev",
+      "description": "Wireless probe 4 reading: battery level",
+      "units": "",
+      "access": "R",
+      "states": "0=Empty, 1=25%, 2=50%, 3=75%, 4=100%"
+    },
+    {
+      "type": "PIV",
+      "instance": 11,
+      "name": "WirelessPrbInfo_4.RadioSignalLev",
+      "description": "Wireless probe 4 reading: radio signal level",
+      "units": "",
+      "access": "R",
+      "states": "0=Absent, 1-7=Very poor, 8-14=Poor, 15-30=Good, 31-100=Excellent"
+    },
+    {
+      "type": "PIV",
+      "instance": 12,
+      "name": "UnitStatus",
+      "description": "Unit status",
+      "units": "",
+      "access": "R",
+      "states": "0=standby, 1=production, 2=alarm, 3=off from BMS, 4=off from scheduler, 5=off from DIN, 6=off from display, 7=ready for backup, 8=manual mode, 9=warning, 10=preheating, 11=startup preheat, 12=autotest, 13=manual drain, 14=thermal shock, 15=drain due to inactivity, 16=foam drain, 17=heater safety off, 18=wait fill, 19=periodic drain, 24=paused by monitoring"
+    },
+    {
+      "type": "PIV",
+      "instance": 13,
+      "name": "WorkHr",
+      "description": "Unit lifetime hours",
+      "units": "h",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "PIV",
+      "instance": 14,
+      "name": "CylWorkHr",
+      "description": "Cylinder lifetime hours",
+      "units": "h",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "PIV",
+      "instance": 15,
+      "name": "ManMode_msk",
+      "description": "Start manual mode",
+      "units": "",
+      "access": "W",
+      "states": "0=Disabled, 1=Manual outputs, 2=Manual production"
+    },
+    {
+      "type": "PIV",
+      "instance": 16,
+      "name": "ManSSR_OpT",
+      "description": "Set ON time for SSR heater power control cycle in manual mode",
+      "units": "ms",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "PIV",
+      "instance": 17,
+      "name": "ManSSR_ClT",
+      "description": "Set OFF time for SSR heater power control cycle in manual mode",
+      "units": "ms",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "PIV",
+      "instance": 18,
+      "name": "RegulationCfg.RegTyp",
+      "description": "Control mode",
+      "units": "",
+      "access": "W",
+      "states": "0=External proportional signal, 1=External proportional signal + limit, 2=ON/OFF signal, 3=Humidity (one probe), 4=Temperature (one probe), 5=Humidity + limit, 6=Temperature + limit, 7=Humidity (two probes), 8=Temperature (two probes)"
+    },
+    {
+      "type": "PIV",
+      "instance": 19,
+      "name": "ThrshAlrmDT",
+      "description": "Set high humidity/temperature alarm threshold",
+      "units": "s",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "PIV",
+      "instance": 20,
+      "name": "MainPrbCfg.UITyp",
+      "description": "Set main probe type",
+      "units": "",
+      "access": "W",
+      "states": "0=0-1V, 1=0-10V, 2=2-10V, 5=NTC, 3=0-20mA, 4=4-20mA"
+    },
+    {
+      "type": "PIV",
+      "instance": 21,
+      "name": "LimitPrbCfg.UITyp",
+      "description": "Set limit probe type",
+      "units": "",
+      "access": "W",
+      "states": "0=0-1V, 1=0-10V, 2=2-10V, 3=0-20mA, 4=4-20mA, 5=NTC"
+    },
+    {
+      "type": "PIV",
+      "instance": 22,
+      "name": "WHardnessMan",
+      "description": "Set water hardness value, if manual mode",
+      "units": "",
+      "access": "W",
+      "states": "0=0-10°F, 1=10-20°F, 2=20-30°F, 3=30-40°F, 4=Demineralised"
+    },
+    {
+      "type": "PIV",
+      "instance": 23,
+      "name": "EvapCycleNoThrsh",
+      "description": "Evaporation cycles before drain to dilute (micro-filling off)",
+      "units": "",
+      "access": "W",
+      "states": "0=AUTO"
+    },
+    {
+      "type": "PIV",
+      "instance": 24,
+      "name": "FillTScale",
+      "description": "Extra filling time after green LED level (micro-filling off)",
+      "units": "%",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "PIV",
+      "instance": 25,
+      "name": "DilDrainTScale",
+      "description": "Set drain time modification",
+      "units": "%",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "PIV",
+      "instance": 26,
+      "name": "Scheduler.SchedDayToSet",
+      "description": "Scheduler: day of week to configure",
+      "units": "",
+      "access": "W",
+      "states": "1=Monday, 2=Tuesday, 3=Wednesday, 4=Thursday, 5=Friday, 6=Saturday, 7=Sunday"
+    },
+    {
+      "type": "PIV",
+      "instance": 27,
+      "name": "SchedDayCfg[0].StartHr",
+      "description": "Scheduler: band 1 start hours",
+      "units": "h",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "PIV",
+      "instance": 28,
+      "name": "SchedDayCfg[0].StartMin",
+      "description": "Scheduler: band 1 start minutes",
+      "units": "min",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "PIV",
+      "instance": 29,
+      "name": "SchedDayCfg[0].WorkMode",
+      "description": "Scheduler: band 1 operating mode",
+      "units": "",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "PIV",
+      "instance": 30,
+      "name": "SchedDayCfg[1].StartHr",
+      "description": "Scheduler: band 2 start hours",
+      "units": "h",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "PIV",
+      "instance": 31,
+      "name": "SchedDayCfg[1].StartMin",
+      "description": "Scheduler: band 2 start minutes",
+      "units": "min",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "PIV",
+      "instance": 32,
+      "name": "SchedDayCfg[1].WorkMode",
+      "description": "Scheduler: band 2 operating mode",
+      "units": "",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "PIV",
+      "instance": 33,
+      "name": "SchedDayCfg[2].StartHr",
+      "description": "Scheduler: band 3 start hours",
+      "units": "h",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "PIV",
+      "instance": 34,
+      "name": "SchedDayCfg[2].StartMin",
+      "description": "Scheduler: band 3 start minutes",
+      "units": "min",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "PIV",
+      "instance": 35,
+      "name": "SchedDayCfg[2].WorkMode",
+      "description": "Scheduler: band 3 operating mode",
+      "units": "",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "PIV",
+      "instance": 36,
+      "name": "SchedDayCfg[3].StartHr",
+      "description": "Scheduler: band 4 start hours",
+      "units": "h",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "PIV",
+      "instance": 37,
+      "name": "SchedDayCfg[3].StartMin",
+      "description": "Scheduler: band 4 start minutes",
+      "units": "min",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "PIV",
+      "instance": 38,
+      "name": "SchedDayCfg[3].WorkMode",
+      "description": "Scheduler: band 4 operating mode",
+      "units": "",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "PIV",
+      "instance": 39,
+      "name": "SchedDayCfg[4].StartHr",
+      "description": "Scheduler: band 5 start hours",
+      "units": "h",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "PIV",
+      "instance": 40,
+      "name": "SchedDayCfg[4].StartMin",
+      "description": "Scheduler: band 5 start minutes",
+      "units": "min",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "PIV",
+      "instance": 41,
+      "name": "SchedDayCfg[4].WorkMode",
+      "description": "Scheduler: band 5 operating mode",
+      "units": "",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "PIV",
+      "instance": 42,
+      "name": "SchedDayCfg[5].StartHr",
+      "description": "Scheduler: band 6 start hours",
+      "units": "h",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "PIV",
+      "instance": 43,
+      "name": "SchedDayCfg[5].StartMin",
+      "description": "Scheduler: band 6 start minutes",
+      "units": "min",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "PIV",
+      "instance": 44,
+      "name": "SchedDayCfg[5].WorkMode",
+      "description": "Scheduler: band 6 operating mode",
+      "units": "",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "PIV",
+      "instance": 45,
+      "name": "UoM",
+      "description": "Unit of measure",
+      "units": "",
+      "access": "W",
+      "states": "0=Default, 1=Int. system °C, kg/h, 2=Imperial °F, lb/h"
+    },
+    {
+      "type": "PIV",
+      "instance": 46,
+      "name": "Year",
+      "description": "Year",
+      "units": "years",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "PIV",
+      "instance": 47,
+      "name": "Month",
+      "description": "Month",
+      "units": "months",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "PIV",
+      "instance": 48,
+      "name": "Day",
+      "description": "Day",
+      "units": "days",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "PIV",
+      "instance": 49,
+      "name": "Hour",
+      "description": "Hours",
+      "units": "h",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "PIV",
+      "instance": 50,
+      "name": "Minute",
+      "description": "Minutes",
+      "units": "min",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "PIV",
+      "instance": 51,
+      "name": "SetTimezone",
+      "description": "Time zone",
+      "units": "",
+      "access": "W",
+      "states": "Time-zone code; see the manual list (0=not set)"
+    },
+    {
+      "type": "PIV",
+      "instance": 52,
+      "name": "NetStatus[1]",
+      "description": "Network unit status: unit 1",
+      "units": "",
+      "access": "R",
+      "states": "0=standby, 1=production, 2=alarm, 3=off from BMS, 4=off from scheduler, 5=off from DIN, 6=off from display, 7=ready for backup, 8=manual mode, 9=warning, 10=preheating, 11=startup preheat, 12=autotest, 13=manual drain, 14=thermal shock, 15=drain due to inactivity, 16=foam drain, 17=heater safety off, 18=wait fill, 19=periodic drain, 24=paused by monitoring"
+    },
+    {
+      "type": "PIV",
+      "instance": 53,
+      "name": "NetStatus[2]",
+      "description": "Network unit status: unit 2",
+      "units": "",
+      "access": "R",
+      "states": "0=standby, 1=production, 2=alarm, 3=off from BMS, 4=off from scheduler, 5=off from DIN, 6=off from display, 7=ready for backup, 8=manual mode, 9=warning, 10=preheating, 11=startup preheat, 12=autotest, 13=manual drain, 14=thermal shock, 15=drain due to inactivity, 16=foam drain, 17=heater safety off, 18=wait fill, 19=periodic drain, 24=paused by monitoring"
+    },
+    {
+      "type": "PIV",
+      "instance": 54,
+      "name": "NetStatus[3]",
+      "description": "Network unit status: unit 3",
+      "units": "",
+      "access": "R",
+      "states": "0=standby, 1=production, 2=alarm, 3=off from BMS, 4=off from scheduler, 5=off from DIN, 6=off from display, 7=ready for backup, 8=manual mode, 9=warning, 10=preheating, 11=startup preheat, 12=autotest, 13=manual drain, 14=thermal shock, 15=drain due to inactivity, 16=foam drain, 17=heater safety off, 18=wait fill, 19=periodic drain, 24=paused by monitoring"
+    },
+    {
+      "type": "PIV",
+      "instance": 55,
+      "name": "NetStatus[4]",
+      "description": "Network unit status: unit 4",
+      "units": "",
+      "access": "R",
+      "states": "0=standby, 1=production, 2=alarm, 3=off from BMS, 4=off from scheduler, 5=off from DIN, 6=off from display, 7=ready for backup, 8=manual mode, 9=warning, 10=preheating, 11=startup preheat, 12=autotest, 13=manual drain, 14=thermal shock, 15=drain due to inactivity, 16=foam drain, 17=heater safety off, 18=wait fill, 19=periodic drain, 24=paused by monitoring"
+    },
+    {
+      "type": "PIV",
+      "instance": 56,
+      "name": "NetStatus[5]",
+      "description": "Network unit status: unit 5",
+      "units": "",
+      "access": "R",
+      "states": "0=standby, 1=production, 2=alarm, 3=off from BMS, 4=off from scheduler, 5=off from DIN, 6=off from display, 7=ready for backup, 8=manual mode, 9=warning, 10=preheating, 11=startup preheat, 12=autotest, 13=manual drain, 14=thermal shock, 15=drain due to inactivity, 16=foam drain, 17=heater safety off, 18=wait fill, 19=periodic drain, 24=paused by monitoring"
+    },
+    {
+      "type": "PIV",
+      "instance": 57,
+      "name": "NetStatus[6]",
+      "description": "Network unit status: unit 6",
+      "units": "",
+      "access": "R",
+      "states": "0=standby, 1=production, 2=alarm, 3=off from BMS, 4=off from scheduler, 5=off from DIN, 6=off from display, 7=ready for backup, 8=manual mode, 9=warning, 10=preheating, 11=startup preheat, 12=autotest, 13=manual drain, 14=thermal shock, 15=drain due to inactivity, 16=foam drain, 17=heater safety off, 18=wait fill, 19=periodic drain, 24=paused by monitoring"
+    },
+    {
+      "type": "PIV",
+      "instance": 58,
+      "name": "NetStatus[7]",
+      "description": "Network unit status: unit 7",
+      "units": "",
+      "access": "R",
+      "states": "0=standby, 1=production, 2=alarm, 3=off from BMS, 4=off from scheduler, 5=off from DIN, 6=off from display, 7=ready for backup, 8=manual mode, 9=warning, 10=preheating, 11=startup preheat, 12=autotest, 13=manual drain, 14=thermal shock, 15=drain due to inactivity, 16=foam drain, 17=heater safety off, 18=wait fill, 19=periodic drain, 24=paused by monitoring"
+    },
+    {
+      "type": "PIV",
+      "instance": 59,
+      "name": "NetStatus[8]",
+      "description": "Network unit status: unit 8",
+      "units": "",
+      "access": "R",
+      "states": "0=standby, 1=production, 2=alarm, 3=off from BMS, 4=off from scheduler, 5=off from DIN, 6=off from display, 7=ready for backup, 8=manual mode, 9=warning, 10=preheating, 11=startup preheat, 12=autotest, 13=manual drain, 14=thermal shock, 15=drain due to inactivity, 16=foam drain, 17=heater safety off, 18=wait fill, 19=periodic drain, 24=paused by monitoring"
+    },
+    {
+      "type": "PIV",
+      "instance": 60,
+      "name": "NetStatus[9]",
+      "description": "Network unit status: unit 9",
+      "units": "",
+      "access": "R",
+      "states": "0=standby, 1=production, 2=alarm, 3=off from BMS, 4=off from scheduler, 5=off from DIN, 6=off from display, 7=ready for backup, 8=manual mode, 9=warning, 10=preheating, 11=startup preheat, 12=autotest, 13=manual drain, 14=thermal shock, 15=drain due to inactivity, 16=foam drain, 17=heater safety off, 18=wait fill, 19=periodic drain, 24=paused by monitoring"
+    },
+    {
+      "type": "PIV",
+      "instance": 61,
+      "name": "NetStatus[10]",
+      "description": "Network unit status: unit 10",
+      "units": "",
+      "access": "R",
+      "states": "0=standby, 1=production, 2=alarm, 3=off from BMS, 4=off from scheduler, 5=off from DIN, 6=off from display, 7=ready for backup, 8=manual mode, 9=warning, 10=preheating, 11=startup preheat, 12=autotest, 13=manual drain, 14=thermal shock, 15=drain due to inactivity, 16=foam drain, 17=heater safety off, 18=wait fill, 19=periodic drain, 24=paused by monitoring"
+    },
+    {
+      "type": "PIV",
+      "instance": 62,
+      "name": "NetStatus[11]",
+      "description": "Network unit status: unit 11",
+      "units": "",
+      "access": "R",
+      "states": "0=standby, 1=production, 2=alarm, 3=off from BMS, 4=off from scheduler, 5=off from DIN, 6=off from display, 7=ready for backup, 8=manual mode, 9=warning, 10=preheating, 11=startup preheat, 12=autotest, 13=manual drain, 14=thermal shock, 15=drain due to inactivity, 16=foam drain, 17=heater safety off, 18=wait fill, 19=periodic drain, 24=paused by monitoring"
+    },
+    {
+      "type": "PIV",
+      "instance": 63,
+      "name": "NetStatus[12]",
+      "description": "Network unit status: unit 12",
+      "units": "",
+      "access": "R",
+      "states": "0=standby, 1=production, 2=alarm, 3=off from BMS, 4=off from scheduler, 5=off from DIN, 6=off from display, 7=ready for backup, 8=manual mode, 9=warning, 10=preheating, 11=startup preheat, 12=autotest, 13=manual drain, 14=thermal shock, 15=drain due to inactivity, 16=foam drain, 17=heater safety off, 18=wait fill, 19=periodic drain, 24=paused by monitoring"
+    },
+    {
+      "type": "PIV",
+      "instance": 64,
+      "name": "NetStatus[13]",
+      "description": "Network unit status: unit 13",
+      "units": "",
+      "access": "R",
+      "states": "0=standby, 1=production, 2=alarm, 3=off from BMS, 4=off from scheduler, 5=off from DIN, 6=off from display, 7=ready for backup, 8=manual mode, 9=warning, 10=preheating, 11=startup preheat, 12=autotest, 13=manual drain, 14=thermal shock, 15=drain due to inactivity, 16=foam drain, 17=heater safety off, 18=wait fill, 19=periodic drain, 24=paused by monitoring"
+    },
+    {
+      "type": "PIV",
+      "instance": 65,
+      "name": "NetStatus[14]",
+      "description": "Network unit status: unit 14",
+      "units": "",
+      "access": "R",
+      "states": "0=standby, 1=production, 2=alarm, 3=off from BMS, 4=off from scheduler, 5=off from DIN, 6=off from display, 7=ready for backup, 8=manual mode, 9=warning, 10=preheating, 11=startup preheat, 12=autotest, 13=manual drain, 14=thermal shock, 15=drain due to inactivity, 16=foam drain, 17=heater safety off, 18=wait fill, 19=periodic drain, 24=paused by monitoring"
+    },
+    {
+      "type": "PIV",
+      "instance": 66,
+      "name": "NetStatus[15]",
+      "description": "Network unit status: unit 15",
+      "units": "",
+      "access": "R",
+      "states": "0=standby, 1=production, 2=alarm, 3=off from BMS, 4=off from scheduler, 5=off from DIN, 6=off from display, 7=ready for backup, 8=manual mode, 9=warning, 10=preheating, 11=startup preheat, 12=autotest, 13=manual drain, 14=thermal shock, 15=drain due to inactivity, 16=foam drain, 17=heater safety off, 18=wait fill, 19=periodic drain, 24=paused by monitoring"
+    },
+    {
+      "type": "PIV",
+      "instance": 67,
+      "name": "NetStatus[16]",
+      "description": "Network unit status: unit 16",
+      "units": "",
+      "access": "R",
+      "states": "0=standby, 1=production, 2=alarm, 3=off from BMS, 4=off from scheduler, 5=off from DIN, 6=off from display, 7=ready for backup, 8=manual mode, 9=warning, 10=preheating, 11=startup preheat, 12=autotest, 13=manual drain, 14=thermal shock, 15=drain due to inactivity, 16=foam drain, 17=heater safety off, 18=wait fill, 19=periodic drain, 24=paused by monitoring"
+    },
+    {
+      "type": "PIV",
+      "instance": 68,
+      "name": "NetStatus[17]",
+      "description": "Network unit status: unit 17",
+      "units": "",
+      "access": "R",
+      "states": "0=standby, 1=production, 2=alarm, 3=off from BMS, 4=off from scheduler, 5=off from DIN, 6=off from display, 7=ready for backup, 8=manual mode, 9=warning, 10=preheating, 11=startup preheat, 12=autotest, 13=manual drain, 14=thermal shock, 15=drain due to inactivity, 16=foam drain, 17=heater safety off, 18=wait fill, 19=periodic drain, 24=paused by monitoring"
+    },
+    {
+      "type": "PIV",
+      "instance": 69,
+      "name": "NetStatus[18]",
+      "description": "Network unit status: unit 18",
+      "units": "",
+      "access": "R",
+      "states": "0=standby, 1=production, 2=alarm, 3=off from BMS, 4=off from scheduler, 5=off from DIN, 6=off from display, 7=ready for backup, 8=manual mode, 9=warning, 10=preheating, 11=startup preheat, 12=autotest, 13=manual drain, 14=thermal shock, 15=drain due to inactivity, 16=foam drain, 17=heater safety off, 18=wait fill, 19=periodic drain, 24=paused by monitoring"
+    },
+    {
+      "type": "PIV",
+      "instance": 70,
+      "name": "NetStatus[19]",
+      "description": "Network unit status: unit 19",
+      "units": "",
+      "access": "R",
+      "states": "0=standby, 1=production, 2=alarm, 3=off from BMS, 4=off from scheduler, 5=off from DIN, 6=off from display, 7=ready for backup, 8=manual mode, 9=warning, 10=preheating, 11=startup preheat, 12=autotest, 13=manual drain, 14=thermal shock, 15=drain due to inactivity, 16=foam drain, 17=heater safety off, 18=wait fill, 19=periodic drain, 24=paused by monitoring"
+    },
+    {
+      "type": "PIV",
+      "instance": 71,
+      "name": "NetStatus[20]",
+      "description": "Network unit status: unit 20",
+      "units": "",
+      "access": "R",
+      "states": "0=standby, 1=production, 2=alarm, 3=off from BMS, 4=off from scheduler, 5=off from DIN, 6=off from display, 7=ready for backup, 8=manual mode, 9=warning, 10=preheating, 11=startup preheat, 12=autotest, 13=manual drain, 14=thermal shock, 15=drain due to inactivity, 16=foam drain, 17=heater safety off, 18=wait fill, 19=periodic drain, 24=paused by monitoring"
+    },
+    {
+      "type": "PIV",
+      "instance": 72,
+      "name": "SV_Command",
+      "description": "Supervisor command: reset alarms or hour counter",
+      "units": "",
+      "access": "W",
+      "states": "1=reset alarm, 2=reset hour counter"
+    },
+    {
+      "type": "PIV",
+      "instance": 73,
+      "name": "SV_CommandResult",
+      "description": "Result of the command",
+      "units": "",
+      "access": "R",
+      "states": "1=successful, 2=failed, 3=invalid command"
+    },
+    {
+      "type": "PIV",
+      "instance": 80,
+      "name": "PreMaintWarnThrsh",
+      "description": "Set next maintenance pre-alert time",
+      "units": "h",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "PIV",
+      "instance": 81,
+      "name": "HiConductAlrmDlyT",
+      "description": "Set high conductivity alarm delay",
+      "units": "min",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "PIV",
+      "instance": 82,
+      "name": "HiConductWarnThrsh",
+      "description": "Set high conductivity warning threshold",
+      "units": "µS/cm",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "PIV",
+      "instance": 83,
+      "name": "HiConductAlrmThrsh",
+      "description": "Set high conductivity alarm threshold",
+      "units": "µS/cm",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "PIV",
+      "instance": 84,
+      "name": "HiConductWarnHyst",
+      "description": "Set high conductivity warning threshold hysteresis",
+      "units": "%",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "PIV",
+      "instance": 85,
+      "name": "FoamLevSetPScale",
+      "description": "Foam sensor sensitivity (0%-200% - def. 100%)",
+      "units": "%",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "PIV",
+      "instance": 86,
+      "name": "PartFillsT",
+      "description": "Set micro-fill cycle duration",
+      "units": "s",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "PIV",
+      "instance": 87,
+      "name": "DilDrainCfg.Typ",
+      "description": "Drain to dilute mode with micro-fill active",
+      "units": "",
+      "access": "W",
+      "states": "0=Disabled, 1=Daily scheduler, 2=Periodic"
+    },
+    {
+      "type": "PIV",
+      "instance": 89,
+      "name": "DilDrainCfg.PeriodicDilDrainThrsh",
+      "description": "Hours between periodic drain to dilute cycles (micro-filling on)",
+      "units": "h",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "PIV",
+      "instance": 90,
+      "name": "DilDrainCfg.DailySched[1].Start_h",
+      "description": "Drain to dilute - Daily scheduler (Monday) - hours",
+      "units": "h",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "PIV",
+      "instance": 91,
+      "name": "DilDrainCfg.DailySched[1].Start_min",
+      "description": "Drain to dilute - Daily scheduler (Monday) - minutes",
+      "units": "min",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "PIV",
+      "instance": 92,
+      "name": "DilDrainCfg.DailySched[2].Start_h",
+      "description": "Drain to dilute - Daily scheduler (Tuesday) - hours",
+      "units": "h",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "PIV",
+      "instance": 93,
+      "name": "DilDrainCfg.DailySched[2].Start_min",
+      "description": "Drain to dilute - Daily scheduler (Tuesday) - minutes",
+      "units": "min",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "PIV",
+      "instance": 94,
+      "name": "DilDrainCfg.DailySched[3].Start_h",
+      "description": "Drain to dilute - Daily scheduler (Wednesday) - hours",
+      "units": "h",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "PIV",
+      "instance": 95,
+      "name": "DilDrainCfg.DailySched[3].Start_min",
+      "description": "Drain to dilute - Daily scheduler (Wednesday) - minutes",
+      "units": "min",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "PIV",
+      "instance": 96,
+      "name": "DilDrainCfg.DailySched[4].Start_h",
+      "description": "Drain to dilute - Daily scheduler (Thursday) - hours",
+      "units": "h",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "PIV",
+      "instance": 97,
+      "name": "DilDrainCfg.DailySched[4].Start_min",
+      "description": "Drain to dilute - Daily scheduler (Thursday) - minutes",
+      "units": "min",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "PIV",
+      "instance": 98,
+      "name": "DilDrainCfg.DailySched[5].Start_h",
+      "description": "Drain to dilute - Daily scheduler (Friday) - hours",
+      "units": "h",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "PIV",
+      "instance": 99,
+      "name": "DilDrainCfg.DailySched[5].Start_min",
+      "description": "Drain to dilute - Daily scheduler (Friday) - minutes",
+      "units": "min",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "PIV",
+      "instance": 100,
+      "name": "DilDrainCfg.DailySched[6].Start_h",
+      "description": "Drain to dilute - Daily scheduler (Saturday) - hours",
+      "units": "h",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "PIV",
+      "instance": 101,
+      "name": "DilDrainCfg.DailySched[6].Start_min",
+      "description": "Drain to dilute - Daily scheduler (Saturday) - minutes",
+      "units": "min",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "PIV",
+      "instance": 102,
+      "name": "DilDrainCfg.DailySched[7].Start_h",
+      "description": "Drain to dilute - Daily scheduler (Sunday) - hours",
+      "units": "h",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "PIV",
+      "instance": 103,
+      "name": "DilDrainCfg.DailySched[7].Start_min",
+      "description": "Drain to dilute - Daily scheduler (Sunday) - minutes",
+      "units": "min",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "PIV",
+      "instance": 104,
+      "name": "PeriodicDrainThrsh",
+      "description": "Production hours between two periodic total drains",
+      "units": "h",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "PIV",
+      "instance": 105,
+      "name": "ExtFanDTOn",
+      "description": "Set start blower delay from start of production",
+      "units": "s",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "PIV",
+      "instance": 106,
+      "name": "ExtFanDTOff",
+      "description": "Set stop blower delay from end of production",
+      "units": "s",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "PIV",
+      "instance": 129,
+      "name": "WorkHrCntDwn",
+      "description": "Time remaining until next maintenance",
+      "units": "h",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "PIV",
+      "instance": 130,
+      "name": "CylResDate.Year",
+      "description": "Cylinder production hours reset date - Year",
+      "units": "years",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "PIV",
+      "instance": 131,
+      "name": "CylResDate.Month",
+      "description": "Cylinder production hours reset date - Month",
+      "units": "months",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "PIV",
+      "instance": 132,
+      "name": "CylResDate.Day",
+      "description": "Cylinder production hours reset date - Day",
+      "units": "days",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "PIV",
+      "instance": 133,
+      "name": "CylResDate.Hour",
+      "description": "Cylinder production hours reset date - Hours",
+      "units": "h",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "PIV",
+      "instance": 134,
+      "name": "CylResDate.Minute",
+      "description": "Cylinder production hours reset date - Minutes",
+      "units": "min",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 0,
+      "name": "MainPrb",
+      "description": "Main probe reading",
+      "units": "",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 1,
+      "name": "LimitPrb",
+      "description": "Limit probe reading",
+      "units": "",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 2,
+      "name": "PreheatPrb",
+      "description": "Water preheating probe reading",
+      "units": "°C or °F",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 3,
+      "name": "WirelessPrbVal_1.Hum",
+      "description": "Wireless probe 1 reading: Humidity",
+      "units": "%RH",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 4,
+      "name": "WirelessPrbVal_1.Temp",
+      "description": "Wireless probe 1 reading: Temperature",
+      "units": "°C or °F",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 5,
+      "name": "WirelessPrbVal_2.Hum",
+      "description": "Wireless probe 2 reading: Humidity",
+      "units": "%RH",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 6,
+      "name": "WirelessPrbVal_2.Temp",
+      "description": "Wireless probe 2 reading: Temperature",
+      "units": "°C or °F",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 7,
+      "name": "WirelessPrbVal_3.Hum",
+      "description": "Wireless probe 3 reading: Humidity",
+      "units": "%RH",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 8,
+      "name": "WirelessPrbVal_3.Temp",
+      "description": "Wireless probe 3 reading: Temperature",
+      "units": "°C or °F",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 9,
+      "name": "WirelessPrbVal_4.Hum",
+      "description": "Wireless probe 4 reading: Humidity",
+      "units": "%RH",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 10,
+      "name": "WirelessPrbVal_4.Temp",
+      "description": "Wireless probe 4 reading: Temperature",
+      "units": "°C or °F",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 11,
+      "name": "SV_PwrReq",
+      "description": "Set production percentage request from supervisor",
+      "units": "%",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 12,
+      "name": "CurrProdPh",
+      "description": "Current production kg/h (lbs/h)",
+      "units": "kg/h or lb/h",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 13,
+      "name": "ManReq",
+      "description": "Enable manual production request",
+      "units": "%",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 14,
+      "name": "GlbSetP_Hum",
+      "description": "Set humidity value (humidity set point)",
+      "units": "%RH",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 15,
+      "name": "GlbSetP_Temp",
+      "description": "Set temperature value (temperature set point)",
+      "units": "°C or °F",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 16,
+      "name": "RegulationCfg.Hyst",
+      "description": "Set control hysteresis",
+      "units": "%",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 17,
+      "name": "RegulationCfg.Diff",
+      "description": "Set control differential",
+      "units": "",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 18,
+      "name": "GlbSetPLim_Hum",
+      "description": "Set humidity limit value (humidity limit set point)",
+      "units": "%RH",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 19,
+      "name": "GlbSetPLim_Temp",
+      "description": "Set temperature limit value (temperature limit set point)",
+      "units": "°C or °F",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 20,
+      "name": "RegulationCfg.DiffLim",
+      "description": "Set limit differential",
+      "units": "",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 21,
+      "name": "RegulationCfg.MinReq",
+      "description": "Set maximum production value",
+      "units": "%",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 22,
+      "name": "AlrmThrshHumLo",
+      "description": "Set main probe low humidity alarm threshold",
+      "units": "%RH",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 23,
+      "name": "AlrmThrshHumHi",
+      "description": "Set main probe high humidity alarm threshold",
+      "units": "%RH",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 24,
+      "name": "AlrmThrshHumHiLim",
+      "description": "Set limit probe low humidity alarm threshold",
+      "units": "%RH",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 25,
+      "name": "AlrmThrshTempLo",
+      "description": "Set main probe low temperature alarm threshold",
+      "units": "°C or °F",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 26,
+      "name": "AlrmThrshTempHi",
+      "description": "Set main probe high temperature alarm threshold",
+      "units": "°C or °F",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 27,
+      "name": "AlrmThrshTempHiLim",
+      "description": "Set limit probe low temperature alarm threshold",
+      "units": "°C or °F",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 28,
+      "name": "MainPrbCfg.Mi_Hum",
+      "description": "Set main probe minimum humidity value",
+      "units": "%RH",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 29,
+      "name": "MainPrbCfg.Ma_Hum",
+      "description": "Set main probe maximum humidity",
+      "units": "%RH",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 30,
+      "name": "MainPrbCfg.Mi_Temp",
+      "description": "Set main probe minimum temperature",
+      "units": "°C or °F",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 31,
+      "name": "MainPrbCfg.Ma_Temp",
+      "description": "Set main probe maximum temperature",
+      "units": "°C or °F",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 32,
+      "name": "LimitPrbCfg.Mi_Hum",
+      "description": "Set limit probe minimum humidity value",
+      "units": "%RH",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 33,
+      "name": "LimitPrbCfg.Ma_Hum",
+      "description": "Set limit probe maximum humidity value",
+      "units": "%RH",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 34,
+      "name": "LimitPrbCfg.Mi_Temp",
+      "description": "Set limit probe minimum temperature value",
+      "units": "°C or °F",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 35,
+      "name": "LimitPrbCfg.Ma_Temp",
+      "description": "Set limit probe maximum temperature value",
+      "units": "°C or °F",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 36,
+      "name": "RegulationCfg.PwrCorrectionFactor",
+      "description": "Set power correction for thermal dissipation",
+      "units": "%",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 37,
+      "name": "SchedDayCfg[0].SetP",
+      "description": "Scheduler: band 1 set point",
+      "units": "",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 38,
+      "name": "SchedDayCfg[1].SetP",
+      "description": "Scheduler: band 2 set point",
+      "units": "",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 39,
+      "name": "SchedDayCfg[2].SetP",
+      "description": "Scheduler: band 3 set point",
+      "units": "",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 40,
+      "name": "SchedDayCfg[3].SetP",
+      "description": "Scheduler: band 4 set point",
+      "units": "",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 41,
+      "name": "SchedDayCfg[4].SetP",
+      "description": "Scheduler: band 5 set point",
+      "units": "",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 42,
+      "name": "SchedDayCfg[5].SetP",
+      "description": "Scheduler: band 6 set point",
+      "units": "",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 43,
+      "name": "NetReq",
+      "description": "Current system request",
+      "units": "%",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 44,
+      "name": "NetProd",
+      "description": "Current system production",
+      "units": "kg/h or lb/h",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 45,
+      "name": "MaxUnitProd",
+      "description": "Set maximum production value",
+      "units": "%",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 46,
+      "name": "RegulationCfg.W_MinTempThrsh",
+      "description": "Set water preheating temperature",
+      "units": "°C or °F",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 47,
+      "name": "PreheatOffset_Temp",
+      "description": "Preheating offset from temperature set point",
+      "units": "°C or °F",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 48,
+      "name": "PreheatOffset_Hum",
+      "description": "Preheating offset from humidity set point",
+      "units": "%RH",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 49,
+      "name": "ProdReqMsk",
+      "description": "Production request",
+      "units": "%",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 53,
+      "name": "FoamLevReal",
+      "description": "Signal reading from foam sensor",
+      "units": "",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "BV",
+      "instance": 0,
+      "name": "RemOn",
+      "description": "Remote on/off command",
+      "units": "",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "BV",
+      "instance": 1,
+      "name": "ThermPtcDin",
+      "description": "Thermal protection status",
+      "units": "",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "BV",
+      "instance": 2,
+      "name": "LevSenStatus.Low",
+      "description": "Level sensor reading: low level",
+      "units": "",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "BV",
+      "instance": 3,
+      "name": "LevSenStatus.Hi",
+      "description": "Level sensor reading: high level",
+      "units": "",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "BV",
+      "instance": 4,
+      "name": "LevSenStatus.Foam",
+      "description": "High level sensor reading: foam",
+      "units": "",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "BV",
+      "instance": 5,
+      "name": "OnOffStatus",
+      "description": "Unit status on/off",
+      "units": "",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "BV",
+      "instance": 6,
+      "name": "OnBySV",
+      "description": "On/off control from supervisor (SV)",
+      "units": "",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "BV",
+      "instance": 11,
+      "name": "WHardnessTyp",
+      "description": "Set water hardness management mode",
+      "units": "",
+      "access": "W",
+      "states": "0=AUTO, 1=MANUAL"
+    },
+    {
+      "type": "BV",
+      "instance": 12,
+      "name": "PreMaintWarn",
+      "description": "Set next maintenance pre-alert time",
+      "units": "",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "BV",
+      "instance": 13,
+      "name": "CurrBlkAlrm.IsBlocker",
+      "description": "Shutdown alarm active",
+      "units": "",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "BV",
+      "instance": 14,
+      "name": "CurrBlkAlrm.IsPresent",
+      "description": "Resettable alarm active",
+      "units": "",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "BV",
+      "instance": 15,
+      "name": "CurrBlkAlrm.Warning",
+      "description": "Warning",
+      "units": "",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "BV",
+      "instance": 16,
+      "name": "Alrm_Autotest.Active",
+      "description": "Alarm ALC01: Autotest",
+      "units": "",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "BV",
+      "instance": 17,
+      "name": "Alrm_HighConductAl.Active",
+      "description": "Alarm ALC02: High conductivity",
+      "units": "",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "BV",
+      "instance": 18,
+      "name": "Alrm_LevSen.Active",
+      "description": "Alarm ALC03: Level sensor broken",
+      "units": "",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "BV",
+      "instance": 19,
+      "name": "Alrm_ThermPtc.Active",
+      "description": "Alarm ALC04: Motor protection",
+      "units": "",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "BV",
+      "instance": 20,
+      "name": "Alrm_WMiss.Active",
+      "description": "Alarm ALB01: No water",
+      "units": "",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "BV",
+      "instance": 21,
+      "name": "Alrm_LowProd.Active",
+      "description": "Alarm ALB02: Low production",
+      "units": "",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "BV",
+      "instance": 22,
+      "name": "Alrm_MainPrb.Active",
+      "description": "Alarm ALA01: Main probe broken",
+      "units": "",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "BV",
+      "instance": 23,
+      "name": "Alrm_LimPrb.Active",
+      "description": "Alarm ALA02: Limit probe broken",
+      "units": "",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "BV",
+      "instance": 24,
+      "name": "Alrm_PreHPrb.Active",
+      "description": "Alarm ALA03: Preheating probe broken",
+      "units": "",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "BV",
+      "instance": 25,
+      "name": "Alrm_HiHum.Active",
+      "description": "Alarm ALH01: High humidity/temperature",
+      "units": "",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "BV",
+      "instance": 26,
+      "name": "Alrm_LoHum.Active",
+      "description": "Alarm ALH02: Low humidity/temperature",
+      "units": "",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "BV",
+      "instance": 27,
+      "name": "Alrm_HiHum_Lim.Active",
+      "description": "Alarm ALH03: High humidity/temperature: limit probe",
+      "units": "",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "BV",
+      "instance": 28,
+      "name": "Alrm_Foam.Active",
+      "description": "Alarm ALW01: Foam warning",
+      "units": "",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "BV",
+      "instance": 29,
+      "name": "Alrm_PeriodicMaint.Active",
+      "description": "Alarm ALT01: Maintenance request",
+      "units": "",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "BV",
+      "instance": 30,
+      "name": "Alrm_CylFull.Active",
+      "description": "Alarm ALW02: Cylinder full",
+      "units": "",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "BV",
+      "instance": 31,
+      "name": "Alrm_ConductPrb.Active",
+      "description": "Alarm ALA04: Conductivity meter broken/not connected",
+      "units": "",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "BV",
+      "instance": 32,
+      "name": "Alrm_HighConductWr.Active",
+      "description": "Warning ALW03: High conductivity",
+      "units": "",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "BV",
+      "instance": 33,
+      "name": "Alrm_RetMem.Active",
+      "description": "Alarm ALR01: Retain memory",
+      "units": "",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "BV",
+      "instance": 34,
+      "name": "Warn_Autotest.Active",
+      "description": "Warning ALW04: Autotest, saved only, not displayed",
+      "units": "",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "BV",
+      "instance": 35,
+      "name": "Warn_LevSen.Active",
+      "description": "Warning ALW05: Level sensor",
+      "units": "",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "BV",
+      "instance": 36,
+      "name": "Warn_LowProd.Active",
+      "description": "Warning ALW06: Low production, saved only, not displayed",
+      "units": "",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "BV",
+      "instance": 37,
+      "name": "Alrm_WirelessPrb_1_Offline.Active",
+      "description": "Alarm ALP01: Wireless probe 1: offline",
+      "units": "",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "BV",
+      "instance": 38,
+      "name": "Alrm_WirelessPrb_2_Offline.Active",
+      "description": "Alarm ALP02: Wireless probe 2: offline",
+      "units": "",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "BV",
+      "instance": 39,
+      "name": "Alrm_WirelessPrb_3_Offline.Active",
+      "description": "Alarm ALP03: Wireless probe 3: offline",
+      "units": "",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "BV",
+      "instance": 40,
+      "name": "Alrm_WirelessPrb_4_Offline.Active",
+      "description": "Alarm ALP04: Wireless probe 4: offline",
+      "units": "",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "BV",
+      "instance": 41,
+      "name": "Alrm_MissingModel.Active",
+      "description": "Alarm ALM01: Humidifi er model not set",
+      "units": "",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "BV",
+      "instance": 42,
+      "name": "Alrm_NetUnit_1.Active",
+      "description": "Alarm ALN01: Network: unit 1 alarm",
+      "units": "",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "BV",
+      "instance": 43,
+      "name": "Alrm_NetUnit_2.Active",
+      "description": "Alarm ALN2: Network: unit 2 alarm",
+      "units": "",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "BV",
+      "instance": 44,
+      "name": "Alrm_NetUnit_3.Active",
+      "description": "Alarm ALN3: Network: unit 3 alarm",
+      "units": "",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "BV",
+      "instance": 45,
+      "name": "Alrm_NetUnit_4.Active",
+      "description": "Alarm ALN4: Network: unit 4 alarm",
+      "units": "",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "BV",
+      "instance": 46,
+      "name": "Alrm_NetUnit_5.Active",
+      "description": "Alarm ALN5: Network: unit 5 alarm",
+      "units": "",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "BV",
+      "instance": 47,
+      "name": "Alrm_NetUnit_6.Active",
+      "description": "Alarm ALN6: Network: unit 6 alarm",
+      "units": "",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "BV",
+      "instance": 48,
+      "name": "Alrm_NetUnit_7.Active",
+      "description": "Alarm ALN7: Network: unit 7 alarm",
+      "units": "",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "BV",
+      "instance": 49,
+      "name": "Alrm_NetUnit_8.Active",
+      "description": "Alarm ALN8: Network: unit 8 alarm",
+      "units": "",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "BV",
+      "instance": 50,
+      "name": "Alrm_NetUnit_9.Active",
+      "description": "Alarm ALN9: Network: unit 9 alarm",
+      "units": "",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "BV",
+      "instance": 51,
+      "name": "Alrm_NetUnit_10.Active",
+      "description": "Alarm ALN10: Network: unit 10 alarm",
+      "units": "",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "BV",
+      "instance": 52,
+      "name": "Alrm_NetUnit_11.Active",
+      "description": "Alarm ALN11: Network: unit 11 alarm",
+      "units": "",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "BV",
+      "instance": 53,
+      "name": "Alrm_NetUnit_12.Active",
+      "description": "Alarm ALN12: Network: unit 12 alarm",
+      "units": "",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "BV",
+      "instance": 54,
+      "name": "Alrm_NetUnit_13.Active",
+      "description": "Alarm ALN13: Network: unit 13 alarm",
+      "units": "",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "BV",
+      "instance": 55,
+      "name": "Alrm_NetUnit_14.Active",
+      "description": "Alarm ALN14: Network: unit 14 alarm",
+      "units": "",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "BV",
+      "instance": 56,
+      "name": "Alrm_NetUnit_15.Active",
+      "description": "Alarm ALN15: Network: unit 15 alarm",
+      "units": "",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "BV",
+      "instance": 57,
+      "name": "Alrm_NetUnit_16.Active",
+      "description": "Alarm ALN16: Network: unit 16 alarm",
+      "units": "",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "BV",
+      "instance": 58,
+      "name": "Alrm_NetUnit_17.Active",
+      "description": "Alarm ALN17: Network: unit 17 alarm",
+      "units": "",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "BV",
+      "instance": 59,
+      "name": "Alrm_NetUnit_18.Active",
+      "description": "Alarm ALN18: Network: unit 18 alarm",
+      "units": "",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "BV",
+      "instance": 60,
+      "name": "Alrm_NetUnit_19.Active",
+      "description": "Alarm ALN19: Network: unit 19 alarm",
+      "units": "",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "BV",
+      "instance": 61,
+      "name": "Alrm_NetUnit_20.Active",
+      "description": "Alarm ALN20: Network: unit 20 alarm",
+      "units": "",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "BV",
+      "instance": 62,
+      "name": "Alrm_WirelessPrb_1_LowBatt.Active",
+      "description": "Alarm ALP05: Wireless probe 1: low battery level",
+      "units": "",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "BV",
+      "instance": 63,
+      "name": "Alrm_WirelessPrb_2_LowBatt.Active",
+      "description": "Alarm ALP06: Wireless probe 2: low battery level",
+      "units": "",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "BV",
+      "instance": 64,
+      "name": "Alrm_WirelessPrb_3_LowBatt.Active",
+      "description": "Alarm ALP07: Wireless probe 3: low battery level",
+      "units": "",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "BV",
+      "instance": 65,
+      "name": "Alrm_WirelessPrb_4_LowBatt.Active",
+      "description": "Alarm ALP08: Wireless probe 4: low battery level",
+      "units": "",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "BV",
+      "instance": 66,
+      "name": "Alrm_WirelessPrb_Main.Active",
+      "description": "Alarm ALA05: Main probe from wireless probe not available",
+      "units": "",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "BV",
+      "instance": 67,
+      "name": "Alrm_WirelessPrb_Limit.Active",
+      "description": "Alarm ALA06: Limit probe from wireless probe not available",
+      "units": "",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "BV",
+      "instance": 68,
+      "name": "SchedDayCfg[0].EnTB",
+      "description": "Scheduler: Enable time band 1",
+      "units": "",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "BV",
+      "instance": 69,
+      "name": "SchedDayCfg[1].EnTB",
+      "description": "Scheduler: Enable time band 2",
+      "units": "",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "BV",
+      "instance": 70,
+      "name": "SchedDayCfg[2].EnTB",
+      "description": "Scheduler: Enable time band 3",
+      "units": "",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "BV",
+      "instance": 71,
+      "name": "SchedDayCfg[3].EnTB",
+      "description": "Scheduler: Enable time band 4",
+      "units": "",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "BV",
+      "instance": 72,
+      "name": "SchedDayCfg[4].EnTB",
+      "description": "Scheduler: Enable time band 5",
+      "units": "",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "BV",
+      "instance": 73,
+      "name": "SchedDayCfg[5].EnTB",
+      "description": "Scheduler: Enable time band 6",
+      "units": "",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "BV",
+      "instance": 75,
+      "name": "ManExtFan",
+      "description": "Blower command in manual mode",
+      "units": "",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "BV",
+      "instance": 79,
+      "name": "EnSched",
+      "description": "Enable scheduler",
+      "units": "",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "BV",
+      "instance": 80,
+      "name": "EnHiConductAlrm",
+      "description": "Enable high conductivity alarm",
+      "units": "",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "BV",
+      "instance": 81,
+      "name": "ManDrain",
+      "description": "Manual total drain command; returns to 0 when drain is done",
+      "units": "",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "BV",
+      "instance": 82,
+      "name": "EnPreheatOff",
+      "description": "Enable preheating function",
+      "units": "",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "BV",
+      "instance": 83,
+      "name": "EnPartFills",
+      "description": "Enable micro-filling function to restore water level",
+      "units": "",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "BV",
+      "instance": 84,
+      "name": "DilDrainCfg.DailySched[1].Enable",
+      "description": "Drain to dilute - Daily scheduler (Monday) - enable",
+      "units": "",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "BV",
+      "instance": 85,
+      "name": "DilDrainCfg.DailySched[2].Enable",
+      "description": "Drain to dilute - Daily scheduler (Tuesday) - enable",
+      "units": "",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "BV",
+      "instance": 86,
+      "name": "DilDrainCfg.DailySched[3].Enable",
+      "description": "Drain to dilute - Daily scheduler (Wednesday) - enable",
+      "units": "",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "BV",
+      "instance": 87,
+      "name": "DilDrainCfg.DailySched[4].Enable",
+      "description": "Drain to dilute - Daily scheduler (Thursday) - enable",
+      "units": "",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "BV",
+      "instance": 88,
+      "name": "DilDrainCfg.DailySched[5].Enable",
+      "description": "Drain to dilute - Daily scheduler (Friday) - enable",
+      "units": "",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "BV",
+      "instance": 89,
+      "name": "DilDrainCfg.DailySched[6].Enable",
+      "description": "Drain to dilute - Daily scheduler (Saturday) - enable",
+      "units": "",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "BV",
+      "instance": 90,
+      "name": "DilDrainCfg.DailySched[7].Enable",
+      "description": "Drain to dilute - Daily scheduler (Sunday) - enable",
+      "units": "",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "BV",
+      "instance": 91,
+      "name": "EnPeriodicDrain",
+      "description": "Enable periodic total drain",
+      "units": "",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "BV",
+      "instance": 92,
+      "name": "UnitPause",
+      "description": "Set unit paused",
+      "units": "",
+      "access": "W",
+      "states": "0=not paused, 1=paused"
+    },
+    {
+      "type": "BV",
+      "instance": 93,
+      "name": "Alrm_SVOffline.Active",
+      "description": "Alarm ALA07: Supervisor offline",
+      "units": "",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "BV",
+      "instance": 101,
+      "name": "Alrm_HiBoilerTemp.Active",
+      "description": "Alarm ALC05: High boiler temperature (>110°)",
+      "units": "",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "BV",
+      "instance": 102,
+      "name": "Warn_AutotestCancel.Active",
+      "description": "Warning ALW07: Autotest cancelled, saved and displayed",
+      "units": "",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "BV",
+      "instance": 103,
+      "name": "Warn_NoDrainYet.Active",
+      "description": "Warning ALW08: No drain to dilute (if micro-filling active)",
+      "units": "",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "BV",
+      "instance": 108,
+      "name": "DisableVarUnitPause",
+      "description": "Disable paused by monitoring service",
+      "units": "",
+      "access": "R",
+      "states": "0=not disabled, 1=disabled"
+    },
+    {
+      "type": "BV",
+      "instance": 110,
+      "name": "EnPreheatNoReq",
+      "description": "Enable preheating without offset",
+      "units": "",
+      "access": "W",
+      "states": "0=disabled, 1=enabled"
+    }
+  ]
+}

@@ -1,0 +1,2142 @@
+{
+ "manufacturer": "Siemens",
+ "manufacturer_slug": "siemens",
+ "model": "Intelligent Valve EVG4U10E / EVF4U20E (BACnet IP)",
+ "model_slug": "intelligent-valve-evg4-evf4",
+ "short_model": "Intelligent Valve EVG4/EVF4",
+ "aliases": [
+  "EVG4U10E",
+  "EVF4U20E",
+  "EVG4U10A",
+  "EVF4U20A",
+  "EXG4U10E",
+  "EXF4U20E",
+  "ASE4U10E",
+  "ASE4U10A",
+  "Siemens Intelligent Valve"
+ ],
+ "equipment_type": "Dynamic control valve with energy metering",
+ "applies_to": "Siemens Intelligent Valve families EVG4/EXG4 (DN 15-50) and EVF4/EXF4 (DN 65-125, plus a DN 150 version) with the ASE4U10E or ASE4U10A controller.",
+ "summary": "The Intelligent Valve is a hydronic control valve with a built-in flow sensor and temperature inputs, so it reports flow, power, energy and operating statistics. It talks BACnet IP (Modbus RTU runs in parallel) and can run as a dynamic control valve, a changeover valve, a flow temperature controller, a heating circuit controller or a differential pressure controller. Over BACnet IP the valve follows SpRel (AV 16), a 0-100 % setpoint that becomes a position, flow or power setpoint depending on CtlMod (MV 39).",
+ "bacnet_transport": [
+  "BACnet IP"
+ ],
+ "firmware": "09.54.14.14; APP=1.23.11989 (application HvacFnct34 v2.614)",
+ "default_device_instance": null,
+ "access_inferred": false,
+ "notes": [
+  "One object list covers every control function (dynamic control valve, changeover, flow temperature, heating circuit, differential pressure); the guide marks which objects each function uses. This file lists every object ID printed in the Operation, Balancing and Commissioning chapters.",
+  "Some objects have a second instance in the differential pressure (Δp) function, and some analog inputs and outputs change instance with the selected signal type; each printed ID is listed with the same object name.",
+  "Heating circuit and room heating objects are only active when the flow temperature control or heating circuit application is selected.",
+  "Printed IDs kept as listed, with these exceptions: PrAdaPwrMax is printed 'AVI162' (listed as AV 162); ROpModSched is printed 'Schedule 1'; DrygFnctSta is printed both as MSV87 and AV87, and AV87 is also SbstTR, so only MV 87 is kept; TnHcrTFlVlvCtr (a reset time in seconds) is printed as MSV86, which is DrygFnct's ID, so its real ID is unknown and it is left out.",
+  "Units are metric as printed (°C, m³/h, kW, kPa). Access is W where the guide's Write column says Y. Modbus register addresses are not reproduced."
+ ],
+ "source": {
+  "title": "Intelligent Valve, BACnet Objects",
+  "doc_number": "A6V11757108",
+  "revision_date": "2026-06-23",
+  "url": "https://sid.siemens.com/api/khub/documents/Z90WHO9nj7QdzVxuByXoDQ/content"
+ },
+ "integration": {
+  "summary": "Commission the valve as a dynamic control valve with the setpoint coming over BACnet IP, so PrSpSrc (MV 54) reads 3. The BMS then writes SpRel (AV 16) and reads flow, power, the primary temperatures, valve position and the main fault code MnFlt (MV 57). The guide's own short list for integration also includes the present flow and power setpoints and the control state.",
+  "minimum_points": [
+   {
+    "ref": "AV 16",
+    "name": "SpRel",
+    "why": "Relative setpoint, 0-100 %"
+   },
+   {
+    "ref": "MV 54",
+    "name": "PrSpSrc",
+    "why": "Must read 3 (Relative setpoint remote) for BACnet IP"
+   },
+   {
+    "ref": "MV 40",
+    "name": "CtlSta",
+    "why": "Active control state"
+   },
+   {
+    "ref": "AV 39",
+    "name": "PrVfl",
+    "why": "Present volume flow, m³/h"
+   },
+   {
+    "ref": "AV 40",
+    "name": "PrPwr",
+    "why": "Present power, kW"
+   },
+   {
+    "ref": "AI 3",
+    "name": "TFlPrim",
+    "why": "Primary flow temperature, °C"
+   },
+   {
+    "ref": "AI 2",
+    "name": "TRtPrim",
+    "why": "Primary return temperature, °C"
+   },
+   {
+    "ref": "AI 1",
+    "name": "VlvPosFb",
+    "why": "Valve position, %"
+   },
+   {
+    "ref": "MV 57",
+    "name": "MnFlt",
+    "why": "Main fault code (1 = no fault)"
+   }
+  ],
+  "enable": "The application and setpoint source are set at commissioning; PrSpSrc (MV 54) shows the result. Option 3 (Relative setpoint remote) means the dynamic control valve takes SpRel (AV 16) from BACnet IP; options 7 and 8 do the same for flow temperature and differential pressure setpoints. VovrMod (MV 92) can override the valve (fully open, fully closed, minimum or maximum flow and so on).",
+  "heartbeat": "BckpMod (MV 42) sets what the valve does when its setpoint is missing, for example when no remote setpoint is present: None (default), Last setpoint, or Predefined setpoint from AV 34-36. BckpModDly (PIV 0, seconds) is the delay before backup mode starts. Backup mode applies to the dynamic control valve and flow temperature applications only.",
+  "remote_sensors": null,
+  "setup": [
+   "BACnet IP per Annex J; the device has no BBMD function.",
+   "Modbus RTU on port 1 runs alongside BACnet IP: address PIV 14 (default 10), baud MV 93 (default 19200), stop bits MV 94, parity MV 95 (default Even); write MbPort1SetApy (MV 96) = 2 (Apply) to use new settings.",
+   "CtlMod (MV 39) picks position, volume flow or power control; VflMax (AV 22) and PwrMax (AV 27) scale SpRel into the flow or power setpoint."
+  ],
+  "gotchas": [
+   "SpTFl (flow temperature setpoint) has a priority array; priority 15 is used by the internal control, so the guide recommends commanding it at priority 14.",
+   "In the differential pressure function several objects move to other instances (for example CtlSta MV 63, PrVfl AV 70, PrPwr AV 71); map the right set for the function in use.",
+   "Pressure, flow temperature and outside temperature inputs change instance with the selected signal type; check which ID is live on the device.",
+   "Alarm BVs (Alm1004-Alm3050) print state 0 = Active and 1 = Inactive."
+  ]
+ },
+ "points": [
+  {
+   "type": "AI",
+   "instance": 2,
+   "name": "TRtPrim",
+   "description": "Primary return temperature",
+   "units": "°C",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "AI",
+   "instance": 3,
+   "name": "TFlPrim",
+   "description": "Primary flow temperature",
+   "units": "°C",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "MV",
+   "instance": 53,
+   "name": "HCSta",
+   "description": "Heating/cooling state",
+   "units": "",
+   "access": "R",
+   "states": "1=Neither; 2=Heating; 3=Cooling"
+  },
+  {
+   "type": "MV",
+   "instance": 64,
+   "name": "HCSta",
+   "description": "Heating/cooling state (Δp control)",
+   "units": "",
+   "access": "R",
+   "states": "1=Neither; 2=Heating; 3=Cooling"
+  },
+  {
+   "type": "MV",
+   "instance": 40,
+   "name": "CtlSta",
+   "description": "Control state",
+   "units": "",
+   "access": "R",
+   "states": "1=Position; 2=Volume flow; 3=Power; 4=Maximum power limit; 5=Minimum volume flow limit; 6=Maximum volume flow limit; 7=Minimum return temperature limitation; 8=Maximum return temperature limitation; 9=Flow/return temperature difference limitation; 10=Override"
+  },
+  {
+   "type": "MV",
+   "instance": 63,
+   "name": "CtlSta",
+   "description": "Control state (Δp control)",
+   "units": "",
+   "access": "R",
+   "states": "1=Position; 2=Volume flow; 3=Power; 4=Maximum power limit; 5=Minimum volume flow limit; 6=Maximum volume flow limit; 7=Minimum return temperature limitation; 8=Maximum return temperature limitation; 9=Flow/return temperature difference limitation; 10=Override"
+  },
+  {
+   "type": "AV",
+   "instance": 16,
+   "name": "SpRel",
+   "description": "Relative setpoint",
+   "units": "%",
+   "access": "W",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 99,
+   "name": "PrAdaVflMax",
+   "description": "Present adapted maximum volume flow",
+   "units": "m³/h",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 162,
+   "name": "PrAdaPwrMax",
+   "description": "Present adapted maximum power",
+   "units": "kW",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 37,
+   "name": "PrSpVfl",
+   "description": "Present setpoint volume flow",
+   "units": "m³/h",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 39,
+   "name": "PrVfl",
+   "description": "Present volume flow",
+   "units": "m³/h",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 70,
+   "name": "PrVfl",
+   "description": "Present volume flow (Δp control)",
+   "units": "m³/h",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 38,
+   "name": "PrSpPwr",
+   "description": "Present setpoint power",
+   "units": "kW",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 40,
+   "name": "PrPwr",
+   "description": "Present power",
+   "units": "kW",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 71,
+   "name": "PrPwr",
+   "description": "Present power (Δp control)",
+   "units": "kW",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 41,
+   "name": "PrDiffPVlv",
+   "description": "Present differential pressure of valve",
+   "units": "kPa",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "AI",
+   "instance": 1,
+   "name": "VlvPosFb",
+   "description": "Valve position feedback",
+   "units": "%",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "MV",
+   "instance": 38,
+   "name": "VlvTyp",
+   "description": "Valve type",
+   "units": "",
+   "access": "R",
+   "states": "1=EVG4U10E015; 2=EVG4U10E020; 3=EVG4U10E025; 4=EVG4U10E032; 5=EVG4U10E040; 6=EVG4U10E050; 7=EVF4U20E065; 8=EVF4U20E080; 9=EVF4U20E100; 10=EVF4U20E125; 11=CDV21EVF4U20E150; 12=EXG4U10E015; 13=EXG4U10E020; 14=EXG4U10E025; 15=EXG4U10E032; 16=EXG4U10E040; 17=EXG4U10E050; 18=EXF4U20E065; 19=EXF4U20E080; 20=EXF4U20E100; 21=EVG4U10A015; 22=EVG4U10A020; 23=EVG4U10A025; 24=EVG4U10A032; 25=EVG4U10A040; 26=EVG4U10A050; 27=EVF4U20A065; 28=EVF4U20A080; 29=EVF4U20A100; 30=EVF4U20A125; 31=EXG4U10A015; 32=EXG4U10A020; 33=EXG4U10A025; 34=EXG4U10A032; 35=EXG4U10A040; 36=EXG4U10A050; 37=EXF4U20A065; 38=EXF4U20A080; 39=EXF4U20A100; 40=EVG4U10A050/1"
+  },
+  {
+   "type": "MV",
+   "instance": 62,
+   "name": "VlvTyp",
+   "description": "Valve type (Δp control)",
+   "units": "",
+   "access": "R",
+   "states": "1=EVG4U10E015; 2=EVG4U10E020; 3=EVG4U10E025; 4=EVG4U10E032; 5=EVG4U10E040; 6=EVG4U10E050; 7=EVF4U20E065; 8=EVF4U20E080; 9=EVF4U20E100; 10=EVF4U20E125; 11=CDV21EVF4U20E150; 12=EXG4U10E015; 13=EXG4U10E020; 14=EXG4U10E025; 15=EXG4U10E032; 16=EXG4U10E040; 17=EXG4U10E050; 18=EXF4U20E065; 19=EXF4U20E080; 20=EXF4U20E100; 21=EVG4U10A015; 22=EVG4U10A020; 23=EVG4U10A025; 24=EVG4U10A032; 25=EVG4U10A040; 26=EVG4U10A050; 27=EVF4U20A065; 28=EVF4U20A080; 29=EVF4U20A100; 30=EVF4U20A125; 31=EXG4U10A015; 32=EXG4U10A020; 33=EXG4U10A025; 34=EXG4U10A032; 35=EXG4U10A040; 36=EXG4U10A050; 37=EXF4U20A065; 38=EXF4U20A080; 39=EXF4U20A100; 40=EVG4U10A050/1"
+  },
+  {
+   "type": "AV",
+   "instance": 17,
+   "name": "NomPipeSize",
+   "description": "Nominal pipe size",
+   "units": "mm",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "MV",
+   "instance": 92,
+   "name": "VovrMod",
+   "description": "Valve override mode",
+   "units": "",
+   "access": "W",
+   "states": "1=None; 2=Fully open; 3=Fully close; 4=Minimum volume flow; 5=Nominal volume flow; 6=Maximum volume flow; 7=Design power; 8=Maximum power; 9=Keep position"
+  },
+  {
+   "type": "MV",
+   "instance": 97,
+   "name": "VovrMod",
+   "description": "Valve override mode (changeover valve)",
+   "units": "",
+   "access": "W",
+   "states": "1=None; 2=Fully open; 3=Fully close; 4=Minimum volume flow; 5=Nominal volume flow; 6=Maximum volume flow; 7=Design power; 8=Maximum power; 9=Keep position; 10=Not used (fail-safe position); 11=Minimum volume flow cooling; 12=Maximum volume flow cooling"
+  },
+  {
+   "type": "AI",
+   "instance": 28,
+   "name": "PSenX1",
+   "description": "Pressure sensor X1 (ID depends on signal type)",
+   "units": "kPa",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "AI",
+   "instance": 29,
+   "name": "PSenX1",
+   "description": "Pressure sensor X1 (ID depends on signal type)",
+   "units": "kPa",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "AI",
+   "instance": 30,
+   "name": "PSenX1",
+   "description": "Pressure sensor X1 (ID depends on signal type)",
+   "units": "kPa",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "AI",
+   "instance": 31,
+   "name": "PSenX3",
+   "description": "Pressure sensor X3 (ID depends on signal type)",
+   "units": "kPa",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "AI",
+   "instance": 32,
+   "name": "PSenX3",
+   "description": "Pressure sensor X3 (ID depends on signal type)",
+   "units": "kPa",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "AI",
+   "instance": 33,
+   "name": "PSenX3",
+   "description": "Pressure sensor X3 (ID depends on signal type)",
+   "units": "kPa",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 21,
+   "name": "SpDiffP",
+   "description": "Setpoint for differential pressure control",
+   "units": "kPa",
+   "access": "W",
+   "states": ""
+  },
+  {
+   "type": "AI",
+   "instance": 24,
+   "name": "DiffPPrim",
+   "description": "Primary differential pressure (ID depends on signal type)",
+   "units": "kPa",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "AI",
+   "instance": 25,
+   "name": "DiffPPrim",
+   "description": "Primary differential pressure (ID depends on signal type)",
+   "units": "kPa",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "AI",
+   "instance": 26,
+   "name": "DiffPPrim",
+   "description": "Primary differential pressure (ID depends on signal type)",
+   "units": "kPa",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "AI",
+   "instance": 27,
+   "name": "DiffPPrim",
+   "description": "Primary differential pressure (ID depends on signal type)",
+   "units": "kPa",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 159,
+   "name": "PrDiffPPrim",
+   "description": "Present primary differential pressure",
+   "units": "kPa",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 47,
+   "name": "OphDev",
+   "description": "Operating hours device",
+   "units": "h",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 115,
+   "name": "OphH",
+   "description": "Operating hours heating",
+   "units": "h",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 116,
+   "name": "OphC",
+   "description": "Operating hours cooling",
+   "units": "h",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 120,
+   "name": "RelOphHMth",
+   "description": "Relative operating hours heating month",
+   "units": "%",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 121,
+   "name": "RelOphHPmth",
+   "description": "Relative operating hours heating previous month",
+   "units": "%",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 126,
+   "name": "RelOphCMth",
+   "description": "Relative operating hours cooling month",
+   "units": "%",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 127,
+   "name": "RelOphCPmth",
+   "description": "Relative operating hours cooling previous month",
+   "units": "%",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 129,
+   "name": "OphVlvOpnMth",
+   "description": "Operating hours valve fully open month",
+   "units": "h",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 130,
+   "name": "OphVlvOpnPmth",
+   "description": "Rel. op. hours valve fully open prev. month",
+   "units": "%",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 131,
+   "name": "OphVflMaxMth",
+   "description": "Operating hours max. volume flow month",
+   "units": "h",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 132,
+   "name": "OphVflMaxPmth",
+   "description": "Rel. op. hours max. volume flow prev. month",
+   "units": "%",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 133,
+   "name": "OphVflaMaxMth",
+   "description": "Operating hours adapted max. volume flow month",
+   "units": "h",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 134,
+   "name": "OphVflaMaxPmth",
+   "description": "Rel. op. hours adapted max. volume flow prev. month",
+   "units": "%",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 135,
+   "name": "OphTRtLimMth",
+   "description": "Operating hours return temp. limit. month",
+   "units": "h",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 136,
+   "name": "OphTRtLimPmth",
+   "description": "Rel. op. hours return temp. limit. prev. month",
+   "units": "%",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 137,
+   "name": "OphTFlRtLmMth",
+   "description": "Operating hours flow/return temp. limit. month",
+   "units": "h",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 138,
+   "name": "OphTFlRtLmPmth",
+   "description": "Rel. op. hours flow/return temp. limit. prev. month",
+   "units": "%",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 139,
+   "name": "OphPwrMaxMth",
+   "description": "Operating hours maximum power month",
+   "units": "h",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 140,
+   "name": "OphPwrMaxPmth",
+   "description": "Rel. op. hours max. power previous month",
+   "units": "%",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 164,
+   "name": "OphPwraMaxMth",
+   "description": "Operating hours adapted max. power month",
+   "units": "h",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 165,
+   "name": "OphPwraMaxPmth",
+   "description": "Rel. op. hours adapted max. power prev. month",
+   "units": "%",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 48,
+   "name": "TotHVfl",
+   "description": "Total heating volume flow",
+   "units": "m³",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 49,
+   "name": "TotCVfl",
+   "description": "Total cooling volume flow",
+   "units": "m³",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 147,
+   "name": "VflDevMth",
+   "description": "Absolute volume flow deviation month",
+   "units": "m³",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 148,
+   "name": "VflDevPrvMth",
+   "description": "Absolute volume flow deviation prev. month",
+   "units": "m³",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 149,
+   "name": "RelVflDevMth",
+   "description": "Rel. volume flow deviation month",
+   "units": "%",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 150,
+   "name": "RelVflDevPrvMth",
+   "description": "Rel. volume flow deviation prev. month",
+   "units": "%",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 50,
+   "name": "TotHEngy",
+   "description": "Total heating energy",
+   "units": "kWh",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 51,
+   "name": "TotCEngy",
+   "description": "Total cooling energy",
+   "units": "kWh",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 117,
+   "name": "TotHEngyMth",
+   "description": "Total heating energy month",
+   "units": "kWh",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 118,
+   "name": "TotHEngyPmth",
+   "description": "Total heating energy previous month",
+   "units": "kWh",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 123,
+   "name": "TotCEngyMth",
+   "description": "Total cooling energy month",
+   "units": "kWh",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 124,
+   "name": "TotCEngyPmth",
+   "description": "Total cooling energy previous month",
+   "units": "kWh",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 141,
+   "name": "AvrgTFlRtMth",
+   "description": "Average temp. diff. flow and return month",
+   "units": "K",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 142,
+   "name": "AvrgTFlRtPmth",
+   "description": "Average temp. diff. flow/return prev. month",
+   "units": "K",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 143,
+   "name": "AvrgVlvPosMth",
+   "description": "Average valve position month",
+   "units": "%",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 144,
+   "name": "AvrgVlvPosPmth",
+   "description": "Average valve position previous month",
+   "units": "%",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 145,
+   "name": "MaxVlvPosMth",
+   "description": "Max. valve position month",
+   "units": "%",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 146,
+   "name": "MaxVlvPosPmth",
+   "description": "Max. valve position previous month",
+   "units": "%",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "PIV",
+   "instance": 19,
+   "name": "VlvClsdPosLti",
+   "description": "Valve fully closed lifetime",
+   "units": "",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 158,
+   "name": "ExpdRmgLifeTi",
+   "description": "Expected remaining lifetime",
+   "units": "years",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "MV",
+   "instance": 57,
+   "name": "MnFlt",
+   "description": "Main fault",
+   "units": "",
+   "access": "R",
+   "states": "1=No fault; 2=Primary flow temperature, sensor fault; 3=Primary return temperature, sensor fault; 4=Flow temperature, sensor fault; 5=Return temperature, sensor fault; 6=Volume flow, sensor fault; 7=Valve actuator fault; 8=Valve actuator, position feedback fault; 9=Valve actuator, no position feedback; 10=Relative setpoint, fault; 11=Flow temperature, setpoint fault; 12=Primary differential pressure, sensor fault; 13=Volume flow, wrong flow direction; 14=Volume flow, air bubbles in hydraulics; 15=Volume flow, cannot reach maximum value; 16=Valve differential pressure above max. value; 17=Volume flow sensor, communication error; 18=Outside air temperature, sensor fault; 19=Volume flow, cannot reach setpoint; 20=Pressure (sensor fault)"
+  },
+  {
+   "type": "BV",
+   "instance": 6,
+   "name": "Alm1004",
+   "description": "Outside air temperature, sensor fault",
+   "units": "",
+   "access": "R",
+   "states": "0=Active; 1=Inactive"
+  },
+  {
+   "type": "BV",
+   "instance": 7,
+   "name": "Alm1050",
+   "description": "Primary flow temperature, sensor fault",
+   "units": "",
+   "access": "R",
+   "states": "0=Active; 1=Inactive"
+  },
+  {
+   "type": "BV",
+   "instance": 8,
+   "name": "Alm1051",
+   "description": "Primary return temperature, sensor fault",
+   "units": "",
+   "access": "R",
+   "states": "0=Active; 1=Inactive"
+  },
+  {
+   "type": "BV",
+   "instance": 9,
+   "name": "Alm1052",
+   "description": "Flow temperature, sensor fault",
+   "units": "",
+   "access": "R",
+   "states": "0=Active; 1=Inactive"
+  },
+  {
+   "type": "BV",
+   "instance": 10,
+   "name": "Alm1054",
+   "description": "Volume flow, sensor fault",
+   "units": "",
+   "access": "R",
+   "states": "0=Active; 1=Inactive"
+  },
+  {
+   "type": "BV",
+   "instance": 11,
+   "name": "Alm1055",
+   "description": "Valve actuator fault",
+   "units": "",
+   "access": "R",
+   "states": "0=Active; 1=Inactive"
+  },
+  {
+   "type": "BV",
+   "instance": 12,
+   "name": "Alm1056",
+   "description": "Valve actuator, position feedback fault",
+   "units": "",
+   "access": "R",
+   "states": "0=Active; 1=Inactive"
+  },
+  {
+   "type": "BV",
+   "instance": 13,
+   "name": "Alm1057",
+   "description": "Valve actuator, no position feedback",
+   "units": "",
+   "access": "R",
+   "states": "0=Active; 1=Inactive"
+  },
+  {
+   "type": "BV",
+   "instance": 14,
+   "name": "Alm1058",
+   "description": "Relative setpoint, fault",
+   "units": "",
+   "access": "R",
+   "states": "0=Active; 1=Inactive"
+  },
+  {
+   "type": "BV",
+   "instance": 15,
+   "name": "Alm1059",
+   "description": "Flow temperature, setpoint fault",
+   "units": "",
+   "access": "R",
+   "states": "0=Active; 1=Inactive"
+  },
+  {
+   "type": "BV",
+   "instance": 16,
+   "name": "Alm1060",
+   "description": "Primary differential pressure, sensor fault",
+   "units": "",
+   "access": "R",
+   "states": "0=Active; 1=Inactive"
+  },
+  {
+   "type": "BV",
+   "instance": 17,
+   "name": "Alm2050",
+   "description": "Volume flow, wrong flow direction",
+   "units": "",
+   "access": "R",
+   "states": "0=Active; 1=Inactive"
+  },
+  {
+   "type": "BV",
+   "instance": 18,
+   "name": "Alm2051",
+   "description": "Volume flow, air bubbles in hydraulics",
+   "units": "",
+   "access": "R",
+   "states": "0=Active; 1=Inactive"
+  },
+  {
+   "type": "BV",
+   "instance": 19,
+   "name": "Alm2052",
+   "description": "Volume flow, cannot reach maximum value",
+   "units": "",
+   "access": "R",
+   "states": "0=Active; 1=Inactive"
+  },
+  {
+   "type": "BV",
+   "instance": 20,
+   "name": "Alm2053",
+   "description": "Valve differential pressure above maximum value",
+   "units": "",
+   "access": "R",
+   "states": "0=Active; 1=Inactive"
+  },
+  {
+   "type": "BV",
+   "instance": 23,
+   "name": "Alm2054",
+   "description": "Volume flow, cannot reach setpoint",
+   "units": "",
+   "access": "R",
+   "states": "0=Active; 1=Inactive"
+  },
+  {
+   "type": "BV",
+   "instance": 21,
+   "name": "Alm3050",
+   "description": "Volume flow sensor, communication error",
+   "units": "",
+   "access": "R",
+   "states": "0=Active; 1=Inactive"
+  },
+  {
+   "type": "AI",
+   "instance": 12,
+   "name": "TOa",
+   "description": "Outside air temperature (ID depends on signal type)",
+   "units": "°C",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "AI",
+   "instance": 13,
+   "name": "TOa",
+   "description": "Outside air temperature (ID depends on signal type)",
+   "units": "°C",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "AI",
+   "instance": 14,
+   "name": "TOa",
+   "description": "Outside air temperature (ID depends on signal type)",
+   "units": "°C",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 14,
+   "name": "SpTFl",
+   "description": "Flow temperature setpoint (flow temp. control)",
+   "units": "°C",
+   "access": "C",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 6,
+   "name": "SpTFl",
+   "description": "Flow temperature setpoint (heating circuit)",
+   "units": "°C",
+   "access": "C",
+   "states": ""
+  },
+  {
+   "type": "AO",
+   "instance": 22,
+   "name": "SpTFlPrimOut",
+   "description": "Primary flow temperature setpoint output (ID depends on signal type)",
+   "units": "°C",
+   "access": "C",
+   "states": ""
+  },
+  {
+   "type": "AO",
+   "instance": 23,
+   "name": "SpTFlPrimOut",
+   "description": "Primary flow temperature setpoint output (ID depends on signal type)",
+   "units": "°C",
+   "access": "C",
+   "states": ""
+  },
+  {
+   "type": "AO",
+   "instance": 24,
+   "name": "SpTFlPrimOut",
+   "description": "Primary flow temperature setpoint output (ID depends on signal type)",
+   "units": "°C",
+   "access": "C",
+   "states": ""
+  },
+  {
+   "type": "AI",
+   "instance": 17,
+   "name": "TFl",
+   "description": "Flow temperature (ID depends on signal type)",
+   "units": "°C",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "AI",
+   "instance": 18,
+   "name": "TFl",
+   "description": "Flow temperature (ID depends on signal type)",
+   "units": "°C",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "AI",
+   "instance": 19,
+   "name": "TFl",
+   "description": "Flow temperature (ID depends on signal type)",
+   "units": "°C",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "AI",
+   "instance": 20,
+   "name": "TFl",
+   "description": "Flow temperature (ID depends on signal type)",
+   "units": "°C",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 11,
+   "name": "TOaDsgn",
+   "description": "Design outside temperature",
+   "units": "°C",
+   "access": "W",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 10,
+   "name": "TOaHi",
+   "description": "Outside temperature high",
+   "units": "°C",
+   "access": "W",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 9,
+   "name": "SpTFlDs",
+   "description": "Flow temperature setpoint for design outside",
+   "units": "°C",
+   "access": "W",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 8,
+   "name": "SpTFlHi",
+   "description": "Flow temperature setpoint for high outside",
+   "units": "°C",
+   "access": "W",
+   "states": ""
+  },
+  {
+   "type": "MV",
+   "instance": 87,
+   "name": "DrygFnctSta",
+   "description": "Drying function state",
+   "units": "",
+   "access": "R",
+   "states": "1=Not executed; 2=Running; 3=Executed"
+  },
+  {
+   "type": "AV",
+   "instance": 102,
+   "name": "TiEldDryg",
+   "description": "Elapsed time drying",
+   "units": "days",
+   "access": "W",
+   "states": ""
+  },
+  {
+   "type": "BO",
+   "instance": 0,
+   "name": "HcrPuCmd",
+   "description": "Heating circuit pump command",
+   "units": "",
+   "access": "R",
+   "states": "0=Active; 1=Inactive"
+  },
+  {
+   "type": "SCH",
+   "instance": 1,
+   "name": "ROpModSched",
+   "description": "Room operation mode scheduler",
+   "units": "",
+   "access": "W",
+   "states": ""
+  },
+  {
+   "type": "MV",
+   "instance": 80,
+   "name": "PrROpMod",
+   "description": "Present room operation mode",
+   "units": "",
+   "access": "R",
+   "states": "1=Comfort; 2=Pre-Comfort; 3=Economy; 4=Protection"
+  },
+  {
+   "type": "MV",
+   "instance": 79,
+   "name": "RsnPrOpMod",
+   "description": "Reason for present operating mode",
+   "units": "",
+   "access": "R",
+   "states": "1=Exception; 2=Room low temperature protection; 3=Operating mode selection; 4=Manual operating mode selection; 5=Heating limit; 6=OSSC model; 7=Heating limit economy; 8=Quick setback; 9=Scheduler"
+  },
+  {
+   "type": "MV",
+   "instance": 55,
+   "name": "ROpMod",
+   "description": "Room operating mode",
+   "units": "",
+   "access": "W",
+   "states": "1=Comfort; 2=Pre-Comfort; 3=Economy; 4=Protection"
+  },
+  {
+   "type": "AV",
+   "instance": 2,
+   "name": "SpHCmf",
+   "description": "Heating setpoint for comfort",
+   "units": "°C",
+   "access": "W",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 3,
+   "name": "SpHPcf",
+   "description": "Heating setpoint for pre-comfort",
+   "units": "°C",
+   "access": "W",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 4,
+   "name": "SpHEco",
+   "description": "Heating setpoint for economy",
+   "units": "°C",
+   "access": "W",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 5,
+   "name": "SpHPrt",
+   "description": "Heating setpoint for protection",
+   "units": "°C",
+   "access": "W",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 87,
+   "name": "SbstTR",
+   "description": "Substitute room temperature",
+   "units": "°C",
+   "access": "W",
+   "states": ""
+  },
+  {
+   "type": "MV",
+   "instance": 45,
+   "name": "SlfTst",
+   "description": "Self-test",
+   "units": "",
+   "access": "W",
+   "states": "1=Ready; 2=Start; 3=Stop"
+  },
+  {
+   "type": "MV",
+   "instance": 65,
+   "name": "SlfTst",
+   "description": "Self-test (Δp control)",
+   "units": "",
+   "access": "W",
+   "states": "1=Ready; 2=Start; 3=Stop"
+  },
+  {
+   "type": "MV",
+   "instance": 58,
+   "name": "FrcVflMax",
+   "description": "Force maximum volume flow",
+   "units": "",
+   "access": "W",
+   "states": "1=Ready; 2=Start; 3=Stop"
+  },
+  {
+   "type": "MV",
+   "instance": 75,
+   "name": "FrcVflMax",
+   "description": "Force maximum volume flow (Δp control)",
+   "units": "",
+   "access": "W",
+   "states": "1=Ready; 2=Start; 3=Stop"
+  },
+  {
+   "type": "AV",
+   "instance": 18,
+   "name": "VflNomVlv",
+   "description": "Nominal volume flow for valve",
+   "units": "m³/h",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 63,
+   "name": "VflNomVlv",
+   "description": "Nominal volume flow for valve (Δp control)",
+   "units": "m³/h",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 22,
+   "name": "VflMax",
+   "description": "Maximum volume flow",
+   "units": "m³/h",
+   "access": "W",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 67,
+   "name": "VflMax",
+   "description": "Maximum volume flow (Δp control)",
+   "units": "m³/h",
+   "access": "W",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 23,
+   "name": "VflMaxRel",
+   "description": "Relative maximum volume flow",
+   "units": "%",
+   "access": "W",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 68,
+   "name": "VflMaxRel",
+   "description": "Relative maximum volume flow (Δp control)",
+   "units": "%",
+   "access": "W",
+   "states": ""
+  },
+  {
+   "type": "BV",
+   "instance": 4,
+   "name": "EnVflMin",
+   "description": "Enable minimum volume flow",
+   "units": "",
+   "access": "W",
+   "states": "0=No; 1=Yes"
+  },
+  {
+   "type": "AV",
+   "instance": 24,
+   "name": "VflMin",
+   "description": "Minimum volume flow",
+   "units": "m³/h",
+   "access": "W",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 25,
+   "name": "VflMinRel",
+   "description": "Relative minimum volume flow",
+   "units": "%",
+   "access": "W",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 103,
+   "name": "VflMaxC",
+   "description": "Maximum volume flow cooling",
+   "units": "m³/h",
+   "access": "W",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 104,
+   "name": "VflMaxRelC",
+   "description": "Relative maximum volume flow cooling",
+   "units": "%",
+   "access": "W",
+   "states": ""
+  },
+  {
+   "type": "BV",
+   "instance": 32,
+   "name": "EnVflMinC",
+   "description": "Enable minimum volume flow cooling",
+   "units": "",
+   "access": "W",
+   "states": "0=No; 1=Yes"
+  },
+  {
+   "type": "AV",
+   "instance": 105,
+   "name": "VflMinC",
+   "description": "Minimum volume flow cooling",
+   "units": "m³/h",
+   "access": "W",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 106,
+   "name": "VflMinRelC",
+   "description": "Relative minimum volume flow cooling",
+   "units": "%",
+   "access": "W",
+   "states": ""
+  },
+  {
+   "type": "MV",
+   "instance": 56,
+   "name": "LqdTyp",
+   "description": "Type of liquid",
+   "units": "",
+   "access": "W",
+   "states": "1=Water; 2=Ethylene glycol; 3=Propylene glycol"
+  },
+  {
+   "type": "AV",
+   "instance": 33,
+   "name": "LqdCnctr",
+   "description": "Concentration of liquid",
+   "units": "%",
+   "access": "W",
+   "states": ""
+  },
+  {
+   "type": "MV",
+   "instance": 24,
+   "name": "VlvDsgn",
+   "description": "Valve design",
+   "units": "",
+   "access": "W",
+   "states": "1=2-port; 2=3-port"
+  },
+  {
+   "type": "BV",
+   "instance": 3,
+   "name": "VlvMountPos",
+   "description": "Valve mounting position",
+   "units": "",
+   "access": "W",
+   "states": "0=Flow; 1=Return"
+  },
+  {
+   "type": "BV",
+   "instance": 26,
+   "name": "VlvMountPos",
+   "description": "Valve mounting position (Δp control)",
+   "units": "",
+   "access": "W",
+   "states": "0=Flow; 1=Return"
+  },
+  {
+   "type": "MV",
+   "instance": 39,
+   "name": "CtlMod",
+   "description": "Control mode",
+   "units": "",
+   "access": "W",
+   "states": "1=Position; 2=Volume flow; 3=Power"
+  },
+  {
+   "type": "BV",
+   "instance": 30,
+   "name": "EnAdaVflMax",
+   "description": "Enable adapted maximum volume flow",
+   "units": "",
+   "access": "W",
+   "states": "0=No; 1=Yes"
+  },
+  {
+   "type": "BV",
+   "instance": 35,
+   "name": "EnAdaVflMaxC",
+   "description": "Enable adapted maximum volume flow cooling",
+   "units": "",
+   "access": "W",
+   "states": "0=No; 1=Yes"
+  },
+  {
+   "type": "MV",
+   "instance": 41,
+   "name": "CmpMod",
+   "description": "Compensation mode",
+   "units": "",
+   "access": "W",
+   "states": "1=Volume flow linear; 2=Volume flow exponential; 3=Heat exchanger characteristic"
+  },
+  {
+   "type": "AV",
+   "instance": 31,
+   "name": "CmpVflCoef",
+   "description": "Compensation volume flow coefficient",
+   "units": "",
+   "access": "W",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 32,
+   "name": "CmpHxCoef",
+   "description": "Compensation heat exchanger coefficient",
+   "units": "",
+   "access": "W",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 58,
+   "name": "DiffPPrimPrcv2",
+   "description": "Process value 2 for differential pressure primary",
+   "units": "kPa",
+   "access": "W",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 29,
+   "name": "TFlPrimDsgn",
+   "description": "Design primary flow temperature",
+   "units": "°C",
+   "access": "W",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 30,
+   "name": "TRtPrimDsgn",
+   "description": "Design primary return temperature",
+   "units": "°C",
+   "access": "W",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 109,
+   "name": "TFlPrimDsgnC",
+   "description": "Design primary flow temperature cooling",
+   "units": "°C",
+   "access": "W",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 110,
+   "name": "TRtPrimDsgnC",
+   "description": "Design primary return temperature cooling",
+   "units": "°C",
+   "access": "W",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 26,
+   "name": "PwrDsgn",
+   "description": "Design power",
+   "units": "kW",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 27,
+   "name": "PwrMax",
+   "description": "Maximum power",
+   "units": "kW",
+   "access": "W",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 28,
+   "name": "PwrMaxRel",
+   "description": "Relative maximum power",
+   "units": "%",
+   "access": "W",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 112,
+   "name": "PwrDsgnC",
+   "description": "Design power cooling",
+   "units": "kW",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 107,
+   "name": "PwrMaxC",
+   "description": "Maximum cooling power",
+   "units": "kW",
+   "access": "W",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 108,
+   "name": "PwrMaxRelC",
+   "description": "Relative maximum power, cooling",
+   "units": "%",
+   "access": "W",
+   "states": ""
+  },
+  {
+   "type": "BV",
+   "instance": 42,
+   "name": "EnAdaPwrMax",
+   "description": "Enable adapted maximum power",
+   "units": "",
+   "access": "W",
+   "states": "0=No; 1=Yes"
+  },
+  {
+   "type": "BV",
+   "instance": 43,
+   "name": "EnAdaPwrMaxC",
+   "description": "Enable adapted maximum power for cooling",
+   "units": "",
+   "access": "W",
+   "states": "0=No; 1=Yes"
+  },
+  {
+   "type": "BV",
+   "instance": 5,
+   "name": "EnTRtLm",
+   "description": "Enable return temperature limitation",
+   "units": "",
+   "access": "W",
+   "states": "0=Active; 1=Inactive"
+  },
+  {
+   "type": "AV",
+   "instance": 52,
+   "name": "SpHTRt",
+   "description": "Return temperature setpoint for heating",
+   "units": "°C",
+   "access": "W",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 53,
+   "name": "SpCTRt",
+   "description": "Return temperature setpoint for cooling",
+   "units": "°C",
+   "access": "W",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 62,
+   "name": "GainTRtCtr",
+   "description": "Gain for return temperature controller",
+   "units": "%/°C",
+   "access": "W",
+   "states": ""
+  },
+  {
+   "type": "PIV",
+   "instance": 5,
+   "name": "TnTRtCtr",
+   "description": "Tn for return temperature controller",
+   "units": "s",
+   "access": "W",
+   "states": ""
+  },
+  {
+   "type": "BV",
+   "instance": 24,
+   "name": "EnTDiffFlRtLm",
+   "description": "Enable flow/return temperature difference limitation",
+   "units": "",
+   "access": "W",
+   "states": "0=Active; 1=Inactive"
+  },
+  {
+   "type": "AV",
+   "instance": 92,
+   "name": "SpTDiffFlRtLm",
+   "description": "Setpoint flow/return temperature difference",
+   "units": "K",
+   "access": "W",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 93,
+   "name": "GainTDiffFlRtCtr",
+   "description": "Gain for flow/return temperature difference",
+   "units": "%/K",
+   "access": "W",
+   "states": ""
+  },
+  {
+   "type": "PIV",
+   "instance": 11,
+   "name": "TnTDiffFlRtCtr",
+   "description": "Tn for flow/return temperature difference",
+   "units": "s",
+   "access": "W",
+   "states": ""
+  },
+  {
+   "type": "BV",
+   "instance": 33,
+   "name": "EnTRtLmC",
+   "description": "Enable return temperature limitation, cooling",
+   "units": "",
+   "access": "W",
+   "states": "0=Active; 1=Inactive"
+  },
+  {
+   "type": "BV",
+   "instance": 34,
+   "name": "EnTDiffFlRtLmC",
+   "description": "Enable flow/return temperature difference limitation, cooling",
+   "units": "",
+   "access": "W",
+   "states": "0=Active; 1=Inactive"
+  },
+  {
+   "type": "AV",
+   "instance": 111,
+   "name": "SpTDiffFlRtLmC",
+   "description": "Flow/return temperature difference setpoint, cooling",
+   "units": "K",
+   "access": "W",
+   "states": ""
+  },
+  {
+   "type": "BV",
+   "instance": 38,
+   "name": "EnTRtLmWgd",
+   "description": "Enable weighted return temperature limitation",
+   "units": "",
+   "access": "W",
+   "states": "0=No; 1=Yes"
+  },
+  {
+   "type": "BV",
+   "instance": 37,
+   "name": "EnTRtLmWgdC",
+   "description": "Enable weighted return temperature limitation for cooling",
+   "units": "",
+   "access": "W",
+   "states": "0=No; 1=Yes"
+  },
+  {
+   "type": "AV",
+   "instance": 160,
+   "name": "PPrcv1",
+   "description": "Process value 1 for pressure",
+   "units": "kPa",
+   "access": "W",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 161,
+   "name": "PPrcv2",
+   "description": "Process value 2 for pressure",
+   "units": "kPa",
+   "access": "W",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 80,
+   "name": "GainDiffPCtr",
+   "description": "Gain for differential pressure controller",
+   "units": "%/K",
+   "access": "W",
+   "states": ""
+  },
+  {
+   "type": "PIV",
+   "instance": 9,
+   "name": "TnDiffPCtr",
+   "description": "Tn for differential pressure controller",
+   "units": "s",
+   "access": "W",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 13,
+   "name": "SpTFlMaxHcr",
+   "description": "Maximum flow temperature setpoint for heating",
+   "units": "°C",
+   "access": "W",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 12,
+   "name": "SpTFlMinHcr",
+   "description": "Minimum flow temperature setpoint for heating",
+   "units": "°C",
+   "access": "W",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 88,
+   "name": "ExpRad",
+   "description": "Radiator exponent",
+   "units": "",
+   "access": "W",
+   "states": ""
+  },
+  {
+   "type": "PIV",
+   "instance": 7,
+   "name": "TcnBldg",
+   "description": "Time constant of building",
+   "units": "h",
+   "access": "W",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 89,
+   "name": "HtgLm",
+   "description": "Heating limit",
+   "units": "°C",
+   "access": "W",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 90,
+   "name": "HtgLmEco",
+   "description": "Heating limit for economy",
+   "units": "°C",
+   "access": "W",
+   "states": ""
+  },
+  {
+   "type": "BV",
+   "instance": 25,
+   "name": "EnPltFrPrt",
+   "description": "Enable plant frost protection",
+   "units": "",
+   "access": "W",
+   "states": "0=No; 1=Yes"
+  },
+  {
+   "type": "PIV",
+   "instance": 13,
+   "name": "DlyOffHcrPu",
+   "description": "Switch-off delay for heating circuit pump",
+   "units": "s",
+   "access": "W",
+   "states": ""
+  },
+  {
+   "type": "BV",
+   "instance": 1,
+   "name": "EnKick",
+   "description": "Enable kick",
+   "units": "",
+   "access": "W",
+   "states": "0=No; 1=Yes"
+  },
+  {
+   "type": "AV",
+   "instance": 82,
+   "name": "GainHcrTFlVlvc",
+   "description": "Gain for flow temperature controller valve position (flow temp. control)",
+   "units": "%/K",
+   "access": "W",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 81,
+   "name": "GainHcrTFlVlvc",
+   "description": "Gain for flow temperature controller valve position (heating circuit)",
+   "units": "%/K",
+   "access": "W",
+   "states": ""
+  },
+  {
+   "type": "MV",
+   "instance": 86,
+   "name": "DrygFnct",
+   "description": "Drying function",
+   "units": "",
+   "access": "W",
+   "states": "1=Off; 2=Constant; 3=Profile"
+  },
+  {
+   "type": "AV",
+   "instance": 98,
+   "name": "SpTFlDrygConM",
+   "description": "Flow temperature setpoint for drying constant",
+   "units": "°C",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 19,
+   "name": "SpIncrTFl",
+   "description": "Setpoint increase for flow temperature",
+   "units": "K",
+   "access": "W",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 20,
+   "name": "TFlPmOutPrcv2",
+   "description": "Process value 2 for primary flow temperature",
+   "units": "°C",
+   "access": "W",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 113,
+   "name": "TFlPmOutPrcv2",
+   "description": "Process value 2 for primary flow temperature",
+   "units": "°C",
+   "access": "W",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 114,
+   "name": "TFlPmOutPrcv2",
+   "description": "Process value 2 for primary flow temperature",
+   "units": "°C",
+   "access": "W",
+   "states": ""
+  },
+  {
+   "type": "BV",
+   "instance": 22,
+   "name": "EnQckSetbck",
+   "description": "Enable quick setback",
+   "units": "",
+   "access": "W",
+   "states": "1=No; 2=Yes"
+  },
+  {
+   "type": "BV",
+   "instance": 27,
+   "name": "EnOscFnct",
+   "description": "Enable optimum start control",
+   "units": "",
+   "access": "W",
+   "states": "1=No; 2=Yes"
+  },
+  {
+   "type": "AV",
+   "instance": 97,
+   "name": "SpTRShftBstH",
+   "description": "Room temperature setpoint shift for boost heating",
+   "units": "°C",
+   "access": "W",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 96,
+   "name": "WarmUpGrdnt",
+   "description": "Warm-up gradient",
+   "units": "K/h",
+   "access": "W",
+   "states": ""
+  },
+  {
+   "type": "MV",
+   "instance": 42,
+   "name": "BckpMod",
+   "description": "Backup mode",
+   "units": "",
+   "access": "W",
+   "states": "1=None; 2=Last setpoint; 3=Predefined setpoint"
+  },
+  {
+   "type": "PIV",
+   "instance": 0,
+   "name": "BckpModDly",
+   "description": "Backup mode activation delay",
+   "units": "s",
+   "access": "W",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 34,
+   "name": "BckpModValPos",
+   "description": "Backup mode value for position",
+   "units": "%",
+   "access": "W",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 35,
+   "name": "BckpModValVfl",
+   "description": "Backup mode value for volume flow",
+   "units": "%",
+   "access": "W",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 36,
+   "name": "BckpModValPwr",
+   "description": "Backup mode value for power",
+   "units": "%",
+   "access": "W",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 91,
+   "name": "BckpModValTFl",
+   "description": "Backup mode value for flow temperature",
+   "units": "°C",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "MV",
+   "instance": 54,
+   "name": "PrSpSrc",
+   "description": "Present setpoint source",
+   "units": "",
+   "access": "R",
+   "states": "1=Relative setpoint terminal; 2=Relative setpoint Modbus; 3=Relative setpoint remote; 4=Heating circuit outside temperature compensated; 5=Flow temperature setpoint terminal; 6=Flow temperature setpoint Modbus; 7=Flow temperature setpoint remote; 8=Differential pressure setpoint remote; 9=Differential pressure setpoint Modbus"
+  },
+  {
+   "type": "MV",
+   "instance": 59,
+   "name": "PrX1Sel",
+   "description": "Present selection for X1",
+   "units": "",
+   "access": "R",
+   "states": "1=None; 2=Relative setpoint terminal; 3=Flow temperature setpoint; 7=Outside air temperature"
+  },
+  {
+   "type": "MV",
+   "instance": 81,
+   "name": "PrX1SelSigTyp",
+   "description": "Present signal type selection for X1",
+   "units": "",
+   "access": "R",
+   "states": "1=None; 2=0…10 V; 3=2…10 V; 4=4…20 mA; 5=Ni1000 (DIN); 6=LG-Ni1000; 8=Pt1000 (EU)"
+  },
+  {
+   "type": "MV",
+   "instance": 60,
+   "name": "PrX2Sel",
+   "description": "Present selection for X2",
+   "units": "",
+   "access": "R",
+   "states": "4=Primary flow temperature; 5=Primary return temperature; 8=Temperature difference between flow and return; 10=Relative volume flow; 11=Valve position; 12=Relative power"
+  },
+  {
+   "type": "MV",
+   "instance": 82,
+   "name": "PrX2SelSigTyp",
+   "description": "Present signal type selection for X2",
+   "units": "",
+   "access": "R",
+   "states": "1=Disabled; 2=0…10 V; 3=2…10 V; 4=4…20 mA"
+  },
+  {
+   "type": "MV",
+   "instance": 61,
+   "name": "PrX3Sel",
+   "description": "Present selection for X3",
+   "units": "",
+   "access": "R",
+   "states": "1=Disabled; 4=Flow temperature; 5=Differential pressure primary"
+  },
+  {
+   "type": "MV",
+   "instance": 84,
+   "name": "PrX3SelSigTyp",
+   "description": "Present signal type selection for X3",
+   "units": "",
+   "access": "R",
+   "states": "5=Ni1000 (DIN); 6=LG-Ni1000; 8=Pt1000 (EU); 1=QBE3000-D1.6; 2=QBE3000-D2.5; 3=QBE3000-D4; 4=Freely adjustable span of pressure measurement"
+  },
+  {
+   "type": "MV",
+   "instance": 83,
+   "name": "PrX3SelSigTyp",
+   "description": "Present signal type selection for X3 (Δp control)",
+   "units": "",
+   "access": "R",
+   "states": "5=Ni1000 (DIN); 6=LG-Ni1000; 8=Pt1000 (EU); 1=QBE3000-D1.6; 2=QBE3000-D2.5; 3=QBE3000-D4; 4=Freely adjustable span of pressure measurement"
+  },
+  {
+   "type": "BV",
+   "instance": 31,
+   "name": "MbPort1LnTrmnt",
+   "description": "Modbus port 1 line termination",
+   "units": "",
+   "access": "W",
+   "states": "0=Inactive; 1=Active"
+  },
+  {
+   "type": "PIV",
+   "instance": 14,
+   "name": "MbPort1Adr",
+   "description": "Modbus port 1 address",
+   "units": "",
+   "access": "W",
+   "states": ""
+  },
+  {
+   "type": "MV",
+   "instance": 93,
+   "name": "MbPort1Baud",
+   "description": "Modbus port 1 baud rate",
+   "units": "",
+   "access": "W",
+   "states": "1=9600; 2=19200; 3=38400; 4=57600; 5=76800; 6=115200"
+  },
+  {
+   "type": "MV",
+   "instance": 94,
+   "name": "MbPort1StpBit",
+   "description": "Modbus port 1 stop bit",
+   "units": "",
+   "access": "W",
+   "states": "1=1; 2=2"
+  },
+  {
+   "type": "MV",
+   "instance": 95,
+   "name": "MbPort1Parity",
+   "description": "Modbus port 1 parity",
+   "units": "",
+   "access": "W",
+   "states": "1=No; 2=Even; 3=Odd"
+  },
+  {
+   "type": "MV",
+   "instance": 96,
+   "name": "MbPort1SetApy",
+   "description": "Modbus port 1 apply setting",
+   "units": "",
+   "access": "W",
+   "states": "1=Ready; 2=Apply"
+  },
+  {
+   "type": "BV",
+   "instance": 29,
+   "name": "EnDemoMod",
+   "description": "Enable demonstration mode",
+   "units": "",
+   "access": "W",
+   "states": "1=Off; 2=On"
+  },
+  {
+   "type": "AV",
+   "instance": 84,
+   "name": "NomPpSizeDmo",
+   "description": "Nominal pipe size demonstration mode",
+   "units": "mm",
+   "access": "W",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 83,
+   "name": "GainDPPrimDmo",
+   "description": "Gain for differential pressure primary demonstration",
+   "units": "%",
+   "access": "W",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 15,
+   "name": "TOaDmo",
+   "description": "Outside temperature for demonstration mode",
+   "units": "°C",
+   "access": "W",
+   "states": ""
+  }
+ ],
+ "page": "https://easybacnet.com/bacnet-points-lists/siemens/intelligent-valve-evg4-evf4",
+ "note": "Re-typed from the manufacturer's public documentation (see source). Point availability varies by firmware and options; verify against the live device."
+}

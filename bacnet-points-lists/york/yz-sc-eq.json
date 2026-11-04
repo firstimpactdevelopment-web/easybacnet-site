@@ -1,0 +1,1127 @@
+{
+ "manufacturer": "York",
+ "manufacturer_slug": "york",
+ "model": "YZ Magnetic-Bearing Centrifugal Chiller (SC-EQ)",
+ "model_slug": "yz-sc-eq",
+ "short_model": "YZ",
+ "aliases": [
+  "YORK YZ",
+  "YZ chiller",
+  "YZ mag bearing",
+  "SC-EQ",
+  "SE-SCC1001-1",
+  "OptiView"
+ ],
+ "equipment_type": "Water-cooled magnetic-bearing centrifugal chiller (via SC-EQ card)",
+ "applies_to": "YORK YZ water-cooled magnetic-bearing centrifugal chillers (variable speed drive) fitted with the SC-EQ communication card.",
+ "summary": "The YZ's SC-EQ card puts the chiller on a BACnet MS/TP trunk (it also speaks Modbus RTU and N2). The BAS can run/stop the chiller and write the leaving chilled liquid setpoint, input current limit and heating setpoint. Read-only points cover water temperatures, refrigerant pressures, VSD and harmonic filter values, magnetic bearing (MBC) mode, purge data, and operation, fault, warning and inhibit codes as MV objects with matching AV copies.",
+ "bacnet_transport": [
+  "BACnet MS/TP"
+ ],
+ "firmware": "SC-EQ software 4.2.0.20",
+ "default_device_instance": "5000 + MAC address",
+ "access_inferred": true,
+ "notes": [
+  "Access is inferred: the sheet has no read/write column. The remote block (AV 1-3, BV 1) is treated as commandable and MV 65001 as writable; everything else as read-only.",
+  "Status-code MVs (operation, safety, cycling, warning, modified run, start inhibit, internal fault) are the printed code + 1, as the doc's status code tables say; the AV copies (AV 52-59) carry the raw code. MVs with their own enum in the points table are shown as printed; BACnet multistate values start at 1, so the card may report the printed number + 1. Confirm by discovery.",
+  "Harmonic filter, heat recovery, heat pump, hot gas bypass and dew point points only report when that option is fitted or enabled.",
+  "Units shown are the IP units; with MV 65001 set to SI the card reports °C, kPa and so on.",
+  "Spare objects (AV 4, BV 2-4 and the empty rows) are left out."
+ ],
+ "source": {
+  "title": "YZ SC-EQ BAS Points List",
+  "doc_number": null,
+  "revision_date": "Rev 1.7, 2021-12-08",
+  "url": "https://docs.johnsoncontrols.com/chillers/api/khub/documents/ZAyi0nhZO6~_x09W4LLALw/content"
+ },
+ "integration": {
+  "summary": "Wire the BAS to the SC-EQ J12 RS-485 port and set the MAC address; the card detects BACnet MS/TP. Run/stop the chiller with BV 1 and write the leaving chilled liquid setpoint (AV 1) and input current limit (AV 2). Read MV 1 for the operating state, BV 5 for motor run, the leaving water temperature and % FLA, and MV 2/MV 3 for safety and cycling shutdowns. MV 5 and MV 12-15 show whether the chiller is taking its commands from the BAS.",
+  "minimum_points": [
+   {
+    "ref": "BV 1",
+    "name": "REM RUN STOP CMD",
+    "why": "Remote run/stop (1 = run)"
+   },
+   {
+    "ref": "AV 1",
+    "name": "REM LEAVING CHL TEMP SP",
+    "why": "Remote leaving chilled liquid setpoint"
+   },
+   {
+    "ref": "AV 2",
+    "name": "REMOTE INPUT CURRENT SP",
+    "why": "Remote input current limit, %"
+   },
+   {
+    "ref": "MV 1",
+    "name": "UNIT OPERATION CODE",
+    "why": "Operating state (stopped, starting, running)"
+   },
+   {
+    "ref": "BV 5",
+    "name": "COMPR MOTOR RUN",
+    "why": "Compressor motor running"
+   },
+   {
+    "ref": "MV 5",
+    "name": "UNIT CONTROL SOURCE",
+    "why": "Control source; BAS for BMS control"
+   },
+   {
+    "ref": "AV 6",
+    "name": "LEAVING CH LIQ TEMP",
+    "why": "Leaving chilled liquid temperature"
+   },
+   {
+    "ref": "AV 18",
+    "name": "MOTOR CURRENT PCT FLA",
+    "why": "Motor current, % FLA (load indication)"
+   },
+   {
+    "ref": "MV 2",
+    "name": "UNIT SAFETY FAULT CODE",
+    "why": "Safety shutdown code (1 = none)"
+   },
+   {
+    "ref": "MV 3",
+    "name": "UNIT CYCLING FAULT CODE",
+    "why": "Cycling shutdown code (1 = none)"
+   }
+  ],
+  "enable": "BV 1 REM RUN STOP CMD (0 = Stop, 1 = Run) is the BAS run/stop and AV 1-3 are the remote setpoints. MV 5 shows the unit control source (Local, BAS, Analog, Digital, Remote); MV 12 shows the run/stop source (Local, BAS, Hardwire) and MV 13-15 the cooling setpoint, heating setpoint and current limit sources. Check they read BAS. The points list has no write-enable point.",
+  "heartbeat": null,
+  "remote_sensors": null,
+  "setup": [
+   "The BAS connects to the SC-EQ J12 port (RS-485: +, -, COM/REF, SHLD). The card detects BACnet MS/TP, Modbus RTU or N2 and the baud rate by itself; allow up to 120 seconds after power-up.",
+   "The MAC address (1-127) is set on DIP switch SW1 (switch 8 unused). Cycle the card's power after changing it.",
+   "The device instance defaults to 5000 + the MAC address (MAC 6 gives 5006). To use another number, set Device Instance Mode to Manual and enter the instance with the SC-AP / MAP tool, or write BV 65000 (mode) and AV 65000 (instance ID).",
+   "MV 65001 Units sets whether the BAS sees IP or SI values, independent of the chiller display; set it to match the chiller."
+  ],
+  "gotchas": [
+   "The remote (commandable) setpoints read as unreliable until the BAS writes them the first time.",
+   "The SC-EQ only exposes the points that apply to the chiller it detects; if it replaces an E-Link, re-discover the device so old non-applicable points don't sit offline.",
+   "Code points come in pairs: the MV state is the code + 1, and the AV copy (AV 52-59) carries the raw code."
+  ]
+ },
+ "points": [
+  {
+   "type": "AV",
+   "instance": 1,
+   "name": "REM LEAVING CHL TEMP SP",
+   "description": "Remote Leaving Chilled Liquid Setpoint",
+   "units": "°F",
+   "access": "C",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 2,
+   "name": "REMOTE INPUT CURRENT SP",
+   "description": "Remote Input Current Limit Setpoint",
+   "units": "%",
+   "access": "C",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 3,
+   "name": "REM HEATING SP",
+   "description": "Remote Heating Setpoint",
+   "units": "°F",
+   "access": "C",
+   "states": ""
+  },
+  {
+   "type": "BV",
+   "instance": 1,
+   "name": "REM RUN STOP CMD",
+   "description": "Remote Run/Stop",
+   "units": "",
+   "access": "C",
+   "states": "0=Stop, 1=Run"
+  },
+  {
+   "type": "MV",
+   "instance": 65001,
+   "name": "Units",
+   "description": "Unit system reported by the SC-EQ",
+   "units": "",
+   "access": "W",
+   "states": "0=IP (English), 1=SI (Metric)"
+  },
+  {
+   "type": "BV",
+   "instance": 5,
+   "name": "COMPR MOTOR RUN",
+   "description": "Motor Run",
+   "units": "",
+   "access": "R",
+   "states": "0=Off, 1=On"
+  },
+  {
+   "type": "BV",
+   "instance": 6,
+   "name": "CH LIQ PUMP STAT",
+   "description": "Chilled Liquid Pump",
+   "units": "",
+   "access": "R",
+   "states": "0=Off, 1=On"
+  },
+  {
+   "type": "BV",
+   "instance": 7,
+   "name": "CND LIQ PUMP STAT",
+   "description": "Condenser Liquid Pump",
+   "units": "",
+   "access": "R",
+   "states": "0=Off, 1=On"
+  },
+  {
+   "type": "BV",
+   "instance": 8,
+   "name": "CH LIQ FLOW SWITCH STAT",
+   "description": "Chilled Liquid Flow Switch",
+   "units": "",
+   "access": "R",
+   "states": "0=Open, 1=Closed"
+  },
+  {
+   "type": "BV",
+   "instance": 9,
+   "name": "CND FLOW SWITCH STAT",
+   "description": "Condenser Liquid Flow Switch",
+   "units": "",
+   "access": "R",
+   "states": "0=Open, 1=Closed"
+  },
+  {
+   "type": "BV",
+   "instance": 10,
+   "name": "START STOP SWITCH STATUS",
+   "description": "Panel Stop Switch",
+   "units": "",
+   "access": "R",
+   "states": "0=Off, 1=On"
+  },
+  {
+   "type": "BV",
+   "instance": 11,
+   "name": "VSD COOLING SYS STAT",
+   "description": "VSD Cooling System",
+   "units": "",
+   "access": "R",
+   "states": "0=Off, 1=On"
+  },
+  {
+   "type": "BV",
+   "instance": 12,
+   "name": "VSD HARMONIC FILTER INST",
+   "description": "Harmonic Filter Installed",
+   "units": "",
+   "access": "R",
+   "states": "0=False, 1=True"
+  },
+  {
+   "type": "BV",
+   "instance": 13,
+   "name": "COND REF LEVEL CNTRL MODE",
+   "description": "Condenser Level Control Valve Mode",
+   "units": "",
+   "access": "R",
+   "states": "0=Auto, 1=Manual"
+  },
+  {
+   "type": "BV",
+   "instance": 14,
+   "name": "PURGE TANK HIGH LEVEL SW",
+   "description": "Purge Tank High Level Switch",
+   "units": "",
+   "access": "R",
+   "states": "0=Off, 1=On"
+  },
+  {
+   "type": "AV",
+   "instance": 5,
+   "name": "LEAVING CH LIQ TEMP SEL SP",
+   "description": "Leaving Chilled Liquid Setpoint - Selected",
+   "units": "°F",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 6,
+   "name": "LEAVING CH LIQ TEMP",
+   "description": "Leaving Chilled Liquid Temperature",
+   "units": "°F",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 7,
+   "name": "ENTERING CH LIQ TEMP",
+   "description": "Entering Chilled Liquid Temperature",
+   "units": "°F",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 8,
+   "name": "ENTERING COND LIQ TEMP",
+   "description": "Entering Condenser Liquid Temperature",
+   "units": "°F",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 9,
+   "name": "LEAVING COND LIQ TEMP",
+   "description": "Leaving Condenser Liquid Temperature",
+   "units": "°F",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 10,
+   "name": "EVAPORATOR PRESSURE",
+   "description": "Evaporator Pressure",
+   "units": "PSIA",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 11,
+   "name": "CONDENSER PRESSURE",
+   "description": "Condenser Pressure",
+   "units": "PSIA",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 12,
+   "name": "EVAP SATURATION TEMP",
+   "description": "Evaporator Saturation Temperature",
+   "units": "°F",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 13,
+   "name": "COND SATURATION TEMP",
+   "description": "Condenser Saturation Temperature",
+   "units": "°F",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 14,
+   "name": "EVAP REFRIGERANT TEMP",
+   "description": "Evaporator refrigerant temperature (sensor option)",
+   "units": "°F",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 15,
+   "name": "DISCHARGE TEMP",
+   "description": "Discharge Temperature",
+   "units": "°F",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 16,
+   "name": "INPUT CURRENT ACT LIMIT",
+   "description": "Active Input Current Limit",
+   "units": "%",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 17,
+   "name": "INPUT CURRENT PCT FLA",
+   "description": "Input % Full Load Amps",
+   "units": "%",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 18,
+   "name": "MOTOR CURRENT PCT FLA",
+   "description": "Motor % Full Load Amps",
+   "units": "%",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 19,
+   "name": "VSD INPUT CURRENT",
+   "description": "VSD Input Current (RMS)",
+   "units": "Amps",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 20,
+   "name": "VSD PHASE A OUTPUT CURRENT",
+   "description": "VSD Phase A Output Current (RMS)",
+   "units": "Amps",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 21,
+   "name": "VSD PHASE B OUTPUT CURRENT",
+   "description": "VSD Phase B Output Current (RMS)",
+   "units": "Amps",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 22,
+   "name": "VSD PHASE C OUTPUT CURRENT",
+   "description": "VSD Phase C Output Current (RMS)",
+   "units": "Amps",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 23,
+   "name": "VSD OUTPUT VOLTAGE",
+   "description": "VSD Output Voltage",
+   "units": "Volts",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 24,
+   "name": "INPUT POWER",
+   "description": "Input Power",
+   "units": "kW",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 25,
+   "name": "INPUT KWH",
+   "description": "Input Kilowatt Hours",
+   "units": "kWh",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 26,
+   "name": "INPUT KWH LO",
+   "description": "Input kWh low part (kWh = offset x 10,000 + low)",
+   "units": "",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 27,
+   "name": "INPUT KWH OFFSET",
+   "description": "Input kWh offset part (kWh = offset x 10,000 + low)",
+   "units": "",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 28,
+   "name": "VSD DC BUS VOLTAGE",
+   "description": "VSD DC Bus Voltage",
+   "units": "Volts",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 29,
+   "name": "VSD DC BUS CURRENT",
+   "description": "VSD DC Bus Current",
+   "units": "Amps",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 30,
+   "name": "SURGE COUNT",
+   "description": "Surge Count",
+   "units": "",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 31,
+   "name": "VSD OUTPUT FREQUENCY",
+   "description": "VSD Output Frequency",
+   "units": "Hz",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 32,
+   "name": "VSD INTERNAL AMBIENT TEMP",
+   "description": "VSD Internal Ambient Temp",
+   "units": "°F",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 33,
+   "name": "VSD CONVERTER HSINK TEMP",
+   "description": "VSD Converter Heatsink Temp",
+   "units": "°F",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 34,
+   "name": "VSD BASEPLATE TEMP",
+   "description": "VSD Baseplate Temperature",
+   "units": "°F",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 35,
+   "name": "VSD PH A HEATSINK TEMP",
+   "description": "VSD Phase A Heatsink Temperature",
+   "units": "°F",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 36,
+   "name": "VSD PH B HEATSINK TEMP",
+   "description": "VSD Phase B Heatsink Temperature",
+   "units": "°F",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 37,
+   "name": "VSD PH C HEATSINK TEMP",
+   "description": "VSD Phase C Heatsink Temperature",
+   "units": "°F",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 38,
+   "name": "FILTER BASEPLATE TEMP",
+   "description": "Harmonic Filter Baseplate Temperature (Harmonic Filter only)",
+   "units": "°F",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 39,
+   "name": "FILTER MAX VOLTAGE THD",
+   "description": "Harmonic Filter Max Voltage Total Harmonic Distortion (Harmonic Filter only)",
+   "units": "%",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 40,
+   "name": "FILTER MAX CURRENT TDD",
+   "description": "Harmonic Filter Max Current Total Demand Distortion (Harmonic Filter only)",
+   "units": "%",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 41,
+   "name": "FILTER SUPPLY KVA",
+   "description": "Harmonic Filter Total Supply KVA (Harmonic Filter only)",
+   "units": "kVA",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 42,
+   "name": "MTR WINDING AVG TEMP",
+   "description": "Average Winding Temperature",
+   "units": "°F",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 43,
+   "name": "COND REFRIGERANT LEVEL SP",
+   "description": "Condenser Refrigerant Level Setpoint",
+   "units": "%",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 44,
+   "name": "COND REFRIGERANT LEVEL",
+   "description": "Condenser Refrigerant Level",
+   "units": "%",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 45,
+   "name": "COND LVL CTRL VLV CMD",
+   "description": "Condenser Level Control Valve Command",
+   "units": "%",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 46,
+   "name": "DROP LEG REFRIG TEMP",
+   "description": "Drop Leg Refrigerant Temperature",
+   "units": "°F",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 47,
+   "name": "HOT GAS BYPASS COMMAND",
+   "description": "Hot Gas Bypass Command",
+   "units": "%",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 48,
+   "name": "OPERATING HOURS",
+   "description": "Operating Hours",
+   "units": "Hr",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 49,
+   "name": "OPERATING HOURS LO",
+   "description": "Operating hours low part (hours = offset x 10,000 + low)",
+   "units": "",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 50,
+   "name": "OPERATING HOURS OFFSET",
+   "description": "Operating hours offset part (hours = offset x 10,000 + low)",
+   "units": "",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 51,
+   "name": "NUMBER OF STARTS",
+   "description": "Number Of Starts",
+   "units": "",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "MV",
+   "instance": 1,
+   "name": "UNIT OPERATION CODE",
+   "description": "Unit Operation Code",
+   "units": "",
+   "access": "R",
+   "states": "1=Unit Stopped - Ready To Start, 2=Unit Stopped - Local Shutdown, 3=Unit Stopped - Remote Shutdown, 4=Unit Stopped - Warning Active, 5=Unit Stopped - Cycling Shutdown, 6=Unit Stopped - Safety Shutdown, 7=Unit Start Inhibit, 8=Unit Starting, 9=Unit Running - No Abnormal Condition, 10=Unit Running - Warning Active, 11=Unit Running - Soft Shutdown, 12=Unit Coastdown, 13=Unit Running - Modified Run, 14=Unit Stopped - Internal Shutdown, 15=Unit Starting - MVVSD Startup - Drive Not Ready, 22=Unit Running - Cooling - No Abnormal Condition, 23=Unit Running - Cooling - Warning Active, 24=Unit Running - Cooling - Modified Run, 25=Unit Running - Heating - No Abnormal Condition, 26=Unit Running - Heating - Warning Active, 27=Unit Running - Heating - Modified Run, 28=Unit Running - Cooling & Heating - No Abnormal Condition, 29=Unit Running - Cooling & Heating - Warning Active, 30=Unit Running - Cooling & Heating - Modified Run"
+  },
+  {
+   "type": "AV",
+   "instance": 52,
+   "name": "UNIT OPERATION CODE AV",
+   "description": "Unit Operation Code AV",
+   "units": "",
+   "access": "R",
+   "states": "0=Unit Stopped - Ready To Start, 1=Unit Stopped - Local Shutdown, 2=Unit Stopped - Remote Shutdown, 3=Unit Stopped - Warning Active, 4=Unit Stopped - Cycling Shutdown, 5=Unit Stopped - Safety Shutdown, 6=Unit Start Inhibit, 7=Unit Starting, 8=Unit Running - No Abnormal Condition, 9=Unit Running - Warning Active, 10=Unit Running - Soft Shutdown, 11=Unit Coastdown, 12=Unit Running - Modified Run, 13=Unit Stopped - Internal Shutdown, 14=Unit Starting - MVVSD Startup - Drive Not Ready, 21=Unit Running - Cooling - No Abnormal Condition, 22=Unit Running - Cooling - Warning Active, 23=Unit Running - Cooling - Modified Run, 24=Unit Running - Heating - No Abnormal Condition, 25=Unit Running - Heating - Warning Active, 26=Unit Running - Heating - Modified Run, 27=Unit Running - Cooling & Heating - No Abnormal Condition, 28=Unit Running - Cooling & Heating - Warning Active, 29=Unit Running - Cooling & Heating - Modified Run"
+  },
+  {
+   "type": "MV",
+   "instance": 2,
+   "name": "UNIT SAFETY FAULT CODE",
+   "description": "Unit Safety Fault Code",
+   "units": "",
+   "access": "R",
+   "states": "1=No Safety Faults Present, 2=Evaporator - Low Pressure, 3=Evaporator - Transducer Or Leaving Liquid Probe, 4=Evaporator - Transducer Or Temperature Sensor, 5=Condenser - High Pressure Contacts Open, 6=Condenser - High Pressure, 7=Condenser - Pressure Transducer Out Of Range, 8=Auxiliary Safety - Contacts Closed, 9=Discharge - Low Temperature, 10=Discharge - High Temperature, 11=Oil - High Sump Temperature, 12=Oil - Low Differential Pressure, 13=Oil - High Differential Pressure, 14=Oil - Pump Pressure Transducer Out Of Range, 15=Oil - Sump Pressure Transducer Out Of Range, 16=Motor - Lack of Motor Oil Change, 17=Sales Order - Invalid Compressor Model, 18=Sales Order – Invalid Gear Code, 19=Oil - Differential Pressure Calibration, 20=Safety Stop, 21=Oil - Variable Speed Pump - Setpoint Not Achieved, 22=Control Panel - Power Failure, 23=Control Panel – Loss of Control Voltage, 24=MOTOR OR STARTER - CURRENT IMBALANCE, 25=Thrust Bearing - Proximity Probe Clearance, 26=Thrust Bearing - Proximity Probe Uncalibrated, 27=Thrust Bearing - Proximity Probe Out Of Range, 28=Thrust Bearing - High Oil Temperature, 29=Thrust Bearing - Oil Temperature Sensor, 30=VSD - High Heatsink Temperature, 31=VSD - 105 % MOTOR CURRENT OVERLOAD, 32=VSD - HIGH PHASE A INVERTER HEATSINK TEMPERATURE, 33=VSD - HIGH PHASE B INVERTER HEATSINK TEMPERATURE, 34=VSD - HIGH PHASE C INVERTER HEATSINK TEMPERATURE, 35=VSD - HIGH CONVERTER HEATSINK TEMPERATURE, 36=VSD - PRECHARGE LOCKOUT, 37=HARMONIC FILTER - HIGH HEATSINK TEMPERATURE, 38=HARMONIC FILTER - HIGH TOTAL DEMAND DISTORTION, 39=LCSSS - PHASE ROTATION, 40=LCSSS - MOTOR OR STARTER - CURRENT IMBALANCE, 41=LCSSS - 105 % MOTOR CURRENT OVERLOAD, 42=LCSSS - HIGH INSTANTANEOUS CURRENT, 43=LCSSS - OPEN SCR, 44=LCSSS - PHASE A SHORTED SCR, 45=LCSSS - PHASE B SHORTED SCR, 46=LCSSS - PHASE C SHORTED SCR, 47=LCSSS - HIGH PHASE A HEATSINK TEMPERATURE, 48=LCSSS - HIGH PHASE B HEATSINK TEMPERATURE, 49=LCSSS - HIGH PHASE C HEATSINK TEMPERATURE, 50=Starter - Invalid Motor Selection, 51=Oil Or Condenser Transducer Error, 52=Evaporator - Low Pressure, 53=Evaporator - Low Pressure - Smart Freeze, 54=Surge Protection - Excess Surge, 55=VSD - HIGH INVERTER BASEPLATE TEMPERATURE, 56=HARMONIC FILTER - HIGH BASEPLATE TEMPERATURE, 57=Thrust Bearing - Proximity Probe Clearance, 58=Thrust Bearing - Limit Switch Open, 59=VGD Actuator – Positioning Fault, 60=Oil – Sump Or Pump Transducer Error, 61=Motor - High Housing Temperature, 62=Motor - High Winding Temperature, 63=Motor - High Bearing Temperature, 67=VSD - MOTOR CURRENT IMBALANCE, 68=Condenser - High Pressure - Stopped, 69=OIL – HIGH SUPPLY TEMPERATURE, 70=Motor - High Bearing Vibration, 71=SALES ORDER – INVALID MODEL NUMBER, 72=LCSSS - PHASE A OPEN SCR, 73=LCSSS - PHASE B OPEN SCR, 74=LCSSS - PHASE C OPEN SCR, 75=Motor - Lack Of Bearing Lubrication, 76=VSD - LOW FREQUENCY DETECTED, 77=VSD - Feedback Sensor, 78=VSD - Control Fault, 79=VSD - Drive Boot Failure, 80=MVSSS - PHASE ROTATION, 81=MVSSS - MOTOR OR STARTER - CURRENT IMBALANCE, 82=MVSSS - 105% MOTOR CURRENT OVERLOAD, 83=MVSSS - HIGH INSTANTANEOUS CURRENT, 84=MVSSS - FAILED SCR, 85=MVSSS - HIGH HEATSINK TEMPERATURE, 86=MVSSS - GROUND FAULT, 87=MVSSS - CONTACTOR FAULT, 88=MVSSS - CONTROL BOARD FAULT, 89=MVSSS - DISCONNECT FAULT, 90=VSD - POWER TRANSFORMER HIGH TEMPERATURE, 91=VSD - HIGH OUTPUT FREQUENCY, 92=MVVSD - GROUND FAULT, 93=VSD - MAIN CONTROL BOARD FAULT, 94=MVVSD - CONTACTOR FAULT, 95=MVVSD - INTERLOCK FAULT, 96=VSD - LOGIC BOARD PLUG, 97=VSD - INPUT CURRENT OVERLOAD, 98=VSD - HIGH PHASE A INPUT BASEPLATE TEMPERATURE, 99=VSD - HIGH PHASE B INPUT BASEPLATE TEMPERATURE, 100=VSD - HIGH PHASE C INPUT BASEPLATE TEMPERATURE, 101=MOTOR – LOW WINDING TEMPERATURE, 102=VSD - INVALID PWM SOFTWARE, 103=VSD - BASEPLATE TEMPERATURE IMBALANCE, 104=VSD - DC BUS PRE-REGULATION LOCKOUT, 105=VSD - GROUND FAULT, 106=VSD - HIGH INSTANTANEOUS CURRENT, 107=MOTOR CURRENT > 15 %FLA, 108=VSD - FREQUENCY > 0 HZ, 109=VSD - PHASE A INPUT DCCT, 110=VSD - PHASE B INPUT DCCT, 111=VSD - PHASE C INPUT DCCT, 112=VSD - HIGH TOTAL DEMAND DISTORTION, 113=Motor – Cooling Coil Leak, 114=MVVSD - Excessive Shutdowns, 115=Isolation Valves - Not Opened, 116=VSD - OUTPUT PHASE ROTATION, 117=VSD - Phase Locked Loop, 118=VSD - HIGH PHASE A INSTANTANEOUS CURRENT, 119=VSD - HIGH PHASE B INSTANTANEOUS CURRENT, 120=VSD - HIGH PHASE C INSTANTANEOUS CURRENT, 121=VSD - Line Voltage Phase Rotation, 122=VSD - INPUT DCCT OFFSET LOCKOUT, 123=VSD - LOGIC BOARD HARDWARE, 124=VSD - RECTIFIER PROGRAM FAULT, 125=VSD - INVERTER PROGRAM FAULT, 126=VSD - DC BUS LOCKOUT - DO NOT CYCLE POWER, 127=VSD - MOTOR CURRENT THD FAULT, 128=VSD - HIGH PHASE A MOTOR CURRENT, 129=VSD - HIGH PHASE B MOTOR CURRENT, 130=VSD - HIGH PHASE C MOTOR CURRENT, 131=VSD - HIGH PHASE A MOTOR BASEPLATE TEMPERATURE, 132=VSD - HIGH PHASE B MOTOR BASEPLATE TEMPERATURE, 133=VSD - HIGH PHASE C MOTOR BASEPLATE TEMPERATURE, 134=VSD - PHASE A MOTOR DCCT, 135=VSD - PHASE B MOTOR DCCT, 136=VSD - PHASE C MOTOR DCCT, 137=Oil – High Sump Pressure, 138=MBC – OVERSPEED FAULT, 139=MBC – WATCHDOG, 140=MBC – POWER SUPPLY FAULT, 141=MBC – HIGH HEATSINK TEMPERATURE, 142=MBC – HIGH DC BUS VOLTAGE, 143=MBC – AMPLIFIER FUSE, 144=MBC – HIGH BEARING J TEMPERATURE, 145=MBC – HIGH BEARING H1 TEMPERATURE, 146=MBC – HIGH BEARING H2 TEMPERATURE, 147=MBC – HIGH BEARING K TEMPERATURE, 148=MBC – GROUND FAULT, 149=MBC – LOW GATE VOLTAGE, 150=MBC – HIGH GATE VOLTAGE, 151=MBC – HIGH AMPLIFIER TEMPERATURE, 152=MBC – HIGH AMPLIFIER VOLTAGE, 153=MBC – FAULT CONTACTS OPEN, 154=MBC – INITIALIZATION FAILURE, 155=MBC – NOT LEVITATED, 156=SYSTEM – STARTUP FAILURE, 157=UPS – Battery Not Connected, 158=UPS – Inverter Low Battery Voltage, 159=MBC – SPEED SENSOR FAULT, 160=MBC – POWER FAIL LANDING, 161=COMPRESSOR – LOW DISCHARGE SUPERHEAT, 162=MVSSS - HIGH HEATSINK 1 TEMPERATURE, 163=MVSSS - HIGH HEATSINK 2 TEMPERATURE, 164=MVSSS - HIGH HEATSINK 3 TEMPERATURE, 165=MOTOR CONTROLLER - FAULT CONTACTS OPEN, 166=VSD - HIGH PHASE A2 INSTANTANEOUS CURRENT, 167=VSD - HIGH PHASE B2 INSTANTANEOUS CURRENT, 168=VSD - HIGH PHASE C2 INSTANTANEOUS CURRENT, 169=VSD - HIGH PHASE A2 INVERTER BASEPLATE TEMPERATURE, 170=VSD - HIGH PHASE B2 INVERTER BASEPLATE TEMPERATURE, 171=VSD - HIGH PHASE C2 INVERTER BASEPLATE TEMPERATURE, 172=VSD - HIGH CONVERTER 2 HEATSINK TEMPERATURE, 173=VSD - MOTOR CURRENT 2 IMBALANCE, 174=VSD - MOTOR CURRENT MISMATCH, 175=VSD - HIGH PHASE A INPUT CURRENT, 176=VSD - HIGH PHASE B INPUT CURRENT, 177=VSD - HIGH PHASE C INPUT CURRENT, 178=VSD - HIGH INPUT CURRENT TDD, 179=INTERNAL ERROR - NO TIMER HANDLES AVAILABLE, 180=WATCHDOG - SOFTWARE REBOOT, 181=VSD - PRECHARGE LOCKOUT 2, 182=VSD - BASEPLATE TEMPERATURE IMBALANCE 2, 183=OIL - VARIABLE SPEED PUMP - HIGH RATE OF CHANGE, 184=VSD - HIGH MOTOR HARMONICS, 185=VSD - CAPACITOR FAULT, 186=VSD - ELECTRICAL SIGNATURE BOARD"
+  },
+  {
+   "type": "AV",
+   "instance": 53,
+   "name": "UNIT SAFETY FAULT CODE AV",
+   "description": "Unit Safety Fault Code AV",
+   "units": "",
+   "access": "R",
+   "states": "0=No Safety Faults Present, 1=Evaporator - Low Pressure, 2=Evaporator - Transducer Or Leaving Liquid Probe, 3=Evaporator - Transducer Or Temperature Sensor, 4=Condenser - High Pressure Contacts Open, 5=Condenser - High Pressure, 6=Condenser - Pressure Transducer Out Of Range, 7=Auxiliary Safety - Contacts Closed, 8=Discharge - Low Temperature, 9=Discharge - High Temperature, 10=Oil - High Sump Temperature, 11=Oil - Low Differential Pressure, 12=Oil - High Differential Pressure, 13=Oil - Pump Pressure Transducer Out Of Range, 14=Oil - Sump Pressure Transducer Out Of Range, 15=Motor - Lack of Motor Oil Change, 16=Sales Order - Invalid Compressor Model, 17=Sales Order – Invalid Gear Code, 18=Oil - Differential Pressure Calibration, 19=Safety Stop, 20=Oil - Variable Speed Pump - Setpoint Not Achieved, 21=Control Panel - Power Failure, 22=Control Panel – Loss of Control Voltage, 23=MOTOR OR STARTER - CURRENT IMBALANCE, 24=Thrust Bearing - Proximity Probe Clearance, 25=Thrust Bearing - Proximity Probe Uncalibrated, 26=Thrust Bearing - Proximity Probe Out Of Range, 27=Thrust Bearing - High Oil Temperature, 28=Thrust Bearing - Oil Temperature Sensor, 29=VSD - High Heatsink Temperature, 30=VSD - 105 % MOTOR CURRENT OVERLOAD, 31=VSD - HIGH PHASE A INVERTER HEATSINK TEMPERATURE, 32=VSD - HIGH PHASE B INVERTER HEATSINK TEMPERATURE, 33=VSD - HIGH PHASE C INVERTER HEATSINK TEMPERATURE, 34=VSD - HIGH CONVERTER HEATSINK TEMPERATURE, 35=VSD - PRECHARGE LOCKOUT, 36=HARMONIC FILTER - HIGH HEATSINK TEMPERATURE, 37=HARMONIC FILTER - HIGH TOTAL DEMAND DISTORTION, 38=LCSSS - PHASE ROTATION, 39=LCSSS - MOTOR OR STARTER - CURRENT IMBALANCE, 40=LCSSS - 105 % MOTOR CURRENT OVERLOAD, 41=LCSSS - HIGH INSTANTANEOUS CURRENT, 42=LCSSS - OPEN SCR, 43=LCSSS - PHASE A SHORTED SCR, 44=LCSSS - PHASE B SHORTED SCR, 45=LCSSS - PHASE C SHORTED SCR, 46=LCSSS - HIGH PHASE A HEATSINK TEMPERATURE, 47=LCSSS - HIGH PHASE B HEATSINK TEMPERATURE, 48=LCSSS - HIGH PHASE C HEATSINK TEMPERATURE, 49=Starter - Invalid Motor Selection, 50=Oil Or Condenser Transducer Error, 51=Evaporator - Low Pressure, 52=Evaporator - Low Pressure - Smart Freeze, 53=Surge Protection - Excess Surge, 54=VSD - HIGH INVERTER BASEPLATE TEMPERATURE, 55=HARMONIC FILTER - HIGH BASEPLATE TEMPERATURE, 56=Thrust Bearing - Proximity Probe Clearance, 57=Thrust Bearing - Limit Switch Open, 58=VGD Actuator – Positioning Fault, 59=Oil – Sump Or Pump Transducer Error, 60=Motor - High Housing Temperature, 61=Motor - High Winding Temperature, 62=Motor - High Bearing Temperature, 66=VSD - MOTOR CURRENT IMBALANCE, 67=Condenser - High Pressure - Stopped, 68=OIL – HIGH SUPPLY TEMPERATURE, 69=Motor - High Bearing Vibration, 70=SALES ORDER – INVALID MODEL NUMBER, 71=LCSSS - PHASE A OPEN SCR, 72=LCSSS - PHASE B OPEN SCR, 73=LCSSS - PHASE C OPEN SCR, 74=Motor - Lack Of Bearing Lubrication, 75=VSD - LOW FREQUENCY DETECTED, 76=VSD - Feedback Sensor, 77=VSD - Control Fault, 78=VSD - Drive Boot Failure, 79=MVSSS - PHASE ROTATION, 80=MVSSS - MOTOR OR STARTER - CURRENT IMBALANCE, 81=MVSSS - 105% MOTOR CURRENT OVERLOAD, 82=MVSSS - HIGH INSTANTANEOUS CURRENT, 83=MVSSS - FAILED SCR, 84=MVSSS - HIGH HEATSINK TEMPERATURE, 85=MVSSS - GROUND FAULT, 86=MVSSS - CONTACTOR FAULT, 87=MVSSS - CONTROL BOARD FAULT, 88=MVSSS - DISCONNECT FAULT, 89=VSD - POWER TRANSFORMER HIGH TEMPERATURE, 90=VSD - HIGH OUTPUT FREQUENCY, 91=MVVSD - GROUND FAULT, 92=VSD - MAIN CONTROL BOARD FAULT, 93=MVVSD - CONTACTOR FAULT, 94=MVVSD - INTERLOCK FAULT, 95=VSD - LOGIC BOARD PLUG, 96=VSD - INPUT CURRENT OVERLOAD, 97=VSD - HIGH PHASE A INPUT BASEPLATE TEMPERATURE, 98=VSD - HIGH PHASE B INPUT BASEPLATE TEMPERATURE, 99=VSD - HIGH PHASE C INPUT BASEPLATE TEMPERATURE, 100=MOTOR – LOW WINDING TEMPERATURE, 101=VSD - INVALID PWM SOFTWARE, 102=VSD - BASEPLATE TEMPERATURE IMBALANCE, 103=VSD - DC BUS PRE-REGULATION LOCKOUT, 104=VSD - GROUND FAULT, 105=VSD - HIGH INSTANTANEOUS CURRENT, 106=MOTOR CURRENT > 15 %FLA, 107=VSD - FREQUENCY > 0 HZ, 108=VSD - PHASE A INPUT DCCT, 109=VSD - PHASE B INPUT DCCT, 110=VSD - PHASE C INPUT DCCT, 111=VSD - HIGH TOTAL DEMAND DISTORTION, 112=Motor – Cooling Coil Leak, 113=MVVSD - Excessive Shutdowns, 114=Isolation Valves - Not Opened, 115=VSD - OUTPUT PHASE ROTATION, 116=VSD - Phase Locked Loop, 117=VSD - HIGH PHASE A INSTANTANEOUS CURRENT, 118=VSD - HIGH PHASE B INSTANTANEOUS CURRENT, 119=VSD - HIGH PHASE C INSTANTANEOUS CURRENT, 120=VSD - Line Voltage Phase Rotation, 121=VSD - INPUT DCCT OFFSET LOCKOUT, 122=VSD - LOGIC BOARD HARDWARE, 123=VSD - RECTIFIER PROGRAM FAULT, 124=VSD - INVERTER PROGRAM FAULT, 125=VSD - DC BUS LOCKOUT - DO NOT CYCLE POWER, 126=VSD - MOTOR CURRENT THD FAULT, 127=VSD - HIGH PHASE A MOTOR CURRENT, 128=VSD - HIGH PHASE B MOTOR CURRENT, 129=VSD - HIGH PHASE C MOTOR CURRENT, 130=VSD - HIGH PHASE A MOTOR BASEPLATE TEMPERATURE, 131=VSD - HIGH PHASE B MOTOR BASEPLATE TEMPERATURE, 132=VSD - HIGH PHASE C MOTOR BASEPLATE TEMPERATURE, 133=VSD - PHASE A MOTOR DCCT, 134=VSD - PHASE B MOTOR DCCT, 135=VSD - PHASE C MOTOR DCCT, 136=Oil – High Sump Pressure, 137=MBC – OVERSPEED FAULT, 138=MBC – WATCHDOG, 139=MBC – POWER SUPPLY FAULT, 140=MBC – HIGH HEATSINK TEMPERATURE, 141=MBC – HIGH DC BUS VOLTAGE, 142=MBC – AMPLIFIER FUSE, 143=MBC – HIGH BEARING J TEMPERATURE, 144=MBC – HIGH BEARING H1 TEMPERATURE, 145=MBC – HIGH BEARING H2 TEMPERATURE, 146=MBC – HIGH BEARING K TEMPERATURE, 147=MBC – GROUND FAULT, 148=MBC – LOW GATE VOLTAGE, 149=MBC – HIGH GATE VOLTAGE, 150=MBC – HIGH AMPLIFIER TEMPERATURE, 151=MBC – HIGH AMPLIFIER VOLTAGE, 152=MBC – FAULT CONTACTS OPEN, 153=MBC – INITIALIZATION FAILURE, 154=MBC – NOT LEVITATED, 155=SYSTEM – STARTUP FAILURE, 156=UPS – Battery Not Connected, 157=UPS – Inverter Low Battery Voltage, 158=MBC – SPEED SENSOR FAULT, 159=MBC – POWER FAIL LANDING, 160=COMPRESSOR – LOW DISCHARGE SUPERHEAT, 161=MVSSS - HIGH HEATSINK 1 TEMPERATURE, 162=MVSSS - HIGH HEATSINK 2 TEMPERATURE, 163=MVSSS - HIGH HEATSINK 3 TEMPERATURE, 164=MOTOR CONTROLLER - FAULT CONTACTS OPEN, 165=VSD - HIGH PHASE A2 INSTANTANEOUS CURRENT, 166=VSD - HIGH PHASE B2 INSTANTANEOUS CURRENT, 167=VSD - HIGH PHASE C2 INSTANTANEOUS CURRENT, 168=VSD - HIGH PHASE A2 INVERTER BASEPLATE TEMPERATURE, 169=VSD - HIGH PHASE B2 INVERTER BASEPLATE TEMPERATURE, 170=VSD - HIGH PHASE C2 INVERTER BASEPLATE TEMPERATURE, 171=VSD - HIGH CONVERTER 2 HEATSINK TEMPERATURE, 172=VSD - MOTOR CURRENT 2 IMBALANCE, 173=VSD - MOTOR CURRENT MISMATCH, 174=VSD - HIGH PHASE A INPUT CURRENT, 175=VSD - HIGH PHASE B INPUT CURRENT, 176=VSD - HIGH PHASE C INPUT CURRENT, 177=VSD - HIGH INPUT CURRENT TDD, 178=INTERNAL ERROR - NO TIMER HANDLES AVAILABLE, 179=WATCHDOG - SOFTWARE REBOOT, 180=VSD - PRECHARGE LOCKOUT 2, 181=VSD - BASEPLATE TEMPERATURE IMBALANCE 2, 182=OIL - VARIABLE SPEED PUMP - HIGH RATE OF CHANGE, 183=VSD - HIGH MOTOR HARMONICS, 184=VSD - CAPACITOR FAULT, 185=VSD - ELECTRICAL SIGNATURE BOARD"
+  },
+  {
+   "type": "MV",
+   "instance": 3,
+   "name": "UNIT CYCLING FAULT CODE",
+   "description": "Unit Cycling Fault Code",
+   "units": "",
+   "access": "R",
+   "states": "1=No Cycling Faults Present, 2=Multiunit Cycling - Contacts Open, 3=System Cycling - Contacts Open, 4=Oil - Low Temperature Differential, 5=Oil - Low Sump Temperature, 6=Control Panel - Power Failure, 7=Leaving Chilled Liquid - Low Temperature, 8=Leaving Chilled Liquid - Flow Switch Open, 9=Condenser - Flow Switch Open, 10=MOTOR CONTROLLER - FAULT CONTACTS OPEN, 11=MOTOR CONTROLLER - LOSS OF CURRENT, 12=POWER FAULT, 13=Control Panel - Schedule, 14=Starter - Low Supply Line Voltage, 15=Starter - High Supply Line Voltage, 16=Proximity Probe - Low Supply Voltage, 17=Oil - Variable Speed Pump - Drive Contacts Open, 18=VSD - INITIALIZATION FAILED, 19=VSD Shutdown - Requesting Fault Data…, 20=VSD - HIGH PHASE A INSTANTANEOUS CURRENT, 21=VSD - HIGH PHASE B INSTANTANEOUS CURRENT, 22=VSD - HIGH PHASE C INSTANTANEOUS CURRENT, 23=VSD - PHASE A GATE DRIVER, 24=VSD - PHASE B GATE DRIVER, 25=VSD - PHASE C GATE DRIVER, 26=VSD - SINGLE PHASE INPUT POWER, 27=VSD - HIGH DC BUS VOLTAGE, 28=VSD - LOGIC BOARD POWER SUPPLY, 29=VSD - LOW DC BUS VOLTAGE, 30=VSD - DC BUS VOLTAGE IMBALANCE, 31=VSD - HIGH INTERNAL AMBIENT TEMPERATURE, 32=VSD - INVALID CURRENT SCALE SELECTION, 33=VSD - LOW PHASE A INVERTER HEATSINK TEMPERATURE, 34=VSD - LOW PHASE B INVERTER HEATSINK TEMPERATURE, 35=VSD - LOW PHASE C INVERTER HEATSINK TEMPERATURE, 36=VSD - LOW CONVERTER HEATSINK TEMPERATURE, 37=VSD - PRECHARGE - DC BUS VOLTAGE IMBALANCE, 38=VSD - PRECHARGE - LOW DC BUS VOLTAGE, 39=VSD - LOGIC BOARD PROCESSOR, 40=VSD - RUN SIGNAL, 41=VSD - SERIAL RECEIVE, 42=VSD - Stop Contacts Open, 43=Harmonic Filter - Logic Board Or Communications, 44=HARMONIC FILTER - HIGH DC BUS VOLTAGE, 45=HARMONIC FILTER - HIGH PHASE A CURRENT, 46=HARMONIC FILTER - HIGH PHASE B CURRENT, 47=HARMONIC FILTER - HIGH PHASE C CURRENT, 48=HARMONIC FILTER - PHASE LOCKED LOOP, 49=Harmonic Filter - Precharge - Low DC Bus Voltage, 50=HARMONIC FILTER - LOW DC BUS VOLTAGE, 51=HARMONIC FILTER - DC BUS VOLTAGE IMBALANCE, 52=HARMONIC FILTER - INPUT CURRENT OVERLOAD, 53=HARMONIC FILTER - LOGIC BOARD POWER SUPPLY, 54=HARMONIC FILTER - RUN SIGNAL, 55=HARMONIC FILTER - DC CURRENT TRANSFORMER 1, 56=HARMONIC FILTER - DC CURRENT TRANSFORMER 2, 57=LCSSS Initialization Failed, 58=LCSSS Shutdown - Requesting Fault Data…, 59=LCSSS - LOW PHASE A TEMPERATURE SENSOR, 60=LCSSS - LOW PHASE B TEMPERATURE SENSOR, 61=LCSSS - LOW PHASE C TEMPERATURE SENSOR, 62=LCSSS - PHASE LOCKED LOOP, 63=LCSSS - POWER FAULT, 64=LCSSS - HIGH SUPPLY LINE VOLTAGE, 65=LCSSS - LOW SUPPLY LINE VOLTAGE, 66=LCSSS - INVALID CURRENT SCALE SELECTION, 67=LCSSS - RUN SIGNAL, 68=LCSSS - SERIAL RECEIVE, 69=LCSSS - Stop Contacts Open, 70=Motor Auto Lubrication In Progress, 71=Control Panel – Loss of Control Voltage, 72=LCSSS – LOGIC BOARD PROCESSOR, 73=LCSSS - LOGIC BOARD POWER SUPPLY, 74=VSD - Serial Communications, 75=LCSSS - Serial Communications, 76=LCSSS - PHASE LOSS, 77=VSD - LOW INVERTER BASEPLATE TEMPERATURE, 78=Expansion I/O – Serial Communications, 82=Motor Controller - Contacts Open, 83=MVVSD - Serial Communications, 84=VSD - Input Power Transformer, 85=VSD - Input Over-Voltage, 86=VSD - LOSS OF COOLING FAN, 87=VSD - HIGH INSTANTANEOUS CURRENT, 88=MVSSS - Initialization Failed, 89=MVSSS Shutdown - Requesting Fault Data…, 90=MVSSS - POWER FAULT, 91=MVSSS - HIGH SUPPLY LINE VOLTAGE, 92=MVSSS - LOW SUPPLY LINE VOLTAGE, 93=MVSSS - RUN SIGNAL, 94=MVSSS - Serial Communications, 95=MVSSS - Stop Contacts Open, 96=MVSSS - LOGIC BOARD POWER SUPPLY, 97=MVSSS - PHASE LOSS, 98=REFRIGERANT TYPE NOT SET, 99=VSD - Serial Communications, 100=LCSSS - Serial Comms, 101=VSD - Serial Communications, 102=AutoDetect - Serial Communications, 103=VSD - DC BUS VOLTAGE IMBALANCE - AU, 104=VSD - DC BUS VOLTAGE IMBALANCE - AL, 105=VSD - DC BUS VOLTAGE IMBALANCE - BU, 106=VSD - DC BUS VOLTAGE IMBALANCE - BL, 107=VSD - DC BUS VOLTAGE IMBALANCE - CU, 108=VSD - DC BUS VOLTAGE IMBALANCE - CL, 109=VSD - PRECHARGE - DC BUS VOLTAGE IMBALANCE - AU, 110=VSD - PRECHARGE - DC BUS VOLTAGE IMBALANCE - AL, 111=VSD - PRECHARGE - DC BUS VOLTAGE IMBALANCE - BU, 112=VSD - PRECHARGE - DC BUS VOLTAGE IMBALANCE - BL, 113=VSD - PRECHARGE - DC BUS VOLTAGE IMBALANCE - CU, 114=VSD - PRECHARGE - DC BUS VOLTAGE IMBALANCE - CL, 115=VSD - HIGH DC BUS VOLTAGE - AU, 116=VSD - HIGH DC BUS VOLTAGE - AL, 117=VSD - HIGH DC BUS VOLTAGE - BU, 118=VSD - HIGH DC BUS VOLTAGE - BL, 119=VSD - HIGH DC BUS VOLTAGE - CU, 120=VSD - HIGH DC BUS VOLTAGE - CL, 121=VSD - GATE DRIVER - ANU, 122=VSD - GATE DRIVER - ANL, 123=VSD - GATE DRIVER - AMU, 124=VSD - GATE DRIVER - AML, 125=VSD - GATE DRIVER - BNU, 126=VSD - GATE DRIVER - BNL, 127=VSD - GATE DRIVER - BMU, 128=VSD - GATE DRIVER - BML, 129=VSD - GATE DRIVER - CNU, 130=VSD - GATE DRIVER - CNL, 131=VSD - GATE DRIVER - CMU, 132=VSD - GATE DRIVER - CML, 133=VSD - INPUT POWER SUPPLY, 134=VSD - HIGH PHASE A INPUT CURRENT, 135=VSD - HIGH PHASE B INPUT CURRENT, 136=VSD - HIGH PHASE C INPUT CURRENT, 137=VSD - HIGH PHASE A MOTOR CURRENT, 138=VSD - HIGH PHASE B MOTOR CURRENT, 139=VSD - HIGH PHASE C MOTOR CURRENT, 140=VSD - PHASE A INPUT GATE DRIVER, 141=VSD - PHASE B INPUT GATE DRIVER, 142=VSD - PHASE C INPUT GATE DRIVER, 143=VGD Actuator – Serial Communications, 144=VSD - INVALID VSD MODEL, 145=VSD - BASEPLATE TEMPERATURE IMBALANCE, 146=VSD - LOW PHASE A INPUT BASEPLATE TEMPERATURE, 147=VSD - LOW PHASE B INPUT BASEPLATE TEMPERATURE, 148=VSD - LOW PHASE C INPUT BASEPLATE TEMPERATURE, 149=VSD - PHASE LOCKED LOOP, 150=VSD - LINE VOLTAGE PHASE ROTATION, 151=VSD - PRECHARGE - LOW DC BUS VOLTAGE 1, 152=VSD - Input Voltage Imbalance, 153=VSD - DC BUS PRE-REGULATION, 154=VSD - LOGIC BOARD PROCESSOR, 155=MVSSS - SERIAL RECEIVE, 156=VSD - Identifying Drive…, 157=Leaving Condenser Liquid - High Temperature, 158=Condenser - Freeze Threat - Flow Switch Open, 159=Isolation Valves - Not Closed, 160=VSD - PHASE A INPUT DCCT OFFSET, 161=VSD - PHASE B INPUT DCCT OFFSET, 162=VSD - PHASE C INPUT DCCT OFFSET, 163=VSD - INVALID SETPOINTS, 164=VSD - PRECHARGE - LOW DC BUS VOLTAGE 2, 165=VSD - SERIAL RECEIVE, 166=VSD - PHASE A MOTOR GATE DRIVER, 167=VSD - PHASE B MOTOR GATE DRIVER, 168=VSD - PHASE C MOTOR GATE DRIVER, 169=VSD - LOW PHASE A MOTOR BASEPLATE TEMPERATURE, 170=VSD - LOW PHASE B MOTOR BASEPLATE TEMPERATURE, 171=VSD - LOW PHASE C MOTOR BASEPLATE TEMPERATURE, 172=VSD - NOT RUNNING, 173=Motor - Lack Of Bearing Lubrication, 174=Evaporator - Low Pressure, 175=Expansion I/O – Serial Communications, 176=Evaporator - Low Pressure - Smart Freeze, 177=MBC – LOW DC BUS VOLTAGE, 178=MBC – J RADIAL POSITION, 179=MBC – K RADIAL POSITION, 180=MBC – H AXIAL POSITION, 181=MBC – FAULT CONTACTS OPEN, 182=MBC – SERIAL COMMUNICATIONS, 183=SYSTEM – STARTUP FAILURE, 184=UPS – Line Low Battery Voltage, 185=MBC – CALIBRATION FAULT, 186=MBC – BEARING CALIBRATION REQUIRED, 187=MOTOR CONTROLLER - INITIALIZATION FAILURE, 188=MOTOR CONTROLLER - SERIAL COMMUNICATIONS, 191=VSD - HIGH PHASE A2 INSTANTANEOUS CURRENT, 192=VSD - HIGH PHASE B2 INSTANTANEOUS CURRENT, 193=VSD - HIGH PHASE C2 INSTANTANEOUS CURRENT, 194=VSD - PHASE A2 GATE DRIVER, 195=VSD - PHASE B2 GATE DRIVER, 196=VSD - PHASE C2 GATE DRIVER, 197=VSD - HIGH DC BUS 2 VOLTAGE, 198=VSD - LOW DC BUS 2 VOLTAGE, 199=VSD - DC BUS 2 VOLTAGE IMBALANCE, 200=VSD - LOW PHASE A2 INVERTER BASEPLATE TEMPERATURE, 201=VSD - LOW PHASE B2 INVERTER BASEPLATE TEMPERATURE, 202=VSD - LOW PHASE C2 INVERTER BASEPLATE TEMPERATURE, 203=VSD - LOW CONVERTER 2 HEATSINK TEMPERATURE, 204=VSD - PRECHARGE - DC BUS 2 VOLTAGE IMBALANCE, 205=VSD - PRECHARGE - LOW DC BUS 2 VOLTAGE 1, 206=VSD - PRECHARGE - LOW DC BUS 2 VOLTAGE 2, 207=VSD - DC BUS VOLTAGE MISMATCH, 208=UPS - NOT CHARGING, 209=VSD - SINGLE PHASE INPUT POWER 2, 210=VSD - 105% MOTOR CURRENT OVERLOAD, 211=VSD - BASEPLATE TEMPERATURE IMBALANCE 2"
+  },
+  {
+   "type": "AV",
+   "instance": 54,
+   "name": "UNIT CYCLING FAULT CODE AV",
+   "description": "Unit Cycling Fault Code AV",
+   "units": "",
+   "access": "R",
+   "states": "0=No Cycling Faults Present, 1=Multiunit Cycling - Contacts Open, 2=System Cycling - Contacts Open, 3=Oil - Low Temperature Differential, 4=Oil - Low Sump Temperature, 5=Control Panel - Power Failure, 6=Leaving Chilled Liquid - Low Temperature, 7=Leaving Chilled Liquid - Flow Switch Open, 8=Condenser - Flow Switch Open, 9=MOTOR CONTROLLER - FAULT CONTACTS OPEN, 10=MOTOR CONTROLLER - LOSS OF CURRENT, 11=POWER FAULT, 12=Control Panel - Schedule, 13=Starter - Low Supply Line Voltage, 14=Starter - High Supply Line Voltage, 15=Proximity Probe - Low Supply Voltage, 16=Oil - Variable Speed Pump - Drive Contacts Open, 17=VSD - INITIALIZATION FAILED, 18=VSD Shutdown - Requesting Fault Data…, 19=VSD - HIGH PHASE A INSTANTANEOUS CURRENT, 20=VSD - HIGH PHASE B INSTANTANEOUS CURRENT, 21=VSD - HIGH PHASE C INSTANTANEOUS CURRENT, 22=VSD - PHASE A GATE DRIVER, 23=VSD - PHASE B GATE DRIVER, 24=VSD - PHASE C GATE DRIVER, 25=VSD - SINGLE PHASE INPUT POWER, 26=VSD - HIGH DC BUS VOLTAGE, 27=VSD - LOGIC BOARD POWER SUPPLY, 28=VSD - LOW DC BUS VOLTAGE, 29=VSD - DC BUS VOLTAGE IMBALANCE, 30=VSD - HIGH INTERNAL AMBIENT TEMPERATURE, 31=VSD - INVALID CURRENT SCALE SELECTION, 32=VSD - LOW PHASE A INVERTER HEATSINK TEMPERATURE, 33=VSD - LOW PHASE B INVERTER HEATSINK TEMPERATURE, 34=VSD - LOW PHASE C INVERTER HEATSINK TEMPERATURE, 35=VSD - LOW CONVERTER HEATSINK TEMPERATURE, 36=VSD - PRECHARGE - DC BUS VOLTAGE IMBALANCE, 37=VSD - PRECHARGE - LOW DC BUS VOLTAGE, 38=VSD - LOGIC BOARD PROCESSOR, 39=VSD - RUN SIGNAL, 40=VSD - SERIAL RECEIVE, 41=VSD - Stop Contacts Open, 42=Harmonic Filter - Logic Board Or Communications, 43=HARMONIC FILTER - HIGH DC BUS VOLTAGE, 44=HARMONIC FILTER - HIGH PHASE A CURRENT, 45=HARMONIC FILTER - HIGH PHASE B CURRENT, 46=HARMONIC FILTER - HIGH PHASE C CURRENT, 47=HARMONIC FILTER - PHASE LOCKED LOOP, 48=Harmonic Filter - Precharge - Low DC Bus Voltage, 49=HARMONIC FILTER - LOW DC BUS VOLTAGE, 50=HARMONIC FILTER - DC BUS VOLTAGE IMBALANCE, 51=HARMONIC FILTER - INPUT CURRENT OVERLOAD, 52=HARMONIC FILTER - LOGIC BOARD POWER SUPPLY, 53=HARMONIC FILTER - RUN SIGNAL, 54=HARMONIC FILTER - DC CURRENT TRANSFORMER 1, 55=HARMONIC FILTER - DC CURRENT TRANSFORMER 2, 56=LCSSS Initialization Failed, 57=LCSSS Shutdown - Requesting Fault Data…, 58=LCSSS - LOW PHASE A TEMPERATURE SENSOR, 59=LCSSS - LOW PHASE B TEMPERATURE SENSOR, 60=LCSSS - LOW PHASE C TEMPERATURE SENSOR, 61=LCSSS - PHASE LOCKED LOOP, 62=LCSSS - POWER FAULT, 63=LCSSS - HIGH SUPPLY LINE VOLTAGE, 64=LCSSS - LOW SUPPLY LINE VOLTAGE, 65=LCSSS - INVALID CURRENT SCALE SELECTION, 66=LCSSS - RUN SIGNAL, 67=LCSSS - SERIAL RECEIVE, 68=LCSSS - Stop Contacts Open, 69=Motor Auto Lubrication In Progress, 70=Control Panel – Loss of Control Voltage, 71=LCSSS – LOGIC BOARD PROCESSOR, 72=LCSSS - LOGIC BOARD POWER SUPPLY, 73=VSD - Serial Communications, 74=LCSSS - Serial Communications, 75=LCSSS - PHASE LOSS, 76=VSD - LOW INVERTER BASEPLATE TEMPERATURE, 77=Expansion I/O – Serial Communications, 81=Motor Controller - Contacts Open, 82=MVVSD - Serial Communications, 83=VSD - Input Power Transformer, 84=VSD - Input Over-Voltage, 85=VSD - LOSS OF COOLING FAN, 86=VSD - HIGH INSTANTANEOUS CURRENT, 87=MVSSS - Initialization Failed, 88=MVSSS Shutdown - Requesting Fault Data…, 89=MVSSS - POWER FAULT, 90=MVSSS - HIGH SUPPLY LINE VOLTAGE, 91=MVSSS - LOW SUPPLY LINE VOLTAGE, 92=MVSSS - RUN SIGNAL, 93=MVSSS - Serial Communications, 94=MVSSS - Stop Contacts Open, 95=MVSSS - LOGIC BOARD POWER SUPPLY, 96=MVSSS - PHASE LOSS, 97=REFRIGERANT TYPE NOT SET, 98=VSD - Serial Communications, 99=LCSSS - Serial Comms, 100=VSD - Serial Communications, 101=AutoDetect - Serial Communications, 102=VSD - DC BUS VOLTAGE IMBALANCE - AU, 103=VSD - DC BUS VOLTAGE IMBALANCE - AL, 104=VSD - DC BUS VOLTAGE IMBALANCE - BU, 105=VSD - DC BUS VOLTAGE IMBALANCE - BL, 106=VSD - DC BUS VOLTAGE IMBALANCE - CU, 107=VSD - DC BUS VOLTAGE IMBALANCE - CL, 108=VSD - PRECHARGE - DC BUS VOLTAGE IMBALANCE - AU, 109=VSD - PRECHARGE - DC BUS VOLTAGE IMBALANCE - AL, 110=VSD - PRECHARGE - DC BUS VOLTAGE IMBALANCE - BU, 111=VSD - PRECHARGE - DC BUS VOLTAGE IMBALANCE - BL, 112=VSD - PRECHARGE - DC BUS VOLTAGE IMBALANCE - CU, 113=VSD - PRECHARGE - DC BUS VOLTAGE IMBALANCE - CL, 114=VSD - HIGH DC BUS VOLTAGE - AU, 115=VSD - HIGH DC BUS VOLTAGE - AL, 116=VSD - HIGH DC BUS VOLTAGE - BU, 117=VSD - HIGH DC BUS VOLTAGE - BL, 118=VSD - HIGH DC BUS VOLTAGE - CU, 119=VSD - HIGH DC BUS VOLTAGE - CL, 120=VSD - GATE DRIVER - ANU, 121=VSD - GATE DRIVER - ANL, 122=VSD - GATE DRIVER - AMU, 123=VSD - GATE DRIVER - AML, 124=VSD - GATE DRIVER - BNU, 125=VSD - GATE DRIVER - BNL, 126=VSD - GATE DRIVER - BMU, 127=VSD - GATE DRIVER - BML, 128=VSD - GATE DRIVER - CNU, 129=VSD - GATE DRIVER - CNL, 130=VSD - GATE DRIVER - CMU, 131=VSD - GATE DRIVER - CML, 132=VSD - INPUT POWER SUPPLY, 133=VSD - HIGH PHASE A INPUT CURRENT, 134=VSD - HIGH PHASE B INPUT CURRENT, 135=VSD - HIGH PHASE C INPUT CURRENT, 136=VSD - HIGH PHASE A MOTOR CURRENT, 137=VSD - HIGH PHASE B MOTOR CURRENT, 138=VSD - HIGH PHASE C MOTOR CURRENT, 139=VSD - PHASE A INPUT GATE DRIVER, 140=VSD - PHASE B INPUT GATE DRIVER, 141=VSD - PHASE C INPUT GATE DRIVER, 142=VGD Actuator – Serial Communications, 143=VSD - INVALID VSD MODEL, 144=VSD - BASEPLATE TEMPERATURE IMBALANCE, 145=VSD - LOW PHASE A INPUT BASEPLATE TEMPERATURE, 146=VSD - LOW PHASE B INPUT BASEPLATE TEMPERATURE, 147=VSD - LOW PHASE C INPUT BASEPLATE TEMPERATURE, 148=VSD - PHASE LOCKED LOOP, 149=VSD - LINE VOLTAGE PHASE ROTATION, 150=VSD - PRECHARGE - LOW DC BUS VOLTAGE 1, 151=VSD - Input Voltage Imbalance, 152=VSD - DC BUS PRE-REGULATION, 153=VSD - LOGIC BOARD PROCESSOR, 154=MVSSS - SERIAL RECEIVE, 155=VSD - Identifying Drive…, 156=Leaving Condenser Liquid - High Temperature, 157=Condenser - Freeze Threat - Flow Switch Open, 158=Isolation Valves - Not Closed, 159=VSD - PHASE A INPUT DCCT OFFSET, 160=VSD - PHASE B INPUT DCCT OFFSET, 161=VSD - PHASE C INPUT DCCT OFFSET, 162=VSD - INVALID SETPOINTS, 163=VSD - PRECHARGE - LOW DC BUS VOLTAGE 2, 164=VSD - SERIAL RECEIVE, 165=VSD - PHASE A MOTOR GATE DRIVER, 166=VSD - PHASE B MOTOR GATE DRIVER, 167=VSD - PHASE C MOTOR GATE DRIVER, 168=VSD - LOW PHASE A MOTOR BASEPLATE TEMPERATURE, 169=VSD - LOW PHASE B MOTOR BASEPLATE TEMPERATURE, 170=VSD - LOW PHASE C MOTOR BASEPLATE TEMPERATURE, 171=VSD - NOT RUNNING, 172=Motor - Lack Of Bearing Lubrication, 173=Evaporator - Low Pressure, 174=Expansion I/O – Serial Communications, 175=Evaporator - Low Pressure - Smart Freeze, 176=MBC – LOW DC BUS VOLTAGE, 177=MBC – J RADIAL POSITION, 178=MBC – K RADIAL POSITION, 179=MBC – H AXIAL POSITION, 180=MBC – FAULT CONTACTS OPEN, 181=MBC – SERIAL COMMUNICATIONS, 182=SYSTEM – STARTUP FAILURE, 183=UPS – Line Low Battery Voltage, 184=MBC – CALIBRATION FAULT, 185=MBC – BEARING CALIBRATION REQUIRED, 186=MOTOR CONTROLLER - INITIALIZATION FAILURE, 187=MOTOR CONTROLLER - SERIAL COMMUNICATIONS, 190=VSD - HIGH PHASE A2 INSTANTANEOUS CURRENT, 191=VSD - HIGH PHASE B2 INSTANTANEOUS CURRENT, 192=VSD - HIGH PHASE C2 INSTANTANEOUS CURRENT, 193=VSD - PHASE A2 GATE DRIVER, 194=VSD - PHASE B2 GATE DRIVER, 195=VSD - PHASE C2 GATE DRIVER, 196=VSD - HIGH DC BUS 2 VOLTAGE, 197=VSD - LOW DC BUS 2 VOLTAGE, 198=VSD - DC BUS 2 VOLTAGE IMBALANCE, 199=VSD - LOW PHASE A2 INVERTER BASEPLATE TEMPERATURE, 200=VSD - LOW PHASE B2 INVERTER BASEPLATE TEMPERATURE, 201=VSD - LOW PHASE C2 INVERTER BASEPLATE TEMPERATURE, 202=VSD - LOW CONVERTER 2 HEATSINK TEMPERATURE, 203=VSD - PRECHARGE - DC BUS 2 VOLTAGE IMBALANCE, 204=VSD - PRECHARGE - LOW DC BUS 2 VOLTAGE 1, 205=VSD - PRECHARGE - LOW DC BUS 2 VOLTAGE 2, 206=VSD - DC BUS VOLTAGE MISMATCH, 207=UPS - NOT CHARGING, 208=VSD - SINGLE PHASE INPUT POWER 2, 209=VSD - 105% MOTOR CURRENT OVERLOAD, 210=VSD - BASEPLATE TEMPERATURE IMBALANCE 2"
+  },
+  {
+   "type": "MV",
+   "instance": 4,
+   "name": "UNIT WARNING CODE",
+   "description": "Unit Warning Code",
+   "units": "",
+   "access": "R",
+   "states": "1=No Warnings Present, 2=Real-Time Clock Failure, 3=Setpoint Override, 4=Condenser Or Evaporator Transducer Error, 5=Evaporator - Low Pressure Limit, 6=Condenser - High Pressure Limit, 7=OIL – HIGH SUPPLY TEMPERATURE, 8=COMPRESSOR – LOW DISCHARGE SUPERHEAT LIMIT, 9=WARNING - CONDENSER - HIGH TUBE CLEANING TIME, 10=Standby Lube - Low Oil Pressure, 11=Warning - Standby Lube Inihibited, 13=WARNING - SALES ORDER - INVALID SERIAL NUMBER, 14=VGD Not Calibrated, 15=VGD Actuator Switch Open, 16=PRV Not Calibrated, 17=Vanes Uncalibrated - Fixed Speed, 18=WARNING - HARMONIC FILTER - OPERATION INHIBITED, 19=Harmonic Filter - Data Loss, 20=Auto Lube Req'd On Next Shutdown, 21=Auto Lube Grease Level Low, 22=Auto Lube Failed, 23=Motor Oil Change Suggested, 24=Motor Oil Change Required, 25=Lack of Motor Oil Change, 26=Seal Lubrication In Process, 27=External I/O - Serial Communications, 28=WARNING - MMB - SERIAL COMMUNICATIONS, 30=Surge Protection - Excess Surge Limit, 31=Excess Surge Detected, 32=WARNING - HARMONIC FILTER - INVALID MODEL, 33=Motor - High Housing Temperature, 34=KW Meter Not Calibrated, 35=Condenser Or VGD Sensor Failure, 36=Conditions Override VGD, 37=Motor Bearing Lube Suggested, 38=Motor Bearing Lube Required, 39=Motor Bearing Lube Not Done, 40=WARNING - HARMONIC FILTER - DATA LOSS, 41=Motor – High Winding Temperature, 42=Motor – High Bearing Temperature, 43=Motor – High Bearing Vibration, 44=Motor – Bearing Vibration Baseline Not Set, 45=WARNING - VSD - INPUT VOLTAGE IMBALANCE, 46=WARNING - HARMONIC FILTER - NOT RUNNING, 47=Condenser- Freeze Threat From Low Pressure, 48=Liquid Level Setpoint Not Achieved, 49=VSD - DC Bus Active, 50=WARNING - LOSS OF SUBCOOLER LIQUID SEAL, 51=Oil - High Sump Pressure, 52=ECON LCSSS - Invalid Current Scale Selection, 53=ECON LCSSS - Phase Loss, 54=ECON LCSSS - Phase Locked Loop, 55=ECON LCSSS - Power Fault, 56=ECON LCSSS - Run Signal, 57=ECON LCSSS - Motor Current Imbalance, 58=ECON LCSSS - 105 % Motor Current Overload, 59=ECON LCSSS - High Motor Current, 60=ECON LCSSS - High Supply Line Voltage, 61=ECON LCSSS - Low Supply Line Voltage, 62=ECON LCSSS - Open SCR, 63=ECON LCSSS - Phase A Shorted SCR, 64=ECON LCSSS - Phase B Shorted SCR, 65=ECON LCSSS - Phase C Shorted SCR, 66=ECON LCSSS - High Phase A Heatsink Temp - Stopped, 67=ECON LCSSS - High Phase B Heatsink Temp – Stopped, 68=ECON LCSSS - High Phase C Heatsink Temp - Stopped, 69=ECON LCSSS - High Phase A Heatsink Temperature, 70=ECON LCSSS - High Phase B Heatsink Temperature, 71=ECON LCSSS - High Phase C Heatsink Temperature, 72=ECON LCSSS - Low Phase A Temperature Sensor, 73=ECON LCSSS - Low Phase B Temperature Sensor, 74=ECON LCSSS - Low Phase C Temperature Sensor, 75=ECON LCSSS - Serial Receive, 76=ECON LCSSS - Logic Board Power Supply, 78=ECON LCSSS – Undefined Fault, 79=COND OR ECON XDCR ERROR, 80=EVAP OR ECON XDCR ERROR, 81=COND OR ECON VGD XDCR FAUILURE, 82=ECON HIGH STALL – VGD OVERRIDE, 83=ECON STANDBY LUBE – LOW OIL PRESSURE, 84=ECON SEAL LUBRICATION INHIBITED, 85=ECON MOTOR – BEARING LUBE SUGGESTED, 86=ECON MOTOR – BEARING LUBE REQUIRED, 87=ECON MOTOR – BEARING LUBE NOT DONE, 88=ECON LIQUID LEVEL SETPOINT NOT ACHIEVED, 89=ECONOMIZER – LEVEL HIGH, 90=ECON ANTI-RECYCLE, 91=ECON COMPRESSOR – PRV MOTOR SWITCH OPEN, 92=ECONOMIZER – PRESSURE XDCR FAILURE, 93=ECON COMPRESSOR – HPCO SWITCH OPEN, 94=ECON COMPRESSOR – GEAR RATIO INVALID, 95=ECON MOTOR – LINE FREQUENCY NOT SET, 96=ECON DISCHARGE – LOW TEMPERATURE, 97=ECON DISCHARGE – HIGH TEMPERATURE, 98=ECON THRUST BEARING – LIMIT SWITCH OPEN, 99=ECON OIL – VSD PUMP – FAULT CONTACTS OPEN, 100=ECON OIL – PUMP PRESSURE XDCR FAILURE, 101=ECON OIL – DIFF PRESSURE CALIBRATION, 102=ECON OIL – LOW DIFFERENTIAL PRESSURE, 103=ECON OIL – HIGH DIFFERENTIAL PRESSURE, 104=ECON OIL – VSD PUMP – SETPOINT NOT ACHIEVED, 105=ECON MOTOR CONTROLLER – LOSS OF CURRENT, 106=ECON MOTOR CONTROLLER – SERIAL COMMUNICATIONS, 107=ECON MOTOR CONTROLLER – INITIALIZATION FAILED, 108=ECON MOTOR CONTROLLER – FAULT CONTACTS OPEN, 109=ECON MOTOR – LACK OF BEARING LUBRICATION, 110=ECON MOTOR – CURRENT > 15 %FLA, 111=ECON COMPRESSOR – PRV NOT CALIBRATED, 112=ECONOMIZER – HIGH LEVEL (STOPPED), 113=SALES ORDER – INVALID MOTOR VOLTS OR FLA, 114=ECON MOTOR – HIGH WINDING TEMP, 115=ECON MOTOR – HIGH BEARING TEMP, 116=ECON MOTOR – HIGH BEARING VIBRATION, 117=ECON MOTOR – VIBRATION BASELINE NOT SET, 118=ECON MOTOR – HIGH WINDING TEMP SHUTDOWN, 119=ECON MOTOR – HIGH BEARING TEMP SHUTDOWN, 120=ECON MOTOR – HIGH BEARING VIBRATION SHUTDOWN, 121=ECON MOTOR – AUTO LUBRICATION IN PROGRESS, 122=ECON AUTO LUBE REG’D ON NEXT SHUTDOWN, 123=ECON AUTO LUBE GREASE LEVEL LOW, 124=ECON AUTO LUBE FAILED, 125=ECON MMB I/O SERIAL COMMUNICATIONS, 126=WARNING - UPS - BATTERY TEST FAILED, 127=MBC – LOW AMPLIFIER RESISTANCE, 128=MBC – HIGH AMPLIFIER RESISTANCE, 129=MBC – LOW AMPLIFIER CURRENT, 130=MBC – HIGH AMPLIFIER CURRENT, 131=MBC – POSITION SENSOR ERROR, 132=WARNING - UPS - NOT CHARGING, 133=UPS – Line Low Battery Voltage, 134=UPS – Battery Not Connected, 135=UPS – Check Battery Connection, 136=WARNING - PURGE - HIGH COIL TEMP, 137=WARNING - PURGE - HIGH COIL TEMP INHIBIT, 138=WARNING - PURGE - HIGH REGEN TANK TEMP, 139=WARNING - PURGE - HIGH LEVEL, 140=WARNING - PURGE - EXCESS PURGE, 141=WARNING - PURGE - EQUALIZATION LOW SUCTION TEMP, 142=WARNING - PURGE - POSSIBLE AIR IN SYSTEM, 143=WARNING - PURGE - OPERATION INHIBITED, 144=ECON MOTOR CONTROLLER – CONTACTS OPEN, 145=ECON MOTOR CONTROLLER – POWER FAULT, 147=WARNING - YEARLY SERVICE REQUIRED - CONTACT JCI, 148=WARNING - 3 YEAR SERVICE REQUIRED - CONTACT JCI, 149=WARNING - CHECK OIL SYSTEM, 150=WARNING - CONDENSER - HIGH SMALL TEMP DIFFERENCE, 151=WARNING - SYSTEM - REPLACE FILTER-DRIER, 152=WARNING - CONTROL PANEL - INTERNAL ERROR"
+  },
+  {
+   "type": "AV",
+   "instance": 55,
+   "name": "UNIT WARNING CODE AV",
+   "description": "Unit Warning Code AV",
+   "units": "",
+   "access": "R",
+   "states": "0=No Warnings Present, 1=Real-Time Clock Failure, 2=Setpoint Override, 3=Condenser Or Evaporator Transducer Error, 4=Evaporator - Low Pressure Limit, 5=Condenser - High Pressure Limit, 6=OIL – HIGH SUPPLY TEMPERATURE, 7=COMPRESSOR – LOW DISCHARGE SUPERHEAT LIMIT, 8=WARNING - CONDENSER - HIGH TUBE CLEANING TIME, 9=Standby Lube - Low Oil Pressure, 10=Warning - Standby Lube Inihibited, 12=WARNING - SALES ORDER - INVALID SERIAL NUMBER, 13=VGD Not Calibrated, 14=VGD Actuator Switch Open, 15=PRV Not Calibrated, 16=Vanes Uncalibrated - Fixed Speed, 17=WARNING - HARMONIC FILTER - OPERATION INHIBITED, 18=Harmonic Filter - Data Loss, 19=Auto Lube Req'd On Next Shutdown, 20=Auto Lube Grease Level Low, 21=Auto Lube Failed, 22=Motor Oil Change Suggested, 23=Motor Oil Change Required, 24=Lack of Motor Oil Change, 25=Seal Lubrication In Process, 26=External I/O - Serial Communications, 27=WARNING - MMB - SERIAL COMMUNICATIONS, 29=Surge Protection - Excess Surge Limit, 30=Excess Surge Detected, 31=WARNING - HARMONIC FILTER - INVALID MODEL, 32=Motor - High Housing Temperature, 33=KW Meter Not Calibrated, 34=Condenser Or VGD Sensor Failure, 35=Conditions Override VGD, 36=Motor Bearing Lube Suggested, 37=Motor Bearing Lube Required, 38=Motor Bearing Lube Not Done, 39=WARNING - HARMONIC FILTER - DATA LOSS, 40=Motor – High Winding Temperature, 41=Motor – High Bearing Temperature, 42=Motor – High Bearing Vibration, 43=Motor – Bearing Vibration Baseline Not Set, 44=WARNING - VSD - INPUT VOLTAGE IMBALANCE, 45=WARNING - HARMONIC FILTER - NOT RUNNING, 46=Condenser- Freeze Threat From Low Pressure, 47=Liquid Level Setpoint Not Achieved, 48=VSD - DC Bus Active, 49=WARNING - LOSS OF SUBCOOLER LIQUID SEAL, 50=Oil - High Sump Pressure, 51=ECON LCSSS - Invalid Current Scale Selection, 52=ECON LCSSS - Phase Loss, 53=ECON LCSSS - Phase Locked Loop, 54=ECON LCSSS - Power Fault, 55=ECON LCSSS - Run Signal, 56=ECON LCSSS - Motor Current Imbalance, 57=ECON LCSSS - 105 % Motor Current Overload, 58=ECON LCSSS - High Motor Current, 59=ECON LCSSS - High Supply Line Voltage, 60=ECON LCSSS - Low Supply Line Voltage, 61=ECON LCSSS - Open SCR, 62=ECON LCSSS - Phase A Shorted SCR, 63=ECON LCSSS - Phase B Shorted SCR, 64=ECON LCSSS - Phase C Shorted SCR, 65=ECON LCSSS - High Phase A Heatsink Temp - Stopped, 66=ECON LCSSS - High Phase B Heatsink Temp – Stopped, 67=ECON LCSSS - High Phase C Heatsink Temp - Stopped, 68=ECON LCSSS - High Phase A Heatsink Temperature, 69=ECON LCSSS - High Phase B Heatsink Temperature, 70=ECON LCSSS - High Phase C Heatsink Temperature, 71=ECON LCSSS - Low Phase A Temperature Sensor, 72=ECON LCSSS - Low Phase B Temperature Sensor, 73=ECON LCSSS - Low Phase C Temperature Sensor, 74=ECON LCSSS - Serial Receive, 75=ECON LCSSS - Logic Board Power Supply, 77=ECON LCSSS – Undefined Fault, 78=COND OR ECON XDCR ERROR, 79=EVAP OR ECON XDCR ERROR, 80=COND OR ECON VGD XDCR FAUILURE, 81=ECON HIGH STALL – VGD OVERRIDE, 82=ECON STANDBY LUBE – LOW OIL PRESSURE, 83=ECON SEAL LUBRICATION INHIBITED, 84=ECON MOTOR – BEARING LUBE SUGGESTED, 85=ECON MOTOR – BEARING LUBE REQUIRED, 86=ECON MOTOR – BEARING LUBE NOT DONE, 87=ECON LIQUID LEVEL SETPOINT NOT ACHIEVED, 88=ECONOMIZER – LEVEL HIGH, 89=ECON ANTI-RECYCLE, 90=ECON COMPRESSOR – PRV MOTOR SWITCH OPEN, 91=ECONOMIZER – PRESSURE XDCR FAILURE, 92=ECON COMPRESSOR – HPCO SWITCH OPEN, 93=ECON COMPRESSOR – GEAR RATIO INVALID, 94=ECON MOTOR – LINE FREQUENCY NOT SET, 95=ECON DISCHARGE – LOW TEMPERATURE, 96=ECON DISCHARGE – HIGH TEMPERATURE, 97=ECON THRUST BEARING – LIMIT SWITCH OPEN, 98=ECON OIL – VSD PUMP – FAULT CONTACTS OPEN, 99=ECON OIL – PUMP PRESSURE XDCR FAILURE, 100=ECON OIL – DIFF PRESSURE CALIBRATION, 101=ECON OIL – LOW DIFFERENTIAL PRESSURE, 102=ECON OIL – HIGH DIFFERENTIAL PRESSURE, 103=ECON OIL – VSD PUMP – SETPOINT NOT ACHIEVED, 104=ECON MOTOR CONTROLLER – LOSS OF CURRENT, 105=ECON MOTOR CONTROLLER – SERIAL COMMUNICATIONS, 106=ECON MOTOR CONTROLLER – INITIALIZATION FAILED, 107=ECON MOTOR CONTROLLER – FAULT CONTACTS OPEN, 108=ECON MOTOR – LACK OF BEARING LUBRICATION, 109=ECON MOTOR – CURRENT > 15 %FLA, 110=ECON COMPRESSOR – PRV NOT CALIBRATED, 111=ECONOMIZER – HIGH LEVEL (STOPPED), 112=SALES ORDER – INVALID MOTOR VOLTS OR FLA, 113=ECON MOTOR – HIGH WINDING TEMP, 114=ECON MOTOR – HIGH BEARING TEMP, 115=ECON MOTOR – HIGH BEARING VIBRATION, 116=ECON MOTOR – VIBRATION BASELINE NOT SET, 117=ECON MOTOR – HIGH WINDING TEMP SHUTDOWN, 118=ECON MOTOR – HIGH BEARING TEMP SHUTDOWN, 119=ECON MOTOR – HIGH BEARING VIBRATION SHUTDOWN, 120=ECON MOTOR – AUTO LUBRICATION IN PROGRESS, 121=ECON AUTO LUBE REG’D ON NEXT SHUTDOWN, 122=ECON AUTO LUBE GREASE LEVEL LOW, 123=ECON AUTO LUBE FAILED, 124=ECON MMB I/O SERIAL COMMUNICATIONS, 125=WARNING - UPS - BATTERY TEST FAILED, 126=MBC – LOW AMPLIFIER RESISTANCE, 127=MBC – HIGH AMPLIFIER RESISTANCE, 128=MBC – LOW AMPLIFIER CURRENT, 129=MBC – HIGH AMPLIFIER CURRENT, 130=MBC – POSITION SENSOR ERROR, 131=WARNING - UPS - NOT CHARGING, 132=UPS – Line Low Battery Voltage, 133=UPS – Battery Not Connected, 134=UPS – Check Battery Connection, 135=WARNING - PURGE - HIGH COIL TEMP, 136=WARNING - PURGE - HIGH COIL TEMP INHIBIT, 137=WARNING - PURGE - HIGH REGEN TANK TEMP, 138=WARNING - PURGE - HIGH LEVEL, 139=WARNING - PURGE - EXCESS PURGE, 140=WARNING - PURGE - EQUALIZATION LOW SUCTION TEMP, 141=WARNING - PURGE - POSSIBLE AIR IN SYSTEM, 142=WARNING - PURGE - OPERATION INHIBITED, 143=ECON MOTOR CONTROLLER – CONTACTS OPEN, 144=ECON MOTOR CONTROLLER – POWER FAULT, 146=WARNING - YEARLY SERVICE REQUIRED - CONTACT JCI, 147=WARNING - 3 YEAR SERVICE REQUIRED - CONTACT JCI, 148=WARNING - CHECK OIL SYSTEM, 149=WARNING - CONDENSER - HIGH SMALL TEMP DIFFERENCE, 150=WARNING - SYSTEM - REPLACE FILTER-DRIER, 151=WARNING - CONTROL PANEL - INTERNAL ERROR"
+  },
+  {
+   "type": "MV",
+   "instance": 5,
+   "name": "UNIT CONTROL SOURCE",
+   "description": "Unit Control Source",
+   "units": "",
+   "access": "R",
+   "states": "0=Local, 1=BAS, 2=Analog, 3=Digital, 4=Modem, 5=Remote"
+  },
+  {
+   "type": "AV",
+   "instance": 56,
+   "name": "UNIT CONTROL SOURCE AV",
+   "description": "Unit Control Source AV",
+   "units": "",
+   "access": "R",
+   "states": "0=Local, 1=BAS, 2=Analog, 3=Digital, 4=Modem, 5=Remote"
+  },
+  {
+   "type": "MV",
+   "instance": 6,
+   "name": "UNIT MODIFIED RUN CODE",
+   "description": "Unit Modified Run Code",
+   "units": "",
+   "access": "R",
+   "states": "1=No Modified Run Conditions Present, 5=Motor - Pulldown Limit, 6=Motor - High Current Limit, 7=Motor Controller - Input Pulldown Limit, 8=Motor Controller - High Input Power Limit, 9=Load Control Mode, 10=COMPRESSOR – SUCTION FLOW LIMIT, 11=VSD - DC BUS ACTIVE, 12=VSD - Input Pulldown Limit, 13=VSD - High Input Current Limit, 14=Discharge – Low Superheat Limit, 15=ECON MOTOR – HIGH CURRENT LIMIT, 16=ECON SEAL LUBRICATION IN PROGRESS, 17=ECON ECONOMIZER – RUN DISABLED, 18=ECON ECONOMIZER – NO DEMAND, 19=ECON COMPRESSOR – NO DEMAND (ECON STOPPED), 20=SEAL LUBRICATION IN PROGRESS"
+  },
+  {
+   "type": "AV",
+   "instance": 57,
+   "name": "UNIT MODIFIED RUN CODE AV",
+   "description": "Unit Modified Run Code AV",
+   "units": "",
+   "access": "R",
+   "states": "0=No Modified Run Conditions Present, 4=Motor - Pulldown Limit, 5=Motor - High Current Limit, 6=Motor Controller - Input Pulldown Limit, 7=Motor Controller - High Input Power Limit, 8=Load Control Mode, 9=COMPRESSOR – SUCTION FLOW LIMIT, 10=VSD - DC BUS ACTIVE, 11=VSD - Input Pulldown Limit, 12=VSD - High Input Current Limit, 13=Discharge – Low Superheat Limit, 14=ECON MOTOR – HIGH CURRENT LIMIT, 15=ECON SEAL LUBRICATION IN PROGRESS, 16=ECON ECONOMIZER – RUN DISABLED, 17=ECON ECONOMIZER – NO DEMAND, 18=ECON COMPRESSOR – NO DEMAND (ECON STOPPED), 19=SEAL LUBRICATION IN PROGRESS"
+  },
+  {
+   "type": "MV",
+   "instance": 7,
+   "name": "UNIT START INHIBIT CODE",
+   "description": "Unit Start Inhibit Code",
+   "units": "",
+   "access": "R",
+   "states": "1=No Inhibit Faults Present, 2=ANTI-RECYCLE, 3=Vane Motor Switch Open, 4=MOTOR CURRENT > 15 %FLA, 5=LCSSS - HIGH PHASE A HEATSINK TEMPERATURE - STOPPED, 6=LCSSS - HIGH PHASE B HEATSINK TEMPERATURE - STOPPED, 7=LCSSS - HIGH PHASE C HEATSINK TEMPERATURE - STOPPED, 8=MOTOR CONTROLLER - INITIALIZATION IN PROGRESS, 9=VSD - FREQUENCY > 0 HZ, 10=MVSSS - HIGH HEATSINK TEMPERATURE - STOPPED, 11=Line Voltage Not Set, 12=Line Frequency Not Set, 13=Oil - High Sump Pressure - Stopped, 14=VGD Actuator - Feedback Not Calibrated, 15=VGD Actuator - Limit Switch Open, 16=PRV Not Calibrated, 17=VGD Actuator - Stroke Not Calibrated, 18=MBC - INITIALIZATION IN PROGRESS, 19=MBC - BEARING CALIBRATION IN PROGRESS, 20=MBC - BEARING CLEARANCE CHECK IN PROGRESS, 21=MVSSS - HIGH HEATSINK 1 TEMPERATURE - STOPPED, 22=MVSSS - HIGH HEATSINK 2 TEMPERATURE - STOPPED, 23=MVSSS - HIGH HEATSINK 3 TEMPERATURE - STOPPED"
+  },
+  {
+   "type": "AV",
+   "instance": 58,
+   "name": "UNIT START INHIBIT CODE AV",
+   "description": "Unit Start Inhibit Code AV",
+   "units": "",
+   "access": "R",
+   "states": "0=No Inhibit Faults Present, 1=ANTI-RECYCLE, 2=Vane Motor Switch Open, 3=MOTOR CURRENT > 15 %FLA, 4=LCSSS - HIGH PHASE A HEATSINK TEMPERATURE - STOPPED, 5=LCSSS - HIGH PHASE B HEATSINK TEMPERATURE - STOPPED, 6=LCSSS - HIGH PHASE C HEATSINK TEMPERATURE - STOPPED, 7=MOTOR CONTROLLER - INITIALIZATION IN PROGRESS, 8=VSD - FREQUENCY > 0 HZ, 9=MVSSS - HIGH HEATSINK TEMPERATURE - STOPPED, 10=Line Voltage Not Set, 11=Line Frequency Not Set, 12=Oil - High Sump Pressure - Stopped, 13=VGD Actuator - Feedback Not Calibrated, 14=VGD Actuator - Limit Switch Open, 15=PRV Not Calibrated, 16=VGD Actuator - Stroke Not Calibrated, 17=MBC - INITIALIZATION IN PROGRESS, 18=MBC - BEARING CALIBRATION IN PROGRESS, 19=MBC - BEARING CLEARANCE CHECK IN PROGRESS, 20=MVSSS - HIGH HEATSINK 1 TEMPERATURE - STOPPED, 21=MVSSS - HIGH HEATSINK 2 TEMPERATURE - STOPPED, 22=MVSSS - HIGH HEATSINK 3 TEMPERATURE - STOPPED"
+  },
+  {
+   "type": "MV",
+   "instance": 8,
+   "name": "UNIT INTERNAL FAULT CODE",
+   "description": "Unit Internal Fault Code",
+   "units": "",
+   "access": "R",
+   "states": "1=No Internal Faults Present, 2=Internal Error - No Timer Handles Available, 3=Watchdog - Software Reboot, 4=Internal Error - Cannot Create Task, 6=INTERNAL ERROR - INVALID BRAM"
+  },
+  {
+   "type": "AV",
+   "instance": 59,
+   "name": "UNIT INTERNAL FAULT CODE AV",
+   "description": "Unit Internal Fault Code AV",
+   "units": "",
+   "access": "R",
+   "states": "0=No Internal Faults Present, 1=Internal Error - No Timer Handles Available, 2=Watchdog - Software Reboot, 3=Internal Error - Cannot Create Task, 5=INTERNAL ERROR - INVALID BRAM"
+  },
+  {
+   "type": "MV",
+   "instance": 9,
+   "name": "ACTIVE PURGE MODE",
+   "description": "Active Purge Mode",
+   "units": "",
+   "access": "R",
+   "states": "1=Standard, 2=Enhanced"
+  },
+  {
+   "type": "AV",
+   "instance": 60,
+   "name": "ACTIVE PURGE MODE AV",
+   "description": "Active Purge Mode AV",
+   "units": "",
+   "access": "R",
+   "states": "1=Standard, 2=Enhanced"
+  },
+  {
+   "type": "MV",
+   "instance": 10,
+   "name": "PURGE CONTROL STATE",
+   "description": "Purge Control State",
+   "units": "",
+   "access": "R",
+   "states": "1=Disabled, 2=Auto Inhibit, 3=Manual Inhibit, 4=Purge Off, 5=Purge On, 6=Purge Air, 7=Regen Heating, 8=Regen Drain, 9=Equalizing, 10=Purge Drain"
+  },
+  {
+   "type": "AV",
+   "instance": 61,
+   "name": "PURGE CONTROL STATE AV",
+   "description": "Purge Control State AV",
+   "units": "",
+   "access": "R",
+   "states": "1=Disabled, 2=Auto Inhibit, 3=Manual Inhibit, 4=Purge Off, 5=Purge On, 6=Purge Air, 7=Regen Heating, 8=Regen Drain, 9=Equalizing, 10=Purge Drain"
+  },
+  {
+   "type": "MV",
+   "instance": 11,
+   "name": "MBC CONTROL MODE",
+   "description": "MBC Control Mode",
+   "units": "",
+   "access": "R",
+   "states": "0=Undefined, 1=Delevitated, 2=Levitated, 3=Calibrating J, 4=Calibrating K, 5=Calibrating H"
+  },
+  {
+   "type": "AV",
+   "instance": 62,
+   "name": "MBC CONTROL MODE AV",
+   "description": "MBC Control Mode AV",
+   "units": "",
+   "access": "R",
+   "states": "0=Undefined, 1=Delevitated, 2=Levitated, 3=Calibrating J, 4=Calibrating K, 5=Calibrating H"
+  },
+  {
+   "type": "MV",
+   "instance": 12,
+   "name": "RUN STOP CTRL SOURCE",
+   "description": "Run/Stop Control Source",
+   "units": "",
+   "access": "R",
+   "states": "0=Local, 1=BAS, 2=Hardwire"
+  },
+  {
+   "type": "AV",
+   "instance": 63,
+   "name": "RUN STOP CTRL SOURCE AV",
+   "description": "Run/Stop Control Source AV",
+   "units": "",
+   "access": "R",
+   "states": "0=Local, 1=BAS, 2=Hardwire"
+  },
+  {
+   "type": "MV",
+   "instance": 13,
+   "name": "COOL SETP CTRL SOURCE",
+   "description": "Cooling Setp Control Source",
+   "units": "",
+   "access": "R",
+   "states": "0=Local, 1=BAS, 2=0-10 Volts, 3=4-20 mA, 4=PWM"
+  },
+  {
+   "type": "AV",
+   "instance": 64,
+   "name": "COOL SETP CTRL SOURCE AV",
+   "description": "Cooling Setp Control Source AV",
+   "units": "",
+   "access": "R",
+   "states": "0=Local, 1=BAS, 2=0-10 Volts, 3=4-20 mA, 4=PWM"
+  },
+  {
+   "type": "MV",
+   "instance": 14,
+   "name": "HEAT SETP CTRL SOURCE",
+   "description": "Heating Setp Control Source",
+   "units": "",
+   "access": "R",
+   "states": "0=Local, 1=BAS, 2=0-10 Volts, 3=4-20 mA, 4=PWM"
+  },
+  {
+   "type": "AV",
+   "instance": 65,
+   "name": "HEAT SETP CTRL SOURCE AV",
+   "description": "Heating Setp Control Source AV",
+   "units": "",
+   "access": "R",
+   "states": "0=Local, 1=BAS, 2=0-10 Volts, 3=4-20 mA, 4=PWM"
+  },
+  {
+   "type": "MV",
+   "instance": 15,
+   "name": "CURR LIM CTRL SOURCE",
+   "description": "Current Limit Control Source",
+   "units": "",
+   "access": "R",
+   "states": "0=Local, 1=BAS, 2=0-10 Volts, 3=4-20 mA, 4=PWM"
+  },
+  {
+   "type": "AV",
+   "instance": 66,
+   "name": "CURR LIM CTRL SOURCE AV",
+   "description": "Current Limit Control Source AV",
+   "units": "",
+   "access": "R",
+   "states": "0=Local, 1=BAS, 2=0-10 Volts, 3=4-20 mA, 4=PWM"
+  },
+  {
+   "type": "AV",
+   "instance": 67,
+   "name": "TOTAL PURGE COUNT",
+   "description": "Total Purge Count",
+   "units": "",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 68,
+   "name": "EVAP SMALL TEMP DIFF",
+   "description": "Evaporator Small Temp Difference",
+   "units": "°F (diff)",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 69,
+   "name": "COND SMALL TEMP DIFF",
+   "description": "Condenser Small Temp Difference",
+   "units": "°F (diff)",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 70,
+   "name": "DISCHARGE SUPERHEAT",
+   "description": "Discharge Superheat",
+   "units": "°F (diff)",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 71,
+   "name": "SUBCOOLER EFFECTIVENESS",
+   "description": "Subcooler Effectiveness",
+   "units": "",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 72,
+   "name": "SUBCOOLING TEMP",
+   "description": "Subcooling Temperature",
+   "units": "°F (diff)",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 73,
+   "name": "DELTA P DIV P",
+   "description": "Delta P / P",
+   "units": "",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 74,
+   "name": "HEAD PRESSURE",
+   "description": "Head Pressure",
+   "units": "PSID",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 75,
+   "name": "MOTOR SPEED",
+   "description": "Motor Speed",
+   "units": "Hz",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 76,
+   "name": "AMB DEW POINT TEMP",
+   "description": "Ambient Dew Point Temperature",
+   "units": "°F",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 77,
+   "name": "MOTOR HOUSING TEMP",
+   "description": "Motor Housing Temperature",
+   "units": "°F",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 78,
+   "name": "MOTOR COOL VLV CMD",
+   "description": "Motor Cooling Valve Command",
+   "units": "%",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 79,
+   "name": "UPS BATTERY VOLTAGE",
+   "description": "UPS Battery Voltage",
+   "units": "Volts",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 80,
+   "name": "ACT ANTI-SURGE MIN FREQ",
+   "description": "Active Anti-Surge Minimum Frequency",
+   "units": "Hz",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 81,
+   "name": "VGD POSITION",
+   "description": "VGD Position",
+   "units": "%",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 82,
+   "name": "ENTERING HEAT COND LIQ TEMP",
+   "description": "Entering Heating Condenser Liquid Temperature (Heat Recovery only)",
+   "units": "°F",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 83,
+   "name": "LEAVING HEAT COND LIQ TEMP",
+   "description": "Leaving Heating Condenser Liquid Temperature (Heat Recovery only)",
+   "units": "°F",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 84,
+   "name": "HEATING ACTIVE SP",
+   "description": "Active Heating Setpoint",
+   "units": "°F",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 85,
+   "name": "HEAT REC HEAD PRESS VLV CMD",
+   "description": "Heat recovery / head pressure control valve command",
+   "units": "%",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 86,
+   "name": "HEATING LOCAL SP",
+   "description": "Local Heating Setpoint",
+   "units": "°F",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 87,
+   "name": "STALL VOLTAGE",
+   "description": "Stall Voltage",
+   "units": "Volts",
+   "access": "R",
+   "states": ""
+  }
+ ],
+ "page": "https://easybacnet.com/bacnet-points-lists/york/yz-sc-eq",
+ "note": "Re-typed from the manufacturer's public documentation (see source). Point availability varies by firmware and options; verify against the live device."
+}

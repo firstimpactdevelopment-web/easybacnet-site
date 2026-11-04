@@ -1,0 +1,1442 @@
+{
+ "manufacturer": "Daikin Applied",
+ "manufacturer_slug": "daikin-applied",
+ "model": "MicroTech MT2300 WSHP Controller - SmartSource R32 (SCH/SDH, SMH/SNH, SSH/STH)",
+ "model_slug": "microtech-mt2300-wshp-smartsource-r32",
+ "short_model": "MT2300 SmartSource R32 WSHP",
+ "aliases": [
+  "MT2300",
+  "SmartSource Series2",
+  "SmartSource SS2C",
+  "SCH",
+  "SDH",
+  "SMH",
+  "SNH",
+  "SSH",
+  "STH",
+  "ED 19129"
+ ],
+ "equipment_type": "Water source heat pump controller",
+ "applies_to": "Daikin SmartSource single/two-stage and two-compressor water source heat pumps with R32 refrigerant and the MicroTech MT2300 controller (models SCH/SDH, SMH/SNH, SSH/STH).",
+ "summary": "The MicroTech MT2300 is the controller on Daikin's R32 SmartSource heat pumps. It joins BACnet MS/TP through a separate BACnet communication module, and one object list serves both the SmartSource Series2 and the two-compressor SS2C applications. Points cover setpoints, network overrides for occupancy, mode and space temperature, water and refrigerant temperatures, fan speed, the board's configuration switches, A2L refrigerant-leak inputs and alarm codes.",
+ "bacnet_transport": [
+  "BACnet MS/TP"
+ ],
+ "firmware": null,
+ "default_device_instance": "3101000 + MS/TP MAC address",
+ "access_inferred": false,
+ "notes": [
+  "Configuration objects (names starting with cp) are stored in flash; the guide warns that repeated writes wear it out.",
+  "Network override objects (access C) revert to their default (Null) after a controller reboot.",
+  "BI 15-34 report the baseboard and I/O expansion module configuration switches; some switches mean different things on Series2 and SS2C units.",
+  "AV 411 is named MacAddress (writable) when address switch S3 is at 255, otherwise MacAddressSwitch (read-only).",
+  "MV 2 and MV 5 return the alarm numbers from the guide's alarm table (1-28)."
+ ],
+ "source": {
+  "title": "MicroTech SmartSource WSHP BACnet Network Integration Guide (MT2300, R32)",
+  "doc_number": "ED 19129-1",
+  "revision_date": "2024-05",
+  "url": "https://tahoeweb.daikinapplied.com/api/general/DownloadDocumentByName/media/MT%20SmartSource%20WSHP%20BACnet%20Protocol%20Document%20ED%2019129-1.pdf/"
+ },
+ "integration": {
+  "summary": "Commission the BACnet module (baud, MAC and instance) through its serial menu, then run the unit from the BMS with the network override objects: occupancy (MSV 7 or MSV 8), application mode (MSV 10) and compressor enable (MSV 1). Feed space temperature or a setpoint from the network if needed, and set Receive Heartbeat so overrides drop back when the BMS stops writing.",
+  "minimum_points": [
+   {
+    "ref": "MV 7",
+    "name": "OccManCmd",
+    "why": "Occupancy override from the BMS"
+   },
+   {
+    "ref": "MV 10",
+    "name": "ApplicMode",
+    "why": "Application mode (Auto/Heat/Cool/Off/Fan Only/Dehumid)"
+   },
+   {
+    "ref": "MV 1",
+    "name": "ComprEnable",
+    "why": "Compressor enable, usually from loop flow proof"
+   },
+   {
+    "ref": "AV 19",
+    "name": "NetworkSetpoint",
+    "why": "Network reference setpoint"
+   },
+   {
+    "ref": "BV 1",
+    "name": "ClearAlarm",
+    "why": "Clear active fault alarms"
+   },
+   {
+    "ref": "MV 4",
+    "name": "McQWSHPStatus",
+    "why": "Unit operating state"
+   },
+   {
+    "ref": "AV 22",
+    "name": "EffectSpaceTemp",
+    "why": "Space temperature used for control"
+   },
+   {
+    "ref": "AI 2",
+    "name": "LWT",
+    "why": "Leaving water temperature"
+   },
+   {
+    "ref": "MV 2",
+    "name": "CurrentAlarm",
+    "why": "Highest-priority active alarm"
+   }
+  ],
+  "enable": "No local/remote switch. The network override objects act as soon as they are written: Occupancy Override Input (MSV 7) or Occupancy Scheduler (MSV 8) set occupancy, Application Mode (MSV 10) limits the unit to Auto/Heat/Cool/Off/Fan Only/Dehumid and overrides the room sensor mode switch, and Compressor Enable (MSV 1) permits compressor operation. All revert to Null after a controller reboot.",
+  "heartbeat": "Receive Heartbeat (AV 20, cpRcvHrtBt, 0-6553.4 s, default 0 = disabled) sets how long a supported network override may go without being rewritten before it reverts to its default; each supported override has its own timer. Send Heartbeat (AV 21) is not supported by the BACnet module; use COV instead.",
+  "remote_sensors": "Write space temperature to AV 18 and space humidity to AV 45; a network dewpoint goes to AV 51. AV 19 sets the reference setpoint only after local setpoint adjust is disabled with MSV 14 = 1. AV 35 shifts the occupied/standby setpoints, MSV 9 takes a network occupancy sensor, MSV 16 overrides the humidistat and MSV 3 the fan On/Auto switch.",
+  "setup": [
+   "Device instance is System Minimum Instance (AV 412, default 3101000) plus the MS/TP MAC address.",
+   "Baud (default 38400) and Max Masters are set from the module's serial menu: DB-9 port, 19200 bps 8-N-1, null-modem cable; press S to save.",
+   "With address switch S3 at 255 (factory default) the MAC is acquired during commissioning and can then be changed through AV 411; any other S3 value is used as a fixed MAC.",
+   "Max APDU length is fixed at 480."
+  ],
+  "gotchas": [
+   "cp... configuration objects are written to flash; do not write them cyclically.",
+   "Network overrides revert to Null on reboot, so the BMS must restore them.",
+   "Changing Units (MSV 15) from English to Metric changes the temperature values the BMS reads.",
+   "An A2L refrigerant leak or loss of A2L board power puts the unit into an alarm state."
+  ]
+ },
+ "points": [
+  {
+   "type": "AI",
+   "instance": 1,
+   "name": "LocalSpaceTemp",
+   "description": "Local Space Temperature",
+   "units": "°F",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "AI",
+   "instance": 2,
+   "name": "LWT",
+   "description": "Leaving Water Temperature",
+   "units": "°F",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "AI",
+   "instance": 3,
+   "name": "EWT",
+   "description": "Entering Water Temperature",
+   "units": "°F",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "AI",
+   "instance": 4,
+   "name": "DischAirTemp",
+   "description": "Discharge Air Temperature",
+   "units": "°F",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "AI",
+   "instance": 5,
+   "name": "LocalSetpt",
+   "description": "Local Setpoint Adjust",
+   "units": "°F",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "AI",
+   "instance": 6,
+   "name": "Comp1SuctionTemp",
+   "description": "Compressor 1 Suction Temperature",
+   "units": "°F",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "AI",
+   "instance": 7,
+   "name": "Comp2SuctionTemp",
+   "description": "Compressor 2 Suction Temperature",
+   "units": "°F",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "AI",
+   "instance": 8,
+   "name": "Brownout",
+   "description": "Brownout Voltage Reading",
+   "units": "counts",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "AI",
+   "instance": 9,
+   "name": "LocalSpaceRH",
+   "description": "Local Space Humidity",
+   "units": "%",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "AI",
+   "instance": 10,
+   "name": "RAT",
+   "description": "Return Air Temperature",
+   "units": "°F",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 1,
+   "name": "cpOccupied_Cool_Setpt",
+   "description": "Occupied Cooling Setpoint",
+   "units": "°F",
+   "access": "W",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 2,
+   "name": "cpStandby_Cool_Setpt",
+   "description": "Standby Cool Setpoint",
+   "units": "°F",
+   "access": "W",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 3,
+   "name": "cpUnoccupied_Cool_Setpt",
+   "description": "Unoccupied Cool Setpoint",
+   "units": "°F",
+   "access": "W",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 4,
+   "name": "cpOccupied_Heat_Setpt",
+   "description": "Occupied Heat Setpoint",
+   "units": "°F",
+   "access": "W",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 5,
+   "name": "cpStandby_Heat_Setpt",
+   "description": "Standby Heat Setpoint",
+   "units": "°F",
+   "access": "W",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 6,
+   "name": "cpUnoccupied_Heat_Setpt",
+   "description": "Unoccupied Heat Setpoint",
+   "units": "°F",
+   "access": "W",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 7,
+   "name": "cpBypassTime",
+   "description": "Local Bypass Time Setpoint",
+   "units": "min",
+   "access": "W",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 8,
+   "name": "cpIntStgOffTmr",
+   "description": "Interstage OFF Timer",
+   "units": "s",
+   "access": "W",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 9,
+   "name": "cpBrownoutRef",
+   "description": "Brownout Reference Setpoint",
+   "units": "counts",
+   "access": "W",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 10,
+   "name": "cpOccDiff",
+   "description": "Occupied Setpoint Differential",
+   "units": "°F",
+   "access": "W",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 11,
+   "name": "cpLowTempProtGL",
+   "description": "Compressor Low Suction Temp Protection Setpoint: Glycol",
+   "units": "°F",
+   "access": "W",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 12,
+   "name": "cpLowTempProt",
+   "description": "Compressor Low Suction Temp Protection Setpoint: Water",
+   "units": "°F",
+   "access": "W",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 13,
+   "name": "cpLowTmpProtDif",
+   "description": "Compressor Low Suction Temp Protection Differential",
+   "units": "°F",
+   "access": "W",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 14,
+   "name": "cpIntStgOnTmr",
+   "description": "Interstage ON Timer",
+   "units": "s",
+   "access": "W",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 15,
+   "name": "cpMinCompOffTmr",
+   "description": "Compressor Minimum OFF Timer",
+   "units": "s",
+   "access": "W",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 16,
+   "name": "cpMinCompOnTmr",
+   "description": "Compressor Minimum ON Timer",
+   "units": "s",
+   "access": "W",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 17,
+   "name": "cpUnoccDiff",
+   "description": "Unoccupied Setpoint Differential",
+   "units": "°F",
+   "access": "W",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 18,
+   "name": "Network SpaceTemp",
+   "description": "Space Temperature Input",
+   "units": "°F",
+   "access": "C",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 19,
+   "name": "NetworkSetpoint",
+   "description": "Network Temperature Setpoint",
+   "units": "°F",
+   "access": "C",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 20,
+   "name": "cpRcvHrtBt",
+   "description": "Receive Heartbeat",
+   "units": "s",
+   "access": "W",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 21,
+   "name": "cpSndHrtBt",
+   "description": "Send Heartbeat",
+   "units": "s",
+   "access": "W",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 22,
+   "name": "EffectSpaceTemp",
+   "description": "Effective Space Temperature Output",
+   "units": "°F",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 23,
+   "name": "EffectSetpt",
+   "description": "Effective Setpoint Output",
+   "units": "°F",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 24,
+   "name": "SetptShift",
+   "description": "Setpoint Shift Output",
+   "units": "°F",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 25,
+   "name": "cpSptAdjMax",
+   "description": "Long Range Setpoint Adjust Maximum",
+   "units": "°F",
+   "access": "W",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 26,
+   "name": "cpSptAdjMin",
+   "description": "Long Range Setpoint Adjust Minimum",
+   "units": "°F",
+   "access": "W",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 27,
+   "name": "cpHydroClgOnSpt",
+   "description": "Hydronic Cooling ON Setpoint",
+   "units": "°F",
+   "access": "W",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 28,
+   "name": "cpHydronicDiff",
+   "description": "Hydronic Setpoint Differential",
+   "units": "°F",
+   "access": "W",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 29,
+   "name": "cpLowLwtDiff",
+   "description": "Low Leaving Water Temp Differential",
+   "units": "°F",
+   "access": "W",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 30,
+   "name": "cpLowEwtSptGly",
+   "description": "Low EWT Setpoint for Glycol",
+   "units": "°F",
+   "access": "W",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 31,
+   "name": "cpLowEwtSptWtr",
+   "description": "Low EWT Setpoint for Water",
+   "units": "°F",
+   "access": "W",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 32,
+   "name": "cpHydroHtgOnSpt",
+   "description": "Hydronic Heating ON Setpoint",
+   "units": "°F",
+   "access": "W",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 33,
+   "name": "cpStg2SptDiff",
+   "description": "Second Stage Setpoints Differential",
+   "units": "°F",
+   "access": "W",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 34,
+   "name": "cpLowPresAlmDly",
+   "description": "Compressor Low Pressure Alarm Delay",
+   "units": "s",
+   "access": "W",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 35,
+   "name": "SetptOffset",
+   "description": "Temperature Setpoint Offset Input",
+   "units": "°F",
+   "access": "C",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 36,
+   "name": "cpStg3SptDiff",
+   "description": "Third Stage Heating Setpoint Differential",
+   "units": "°F",
+   "access": "W",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 37,
+   "name": "cpStg4SptDiff",
+   "description": "Fourth Stage Heating Setpoint Differential",
+   "units": "°F",
+   "access": "W",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 38,
+   "name": "FanSpeedCmd",
+   "description": "Fan Speed Output",
+   "units": "%",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 39,
+   "name": "FanRunHours",
+   "description": "Fan Run Hours",
+   "units": "h",
+   "access": "W",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 40,
+   "name": "CompRunHours",
+   "description": "Compressor 1 Run Hours",
+   "units": "h",
+   "access": "W",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 41,
+   "name": "CompStarts",
+   "description": "Compressor 1 Starts",
+   "units": "",
+   "access": "W",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 42,
+   "name": "Comp2RunHours / CompHiCapRunHours",
+   "description": "Compressor 2 / Compressor High Capacity Run Hours",
+   "units": "h",
+   "access": "W",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 43,
+   "name": "Comp2Starts / CompHiCapStarts",
+   "description": "Compressor 2 / Compressor High Capacity Starts",
+   "units": "",
+   "access": "W",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 44,
+   "name": "EffectSpaceRH",
+   "description": "Effective Space Humidity",
+   "units": "%",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 45,
+   "name": "NetworkSpaceRH",
+   "description": "Network Space Humidity Override",
+   "units": "%",
+   "access": "C",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 46,
+   "name": "cpSpaceRH_Diff",
+   "description": "Space Humidity Setpoint Differential",
+   "units": "%",
+   "access": "W",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 47,
+   "name": "cpSpaceRH_Setpt",
+   "description": "Space Humidity Setpoint",
+   "units": "%",
+   "access": "W",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 48,
+   "name": "EffectControlTemp",
+   "description": "Effective Control Temperature",
+   "units": "°F",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 49,
+   "name": "cpWaitForFlow",
+   "description": "Compressor Wait for Flow Timer",
+   "units": "s",
+   "access": "W",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 50,
+   "name": "LocalDewpointCalc",
+   "description": "Local Space Dewpoint",
+   "units": "°F",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 51,
+   "name": "NetworkDewpoint",
+   "description": "Network Dewpoint Override",
+   "units": "°F",
+   "access": "C",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 52,
+   "name": "EffectiveDewpoint",
+   "description": "Effective Dewpoint",
+   "units": "°F",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 53,
+   "name": "cpDewpointSetp",
+   "description": "Dewpoint Setpoint",
+   "units": "°F",
+   "access": "W",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 54,
+   "name": "cpDewpointDiff",
+   "description": "Dewpoint Differential",
+   "units": "°F",
+   "access": "W",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 55,
+   "name": "cpVsFanOnlyPWM",
+   "description": "Variable Fan Speed PWM - Fan-Only",
+   "units": "%",
+   "access": "W",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 56,
+   "name": "cpVsDehumPWM",
+   "description": "Variable Fan Speed PWM - Dehumidification",
+   "units": "%",
+   "access": "W",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 57,
+   "name": "cpVsCool1PWM",
+   "description": "Variable Fan Speed PWM - Cool Stage 1",
+   "units": "%",
+   "access": "W",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 58,
+   "name": "cpVsCool2PWM",
+   "description": "Variable Fan Speed PWM -Cool Stage 2",
+   "units": "%",
+   "access": "W",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 59,
+   "name": "cpVsHeat1PWM",
+   "description": "Variable Fan Speed PWM - Heat Stage 1",
+   "units": "%",
+   "access": "W",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 60,
+   "name": "cpVsHeat2PWM",
+   "description": "Variable Fan Speed PWM - Heat Stage 2",
+   "units": "%",
+   "access": "W",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 61,
+   "name": "cpVsElecHeatPWM",
+   "description": "Variable Fan Speed PWM - Electric Heat",
+   "units": "%",
+   "access": "W",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 62,
+   "name": "cpVsHydroHeatPWM",
+   "description": "Variable Fan Speed PWM - Hydronic Heat",
+   "units": "%",
+   "access": "W",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 63,
+   "name": "cpVsHydroCoolPWM",
+   "description": "Variable Fan Speed PWM - Hydronic Cool",
+   "units": "%",
+   "access": "W",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 411,
+   "name": "MacAddress",
+   "description": "MAC Address / Address Switch (named MacAddressSwitch, read-only, when switch S3 is below 255)",
+   "units": "",
+   "access": "W",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 412,
+   "name": "SystemMinInstance",
+   "description": "System Minimum Instance",
+   "units": "",
+   "access": "W",
+   "states": ""
+  },
+  {
+   "type": "BI",
+   "instance": 1,
+   "name": "A2L_Fault",
+   "description": "A2L Board Fault",
+   "units": "",
+   "access": "R",
+   "states": "0=Alarm; 1=Normal"
+  },
+  {
+   "type": "BI",
+   "instance": 2,
+   "name": "EmergShutDn",
+   "description": "Emergency Shutdown",
+   "units": "",
+   "access": "R",
+   "states": "0=Normal; 1=Shutdown"
+  },
+  {
+   "type": "BI",
+   "instance": 3,
+   "name": "HiPressure1",
+   "description": "Compressor 1 High Pressure",
+   "units": "",
+   "access": "R",
+   "states": "0=Normal; 1=Alarm"
+  },
+  {
+   "type": "BI",
+   "instance": 4,
+   "name": "LoPressure1",
+   "description": "Compressor 1 Low Pressure",
+   "units": "",
+   "access": "R",
+   "states": "0=Normal; 1=Alarm"
+  },
+  {
+   "type": "BI",
+   "instance": 5,
+   "name": "Tstat_G",
+   "description": "Thermostat Fan Input",
+   "units": "",
+   "access": "R",
+   "states": "0=Off (Auto); 1=On"
+  },
+  {
+   "type": "BI",
+   "instance": 6,
+   "name": "Tstat_W1",
+   "description": "Thermostat - Heating Stage 1",
+   "units": "",
+   "access": "R",
+   "states": "0=Inactive; 1=Active"
+  },
+  {
+   "type": "BI",
+   "instance": 7,
+   "name": "Tstat_W2",
+   "description": "Thermostat - Heating Stage 2",
+   "units": "",
+   "access": "R",
+   "states": "0=Inactive; 1=Active"
+  },
+  {
+   "type": "BI",
+   "instance": 8,
+   "name": "Tstat_Y1",
+   "description": "Thermostat - Cooling Stage 1",
+   "units": "",
+   "access": "R",
+   "states": "0=Inactive; 1=Active"
+  },
+  {
+   "type": "BI",
+   "instance": 9,
+   "name": "Tstat_Y2",
+   "description": "Thermostat - Cooling Stage 2",
+   "units": "",
+   "access": "R",
+   "states": "0=Inactive; 1=Active"
+  },
+  {
+   "type": "BI",
+   "instance": 10,
+   "name": "OccSw_In",
+   "description": "Occupancy Switch Setting",
+   "units": "",
+   "access": "R",
+   "states": "0=Off; 1=On"
+  },
+  {
+   "type": "BI",
+   "instance": 11,
+   "name": "HiPressure2",
+   "description": "Compressor 2 High Pressure",
+   "units": "",
+   "access": "R",
+   "states": "0=Normal; 1=Alarm"
+  },
+  {
+   "type": "BI",
+   "instance": 12,
+   "name": "LoPressure2",
+   "description": "Compressor 2 Low Pressure",
+   "units": "",
+   "access": "R",
+   "states": "0=Normal; 1=Alarm"
+  },
+  {
+   "type": "BI",
+   "instance": 13,
+   "name": "Tstat_W3",
+   "description": "Thermostat - Heating Stage 3",
+   "units": "",
+   "access": "R",
+   "states": "0=Inactive; 1=Active"
+  },
+  {
+   "type": "BI",
+   "instance": 14,
+   "name": "Tstat_W4_Y3",
+   "description": "Thermostat - Heating Stage 4 / Cooling Stage 3",
+   "units": "",
+   "access": "R",
+   "states": "0=Inactive; 1=Active"
+  },
+  {
+   "type": "BI",
+   "instance": 15,
+   "name": "BB_ConfigSw1",
+   "description": "Unit Operation",
+   "units": "",
+   "access": "R",
+   "states": "0=Off; 1=On"
+  },
+  {
+   "type": "BI",
+   "instance": 16,
+   "name": "BB_ConfigSw2",
+   "description": "Fan Operation",
+   "units": "",
+   "access": "R",
+   "states": "0=Off; 1=On"
+  },
+  {
+   "type": "BI",
+   "instance": 17,
+   "name": "BB_ConfigSw3",
+   "description": "Loop Fluid",
+   "units": "",
+   "access": "R",
+   "states": "0=Off; 1=On"
+  },
+  {
+   "type": "BI",
+   "instance": 18,
+   "name": "BB_ConfigSw4",
+   "description": "Freeze Fault Protection",
+   "units": "",
+   "access": "R",
+   "states": "0=Off; 1=On"
+  },
+  {
+   "type": "BI",
+   "instance": 19,
+   "name": "BB_ConfigSw5",
+   "description": "Room Sensor Setpoint Adjust",
+   "units": "",
+   "access": "R",
+   "states": "0=Off; 1=On"
+  },
+  {
+   "type": "BI",
+   "instance": 20,
+   "name": "BB_ConfigSw6",
+   "description": "Thermostat/Room Sensor",
+   "units": "",
+   "access": "R",
+   "states": "0=Off; 1=On"
+  },
+  {
+   "type": "BI",
+   "instance": 21,
+   "name": "BB_ConfigSw7",
+   "description": "Config switch 7: Compressor Heating Enable (Series2) / Compressor Availability (SS2C)",
+   "units": "",
+   "access": "R",
+   "states": "0=Off; 1=On"
+  },
+  {
+   "type": "BI",
+   "instance": 22,
+   "name": "BB_ConfigSw8",
+   "description": "Config switch 8: I/O Expansion Module (Series2) / Compressor Availability (SS2C)",
+   "units": "",
+   "access": "R",
+   "states": "0=Off; 1=On"
+  },
+  {
+   "type": "BI",
+   "instance": 23,
+   "name": "BB_ConfigSw9",
+   "description": "Baseboard Application Select",
+   "units": "",
+   "access": "R",
+   "states": "0=Off; 1=On"
+  },
+  {
+   "type": "BI",
+   "instance": 24,
+   "name": "BB_ConfigSw10",
+   "description": "Discrete Variable Fan Select",
+   "units": "",
+   "access": "R",
+   "states": "0=Off; 1=On"
+  },
+  {
+   "type": "BI",
+   "instance": 25,
+   "name": "IO_ConfigSw1",
+   "description": "Variable Fan Speed Selection (switch 1)",
+   "units": "",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "BI",
+   "instance": 26,
+   "name": "IO_ConfigSw2",
+   "description": "Variable Fan Speed Selection (switch 2)",
+   "units": "",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "BI",
+   "instance": 27,
+   "name": "IO_ConfigSw3",
+   "description": "Variable Fan Speed Selection (switch 3)",
+   "units": "",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "BI",
+   "instance": 28,
+   "name": "IO_ConfigSw4",
+   "description": "Variable Fan Speed Selection (switch 4)",
+   "units": "",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "BI",
+   "instance": 29,
+   "name": "IO_ConfigSw5",
+   "description": "Secondary Heating Options",
+   "units": "",
+   "access": "R",
+   "states": "0=Off; 1=On"
+  },
+  {
+   "type": "BI",
+   "instance": 30,
+   "name": "IO_ConfigSw6",
+   "description": "Secondary Heating Options (switch 6)",
+   "units": "",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "BI",
+   "instance": 31,
+   "name": "IO_ConfigSw7",
+   "description": "Hot Gas Reheat (HGR)",
+   "units": "",
+   "access": "R",
+   "states": "0=Off; 1=On"
+  },
+  {
+   "type": "BI",
+   "instance": 32,
+   "name": "IO_ConfigSw8",
+   "description": "Waterside Economizer (WSE)",
+   "units": "",
+   "access": "R",
+   "states": "0=Off; 1=On"
+  },
+  {
+   "type": "BI",
+   "instance": 33,
+   "name": "IO_ConfigSw9",
+   "description": "I/O Expansion Module Application Select",
+   "units": "",
+   "access": "R",
+   "states": "0=Off; 1=On"
+  },
+  {
+   "type": "BI",
+   "instance": 34,
+   "name": "IO_ConfigSw10",
+   "description": "Compressor Dual Speed Option (Series2) / Lead Compressor Select (SS2C)",
+   "units": "",
+   "access": "R",
+   "states": "0=Off; 1=On"
+  },
+  {
+   "type": "BI",
+   "instance": 35,
+   "name": "Humidistat",
+   "description": "Humidistat Input",
+   "units": "",
+   "access": "R",
+   "states": "0=Inactive; 1=Active"
+  },
+  {
+   "type": "BO",
+   "instance": 1,
+   "name": "Alarm",
+   "description": "Thermostat Alarm",
+   "units": "",
+   "access": "R",
+   "states": "0=Alarm output command is Off (0 VAC); 1=Alarm output command is On (24 VAC)"
+  },
+  {
+   "type": "BO",
+   "instance": 2,
+   "name": "Comp1Out",
+   "description": "Compressor 1",
+   "units": "",
+   "access": "R",
+   "states": "0=Compressor 1 command is Off; 1=Compressor 1 command is On"
+  },
+  {
+   "type": "BO",
+   "instance": 3,
+   "name": "FanMainOut",
+   "description": "Fan Main Enable",
+   "units": "",
+   "access": "R",
+   "states": "0=Fan main command is Off; 1=Fan main command is On"
+  },
+  {
+   "type": "BO",
+   "instance": 4,
+   "name": "FanLowOut",
+   "description": "Fan Speed",
+   "units": "",
+   "access": "R",
+   "states": "0=Fan high speed command is On; 1=Fan low speed command is On"
+  },
+  {
+   "type": "BO",
+   "instance": 5,
+   "name": "PumpOut",
+   "description": "Pump Request",
+   "units": "",
+   "access": "R",
+   "states": "0=Pump command is Off; 1=Pump command is On"
+  },
+  {
+   "type": "BO",
+   "instance": 6,
+   "name": "RevVlv1Out",
+   "description": "Reversing Valve 1",
+   "units": "",
+   "access": "R",
+   "states": "0=Reversing valve 1 command is Off (cooling); 1=Reversing valve 1 command is On (heating)"
+  },
+  {
+   "type": "BO",
+   "instance": 7,
+   "name": "Comp2Out",
+   "description": "Compressor 2 / Compressor High Capacity",
+   "units": "",
+   "access": "R",
+   "states": "0=Compressor 2 command is Off; 1=Compressor 2 command is On"
+  },
+  {
+   "type": "BO",
+   "instance": 8,
+   "name": "RevVlv2Out",
+   "description": "Reversing Valve 2",
+   "units": "",
+   "access": "R",
+   "states": "0=Reversing valve 2 command is Off (cooling); 1=Reversing valve 2 command is On (heating)"
+  },
+  {
+   "type": "BO",
+   "instance": 9,
+   "name": "AuxHeat1Out",
+   "description": "Auxiliary Heat 1",
+   "units": "",
+   "access": "R",
+   "states": "0=Electric heat 1 command is Off; 1=Electric heat 1 command is On"
+  },
+  {
+   "type": "BO",
+   "instance": 10,
+   "name": "AuxHeat2Out",
+   "description": "Auxiliary Heat 2",
+   "units": "",
+   "access": "R",
+   "states": "0=Electric heat 2 command is Off; 1=Electric heat 2 command is On"
+  },
+  {
+   "type": "BO",
+   "instance": 11,
+   "name": "HGR_Out",
+   "description": "Hot Gas Reheat",
+   "units": "",
+   "access": "R",
+   "states": "0=HGR command is Off (valve is closed); 1=HGR command is On (valve is open)"
+  },
+  {
+   "type": "BO",
+   "instance": 12,
+   "name": "WSE_Out",
+   "description": "Waterside Economizer",
+   "units": "",
+   "access": "R",
+   "states": "0=WSE command is Off (valve is closed); 1=WSE command is On (valve is open)"
+  },
+  {
+   "type": "BV",
+   "instance": 1,
+   "name": "ClearAlarm",
+   "description": "Clear Alarm",
+   "units": "",
+   "access": "W",
+   "states": "0=Normal; 1=Clear Alarm"
+  },
+  {
+   "type": "MI",
+   "instance": 1,
+   "name": "CondOverFlow",
+   "description": "Condensate Overflow Status",
+   "units": "",
+   "access": "R",
+   "states": "1=Dry; 2=Wet; 3=Null"
+  },
+  {
+   "type": "MI",
+   "instance": 2,
+   "name": "FanOnAuto",
+   "description": "Fan On/Auto Switch Status (Room Sensor)",
+   "units": "",
+   "access": "R",
+   "states": "1=On; 2=Auto; 3=Null"
+  },
+  {
+   "type": "MI",
+   "instance": 3,
+   "name": "HeatCoolAuto",
+   "description": "System Mode Switch (Heat/Cool/Auto) Status",
+   "units": "",
+   "access": "R",
+   "states": "1=Off; 2=Heat; 3=Cool; 4=Auto; 5=Null"
+  },
+  {
+   "type": "MI",
+   "instance": 4,
+   "name": "DehumRequired",
+   "description": "Dehumidification Required",
+   "units": "",
+   "access": "R",
+   "states": "1=Dehumid not Required; 2=Dehumid Required; 3=Null"
+  },
+  {
+   "type": "MI",
+   "instance": 5,
+   "name": "FanRunStatus",
+   "description": "Fan Run Status",
+   "units": "",
+   "access": "R",
+   "states": "1=Fan is Off; 2=Fan is On"
+  },
+  {
+   "type": "MV",
+   "instance": 1,
+   "name": "ComprEnable",
+   "description": "Compressor Enable Input",
+   "units": "",
+   "access": "C",
+   "states": "1=Disabled; 2=Enabled; 3=Null (Compressors Enabled)"
+  },
+  {
+   "type": "MV",
+   "instance": 2,
+   "name": "CurrentAlarm",
+   "description": "Current Alarm",
+   "units": "",
+   "access": "R",
+   "states": "Alarm number 1-28 (see the alarm table in the guide)"
+  },
+  {
+   "type": "MV",
+   "instance": 3,
+   "name": "NetworkFanOnAuto",
+   "description": "Network Fan On/Auto Input",
+   "units": "",
+   "access": "C",
+   "states": "1=Fan Auto; 2=Fan On; 3=Null"
+  },
+  {
+   "type": "MV",
+   "instance": 4,
+   "name": "McQWSHPStatus",
+   "description": "Unit Status",
+   "units": "",
+   "access": "R",
+   "states": "1=Off Alarm; 2=Off; 3=Start; 4=Fan Only; 5=Prepare to Heat; 6=Heating; 7=Prepare to Cool; 8=Cooling; 9=Prepare to Dehumidify; 10=Dehumidification"
+  },
+  {
+   "type": "MV",
+   "instance": 5,
+   "name": "PreviousAlarm",
+   "description": "Previous Alarm",
+   "units": "",
+   "access": "R",
+   "states": "Alarm number 1-28 (see the alarm table in the guide)"
+  },
+  {
+   "type": "MV",
+   "instance": 6,
+   "name": "EffectOccup",
+   "description": "Effective Occupancy",
+   "units": "",
+   "access": "R",
+   "states": "1=Occupied; 2=Unoccupied; 3=Bypass; 4=Standby; 5=Null"
+  },
+  {
+   "type": "MV",
+   "instance": 7,
+   "name": "OccManCmd",
+   "description": "Occupancy Override Input",
+   "units": "",
+   "access": "C",
+   "states": "1=Occupied; 2=Unoccupied; 3=Bypass; 4=Standby; 5=Null"
+  },
+  {
+   "type": "MV",
+   "instance": 8,
+   "name": "OccSchedule",
+   "description": "Occupancy Scheduler",
+   "units": "",
+   "access": "C",
+   "states": "1=Occupied; 2=Unoccupied; 3=Standby; 4=Null"
+  },
+  {
+   "type": "MV",
+   "instance": 9,
+   "name": "OccSensor",
+   "description": "Occupancy Sensor",
+   "units": "",
+   "access": "C",
+   "states": "1=Occupied; 2=Unoccupied; 3=Null"
+  },
+  {
+   "type": "MV",
+   "instance": 10,
+   "name": "ApplicMode",
+   "description": "Application Mode",
+   "units": "",
+   "access": "C",
+   "states": "1=Auto; 2=Heat; 3=Cool; 4=Off; 5=Fan Only; 6=Dehumid; 7=Null"
+  },
+  {
+   "type": "MV",
+   "instance": 11,
+   "name": "AuxHeatEnable",
+   "description": "Auxiliary Heat Enable",
+   "units": "",
+   "access": "C",
+   "states": "1=Disabled; 2=Enabled; 3=Null"
+  },
+  {
+   "type": "MV",
+   "instance": 12,
+   "name": "EnergyHoldOff",
+   "description": "Energy Hold Off",
+   "units": "",
+   "access": "C",
+   "states": "1=Normal; 2=Energy Hold Off; 3=Null"
+  },
+  {
+   "type": "MV",
+   "instance": 13,
+   "name": "PumpRequest",
+   "description": "Pump Request Output",
+   "units": "",
+   "access": "R",
+   "states": "1=No Request for Flow; 2=Request for Flow; 3=Null"
+  },
+  {
+   "type": "MV",
+   "instance": 14,
+   "name": "cpLocSpEnable",
+   "description": "Room Sensor Setpoint Adjust Enable/Disable",
+   "units": "",
+   "access": "W",
+   "states": "1=Disabled; 2=Enabled"
+  },
+  {
+   "type": "MV",
+   "instance": 15,
+   "name": "Units",
+   "description": "Units (English/Metric)",
+   "units": "",
+   "access": "W",
+   "states": "1=English (E); 2=Metric (M)"
+  },
+  {
+   "type": "MV",
+   "instance": 16,
+   "name": "NetworkHumidistat",
+   "description": "Network Humidistat Input",
+   "units": "",
+   "access": "C",
+   "states": "1=No Dehumid Request; 2=Request Dehumid; 3=Null"
+  },
+  {
+   "type": "MV",
+   "instance": 17,
+   "name": "cpNetVsCnfgEn",
+   "description": "Network Variable Speed Fan Enable",
+   "units": "",
+   "access": "W",
+   "states": "1=Disabled; 2=Enabled; 3=Null"
+  },
+  {
+   "type": "MV",
+   "instance": 18,
+   "name": "cpSpaceDehumCnfg",
+   "description": "Space Dehumidification Method",
+   "units": "",
+   "access": "W",
+   "states": "1=Relative Humidity; 2=Dewpoint; 3=Null"
+  },
+  {
+   "type": "MV",
+   "instance": 19,
+   "name": "cpSpaceRHSensor",
+   "description": "Space Relative Humidity Sensor",
+   "units": "",
+   "access": "W",
+   "states": "1=Not Installed; 2=Installed; 3=Null"
+  },
+  {
+   "type": "MV",
+   "instance": 20,
+   "name": "cpControlTempSrc",
+   "description": "Control Temperature Source",
+   "units": "",
+   "access": "W",
+   "states": "1=Space; 2=Return; 3=Average; 4=Null"
+  }
+ ],
+ "page": "https://easybacnet.com/bacnet-points-lists/daikin-applied/microtech-mt2300-wshp-smartsource-r32",
+ "note": "Re-typed from the manufacturer's public documentation (see source). Point availability varies by firmware and options; verify against the live device."
+}

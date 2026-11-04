@@ -1,0 +1,3096 @@
+{
+ "manufacturer": "Trane",
+ "manufacturer_slug": "trane",
+ "model": "BCI2-I (IntelliPak)",
+ "model_slug": "bci2-i-intellipak",
+ "aliases": [
+  "BCI2-I",
+  "BCI2I",
+  "IntelliPak BACnet interface",
+  "BACnet Communication Interface for IntelliPak",
+  "BAS-SVP054",
+  "IntelliPak I",
+  "IntelliPak II",
+  "Commercial Self-Contained",
+  "Signature Series"
+ ],
+ "equipment_type": "Rooftop unit communication interface (IntelliPak)",
+ "applies_to": "Trane IntelliPak I and II rooftop units, IntelliPak air handlers and Commercial Self-Contained (CSC) units fitted with the BCI2-I BACnet card.",
+ "summary": "The BCI2-I is a non-programmable BACnet MS/TP card for IntelliPak rooftops and Commercial Self-Contained units. It scans the unit at first power-up and creates only the objects that match the installed options, so the full table is a superset. The BAS writes AO/BO/MO output objects (commands, setpoints, BAS sensor values) and reads AI/BI/MI status and diagnostics. This is the older IntelliPak interface, not the Symbio 800 IntelliPak controller.",
+ "bacnet_transport": [
+  "BACnet MS/TP"
+ ],
+ "firmware": null,
+ "default_device_instance": null,
+ "access_inferred": false,
+ "notes": [
+  "The tables have no read/write column. The guide says output objects carry BAS commands, setpoints and sensor values and input objects are status; its object-type tables give AO, AV, BO and MO a priority array, so those are marked commandable.",
+  "'When exists' conditions from the guide are shown in brackets where they fit. Objects marked 'Never' in the guide (Chemical Purge, CSC only) are kept as printed.",
+  "BI 86, 88, 89 and 90 are printed twice with different meanings by unit type. Listed here: BI 86 Velocity Press Sensor Fail (CSC, IntelliPak I, rooftop) and the rooftop meanings of BI 88-90. The other printed meanings are BI 86 'Diagnostic: Vel Press Sensor (Rear)' (rooftop, IntelliPak II), BI 88 'Diagnostic: WSM Communications Failure', BI 89 'Diagnostic: Compressor Trip - Ckt 3' and BI 90 'Diagnostic: Compressor Trip - Ckt 4' (Commercial Self-Contained).",
+  "The diagnostics table repeats BI 161-166, 243-246 and 311. BI 161-164 are named 'Evaporator Frost Protection Circuit n Status' in the binary input table and 'Circuit n Coil Frost Protection Status' in the diagnostics table; BI 166 is 'Diagnostic Stop Status' vs 'Diagnostic: Stop Status'. The binary input table names are used here.",
+  "Units are the IP defaults printed in the guide; the card ships set to SI and only switches to IP after a clear and units change.",
+  "Objects in the 1001 range (AI, AO, AV, BI 1001...) are only created when a digital scroll compressor is present."
+ ],
+ "source": {
+  "title": "Integration Guide: BACnet Communication Interface (BCI2-I) for IntelliPak and Commercial Self-Contained",
+  "doc_number": "BAS-SVP054B-EN",
+  "revision_date": "September 2023",
+  "url": "https://elibrary.tranetechnologies.com/public/commercial-hvac/Literature/Integration/BAS-SVP054B-EN_09222023.pdf"
+ },
+ "integration": {
+  "summary": "Set Unit Control to BAS/NETWORK at the unit's Human Interface, then set BO 1 System Control Command to Active (BAS Control). Put each output object the BMS will drive in service (Out_Of_Service = FALSE). Schedule with MO 7 Occupancy Request, set the mode with MO 8 and the space setpoint with AO 2 (or the discharge air setpoints on VAV units). Keep rewriting BAS sensor values.",
+  "minimum_points": [
+   {
+    "ref": "BO 1",
+    "name": "System Control Command",
+    "why": "Active = BAS control; Inactive = standalone, monitor only"
+   },
+   {
+    "ref": "MO 7",
+    "name": "Occupancy Request",
+    "why": "Occupancy command (1 = Occupied, 2 = Unoccupied)"
+   },
+   {
+    "ref": "MO 8",
+    "name": "Heat Cool Mode Request BAS",
+    "why": "Heat/cool mode command (1 = Auto)"
+   },
+   {
+    "ref": "AO 2",
+    "name": "Space Temperature Setpoint BAS",
+    "why": "Space setpoint; occupied/standby offsets apply to it"
+   },
+   {
+    "ref": "AO 6",
+    "name": "Discharge Air Cooling Setpoint BAS",
+    "why": "Supply air cooling setpoint on VAV units"
+   },
+   {
+    "ref": "BI 1",
+    "name": "System Control Status",
+    "why": "Confirms the unit is under BAS control"
+   },
+   {
+    "ref": "MI 20",
+    "name": "Occupancy Status",
+    "why": "Confirms the occupancy the unit is running in"
+   },
+   {
+    "ref": "MI 41",
+    "name": "Supply Fan Status",
+    "why": "Supply fan on/off (2 = On)"
+   },
+   {
+    "ref": "AI 15",
+    "name": "Space Temperature Active",
+    "why": "Space temperature the unit is controlling to"
+   },
+   {
+    "ref": "BI 165",
+    "name": "Alarm Relay Output Status",
+    "why": "Unit alarm relay; Active = energized"
+   }
+  ],
+  "enable": "At the unit Human Interface, BAS Communication Module must read Installed and Setup > Unit Control must be BAS/NETWORK. Then BO 1 System Control Command must be Active (BAS Control); while Inactive the unit runs on local sensors and setpoints and ignores BAS values. Output objects ship with Out_Of_Service = TRUE, so the unit uses its local value until the BMS sets Out_Of_Service to FALSE on each output it will write.",
+  "heartbeat": "BAS-supplied sensor objects with a 900 s refresh rate (AO 10-15, AO 17, AO 18, AO 25) must be rewritten within that time. If not, the BCI2-I puts the object in fault and the unit reverts to its own sensor. At power-up these objects stay in fault until the first write. Setpoints and commands have no refresh limit (AO 22 is printed with a 5 s refresh rate).",
+  "remote_sensors": "Write BMS sensor values to the '... BAS' AOs (AO 11 Space Temperature BAS, AO 12 Discharge Air Temperature BAS, AO 13 Duct Static Pressure BAS, AO 14 Outdoor Air Temperature BAS, AO 15 Outdoor Air Humidity BAS, AO 17 Outdoor Air Flow BAS, AO 18 Space CO2 Concentration BAS, AO 25 Space Humidity BAS, AO 10 Space Static Pressure BAS) with the object in service, and keep refreshing them. The matching '... Active' AIs show the value in use.",
+  "setup": [
+   "BACnet MS/TP at 9600, 19200, 38400 or 76800 bps; default 76,800.",
+   "There are no rotary dials on the BCI2-I: the factory address is on a label on the board. Change it in the embedded BCI2 Service Tool (USB cable, browser at 198.80.18.1, Tools > Installation and Communication > Protocol Configuration) or with Tracer TU 11.6 or later.",
+   "The Device ID defaults to the MS/TP address; tick 'Use Software Device ID' to set a different one.",
+   "Units default to SI. To switch to IP, clear the controller first, then change Device Units; mixed units are not supported.",
+   "The clock resets to 12:00 Jan 1 1970 after a power loss; send TimeSynchronization from the BMS periodically.",
+   "Older IntelliPak/CSC units need the correct HI and module software; units that show COMM 5 instead of BACnet on the revision screen need upgrades (see the guide)."
+  ],
+  "gotchas": [
+   "Writing an output object has no effect while it is Out of Service (the factory default); the unit keeps using its local value.",
+   "The object list is built at first power-up from the unit configuration. Clear the controller so it rescans after adding options.",
+   "BO 13 Filter Timer Reset and BO 14 Reset Diagnostic go back to Inactive on their own after the reset.",
+   "BI 86, 88, 89 and 90 mean different diagnostics on rooftops and on CSC units; check the unit type before naming them in the BMS.",
+   "Diagnostic BIs send BACnet event notifications when they change."
+  ]
+ },
+ "points": [
+  {
+   "type": "AO",
+   "instance": 1,
+   "name": "Economizer Minimum Position Setpoint BAS",
+   "description": "BAS economizer position minimum setpoint value [With Economizer installed]",
+   "units": "%",
+   "access": "C",
+   "states": ""
+  },
+  {
+   "type": "AO",
+   "instance": 2,
+   "name": "Space Temperature Setpoint BAS",
+   "description": "Base value to calculate setpoints in occupied and standby modes",
+   "units": "°F",
+   "access": "C",
+   "states": ""
+  },
+  {
+   "type": "AO",
+   "instance": 4,
+   "name": "Morning Warmup Setpoint BAS",
+   "description": "BAS temperature setpoint used in morning warm-up mode [With any heat installed]",
+   "units": "°F",
+   "access": "C",
+   "states": ""
+  },
+  {
+   "type": "AO",
+   "instance": 5,
+   "name": "Daytime Warmup Terminate Temperature Setpoint BAS",
+   "description": "BAS daytime warm-up terminate temperature setpoint [With any heat installed]",
+   "units": "°F",
+   "access": "C",
+   "states": ""
+  },
+  {
+   "type": "AO",
+   "instance": 6,
+   "name": "Discharge Air Cooling Setpoint BAS",
+   "description": "BAS discharge air temperature cooling setpoint value [Variable Air Volume]",
+   "units": "°F",
+   "access": "C",
+   "states": ""
+  },
+  {
+   "type": "AO",
+   "instance": 7,
+   "name": "Discharge Air Heating Setpoint BAS",
+   "description": "BAS discharge air temperature heating setpoint value [Variable Air Volume]",
+   "units": "°F",
+   "access": "C",
+   "states": ""
+  },
+  {
+   "type": "AO",
+   "instance": 8,
+   "name": "Duct Static Pressure Setpoint BAS",
+   "description": "BAS duct static air pressure setpoint value [Variable Air Volume]",
+   "units": "in. w.c.",
+   "access": "C",
+   "states": ""
+  },
+  {
+   "type": "AO",
+   "instance": 9,
+   "name": "Space Static Pressure Setpoint BAS",
+   "description": "BAS space static air pressure setpoint value [With StatiTrac]",
+   "units": "in. w.c.",
+   "access": "C",
+   "states": ""
+  },
+  {
+   "type": "AO",
+   "instance": 10,
+   "name": "Space Static Pressure BAS",
+   "description": "BAS space static air pressure sensor value [With StatiTrac]",
+   "units": "in. w.c.",
+   "access": "C",
+   "states": ""
+  },
+  {
+   "type": "AO",
+   "instance": 11,
+   "name": "Space Temperature BAS",
+   "description": "BAS space air temperature sensor value",
+   "units": "°F",
+   "access": "C",
+   "states": ""
+  },
+  {
+   "type": "AO",
+   "instance": 12,
+   "name": "Discharge Air Temperature BAS",
+   "description": "BAS discharge air temperature sensor value",
+   "units": "°F",
+   "access": "C",
+   "states": ""
+  },
+  {
+   "type": "AO",
+   "instance": 13,
+   "name": "Duct Static Pressure BAS",
+   "description": "BAS duct static air pressure sensor value [Variable Air Volume]",
+   "units": "in. w.c.",
+   "access": "C",
+   "states": ""
+  },
+  {
+   "type": "AO",
+   "instance": 14,
+   "name": "Outdoor Air Temperature BAS",
+   "description": "BAS outdoor air temperature sensor value",
+   "units": "°F",
+   "access": "C",
+   "states": ""
+  },
+  {
+   "type": "AO",
+   "instance": 15,
+   "name": "Outdoor Air Humidity BAS",
+   "description": "BAS outdoor air humidity sensor value",
+   "units": "%",
+   "access": "C",
+   "states": ""
+  },
+  {
+   "type": "AO",
+   "instance": 16,
+   "name": "Outdoor Air Minimum Flow Setpoint BAS",
+   "description": "BAS minimum outdoor airflow setpoint [Fresh Air Management installed]",
+   "units": "cfm",
+   "access": "C",
+   "states": ""
+  },
+  {
+   "type": "AO",
+   "instance": 17,
+   "name": "Outdoor Air Flow BAS",
+   "description": "BAS outdoor airflow sensor value [Fresh Air Management installed]",
+   "units": "cfm",
+   "access": "C",
+   "states": ""
+  },
+  {
+   "type": "AO",
+   "instance": 18,
+   "name": "Space CO2 Concentration BAS",
+   "description": "BAS space CO2 sensor value",
+   "units": "ppm",
+   "access": "C",
+   "states": ""
+  },
+  {
+   "type": "AO",
+   "instance": 19,
+   "name": "Cool Capacity Enable Setpoint BAS",
+   "description": "BAS cooling demand limit capacity setpoint value [With all cooling types]",
+   "units": "%",
+   "access": "C",
+   "states": ""
+  },
+  {
+   "type": "AO",
+   "instance": 20,
+   "name": "Heat Capacity Enable Setpoint BAS",
+   "description": "BAS heating demand limit capacity setpoint value [With any heat installed]",
+   "units": "%",
+   "access": "C",
+   "states": ""
+  },
+  {
+   "type": "AO",
+   "instance": 21,
+   "name": "Space Dehumidification Setpoint BAS",
+   "description": "BAS space dehumidification setpoint value [Dehumidification Configuration]",
+   "units": "%",
+   "access": "C",
+   "states": ""
+  },
+  {
+   "type": "AO",
+   "instance": 22,
+   "name": "Discharge Air Dewpoint Setpoint BAS",
+   "description": "BAS discharge air dewpoint setpoint value",
+   "units": "°F",
+   "access": "C",
+   "states": ""
+  },
+  {
+   "type": "AO",
+   "instance": 23,
+   "name": "Discharge Air Reheat Setpoint BAS",
+   "description": "BAS discharge air reheat setpoint value [Dehumidification Configuration]",
+   "units": "°F",
+   "access": "C",
+   "states": ""
+  },
+  {
+   "type": "AO",
+   "instance": 25,
+   "name": "Space Humidity BAS",
+   "description": "BAS space humidity sensor value [Dehumidification or Humidification Configuration]",
+   "units": "%",
+   "access": "C",
+   "states": ""
+  },
+  {
+   "type": "AO",
+   "instance": 26,
+   "name": "Space Humidification Setpoint BAS",
+   "description": "BAS space humidification setpoint value [Roof Top Unit with Humidification Configured]",
+   "units": "%",
+   "access": "C",
+   "states": ""
+  },
+  {
+   "type": "AO",
+   "instance": 29,
+   "name": "Occupied Offset",
+   "description": "Offset used to calculate setpoints in occupied mode",
+   "units": "°F",
+   "access": "C",
+   "states": ""
+  },
+  {
+   "type": "AO",
+   "instance": 30,
+   "name": "Standby Offset",
+   "description": "Offset value used to calculate setpoints in standby mode",
+   "units": "°F",
+   "access": "C",
+   "states": ""
+  },
+  {
+   "type": "AO",
+   "instance": 31,
+   "name": "Unoccupied Cooling Setpoint",
+   "description": "Cooling temperature setpoint used for control in unoccupied mode",
+   "units": "°F",
+   "access": "C",
+   "states": ""
+  },
+  {
+   "type": "AO",
+   "instance": 32,
+   "name": "Unoccupied Heating Setpoint",
+   "description": "Heating temperature setpoint used for control in unoccupied mode",
+   "units": "°F",
+   "access": "C",
+   "states": ""
+  },
+  {
+   "type": "AO",
+   "instance": 33,
+   "name": "Chemical Purge Water Treatment Duration",
+   "description": "Set BAS time duration (minutes) for Chemical Purge Water Treatment event (CSC",
+   "units": "min",
+   "access": "C",
+   "states": ""
+  },
+  {
+   "type": "AO",
+   "instance": 39,
+   "name": "Supply Fan Speed Command Setpoint BAS",
+   "description": "BAS Supply Fan Speed Setpoint [Variable Air Volume]",
+   "units": "%",
+   "access": "C",
+   "states": ""
+  },
+  {
+   "type": "AO",
+   "instance": 40,
+   "name": "Exhaust Fan Speed Setpoint BAS",
+   "description": "BAS Exhaust Fan Speed Setpoint [Variable Air Volume]",
+   "units": "%",
+   "access": "C",
+   "states": ""
+  },
+  {
+   "type": "AO",
+   "instance": 43,
+   "name": "Daytime Warm-up Initiate Temperature Setpoint BAS",
+   "description": "BAS initiate temperature setpoint used in morning warm-up mode [With any heat installed]",
+   "units": "°F",
+   "access": "C",
+   "states": ""
+  },
+  {
+   "type": "AO",
+   "instance": 1001,
+   "name": "Digital Scroll Compressor Signal",
+   "description": "Supplied voltage to the Digital Scroll Compressor [Digital Scroll Compressor present]",
+   "units": "V",
+   "access": "C",
+   "states": ""
+  },
+  {
+   "type": "AI",
+   "instance": 1,
+   "name": "Cooling Capacity Status",
+   "description": "Unit cooling capacity being utilized",
+   "units": "%",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "AI",
+   "instance": 2,
+   "name": "Heat Primary Capacity Status",
+   "description": "Unit primary heating capacity being utilized",
+   "units": "%",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "AI",
+   "instance": 3,
+   "name": "Heat Secondary Capacity Status",
+   "description": "Unit secondary heating capacity being utilized [Roof Top Unit]",
+   "units": "%",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "AI",
+   "instance": 5,
+   "name": "Reheat Capacity Status",
+   "description": "Unit reheat heating capacity being utilized [Dehumidification]",
+   "units": "%",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "AI",
+   "instance": 6,
+   "name": "Filter Runtime Hours",
+   "description": "Number of hours air has flowed through the filter",
+   "units": "h",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "AI",
+   "instance": 7,
+   "name": "Supply Fan Speed Command",
+   "description": "Unit commanded supply fan speed",
+   "units": "%",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "AI",
+   "instance": 8,
+   "name": "Exhaust Fan Speed Command",
+   "description": "Unit commanded exhaust fan speed [With 100% exhaust capabilities]",
+   "units": "%",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "AI",
+   "instance": 9,
+   "name": "Exhaust Damper Position Status",
+   "description": "Unit exhaust damper position [With 100% exhaust capabilities or Return Fan]",
+   "units": "%",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "AI",
+   "instance": 10,
+   "name": "Return Fan Speed Command",
+   "description": "Unit commanded return fan speed",
+   "units": "%",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "AI",
+   "instance": 11,
+   "name": "Outdoor Air Damper Position Status",
+   "description": "Unit outdoor air damper position [With Economizer installed]",
+   "units": "%",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "AI",
+   "instance": 12,
+   "name": "Waterside Economizer Valve Position Status",
+   "description": "Unit waterside economizer valve position [Commercial Self Contained with Waterside Economizer]",
+   "units": "%",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "AI",
+   "instance": 13,
+   "name": "Frost Avoidance Temperature Setpoint",
+   "description": "Frost coil avoidance temperature setpoint",
+   "units": "°F",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "AI",
+   "instance": 14,
+   "name": "Condenser Capacity Status",
+   "description": "Unit condenser capacity being utilized",
+   "units": "%",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "AI",
+   "instance": 15,
+   "name": "Space Temperature Active",
+   "description": "Space temperature currently used for unit control",
+   "units": "°F",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "AI",
+   "instance": 16,
+   "name": "Space Humidity Active",
+   "description": "Space humidity value from a unit-mounted control [With Dehumidification or with Economizing and Comparative Enthalpy Module]",
+   "units": "%RH",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "AI",
+   "instance": 17,
+   "name": "Space Enthalpy",
+   "description": "Space enthalpy value from a unit-mounted control [With Dehumidification or with Economizing and Comparative Enthalpy Module]",
+   "units": "Btu/lb",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "AI",
+   "instance": 18,
+   "name": "Outdoor Air Temperature Active",
+   "description": "Outdoor air temperature currently used for unit control",
+   "units": "°F",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "AI",
+   "instance": 19,
+   "name": "Outdoor Air Temperature Local",
+   "description": "Outdoor air temperature value from a unit-mounted sensor",
+   "units": "°F",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "AI",
+   "instance": 20,
+   "name": "Outdoor Air Humidity Active",
+   "description": "Outdoor air humidity value used for unit control [With Economizing and Comparative Enthalpy Module]",
+   "units": "%RH",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "AI",
+   "instance": 21,
+   "name": "Outdoor Air Humidity Local",
+   "description": "Outdoor air humidity value from a unit-mounted sensor [With Economizing and Comparative Enthalpy Module]",
+   "units": "%RH",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "AI",
+   "instance": 22,
+   "name": "Outdoor Air Dewpoint",
+   "description": "Outdoor air dewpoint value being utilized by the unit",
+   "units": "°F",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "AI",
+   "instance": 23,
+   "name": "Outdoor Air Enthalpy",
+   "description": "Outdoor air enthalpy value being utilized by the unit [With Economizing and Comparative Enthalpy Module]",
+   "units": "Btu/lb",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "AI",
+   "instance": 24,
+   "name": "Discharge Air Temperature Active",
+   "description": "Discharge air temperature currently used for unit control",
+   "units": "°F",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "AI",
+   "instance": 25,
+   "name": "Mixed Air Temperature",
+   "description": "Mixed air temperature value from a unit-mounted sensor",
+   "units": "°F",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "AI",
+   "instance": 26,
+   "name": "Return Air Temperature",
+   "description": "Return air temperature value from a unit-mounted sensor [With Economizing and Comparative Enthalpy Module]",
+   "units": "°F",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "AI",
+   "instance": 28,
+   "name": "Duct Static Pressure Active",
+   "description": "Duct static air pressure value currently being used for unit control [Variable Air Volume]",
+   "units": "in. w.c.",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "AI",
+   "instance": 29,
+   "name": "Duct Static Pressure Local",
+   "description": "Duct static air pressure value measured by a unit-mounted sensor [Variable Air Volume]",
+   "units": "in. w.c.",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "AI",
+   "instance": 30,
+   "name": "Return Fan Air Pressure",
+   "description": "Return fan air pressure value measured by a unit-mounted sensor [Return fan with StatiTrac]",
+   "units": "in. w.c.",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "AI",
+   "instance": 31,
+   "name": "Space Static Air Pressure Active",
+   "description": "Space static air pressure value being used for unit control [With StatiTrac installed]",
+   "units": "in. w.c.",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "AI",
+   "instance": 32,
+   "name": "Space CO2 Concentration Active",
+   "description": "Space CO2 concentration being used for unit control [With DCV option]",
+   "units": "ppm",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "AI",
+   "instance": 33,
+   "name": "Discharge Air Dewpoint",
+   "description": "Discharge air temperature dewpoint being used by the unit [Dehumidification]",
+   "units": "°F",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "AI",
+   "instance": 34,
+   "name": "Outdoor Air Flow Active",
+   "description": "Outdoor airflow utilized by the unit [With Ventilation Control Module]",
+   "units": "cfm",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "AI",
+   "instance": 35,
+   "name": "Condenser Water Entering Temperature",
+   "description": "Temperature of the water entering the condenser",
+   "units": "°F",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "AI",
+   "instance": 36,
+   "name": "Evaporator Entering Temperature Circuit 1",
+   "description": "Entering evaporator temperature for circuit 1 [DX Roof Top Unit]",
+   "units": "°F",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "AI",
+   "instance": 37,
+   "name": "Evaporator Entering Temperature Circuit 2",
+   "description": "Entering evaporator temperature for circuit 2 [DX Roof Top Unit]",
+   "units": "°F",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "AI",
+   "instance": 38,
+   "name": "Evaporator Leaving Temperature Circuit 1",
+   "description": "Leaving evaporator temperature for circuit 1 [Commercial Self Contained or DX Roof Top Unit]",
+   "units": "°F",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "AI",
+   "instance": 39,
+   "name": "Evaporator Leaving Temperature Circuit 2",
+   "description": "Leaving evaporator temperature for circuit 2 [Commercial Self Contained or DX Roof Top Unit]",
+   "units": "°F",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "AI",
+   "instance": 40,
+   "name": "Evaporator Leaving Temperature Circuit 3",
+   "description": "Leaving evaporator temperature for circuit 3",
+   "units": "°F",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "AI",
+   "instance": 41,
+   "name": "Evaporator Leaving Temperature Circuit 4",
+   "description": "Leaving evaporator temperature for circuit 4",
+   "units": "°F",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "AI",
+   "instance": 42,
+   "name": "Condensing Saturated Temperature Circuit 1",
+   "description": "Saturated condenser temperature for circuit 1 [DX]",
+   "units": "°F",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "AI",
+   "instance": 43,
+   "name": "Condensing Saturated Temperature Circuit 2",
+   "description": "Saturated condenser temperature for circuit 2 [For 2 or more refrigerant circuits]",
+   "units": "°F",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "AI",
+   "instance": 44,
+   "name": "Condensing Saturated Temperature Circuit 3",
+   "description": "Saturated condenser temperature for circuit 3 [For 3 or more refrigerant circuits]",
+   "units": "°F",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "AI",
+   "instance": 45,
+   "name": "Condensing Saturated Temperature Circuit 4",
+   "description": "Saturated condenser temperature for circuit 4 [For 4 refrigerant circuits]",
+   "units": "°F",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "AI",
+   "instance": 46,
+   "name": "Condenser Water Leaving Temperature Active",
+   "description": "Condenser water leaving temperature value used for unit control",
+   "units": "°F",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "AI",
+   "instance": 47,
+   "name": "Condenser Water Temperature Local",
+   "description": "Condenser water leaving temperature from a unit mounted sensor",
+   "units": "°F",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "AI",
+   "instance": 48,
+   "name": "Duct Static Pressure Setpoint Active",
+   "description": "Duct static pressure setpoint value being used for unit control [Variable Air Volume]",
+   "units": "in. w.c.",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "AI",
+   "instance": 50,
+   "name": "Space Temperature Setpoint Active",
+   "description": "Space temperature setpoint value being used for unit control",
+   "units": "°F",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "AI",
+   "instance": 52,
+   "name": "Discharge Air Temperature Setpoint Active",
+   "description": "Discharge air temperature setpoint value being used for unit control [Variable Air Volume]",
+   "units": "°F",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "AI",
+   "instance": 54,
+   "name": "Morning Warmup Temperature Setpoint Active",
+   "description": "Air temperature setpoint used during morning warm-up mode [With any heat installed]",
+   "units": "°F",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "AI",
+   "instance": 55,
+   "name": "Daytime Warmup Air Temperature Terminate Setpoint Active",
+   "description": "Air temperature setpoint used to end daytime warm-up mode [Variable Air Volume with any heat installed]",
+   "units": "°F",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "AI",
+   "instance": 56,
+   "name": "Economizer Minimum Position Setpoint Active",
+   "description": "Minimum position value the economizer damper will utilize [With Economizer installed]",
+   "units": "%",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "AI",
+   "instance": 57,
+   "name": "Outdoor Air Minimum Flow Setpoint Active",
+   "description": "Minimum outdoor airflow setpoint being utilized by the unit",
+   "units": "cfm",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "AI",
+   "instance": 58,
+   "name": "Dehumidification High Limit Setpoint",
+   "description": "Humidity setpoint value that starts dehumidification control [Roof Top Unit with Dehumidification]",
+   "units": "%",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "AI",
+   "instance": 60,
+   "name": "Discharge Air Dewpoint Temperature Setpoint",
+   "description": "Humidity setpoint value used during dehumidification control [With Dehumidification]",
+   "units": "°F",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "AI",
+   "instance": 61,
+   "name": "Discharge Air Reheat Setpoint Active",
+   "description": "Active supply air reheat temperature setpoint [Roof Top Unit with Dehumidification]",
+   "units": "°F",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "AI",
+   "instance": 62,
+   "name": "Space Humidification Setpoint Active",
+   "description": "Setpoint used during space humidification control [Roof Top Unit]",
+   "units": "%",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "AI",
+   "instance": 64,
+   "name": "Energy Recovery Exhaust Air Bypass Damper Position",
+   "description": "Energy recovery exhaust air bypass damper position [Roof Top Unit with Energy Recovery]",
+   "units": "%",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "AI",
+   "instance": 65,
+   "name": "Energy Recovery Leaving Exhaust Temperature",
+   "description": "Energy recovery leaving exhaust air temperature [Roof Top Unit with Energy Recovery]",
+   "units": "°F",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "AI",
+   "instance": 66,
+   "name": "Energy Recovery Outdoor Air Bypass Damper Position",
+   "description": "Energy recovery outdoor air bypass damper position [Roof Top Unit with Energy Recovery]",
+   "units": "%",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "AI",
+   "instance": 67,
+   "name": "Daytime Warmup Initiate Temperature Setpoint Local",
+   "description": "Local daytime warm-up initiate temperature setpoint [Variable Air Volume with any heat installed]",
+   "units": "°F",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "AI",
+   "instance": 68,
+   "name": "Daytime Warmup Terminate Temperature Setpoint Local",
+   "description": "Temperature setpoint that will exit daytime warm-up mode [Variable Air Volume with any heat installed]",
+   "units": "°F",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "AI",
+   "instance": 69,
+   "name": "Economizing Temperature Enable Setpoint",
+   "description": "Temperature setpoint below which economizing can be used [With Economizer installed]",
+   "units": "°F",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "AI",
+   "instance": 70,
+   "name": "Economizing Enthalpy Enable Setpoint",
+   "description": "Enthalpy setpoint below which economizing can be used [With Economizer installed]",
+   "units": "Btu/lb",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "AI",
+   "instance": 71,
+   "name": "Exhaust Enable Position Setpoint Status",
+   "description": "Exhaust air damper minimum position to enable exhaust sequence [With Economizer installed]",
+   "units": "%",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "AI",
+   "instance": 74,
+   "name": "Space Temperature Cooling Setpoint Input",
+   "description": "Cooling temperature setpoint from space sensor module",
+   "units": "°F",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "AI",
+   "instance": 75,
+   "name": "Space Temperature Heating Setpoint Input",
+   "description": "Heating temperature setpoint from space sensor module",
+   "units": "°F",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "AI",
+   "instance": 76,
+   "name": "Humidification Capacity Status",
+   "description": "Unit humidification capacity being utilized [With Humidification]",
+   "units": "%",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "AI",
+   "instance": 78,
+   "name": "Space Temperature Setpoint Local",
+   "description": "Local space temperature setpoint",
+   "units": "°F",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "AI",
+   "instance": 79,
+   "name": "Dehumidification Capacity Status",
+   "description": "Unit dehumidification capacity being utilized [Roof Top Unit with Dehumidification]",
+   "units": "%",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "AI",
+   "instance": 80,
+   "name": "Cabinet Style",
+   "description": "Cabinet style of the unit",
+   "units": "",
+   "access": "R",
+   "states": "8 = Modular, 24 = Signature, 4 = Air Handler"
+  },
+  {
+   "type": "AI",
+   "instance": 81,
+   "name": "Cool Type",
+   "description": "Cooling type installed in the unit",
+   "units": "",
+   "access": "R",
+   "states": "1 = None, 2 = Modulating Cold Water, 6 = Modulating DX, 33 = 2-Stage Air-Cooled DX 1 Circuit 2 Compressor Relays, 34 = 2-Stage Air-Cooled DX 2 Circuit 2 Compressor Relays, 35 = 3-Stage Air-Cooled DX 2 Circuit 1 Compressor Relays, 36 = 3-Stage Air-Cooled DX 2 Circuit 2 Compr Relays, 37 = 2-Stage Water-Cooled DX 1 Circuit 2 Compressor Relays, 38 = 2-Stage Water-Cooled DX 2 Circuit 2 Compressor Relays, 39 = 3-Stage Water-Cooled DX 1 Circuit 2 Compressor Relays, 40 = 3-Stage Water-Cooled DX 2 Circuit 2 Compressor Relays, 41 = 3-Stage Air-Cooled DX 2 Circuit 3 Compressor Relays, 42 = 4-Stage Air-Cooled DX 2 Circuit 3 Compressor Relays, 43 = 3-Stage Water-Cooled DX 2 Circuit 3 Compressor Relays, 44 = 4-Stage Water-Cooled DX 2 Circuit 3 Compressor Relays, 45 = 3-Stage Water-Cooled DX 3 Circuit 3 Compressor Relays, 46 = 4-Stage Water-Cooled DX 3 Circuit 3 Compressor Relays, 47 = 4-Stage Air-Cooled DX 2 Circuit 4 Compressor Relays, 48 = 4-Stage Water-Cooled DX 2 Circuit 4 Compressor Relays, 49 = 4-Stage Water-Cooled DX 4 Circuit 4 Compressor Relays"
+  },
+  {
+   "type": "AI",
+   "instance": 82,
+   "name": "Preheat Type",
+   "description": "Heating type installed in the unit",
+   "units": "",
+   "access": "R",
+   "states": "129 = None, 130 = Modulating Hot Water, 134 = Modulating Electric, 135 = 1-Stage Electric, 136 = 2-Stage Electric, 137 = 3-Stage Electric, 138 = 4-Stage Electric, 158 = 5-Stage Electric, 160 = 7-Stage Electric, 141 = 2-Stage Gas, 162 = 4-Stage Gas, 142 = Modulating Gas, 163 = External Heat"
+  },
+  {
+   "type": "AI",
+   "instance": 83,
+   "name": "Reheat Type",
+   "description": "Reheat type installed in the unit",
+   "units": "",
+   "access": "R",
+   "states": "1 = None, 17 = Hot Gas"
+  },
+  {
+   "type": "AI",
+   "instance": 84,
+   "name": "Space CO2 High Limit Setpoint",
+   "description": "High limit space CO2 setpoint for ventilation",
+   "units": "ppm",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "AI",
+   "instance": 85,
+   "name": "Space CO2 Low Limit",
+   "description": "Low limit space CO2 setpoint for ventilation [With DCV option]",
+   "units": "ppm",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "AI",
+   "instance": 86,
+   "name": "Economizer Minimum Position Setpoint Local",
+   "description": "Local economizer minimum position setpoint [With Economizer installed]",
+   "units": "%",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "AI",
+   "instance": 87,
+   "name": "Space Temperature Local",
+   "description": "Space air temperature measured by a unit-mounted sensor",
+   "units": "°F",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "AI",
+   "instance": 88,
+   "name": "Unit Energy Demand",
+   "description": "Current heat/cool energy demand of the unit",
+   "units": "%",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "AI",
+   "instance": 89,
+   "name": "Supply Fan Type",
+   "description": "Supply fan type installed in the unit",
+   "units": "",
+   "access": "R",
+   "states": "1 = None, 2 = 1-Speed, 6 = Variable Speed"
+  },
+  {
+   "type": "AI",
+   "instance": 90,
+   "name": "Exhaust or Return Fan Type",
+   "description": "Exhaust or return fan type installed in the unit",
+   "units": "",
+   "access": "R",
+   "states": "1 = None, 2 = 1-Speed Exhaust Fan, 7 = 1-Speed Exhaust Fan with Modulating Exhaust Damper, 22 = 1-Speed Return Fan with Modulating Exhaust Damper, 26 = Variable Speed Fan with Modulating Exhaust Damper"
+  },
+  {
+   "type": "AI",
+   "instance": 110,
+   "name": "Daytime Warmup Air Temperature Initiate Setpoint Active",
+   "description": "Active daytime warmup initiate setpoint [Variable Air Volume with any Heat Installed]",
+   "units": "°F",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "AI",
+   "instance": 1001,
+   "name": "Resistance Compressor Minimum Capacity",
+   "description": "Created when Digital Scroll Compressor is present [Digital Scroll Compressor present]",
+   "units": "ohm",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 1,
+   "name": "Filter Runtime Hours Setpoint",
+   "description": "Setpoint value used by the filter run hours calculation",
+   "units": "h",
+   "access": "C",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 1001,
+   "name": "Digital Scroll Compressor Cooling P Gain",
+   "description": "Created when Digital Scroll Compressor is present",
+   "units": "",
+   "access": "C",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 1002,
+   "name": "Digital Scroll Compressor Cooling Capacity Status",
+   "description": "Created when Digital Scroll Compressor is present",
+   "units": "%",
+   "access": "C",
+   "states": ""
+  },
+  {
+   "type": "MO",
+   "instance": 1,
+   "name": "Economizer Airside Enable BAS",
+   "description": "Commands the state of the airside economizer system [With Economizer installed]",
+   "units": "",
+   "access": "C",
+   "states": "1 = Disabled, 2 = Enabled, 3 = Auto"
+  },
+  {
+   "type": "MO",
+   "instance": 2,
+   "name": "Emergency Override Command",
+   "description": "Commands the unit into an emergency mode of operation",
+   "units": "",
+   "access": "C",
+   "states": "1 = Normal, 2 = Pressurize, 3 = De-pressurize, 4 = Purge, 5 = Shutdown, 6 = Fire"
+  },
+  {
+   "type": "MO",
+   "instance": 3,
+   "name": "Economizer Waterside Enable BAS",
+   "description": "Commands the state of the waterside economizer system [Commercial Self Contained with Water Side Economizer]",
+   "units": "",
+   "access": "C",
+   "states": "1 = Disabled, 2 = Enabled, 3 = Auto"
+  },
+  {
+   "type": "MO",
+   "instance": 6,
+   "name": "Language Selection Command",
+   "description": "Commands the unit to provide diagnostics in foreign languages",
+   "units": "",
+   "access": "C",
+   "states": "1 = English, 2 = French, 3 = German, 4 = Spanish, 5 = Portuguese, 6 = Dutch, 7 = Italian"
+  },
+  {
+   "type": "MO",
+   "instance": 7,
+   "name": "Occupancy Request",
+   "description": "Commands the unit into an occupancy mode",
+   "units": "",
+   "access": "C",
+   "states": "1 = Occupied, 2 = Unoccupied, 3 = Occupied Bypass, 4 = Occupied Standby"
+  },
+  {
+   "type": "MO",
+   "instance": 8,
+   "name": "Heat Cool Mode Request BAS",
+   "description": "Commands the unit to a specific application mode",
+   "units": "",
+   "access": "C",
+   "states": "1 = Auto, 2 = Heat, 3 = Morning Warm-up, 4 = Cool, 5 = Night Purge, 6 = Pre-cool, 7 = Off, 8 = Test, 9 = Emergency Heat, 10 = Fan Only, 11 = Free Cool, 12 = Ice Making, 13 = Max Heat, 14 = Economy Mode, 15 = Dehumidifying, 16 = Calibrate"
+  },
+  {
+   "type": "MO",
+   "instance": 10,
+   "name": "Condenser Water Flow BAS",
+   "description": "Commands the unit to utilize a remote water flow indication",
+   "units": "",
+   "access": "C",
+   "states": "1 = Flow, 2 = No Flow, 3 = Auto"
+  },
+  {
+   "type": "MI",
+   "instance": 2,
+   "name": "Trane Unit Type",
+   "description": "General description of the equipment-type classification",
+   "units": "",
+   "access": "R",
+   "states": "1 = 1 Heat/1 Cool, 2 = Heat Pump, 3 = Blower Coil, 4 = Unit Ventilator, 5 = Fan Coil, 6 = Rooftop, 7 = Air Handler, 8 = Vertical Self Contained, 9 = Unitary, 10 = VAV Box, 11 = Fan Coil"
+  },
+  {
+   "type": "MI",
+   "instance": 9,
+   "name": "Economizer Type",
+   "description": "General description of the equipment economizer system",
+   "units": "",
+   "access": "R",
+   "states": "1 = None, 2 = 2 Position Ventilation, 3 = Modulation Economizer, 4 = 2 Position Ventilation/Waterside Economizer, 5 = Waterside Economizer, 6 = Airside/Waterside Economizer, 7 = TRAQ Damper, 8 = Airside Economizer and TRAQ Damper/Sensor, 9 = Waterside Economizer and TRAQ Damper/Sensor, 10 = Airside/Waterside Economizer and TRAQ Damper/Sensor"
+  },
+  {
+   "type": "MI",
+   "instance": 10,
+   "name": "Condenser Type",
+   "description": "General description of the equipment condenser system",
+   "units": "",
+   "access": "R",
+   "states": "1 = None, 2 = Air Cooled, 3 = Water Cooled, 4 = Evaporative"
+  },
+  {
+   "type": "MI",
+   "instance": 13,
+   "name": "Ventilation Override Status",
+   "description": "Whether the unit is in a ventilation override mode of operation [Configured with Ventilation Override Module]",
+   "units": "",
+   "access": "R",
+   "states": "1 = Inactive, 2 = Mode A Active, 3 = Mode B Active, 4 = Mode C Active, 5 = Mode D Active, 6 = Mode E Active"
+  },
+  {
+   "type": "MI",
+   "instance": 15,
+   "name": "Economizer Decision Method",
+   "description": "Unit method to determine when the economizer system is enabled [Configured with Economizer]",
+   "units": "",
+   "access": "R",
+   "states": "1 = Absolute Temperature, 2 = Relative Temperature, 3 = Absolute Enthalpy, 4 = Comparative Enthalpy"
+  },
+  {
+   "type": "MI",
+   "instance": 17,
+   "name": "Cooling Reset Type Status",
+   "description": "Type of cooling reset [Variable Air Volume]",
+   "units": "",
+   "access": "R",
+   "states": "1 = None, 2 = Outdoor Air, 3 = Zone"
+  },
+  {
+   "type": "MI",
+   "instance": 18,
+   "name": "Heating Reset Type Status",
+   "description": "Type of heating reset [Variable Air Volume]",
+   "units": "",
+   "access": "R",
+   "states": "1 = None, 2 = Outdoor Air, 3 = Zone"
+  },
+  {
+   "type": "MI",
+   "instance": 19,
+   "name": "Application Mode Status",
+   "description": "Current application mode of the equipment",
+   "units": "",
+   "access": "R",
+   "states": "1 = Auto, 2 = Heat, 3 = Morning Warm-up, 4 = Cool, 5 = Night Purge, 6 = Pre-cool, 7 = Off, 8 = Test, 9 = Emergency Heat, 10 = Fan Only, 11 = Free Cool, 12 = Ice-Making, 13 = Max Heat, 14 = Economy Mode, 15 = Dehumidifying, 16 = Calibrate"
+  },
+  {
+   "type": "MI",
+   "instance": 20,
+   "name": "Occupancy Status",
+   "description": "Current occupancy mode of the unit",
+   "units": "",
+   "access": "R",
+   "states": "1 = Occupied, 2 = Unoccupied, 3 = Occupied Bypass, 4 = Occupied Standby"
+  },
+  {
+   "type": "MI",
+   "instance": 21,
+   "name": "Unit Stop Source",
+   "description": "Source of the stop command that turned off the equipment",
+   "units": "",
+   "access": "R",
+   "states": "1 = None, 2 = Emergency Stop, 3 = External Auto/Stop, 4 = Local HI, 5 = Remote HI"
+  },
+  {
+   "type": "MI",
+   "instance": 22,
+   "name": "Cooling Setpoint Source",
+   "description": "Source of the space cooling setpoint",
+   "units": "",
+   "access": "R",
+   "states": "1 = RTM Zone Sensor, 2 = Night Setback Panel, 3 = Human Interface, 4 = GBAS 0-5V, 5 = BAS/Network, 6 = GBAS 0-10V"
+  },
+  {
+   "type": "MI",
+   "instance": 23,
+   "name": "Heating Setpoint Source",
+   "description": "Source of the space heating setpoint",
+   "units": "",
+   "access": "R",
+   "states": "1 = RTM Zone Sensor, 2 = Night Setback Panel, 3 = Human Interface, 4 = GBAS 0-5V, 5 = BAS/Network, 6 = GBAS 0-10V"
+  },
+  {
+   "type": "MI",
+   "instance": 24,
+   "name": "Timed Override Status",
+   "description": "Timed override request or cancel from zone sensor",
+   "units": "",
+   "access": "R",
+   "states": "1 = Idle, 2 = On, 3 = Cancel"
+  },
+  {
+   "type": "MI",
+   "instance": 25,
+   "name": "Cool Output 1",
+   "description": "Commanded state of cooling output 1 [DX]",
+   "units": "",
+   "access": "R",
+   "states": "1 = Off, 2 = On, 3 = Not Present"
+  },
+  {
+   "type": "MI",
+   "instance": 26,
+   "name": "Cool Output 2",
+   "description": "Commanded state of cooling output 2 [With 2 or more refrigerant circuits]",
+   "units": "",
+   "access": "R",
+   "states": "1 = Off, 2 = On, 3 = Not Present"
+  },
+  {
+   "type": "MI",
+   "instance": 27,
+   "name": "Cool Output 3",
+   "description": "Commanded state of cooling output 3 [With 3 or more refrigerant circuits]",
+   "units": "",
+   "access": "R",
+   "states": "1 = Off, 2 = On, 3 = Not Present"
+  },
+  {
+   "type": "MI",
+   "instance": 28,
+   "name": "Cool Output 4",
+   "description": "Commanded state of cooling output 4",
+   "units": "",
+   "access": "R",
+   "states": "1 = Off, 2 = On, 3 = Not Present"
+  },
+  {
+   "type": "MI",
+   "instance": 29,
+   "name": "Heat Output 1",
+   "description": "Commanded state of heating output 1 [Configured with any heat]",
+   "units": "",
+   "access": "R",
+   "states": "1 = Off, 2 = On, 3 = Not Present"
+  },
+  {
+   "type": "MI",
+   "instance": 30,
+   "name": "Heat Output 2",
+   "description": "Commanded state of heating output 2 [Configured with 2 or more stages of heat]",
+   "units": "",
+   "access": "R",
+   "states": "1 = Off, 2 = On, 3 = Not Present"
+  },
+  {
+   "type": "MI",
+   "instance": 31,
+   "name": "Heat Output 3",
+   "description": "Commanded state of heating output 3",
+   "units": "",
+   "access": "R",
+   "states": "1 = Off, 2 = On, 3 = Not Present"
+  },
+  {
+   "type": "MI",
+   "instance": 32,
+   "name": "Heat Output 4",
+   "description": "Commanded state of heating output 4",
+   "units": "",
+   "access": "R",
+   "states": "1 = Off, 2 = On, 3 = Not Present"
+  },
+  {
+   "type": "MI",
+   "instance": 33,
+   "name": "Heat Output 5",
+   "description": "Commanded state of heating output 5",
+   "units": "",
+   "access": "R",
+   "states": "1 = Off, 2 = On, 3 = Not Present"
+  },
+  {
+   "type": "MI",
+   "instance": 34,
+   "name": "Prefilter Status",
+   "description": "Pre-filter media state [Roof Top Unit Configured with Energy Recovery]",
+   "units": "",
+   "access": "R",
+   "states": "1 = Clean, 2 = Dirty, 3 = Not Present"
+  },
+  {
+   "type": "MI",
+   "instance": 35,
+   "name": "Primary Filter Status",
+   "description": "Primary filter media state",
+   "units": "",
+   "access": "R",
+   "states": "1 = Clean, 2 = Dirty, 3 = Not Present"
+  },
+  {
+   "type": "MI",
+   "instance": 36,
+   "name": "Final Filter Status",
+   "description": "Final filter media state [Configured with Final Filter]",
+   "units": "",
+   "access": "R",
+   "states": "1 = Clean, 2 = Dirty, 3 = Not Present"
+  },
+  {
+   "type": "MI",
+   "instance": 37,
+   "name": "Supply Fan Proving Status",
+   "description": "Current state of the supply fan",
+   "units": "",
+   "access": "R",
+   "states": "1 = Off, 2 = On, 3 = Not Present"
+  },
+  {
+   "type": "MI",
+   "instance": 38,
+   "name": "Exhaust Fan Status",
+   "description": "Commanded state of the exhaust fan [Configured with 100% or 50/100% Powered Exhaust]",
+   "units": "",
+   "access": "R",
+   "states": "1 = Off, 2 = On, 3 = Not Present"
+  },
+  {
+   "type": "MI",
+   "instance": 39,
+   "name": "Exhaust Fan Proving Status",
+   "description": "Whether the unit exhaust fan is off or on [Configured with 100% or 50/100% Powered Exhaust]",
+   "units": "",
+   "access": "R",
+   "states": "1 = Off, 2 = On, 3 = Not Present"
+  },
+  {
+   "type": "MI",
+   "instance": 40,
+   "name": "Return Fan Proving Status",
+   "description": "Current state of the return fan [Configured with return fan]",
+   "units": "",
+   "access": "R",
+   "states": "1 = Off, 2 = On, 3 = Not Present"
+  },
+  {
+   "type": "MI",
+   "instance": 41,
+   "name": "Supply Fan Status",
+   "description": "State of the supply fan",
+   "units": "",
+   "access": "R",
+   "states": "1 = Off, 2 = On, 3 = Not Present"
+  },
+  {
+   "type": "MI",
+   "instance": 42,
+   "name": "Return Fan Status",
+   "description": "State of the return fan",
+   "units": "",
+   "access": "R",
+   "states": "1 = Off, 2 = On, 3 = Not Present"
+  },
+  {
+   "type": "MI",
+   "instance": 43,
+   "name": "Outdoor Damper Status",
+   "description": "Operating state of the outdoor damper [With Economizer installed]",
+   "units": "",
+   "access": "R",
+   "states": "1 = At or Below Minimum Position, 2 = Above Minimum Position, 3 = Not Present"
+  },
+  {
+   "type": "MI",
+   "instance": 44,
+   "name": "Economizer System Status",
+   "description": "Operating state of the waterside economizer system [With Economizer installed]",
+   "units": "",
+   "access": "R",
+   "states": "1 = Disabled, 2 = Enabled, 3 = Not Present"
+  },
+  {
+   "type": "MI",
+   "instance": 46,
+   "name": "Cool Output 5",
+   "description": "Commanded state of cooling output 5 [With 5 or more cooling outputs]",
+   "units": "",
+   "access": "R",
+   "states": "1 = Off, 2 = On, 3 = Not Present"
+  },
+  {
+   "type": "BO",
+   "instance": 1,
+   "name": "System Control Command",
+   "description": "Commands the unit to standalone-or BAS-controlled operation",
+   "units": "",
+   "access": "C",
+   "states": "Inactive = Standalone Control, Active = BAS Control"
+  },
+  {
+   "type": "BO",
+   "instance": 5,
+   "name": "Heat Lockout Command",
+   "description": "Commands the unit to prevent heating operation",
+   "units": "",
+   "access": "C",
+   "states": "Inactive = Allow Heating, Active = Heating Locked Out"
+  },
+  {
+   "type": "BO",
+   "instance": 6,
+   "name": "Cool Lockout Command",
+   "description": "Commands the unit to prevent cooling operation",
+   "units": "",
+   "access": "C",
+   "states": "Inactive = Allow Cooling, Active = Cooling Locked Out"
+  },
+  {
+   "type": "BO",
+   "instance": 7,
+   "name": "Remote Minimum Position Enabled Command",
+   "description": "Commands the unit to the minimum position operation",
+   "units": "",
+   "access": "C",
+   "states": "Inactive = Disabled, Active = Enabled"
+  },
+  {
+   "type": "BO",
+   "instance": 8,
+   "name": "Supply Fan Configuration Command",
+   "description": "Commands the unit supply fan to cycling or continuous operation",
+   "units": "",
+   "access": "C",
+   "states": "Inactive = Auto, Active = On"
+  },
+  {
+   "type": "BO",
+   "instance": 12,
+   "name": "Primary Heat Reheat Enable Command",
+   "description": "Enable the heating or reheating system during dehumidification mode",
+   "units": "",
+   "access": "C",
+   "states": "Inactive = Disabled, Active = Enabled"
+  },
+  {
+   "type": "BO",
+   "instance": 13,
+   "name": "Filter Timer Reset",
+   "description": "Commands the unit to reset the accumulated filter run hours",
+   "units": "",
+   "access": "C",
+   "states": "Inactive = Accumulating, Active = Reset"
+  },
+  {
+   "type": "BO",
+   "instance": 14,
+   "name": "Reset Diagnostic",
+   "description": "Commands the unit to reset and clear diagnostics",
+   "units": "",
+   "access": "C",
+   "states": "Inactive = Normal, Active = Reset"
+  },
+  {
+   "type": "BO",
+   "instance": 15,
+   "name": "Dehumidification Enable Command",
+   "description": "Commands the operating state of the dehumidification system [Roof Top Unit with Dehumidification]",
+   "units": "",
+   "access": "C",
+   "states": "Inactive = Disabled, Active = Enabled Out of Service = Auto"
+  },
+  {
+   "type": "BO",
+   "instance": 16,
+   "name": "Humidification Command",
+   "description": "Commands the operating state of the humidification system [Configured with Humidification]",
+   "units": "",
+   "access": "C",
+   "states": "Inactive = Disabled, Active = Enabled Out of Service = Auto"
+  },
+  {
+   "type": "BO",
+   "instance": 17,
+   "name": "Chemical Purge Water Treatment Request",
+   "description": "Commands the unit into a Chemical Purge Water Treatment event through BAS",
+   "units": "",
+   "access": "C",
+   "states": "Inactive = Not Requested, Active = Requested"
+  },
+  {
+   "type": "BI",
+   "instance": 1,
+   "name": "System Control Status",
+   "description": "Control system currently in command of the unit",
+   "units": "",
+   "access": "R",
+   "states": "Inactive = Standalone control, Active = BAS control"
+  },
+  {
+   "type": "BI",
+   "instance": 2,
+   "name": "Compressor Lockout Status",
+   "description": "One or more compressors are locked out with no diagnostic",
+   "units": "",
+   "access": "R",
+   "states": "Inactive = Normal, Active = Locked Out"
+  },
+  {
+   "type": "BI",
+   "instance": 3,
+   "name": "Unit On Off Status",
+   "description": "Current state of the unit",
+   "units": "",
+   "access": "R",
+   "states": "Inactive = Off, Active = On"
+  },
+  {
+   "type": "BI",
+   "instance": 9,
+   "name": "VAV Box Command",
+   "description": "Whether VAV boxes should be in control or wide open [Variable Air Volume]",
+   "units": "",
+   "access": "R",
+   "states": "Inactive = Auto, Active = Open"
+  },
+  {
+   "type": "BI",
+   "instance": 10,
+   "name": "Demand Limit Status",
+   "description": "Whether the unit is in an energy-demand limit mode",
+   "units": "",
+   "access": "R",
+   "states": "Inactive = Inactive, Active = Active"
+  },
+  {
+   "type": "BI",
+   "instance": 11,
+   "name": "Service Test Mode Status",
+   "description": "Whether the unit is in service test mode",
+   "units": "",
+   "access": "R",
+   "states": "Inactive = Inactive, Active = Active"
+  },
+  {
+   "type": "BI",
+   "instance": 15,
+   "name": "Supply Fan Configuration Status",
+   "description": "Supply fan configuration [Constant Volume]",
+   "units": "",
+   "access": "R",
+   "states": "Inactive = Cycling, Active = Continuous"
+  },
+  {
+   "type": "BI",
+   "instance": 22,
+   "name": "Economizer Airside Enable Status",
+   "description": "Status of the airside economizer system [With Economizer installed]",
+   "units": "",
+   "access": "R",
+   "states": "Inactive = Disabled, Active = Enabled"
+  },
+  {
+   "type": "BI",
+   "instance": 23,
+   "name": "Waterside Economizer Enable Status",
+   "description": "Status of the waterside economizer system [Configured with Water Side Economizer]",
+   "units": "",
+   "access": "R",
+   "states": "Inactive = Disabled, Active = Enabled"
+  },
+  {
+   "type": "BI",
+   "instance": 24,
+   "name": "Condenser Water Pump Status",
+   "description": "Status of the condenser water system pump [Water Cooled Commercial Self Contained or Roof Top Unit]",
+   "units": "",
+   "access": "R",
+   "states": "Inactive = Inactive, Active = Active"
+  },
+  {
+   "type": "BI",
+   "instance": 25,
+   "name": "Condenser Water Flow Status",
+   "description": "Flow status of water in the condenser system",
+   "units": "",
+   "access": "R",
+   "states": "Inactive = No Flow, Active = Flow"
+  },
+  {
+   "type": "BI",
+   "instance": 26,
+   "name": "Energy Recovery Frost Avoidance Status",
+   "description": "Status of the energy recovery system frost protection function [With Energy Recovery]",
+   "units": "",
+   "access": "R",
+   "states": "Inactive = Inactive, Active = Active"
+  },
+  {
+   "type": "BI",
+   "instance": 27,
+   "name": "Energy Recovery Status",
+   "description": "Status of the energy recover system [With Energy Recovery]",
+   "units": "",
+   "access": "R",
+   "states": "Inactive = Inactive, Active = Active"
+  },
+  {
+   "type": "BI",
+   "instance": 28,
+   "name": "Energy Recovery Preheat Status",
+   "description": "Status of the energy recovery preheat function [With Energy Recovery]",
+   "units": "",
+   "access": "R",
+   "states": "Inactive = Inactive, Active = Active"
+  },
+  {
+   "type": "BI",
+   "instance": 161,
+   "name": "Evaporator Frost Protection Circuit 1 Status",
+   "description": "Status of evaporator frost protection function for circuit 1 [DX]",
+   "units": "",
+   "access": "R",
+   "states": "Inactive = Inactive, Active = Active"
+  },
+  {
+   "type": "BI",
+   "instance": 162,
+   "name": "Evaporator Frost Protection Circuit 2 Status",
+   "description": "Status of evaporator frost protection function for circuit 2 [For 2 or more refrigerant circuits]",
+   "units": "",
+   "access": "R",
+   "states": "Inactive = Inactive, Active = Active"
+  },
+  {
+   "type": "BI",
+   "instance": 163,
+   "name": "Evaporator Frost Protection Circuit 3 Status",
+   "description": "Status of evaporator frost protection function for circuit 3 [For 3 or more refrigerant circuits]",
+   "units": "",
+   "access": "R",
+   "states": "Inactive = Inactive, Active = Active"
+  },
+  {
+   "type": "BI",
+   "instance": 164,
+   "name": "Evaporator Frost Protection Circuit 4 Status",
+   "description": "Status of evaporator frost protection function for circuit 4 [For 4 or more refrigerant circuits]",
+   "units": "",
+   "access": "R",
+   "states": "Inactive = Inactive, Active = Active"
+  },
+  {
+   "type": "BI",
+   "instance": 165,
+   "name": "Alarm Relay Output Status",
+   "description": "State of the alarm relay on the unit",
+   "units": "",
+   "access": "R",
+   "states": "Inactive = De-energized, Active = Energized"
+  },
+  {
+   "type": "BI",
+   "instance": 166,
+   "name": "Diagnostic Stop Status",
+   "description": "Whether the unit diagnostic has caused the unit to shutdown",
+   "units": "",
+   "access": "R",
+   "states": "Inactive = Inactive, Active = Active"
+  },
+  {
+   "type": "BI",
+   "instance": 243,
+   "name": "Condenser Water Drain Status",
+   "description": "Status of the condenser water drain [Roof Top Unit]",
+   "units": "",
+   "access": "R",
+   "states": "Inactive = Closed, Active = Open"
+  },
+  {
+   "type": "BI",
+   "instance": 244,
+   "name": "Chemical Purge Water Treatment Status",
+   "description": "Active status of the Chemical Purge Water Treatment event (CSC units only)",
+   "units": "",
+   "access": "R",
+   "states": "Inactive = Inactive, Active = Active"
+  },
+  {
+   "type": "BI",
+   "instance": 245,
+   "name": "Rapid Restart Status",
+   "description": "Active status of the Rapid Restart event [Roof Top Unit]",
+   "units": "",
+   "access": "R",
+   "states": "Inactive = Inactive, Active = Active"
+  },
+  {
+   "type": "BI",
+   "instance": 246,
+   "name": "Supply Air Tempering Status",
+   "description": "Current status of the Supply Air Tempering event [Roof Top Unit and Commercial Self Contained]",
+   "units": "",
+   "access": "R",
+   "states": "Inactive = Inactive, Active = Active"
+  },
+  {
+   "type": "BI",
+   "instance": 311,
+   "name": "Supply Air Low Limit Active",
+   "description": "Active status of the Supply Air Low Limit event",
+   "units": "",
+   "access": "R",
+   "states": "Inactive = Inactive, Active = Active"
+  },
+  {
+   "type": "BI",
+   "instance": 1001,
+   "name": "Digital Scroll Compressor Status",
+   "description": "Created when Digital Scroll Compressor is present [Digital Scroll Compressor present]",
+   "units": "",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "BI",
+   "instance": 29,
+   "name": "Diagnostic: RTM Zone Temp Sensor Failure",
+   "description": "Unit diagnostic",
+   "units": "",
+   "access": "R",
+   "states": "Inactive, Active"
+  },
+  {
+   "type": "BI",
+   "instance": 30,
+   "name": "Diagnostic: Supply Air Temp Sensor Fail",
+   "description": "Unit diagnostic",
+   "units": "",
+   "access": "R",
+   "states": "Inactive, Active"
+  },
+  {
+   "type": "BI",
+   "instance": 31,
+   "name": "Diagnostic: RTM Aux Temp Sensor Failure",
+   "description": "Unit diagnostic; ID used on RTor CSC units",
+   "units": "",
+   "access": "R",
+   "states": "Inactive, Active"
+  },
+  {
+   "type": "BI",
+   "instance": 32,
+   "name": "Diagnostic: OA Temperature Sensor Fail",
+   "description": "Unit diagnostic",
+   "units": "",
+   "access": "R",
+   "states": "Inactive, Active"
+  },
+  {
+   "type": "BI",
+   "instance": 33,
+   "name": "Diagnostic: Mode Input Failure",
+   "description": "Unit diagnostic",
+   "units": "",
+   "access": "R",
+   "states": "Inactive, Active"
+  },
+  {
+   "type": "BI",
+   "instance": 34,
+   "name": "Diagnostic: Occ Zone Cool Setpoint Fail",
+   "description": "Unit diagnostic",
+   "units": "",
+   "access": "R",
+   "states": "Inactive, Active"
+  },
+  {
+   "type": "BI",
+   "instance": 35,
+   "name": "Diagnostic: Occ Zone Heat Setpoint Fail",
+   "description": "Unit diagnostic",
+   "units": "",
+   "access": "R",
+   "states": "Inactive, Active"
+  },
+  {
+   "type": "BI",
+   "instance": 36,
+   "name": "Diagnostic: Supply Air Press Sensor Fail",
+   "description": "Unit diagnostic",
+   "units": "",
+   "access": "R",
+   "states": "Inactive, Active"
+  },
+  {
+   "type": "BI",
+   "instance": 37,
+   "name": "Diagnostic: OA Humidity Sensor Failure",
+   "description": "Unit diagnostic",
+   "units": "",
+   "access": "R",
+   "states": "Inactive, Active"
+  },
+  {
+   "type": "BI",
+   "instance": 38,
+   "name": "Diagnostic: Emergency Stop (man)",
+   "description": "Unit diagnostic",
+   "units": "",
+   "access": "R",
+   "states": "Inactive, Active"
+  },
+  {
+   "type": "BI",
+   "instance": 39,
+   "name": "Diagnostic: Supply Fan Failure (man)",
+   "description": "Unit diagnostic",
+   "units": "",
+   "access": "R",
+   "states": "Inactive, Active"
+  },
+  {
+   "type": "BI",
+   "instance": 40,
+   "name": "Diagnostic: Exhaust/Return Fan Failure (man)",
+   "description": "Unit diagnostic",
+   "units": "",
+   "access": "R",
+   "states": "Inactive, Active"
+  },
+  {
+   "type": "BI",
+   "instance": 41,
+   "name": "Diagnostic: Lvg Evap Temp Sensor Fail - Ckt1",
+   "description": "Unit diagnostic",
+   "units": "",
+   "access": "R",
+   "states": "Inactive, Active"
+  },
+  {
+   "type": "BI",
+   "instance": 42,
+   "name": "Diagnostic: Lvg Evap Temp Sensor Fail - Ckt2",
+   "description": "Unit diagnostic",
+   "units": "",
+   "access": "R",
+   "states": "Inactive, Active"
+  },
+  {
+   "type": "BI",
+   "instance": 43,
+   "name": "Diagnostic: Low Pressure Ctl Open - Ckt1 (man)",
+   "description": "Unit diagnostic",
+   "units": "",
+   "access": "R",
+   "states": "Inactive, Active"
+  },
+  {
+   "type": "BI",
+   "instance": 44,
+   "name": "Diagnostic: Low Pressure Ctl Open - Ckt2 (man)",
+   "description": "Unit diagnostic",
+   "units": "",
+   "access": "R",
+   "states": "Inactive, Active"
+  },
+  {
+   "type": "BI",
+   "instance": 45,
+   "name": "Diagnostic: Cond Temp Sensor Fail - Ckt1",
+   "description": "Unit diagnostic",
+   "units": "",
+   "access": "R",
+   "states": "Inactive, Active"
+  },
+  {
+   "type": "BI",
+   "instance": 46,
+   "name": "Diagnostic: Cond Temp Sensor Fail - Ckt2",
+   "description": "Unit diagnostic",
+   "units": "",
+   "access": "R",
+   "states": "Inactive, Active"
+  },
+  {
+   "type": "BI",
+   "instance": 47,
+   "name": "Diagnostic: Compressor Trip - Ckt1 (man)",
+   "description": "Unit diagnostic",
+   "units": "",
+   "access": "R",
+   "states": "Inactive, Active"
+  },
+  {
+   "type": "BI",
+   "instance": 48,
+   "name": "Diagnostic: Compressor Trip - Ckt2 (man)",
+   "description": "Unit diagnostic",
+   "units": "",
+   "access": "R",
+   "states": "Inactive, Active"
+  },
+  {
+   "type": "BI",
+   "instance": 49,
+   "name": "Diagnostic: HEAT Aux Temp Sensor Fail",
+   "description": "Unit diagnostic",
+   "units": "",
+   "access": "R",
+   "states": "Inactive, Active"
+  },
+  {
+   "type": "BI",
+   "instance": 50,
+   "name": "Diagnostic: Low Air Temp Limit Trip (man)",
+   "description": "Unit diagnostic",
+   "units": "",
+   "access": "R",
+   "states": "Inactive, Active"
+  },
+  {
+   "type": "BI",
+   "instance": 51,
+   "name": "Diagnostic: Heat Failure",
+   "description": "Unit diagnostic",
+   "units": "",
+   "access": "R",
+   "states": "Inactive, Active"
+  },
+  {
+   "type": "BI",
+   "instance": 52,
+   "name": "Diagnostic: Unocc Zone Cool Stpnt Fail",
+   "description": "Unit diagnostic",
+   "units": "",
+   "access": "R",
+   "states": "Inactive, Active"
+  },
+  {
+   "type": "BI",
+   "instance": 53,
+   "name": "Diagnostic: Unocc Zone Heat Stpnt Fail",
+   "description": "Unit diagnostic",
+   "units": "",
+   "access": "R",
+   "states": "Inactive, Active"
+  },
+  {
+   "type": "BI",
+   "instance": 54,
+   "name": "Diagnostic: SA Duct Press Setpoint Fail",
+   "description": "Unit diagnostic",
+   "units": "",
+   "access": "R",
+   "states": "Inactive, Active"
+  },
+  {
+   "type": "BI",
+   "instance": 55,
+   "name": "Diagnostic: Space Pressure Setpoint Fail",
+   "description": "Unit diagnostic",
+   "units": "",
+   "access": "R",
+   "states": "Inactive, Active"
+  },
+  {
+   "type": "BI",
+   "instance": 56,
+   "name": "Diagnostic: Space Pressure Sensor Fail",
+   "description": "Unit diagnostic",
+   "units": "",
+   "access": "R",
+   "states": "Inactive, Active"
+  },
+  {
+   "type": "BI",
+   "instance": 57,
+   "name": "Diagnostic: Return Air Temp Sensor Fail",
+   "description": "Unit diagnostic",
+   "units": "",
+   "access": "R",
+   "states": "Inactive, Active"
+  },
+  {
+   "type": "BI",
+   "instance": 58,
+   "name": "Diagnostic: Return Air RH Sensor Failure",
+   "description": "Unit diagnostic; ID used on RTor CSC units",
+   "units": "",
+   "access": "R",
+   "states": "Inactive, Active"
+  },
+  {
+   "type": "BI",
+   "instance": 59,
+   "name": "Diagnostic: SA High Press Limit",
+   "description": "Unit diagnostic",
+   "units": "",
+   "access": "R",
+   "states": "Inactive, Active"
+  },
+  {
+   "type": "BI",
+   "instance": 60,
+   "name": "Diagnostic: Man - SA High Press Limit",
+   "description": "Unit diagnostic",
+   "units": "",
+   "access": "R",
+   "states": "Inactive, Active"
+  },
+  {
+   "type": "BI",
+   "instance": 61,
+   "name": "Diagnostic: SCM Communications Failure",
+   "description": "Unit diagnostic",
+   "units": "",
+   "access": "R",
+   "states": "Inactive, Active"
+  },
+  {
+   "type": "BI",
+   "instance": 62,
+   "name": "Diagnostic: MCM Communications Failure",
+   "description": "Unit diagnostic",
+   "units": "",
+   "access": "R",
+   "states": "Inactive, Active"
+  },
+  {
+   "type": "BI",
+   "instance": 63,
+   "name": "Diagnostic: HEAT Communications Failure",
+   "description": "Unit diagnostic",
+   "units": "",
+   "access": "R",
+   "states": "Inactive, Active"
+  },
+  {
+   "type": "BI",
+   "instance": 64,
+   "name": "Diagnostic: ECEM Communications Failure",
+   "description": "Unit diagnostic",
+   "units": "",
+   "access": "R",
+   "states": "Inactive, Active"
+  },
+  {
+   "type": "BI",
+   "instance": 65,
+   "name": "Diagnostic: GBAS 0-5 VDC Comm Failure",
+   "description": "Unit diagnostic",
+   "units": "",
+   "access": "R",
+   "states": "Inactive, Active"
+  },
+  {
+   "type": "BI",
+   "instance": 66,
+   "name": "Diagnostic: BACnet Module Comm Fail",
+   "description": "Unit diagnostic",
+   "units": "",
+   "access": "R",
+   "states": "Inactive, Active"
+  },
+  {
+   "type": "BI",
+   "instance": 67,
+   "name": "Diagnostic: BAS/Network Comm Fail",
+   "description": "Unit diagnostic",
+   "units": "",
+   "access": "R",
+   "states": "Inactive, Active"
+  },
+  {
+   "type": "BI",
+   "instance": 68,
+   "name": "Diagnostic: NSB Panel Communication Fail",
+   "description": "Unit diagnostic",
+   "units": "",
+   "access": "R",
+   "states": "Inactive, Active"
+  },
+  {
+   "type": "BI",
+   "instance": 69,
+   "name": "Diagnostic: RTM EEPROM Failure",
+   "description": "Unit diagnostic",
+   "units": "",
+   "access": "R",
+   "states": "Inactive, Active"
+  },
+  {
+   "type": "BI",
+   "instance": 70,
+   "name": "Diagnostic: Unit HI Communications Fail",
+   "description": "Unit diagnostic",
+   "units": "",
+   "access": "R",
+   "states": "Inactive, Active"
+  },
+  {
+   "type": "BI",
+   "instance": 71,
+   "name": "Diagnostic: VOM Communications Failure",
+   "description": "Unit diagnostic",
+   "units": "",
+   "access": "R",
+   "states": "Inactive, Active"
+  },
+  {
+   "type": "BI",
+   "instance": 72,
+   "name": "Diagnostic: Compressor Contact Fail-Ckt1 (man)",
+   "description": "Unit diagnostic",
+   "units": "",
+   "access": "R",
+   "states": "Inactive, Active"
+  },
+  {
+   "type": "BI",
+   "instance": 73,
+   "name": "Diagnostic: Compressor Contact Fail-Ckt2 (man)",
+   "description": "Unit diagnostic",
+   "units": "",
+   "access": "R",
+   "states": "Inactive, Active"
+  },
+  {
+   "type": "BI",
+   "instance": 74,
+   "name": "Diagnostic: SA Temp Cool Setpoint Fail",
+   "description": "Unit diagnostic",
+   "units": "",
+   "access": "R",
+   "states": "Inactive, Active"
+  },
+  {
+   "type": "BI",
+   "instance": 75,
+   "name": "Diagnostic: SA Temp Heat Setpoint Fail",
+   "description": "Unit diagnostic",
+   "units": "",
+   "access": "R",
+   "states": "Inactive, Active"
+  },
+  {
+   "type": "BI",
+   "instance": 76,
+   "name": "Diagnostic: Dirty Filter",
+   "description": "Unit diagnostic",
+   "units": "",
+   "access": "R",
+   "states": "Inactive, Active"
+  },
+  {
+   "type": "BI",
+   "instance": 77,
+   "name": "Diagnostic: NSB Zone Temp Sensor Fail",
+   "description": "Unit diagnostic",
+   "units": "",
+   "access": "R",
+   "states": "Inactive, Active"
+  },
+  {
+   "type": "BI",
+   "instance": 78,
+   "name": "Diagnostic: VOM Mode A Active",
+   "description": "Unit diagnostic",
+   "units": "",
+   "access": "R",
+   "states": "Inactive, Active"
+  },
+  {
+   "type": "BI",
+   "instance": 79,
+   "name": "Diagnostic: VOM Mode B Active",
+   "description": "Unit diagnostic",
+   "units": "",
+   "access": "R",
+   "states": "Inactive, Active"
+  },
+  {
+   "type": "BI",
+   "instance": 80,
+   "name": "Diagnostic: VOM Mode C Active",
+   "description": "Unit diagnostic",
+   "units": "",
+   "access": "R",
+   "states": "Inactive, Active"
+  },
+  {
+   "type": "BI",
+   "instance": 81,
+   "name": "Diagnostic: VOM Mode D Active",
+   "description": "Unit diagnostic",
+   "units": "",
+   "access": "R",
+   "states": "Inactive, Active"
+  },
+  {
+   "type": "BI",
+   "instance": 82,
+   "name": "Diagnostic: VOM Mode E Active",
+   "description": "Unit diagnostic",
+   "units": "",
+   "access": "R",
+   "states": "Inactive, Active"
+  },
+  {
+   "type": "BI",
+   "instance": 83,
+   "name": "Diagnostic: CO2 Sensor Failure",
+   "description": "Unit diagnostic",
+   "units": "",
+   "access": "R",
+   "states": "Inactive, Active"
+  },
+  {
+   "type": "BI",
+   "instance": 84,
+   "name": "Diagnostic: VCM Aux Temp Sensor Failure",
+   "description": "Unit diagnostic",
+   "units": "",
+   "access": "R",
+   "states": "Inactive, Active"
+  },
+  {
+   "type": "BI",
+   "instance": 85,
+   "name": "Diagnostic: Blocked Air Return (man)",
+   "description": "Unit diagnostic",
+   "units": "",
+   "access": "R",
+   "states": "Inactive, Active"
+  },
+  {
+   "type": "BI",
+   "instance": 86,
+   "name": "Diagnostic: Velocity Press Sensor Fail",
+   "description": "Unit diagnostic; other meaning on some unit types (see notes)",
+   "units": "",
+   "access": "R",
+   "states": "Inactive, Active"
+  },
+  {
+   "type": "BI",
+   "instance": 87,
+   "name": "Diagnostic: VCM Communications Failure",
+   "description": "Unit diagnostic",
+   "units": "",
+   "access": "R",
+   "states": "Inactive, Active"
+  },
+  {
+   "type": "BI",
+   "instance": 88,
+   "name": "Diagnostic: Low Space Pressure Warning",
+   "description": "Unit diagnostic; other meaning on some unit types (see notes)",
+   "units": "",
+   "access": "R",
+   "states": "Inactive, Active"
+  },
+  {
+   "type": "BI",
+   "instance": 89,
+   "name": "Diagnostic: Low Space Pressure Trip - Auto",
+   "description": "Unit diagnostic; other meaning on some unit types (see notes)",
+   "units": "",
+   "access": "R",
+   "states": "Inactive, Active"
+  },
+  {
+   "type": "BI",
+   "instance": 90,
+   "name": "Diagnostic: Low Space Pressure Trip - Manual",
+   "description": "Unit diagnostic; other meaning on some unit types (see notes)",
+   "units": "",
+   "access": "R",
+   "states": "Inactive, Active"
+  },
+  {
+   "type": "BI",
+   "instance": 91,
+   "name": "Diagnostic: Exh Fan VFD Bypass Enabled",
+   "description": "Unit diagnostic",
+   "units": "",
+   "access": "R",
+   "states": "Inactive, Active"
+  },
+  {
+   "type": "BI",
+   "instance": 92,
+   "name": "Diagnostic: Cond Temp Sensor Fail - Ckt3",
+   "description": "Unit diagnostic",
+   "units": "",
+   "access": "R",
+   "states": "Inactive, Active"
+  },
+  {
+   "type": "BI",
+   "instance": 93,
+   "name": "Diagnostic: Cond Temp Sensor Fail - Ckt4",
+   "description": "Unit diagnostic",
+   "units": "",
+   "access": "R",
+   "states": "Inactive, Active"
+  },
+  {
+   "type": "BI",
+   "instance": 94,
+   "name": "Diagnostic: Ent Cond Wtr Tmp Sensor Fail",
+   "description": "Unit diagnostic",
+   "units": "",
+   "access": "R",
+   "states": "Inactive, Active"
+  },
+  {
+   "type": "BI",
+   "instance": 95,
+   "name": "Diagnostic: WSM MA Temp Sensor Failure",
+   "description": "Unit diagnostic",
+   "units": "",
+   "access": "R",
+   "states": "Inactive, Active"
+  },
+  {
+   "type": "BI",
+   "instance": 96,
+   "name": "Diagnostic: Enter Water Temp Sensor Fail",
+   "description": "Unit diagnostic",
+   "units": "",
+   "access": "R",
+   "states": "Inactive, Active"
+  },
+  {
+   "type": "BI",
+   "instance": 97,
+   "name": "Diagnostic: Water Flow Failure",
+   "description": "Unit diagnostic",
+   "units": "",
+   "access": "R",
+   "states": "Inactive, Active"
+  },
+  {
+   "type": "BI",
+   "instance": 98,
+   "name": "Diagnostic: Supply Fan VFD Bypass Enable",
+   "description": "Unit diagnostic",
+   "units": "",
+   "access": "R",
+   "states": "Inactive, Active"
+  },
+  {
+   "type": "BI",
+   "instance": 99,
+   "name": "Diagnostic: High CO2 Level",
+   "description": "Unit diagnostic",
+   "units": "",
+   "access": "R",
+   "states": "Inactive, Active"
+  },
+  {
+   "type": "BI",
+   "instance": 100,
+   "name": "Diagnostic: Low Pressure Ctl Open - Ckt4",
+   "description": "Unit diagnostic",
+   "units": "",
+   "access": "R",
+   "states": "Inactive, Active"
+  },
+  {
+   "type": "BI",
+   "instance": 101,
+   "name": "Diagnostic: Low Pressure Ctl Open - Ckt3",
+   "description": "Unit diagnostic",
+   "units": "",
+   "access": "R",
+   "states": "Inactive, Active"
+  },
+  {
+   "type": "BI",
+   "instance": 102,
+   "name": "Diagnostic: Compressor Contact Fail-Ckt4",
+   "description": "Unit diagnostic",
+   "units": "",
+   "access": "R",
+   "states": "Inactive, Active"
+  },
+  {
+   "type": "BI",
+   "instance": 103,
+   "name": "Diagnostic: Compressor Contact Fail-Ckt3",
+   "description": "Unit diagnostic",
+   "units": "",
+   "access": "R",
+   "states": "Inactive, Active"
+  },
+  {
+   "type": "BI",
+   "instance": 104,
+   "name": "Diagnostic: Evap Temp Sensor Fail - Ckt4",
+   "description": "Unit diagnostic",
+   "units": "",
+   "access": "R",
+   "states": "Inactive, Active"
+  },
+  {
+   "type": "BI",
+   "instance": 105,
+   "name": "Diagnostic: Evap Temp Sensor Fail - Ckt3",
+   "description": "Unit diagnostic",
+   "units": "",
+   "access": "R",
+   "states": "Inactive, Active"
+  },
+  {
+   "type": "BI",
+   "instance": 106,
+   "name": "Diagnostic: RTM Zone Humidity Sensor Fail",
+   "description": "Unit diagnostic",
+   "units": "",
+   "access": "R",
+   "states": "Inactive, Active"
+  },
+  {
+   "type": "BI",
+   "instance": 107,
+   "name": "Diagnostic: Ent Evap Temp Sensor Fail-Ckt 1",
+   "description": "Unit diagnostic",
+   "units": "",
+   "access": "R",
+   "states": "Inactive, Active"
+  },
+  {
+   "type": "BI",
+   "instance": 108,
+   "name": "Diagnostic: Ent Evap Temp Sensor Fail-Ckt 2",
+   "description": "Unit diagnostic",
+   "units": "",
+   "access": "R",
+   "states": "Inactive, Active"
+  },
+  {
+   "type": "BI",
+   "instance": 111,
+   "name": "Diagnostic: Recovery Dirty Prefilter",
+   "description": "Unit diagnostic",
+   "units": "",
+   "access": "R",
+   "states": "Inactive, Active"
+  },
+  {
+   "type": "BI",
+   "instance": 112,
+   "name": "Diagnostic: Recovery Lvg Exh Sensor Fail",
+   "description": "Unit diagnostic",
+   "units": "",
+   "access": "R",
+   "states": "Inactive, Active"
+  },
+  {
+   "type": "BI",
+   "instance": 113,
+   "name": "Diagnostic: Energy Recovery Wheel Fail (man)",
+   "description": "Unit diagnostic",
+   "units": "",
+   "access": "R",
+   "states": "Inactive, Active"
+  },
+  {
+   "type": "BI",
+   "instance": 114,
+   "name": "Diagnostic: Cond Sump Max Level Fail",
+   "description": "Unit diagnostic",
+   "units": "",
+   "access": "R",
+   "states": "Inactive, Active"
+  },
+  {
+   "type": "BI",
+   "instance": 115,
+   "name": "Diagnostic: Cond Sump Min Level or Drain",
+   "description": "Unit diagnostic",
+   "units": "",
+   "access": "R",
+   "states": "Inactive, Active"
+  },
+  {
+   "type": "BI",
+   "instance": 116,
+   "name": "Diagnostic: Cond Sump Pump Fail (man)",
+   "description": "Unit diagnostic",
+   "units": "",
+   "access": "R",
+   "states": "Inactive, Active"
+  },
+  {
+   "type": "BI",
+   "instance": 117,
+   "name": "Diagnostic: Cond Sump Pump Fail",
+   "description": "Unit diagnostic",
+   "units": "",
+   "access": "R",
+   "states": "Inactive, Active"
+  },
+  {
+   "type": "BI",
+   "instance": 118,
+   "name": "Diagnostic: Cond Water Temp Sensor Fail",
+   "description": "Unit diagnostic",
+   "units": "",
+   "access": "R",
+   "states": "Inactive, Active"
+  },
+  {
+   "type": "BI",
+   "instance": 119,
+   "name": "Diagnostic: Cond Sump Heater Fail (man)",
+   "description": "Unit diagnostic",
+   "units": "",
+   "access": "R",
+   "states": "Inactive, Active"
+  },
+  {
+   "type": "BI",
+   "instance": 120,
+   "name": "Diagnostic: GBAS 0-10 VDC Comm Failure",
+   "description": "Unit diagnostic",
+   "units": "",
+   "access": "R",
+   "states": "Inactive, Active"
+  },
+  {
+   "type": "BI",
+   "instance": 121,
+   "name": "Diagnostic: Reheat Head Press High",
+   "description": "Unit diagnostic; ID used on RT units",
+   "units": "",
+   "access": "R",
+   "states": "Inactive, Active"
+  },
+  {
+   "type": "BI",
+   "instance": 122,
+   "name": "Diagnostic: Improper Airflow for Dehumid (man)",
+   "description": "Unit diagnostic",
+   "units": "",
+   "access": "R",
+   "states": "Inactive, Active"
+  },
+  {
+   "type": "BI",
+   "instance": 123,
+   "name": "Diagnostic: SA Reheat Setpoint Failure",
+   "description": "Unit diagnostic",
+   "units": "",
+   "access": "R",
+   "states": "Inactive, Active"
+  },
+  {
+   "type": "BI",
+   "instance": 124,
+   "name": "Diagnostic: Unocc Dehumid Setpoint Fail",
+   "description": "Unit diagnostic",
+   "units": "",
+   "access": "R",
+   "states": "Inactive, Active"
+  },
+  {
+   "type": "BI",
+   "instance": 125,
+   "name": "Diagnostic: Occ Dehumid Setpoint Failure",
+   "description": "Unit diagnostic",
+   "units": "",
+   "access": "R",
+   "states": "Inactive, Active"
+  },
+  {
+   "type": "BI",
+   "instance": 126,
+   "name": "Diagnostic: Unocc Humid Setpoint Fail",
+   "description": "Unit diagnostic",
+   "units": "",
+   "access": "R",
+   "states": "Inactive, Active"
+  },
+  {
+   "type": "BI",
+   "instance": 127,
+   "name": "Diagnostic: Occ Humid Setpoint Failure",
+   "description": "Unit diagnostic",
+   "units": "",
+   "access": "R",
+   "states": "Inactive, Active"
+  },
+  {
+   "type": "BI",
+   "instance": 128,
+   "name": "Diagnostic: MDM Communications Failure",
+   "description": "Unit diagnostic",
+   "units": "",
+   "access": "R",
+   "states": "Inactive, Active"
+  },
+  {
+   "type": "BI",
+   "instance": 129,
+   "name": "Diagnostic: Dirty Final Filter",
+   "description": "Unit diagnostic",
+   "units": "",
+   "access": "R",
+   "states": "Inactive, Active"
+  },
+  {
+   "type": "BI",
+   "instance": 130,
+   "name": "Diagnostic: Vel Press Sensor (Front) Fail",
+   "description": "Unit diagnostic",
+   "units": "",
+   "access": "R",
+   "states": "Inactive, Active"
+  },
+  {
+   "type": "BI",
+   "instance": 131,
+   "name": "Diagnostic: High Superheat - Ckt 1",
+   "description": "Unit diagnostic",
+   "units": "",
+   "access": "R",
+   "states": "Inactive, Active"
+  },
+  {
+   "type": "BI",
+   "instance": 132,
+   "name": "Diagnostic: Low Refrigerant Charge - Ckt 1",
+   "description": "Unit diagnostic",
+   "units": "",
+   "access": "R",
+   "states": "Inactive, Active"
+  },
+  {
+   "type": "BI",
+   "instance": 133,
+   "name": "Diagnostic: High Superheat - Ckt 2",
+   "description": "Unit diagnostic",
+   "units": "",
+   "access": "R",
+   "states": "Inactive, Active"
+  },
+  {
+   "type": "BI",
+   "instance": 134,
+   "name": "Diagnostic: Low Refrigerant Charge - Ckt 2",
+   "description": "Unit diagnostic",
+   "units": "",
+   "access": "R",
+   "states": "Inactive, Active"
+  },
+  {
+   "type": "BI",
+   "instance": 139,
+   "name": "Diagnostic: MPM Communications Failure",
+   "description": "Unit diagnostic",
+   "units": "",
+   "access": "R",
+   "states": "Inactive, Active"
+  },
+  {
+   "type": "BI",
+   "instance": 140,
+   "name": "Diagnostic: TPM Communications Failure",
+   "description": "Unit diagnostic",
+   "units": "",
+   "access": "R",
+   "states": "Inactive, Active"
+  },
+  {
+   "type": "BI",
+   "instance": 141,
+   "name": "Diagnostic: Return Plenum Press Sensor",
+   "description": "Unit diagnostic",
+   "units": "",
+   "access": "R",
+   "states": "Inactive, Active"
+  },
+  {
+   "type": "BI",
+   "instance": 142,
+   "name": "Diagnostic: Return Press High Limit (Man)",
+   "description": "Unit diagnostic",
+   "units": "",
+   "access": "R",
+   "states": "Inactive, Active"
+  },
+  {
+   "type": "BI",
+   "instance": 143,
+   "name": "Diagnostic: Return Press High Limit (Auto)",
+   "description": "Unit diagnostic",
+   "units": "",
+   "access": "R",
+   "states": "Inactive, Active"
+  },
+  {
+   "type": "BI",
+   "instance": 146,
+   "name": "Diagnostic: Invalid Unit Configuration",
+   "description": "Unit diagnostic",
+   "units": "",
+   "access": "R",
+   "states": "Inactive, Active"
+  },
+  {
+   "type": "BI",
+   "instance": 147,
+   "name": "Diagnostic: Maintenance Required",
+   "description": "Unit diagnostic",
+   "units": "",
+   "access": "R",
+   "states": "Inactive, Active"
+  },
+  {
+   "type": "BI",
+   "instance": 148,
+   "name": "Diagnostic: Unit Communications Failure",
+   "description": "Unit diagnostic",
+   "units": "",
+   "access": "R",
+   "states": "Inactive, Active"
+  },
+  {
+   "type": "BI",
+   "instance": 149,
+   "name": "Diagnostic: Unit Stopped at Local HI",
+   "description": "Unit diagnostic",
+   "units": "",
+   "access": "R",
+   "states": "Inactive, Active"
+  },
+  {
+   "type": "BI",
+   "instance": 150,
+   "name": "Diagnostic: Unit Stopped at Remote HI",
+   "description": "Unit diagnostic",
+   "units": "",
+   "access": "R",
+   "states": "Inactive, Active"
+  },
+  {
+   "type": "BI",
+   "instance": 151,
+   "name": "Diagnostic: RTM External Stop",
+   "description": "Unit diagnostic",
+   "units": "",
+   "access": "R",
+   "states": "Inactive, Active"
+  },
+  {
+   "type": "BI",
+   "instance": 153,
+   "name": "Diagnostic: Ckt2 High Compressor Pressure Differential (Man)",
+   "description": "Unit diagnostic",
+   "units": "",
+   "access": "R",
+   "states": "Inactive, Active"
+  },
+  {
+   "type": "BI",
+   "instance": 154,
+   "name": "Diagnostic: VSM Communications Failure",
+   "description": "Unit diagnostic",
+   "units": "",
+   "access": "R",
+   "states": "Inactive, Active"
+  },
+  {
+   "type": "BI",
+   "instance": 155,
+   "name": "Diagnostic: Ckt1 High Compressor Pressure Differential (Man)",
+   "description": "Unit diagnostic",
+   "units": "",
+   "access": "R",
+   "states": "Inactive, Active"
+  },
+  {
+   "type": "BI",
+   "instance": 233,
+   "name": "Diagnostic: Sump Min Level Cycling (man)",
+   "description": "Unit diagnostic",
+   "units": "",
+   "access": "R",
+   "states": "Inactive, Active"
+  },
+  {
+   "type": "BI",
+   "instance": 235,
+   "name": "Diagnostic: Cond Press Sensor Fail – Ckt2",
+   "description": "Unit diagnostic",
+   "units": "",
+   "access": "R",
+   "states": "Inactive, Active"
+  },
+  {
+   "type": "BI",
+   "instance": 236,
+   "name": "Diagnostic: Cond Press Sensor Fail – Ckt1",
+   "description": "Unit diagnostic",
+   "units": "",
+   "access": "R",
+   "states": "Inactive, Active"
+  },
+  {
+   "type": "BI",
+   "instance": 237,
+   "name": "Diagnostic: Ent Evap Temp Sensor Fail-Ckt 3",
+   "description": "Unit diagnostic",
+   "units": "",
+   "access": "R",
+   "states": "Inactive, Active"
+  },
+  {
+   "type": "BI",
+   "instance": 238,
+   "name": "Diagnostic: Ent Evap Temp Sensor Fail-Ckt 4",
+   "description": "Unit diagnostic",
+   "units": "",
+   "access": "R",
+   "states": "Inactive, Active"
+  },
+  {
+   "type": "BI",
+   "instance": 239,
+   "name": "Diagnostic: Morning Warmup Setpoint Fail",
+   "description": "Unit diagnostic",
+   "units": "",
+   "access": "R",
+   "states": "Inactive, Active"
+  },
+  {
+   "type": "BI",
+   "instance": 240,
+   "name": "Diagnostic: Min Position Setpoint Fail",
+   "description": "Unit diagnostic",
+   "units": "",
+   "access": "R",
+   "states": "Inactive, Active"
+  },
+  {
+   "type": "BI",
+   "instance": 241,
+   "name": "Diagnostic: Econ Drybulb Setpoint Fail",
+   "description": "Unit diagnostic",
+   "units": "",
+   "access": "R",
+   "states": "Inactive, Active"
+  },
+  {
+   "type": "BI",
+   "instance": 242,
+   "name": "Diagnostic: Min OA Flow Setpoint Fail",
+   "description": "Unit diagnostic",
+   "units": "",
+   "access": "R",
+   "states": "Inactive, Active"
+  },
+  {
+   "type": "BI",
+   "instance": 247,
+   "name": "Diagnostic: Single Zone VAV Hardware Configuration Failure",
+   "description": "Unit diagnostic",
+   "units": "",
+   "access": "R",
+   "states": "Inactive, Active"
+  },
+  {
+   "type": "BI",
+   "instance": 248,
+   "name": "Diagnostic: Rapid Restart Hardware Configuration Failure",
+   "description": "Unit diagnostic",
+   "units": "",
+   "access": "R",
+   "states": "Inactive, Active"
+  },
+  {
+   "type": "BI",
+   "instance": 305,
+   "name": "Diagnostic: Unit Economizing When It Should Not",
+   "description": "Unit diagnostic [With Economizer installed]",
+   "units": "",
+   "access": "R",
+   "states": "Inactive, Active"
+  },
+  {
+   "type": "BI",
+   "instance": 306,
+   "name": "Diagnostic: Unit Not Economizing When It Should",
+   "description": "Unit diagnostic [With Economizer installed]",
+   "units": "",
+   "access": "R",
+   "states": "Inactive, Active"
+  },
+  {
+   "type": "BI",
+   "instance": 307,
+   "name": "Diagnostic: Excessive Outdoor Air",
+   "description": "Unit diagnostic",
+   "units": "",
+   "access": "R",
+   "states": "Inactive, Active"
+  },
+  {
+   "type": "BI",
+   "instance": 308,
+   "name": "Diagnostic: Outdoor Air Damper Not Modulating",
+   "description": "Unit diagnostic",
+   "units": "",
+   "access": "R",
+   "states": "Inactive, Active"
+  },
+  {
+   "type": "BI",
+   "instance": 312,
+   "name": "Morning Warmup Enabled",
+   "description": "Whether Morning Warmup is Enabled",
+   "units": "",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "BI",
+   "instance": 313,
+   "name": "Daytime Warmup Enabled",
+   "description": "Whether Daytime Warmup is Enabled",
+   "units": "",
+   "access": "R",
+   "states": ""
+  }
+ ],
+ "page": "https://easybacnet.com/bacnet-points-lists/trane/bci2-i-intellipak",
+ "note": "Re-typed from the manufacturer's public documentation (see source). Point availability varies by firmware and options; verify against the live device."
+}
