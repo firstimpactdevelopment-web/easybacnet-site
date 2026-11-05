@@ -21,6 +21,7 @@ sitemap, llms.txt and IndexNow ping.
 """
 
 import csv
+import datetime
 import glob
 import html
 import io
@@ -28,15 +29,29 @@ import json
 import os
 import re
 import shutil
+import subprocess
 
 HERE = os.path.dirname(os.path.abspath(__file__))
 DATA_DIR = os.path.join(HERE, "points_data")
 BASE_URL = "https://easybacnet.com"
 ROOT = "bacnet-points-lists"
 
-# Bump when the library's data or pages change meaningfully.
+# Template floor date: bump when the page TEMPLATES change meaningfully for every list.
+# Each page's own date is max(UPDATED, last git commit of its data file) - see data_dates().
 UPDATED = "2026-10-28"
 UPDATED_HUMAN = "28 October 2026"
+
+# {site-relative .html path: ISO date} for every page build() writes, so build_site can use
+# accurate per-page sitemap <lastmod> values instead of one global date.
+LASTMOD = {}
+
+MONTHS = ("January", "February", "March", "April", "May", "June", "July", "August",
+          "September", "October", "November", "December")
+
+
+def human_date(iso):
+    y, mo, d = (int(x) for x in iso.split("-"))
+    return "%d %s %d" % (d, MONTHS[mo - 1], y)
 
 # Google Play listing with UTM tags (same scheme as build_site.play_url), so
 # Play Console credits installs that start from a points-list page.
@@ -111,6 +126,58 @@ def load_all():
         assign_row_ids(d["points"])
         models.append(d)
     return models
+
+
+def _norm(p):
+    return os.path.normcase(os.path.normpath(p))
+
+
+def data_dates():
+    """{normalised data-file path: (first_commit_iso, last_commit_iso)} from git history.
+    Untracked or locally modified files get today's date as their last date (they will be
+    committed with the deploy). Returns {} when git isn't available, so callers fall back to
+    UPDATED."""
+    today = datetime.date.today().isoformat()
+
+    def git(*args):
+        return subprocess.run(("git",) + args, cwd=DATA_DIR, capture_output=True, text=True,
+                              encoding="utf-8", errors="replace", timeout=120, check=True).stdout
+    try:
+        top = git("rev-parse", "--show-toplevel").strip()
+        log = git("log", "--format=%cs", "--name-only", "--", ".")
+        status = git("status", "--porcelain", "--untracked-files=all", "--", ".")
+    except Exception as e:  # no git, not a repo, timeout...
+        print("points library: git dates unavailable (%s); using %s" % (e.__class__.__name__, UPDATED))
+        return {}
+    out, day = {}, None
+    for line in log.splitlines():   # newest commit first
+        line = line.strip()
+        if not line:
+            continue
+        if re.fullmatch(r"\d{4}-\d{2}-\d{2}", line):
+            day = line
+            continue
+        p = _norm(os.path.join(top, line))
+        out[p] = (day, out[p][1]) if p in out else (day, day)
+    for line in status.splitlines():  # porcelain paths are relative to the repo root
+        rel = line[3:].split(" -> ")[-1].strip().strip('"')
+        if rel:
+            p = _norm(os.path.join(top, rel))
+            out[p] = (out[p][0] if p in out else today, today)
+    return out
+
+
+def assign_dates(models):
+    """Set m['_modified'] (never before the UPDATED template floor) and m['_published']."""
+    dates = data_dates()
+    for m in models:
+        first, last = dates.get(_norm(m["_path"]), (None, None))
+        m["_modified"] = max(UPDATED, last or UPDATED)
+        m["_published"] = first
+
+
+def newest(models):
+    return max((m.get("_modified") or UPDATED) for m in models) if models else UPDATED
 
 
 def validate(d, path):
@@ -793,9 +860,9 @@ def cat_row(m, tags, maxo, show_type=False):
             '%(ty)s'
             '<td class="num" data-l="Objects">%(n)d<span class="bar" aria-hidden="true"><i style="width:%(po).0f%%"></i></span></td>'
             '<td class="num" data-l="Writable">%(w)d<span class="bar w" aria-hidden="true"><i style="width:%(pw).0f%%"></i></span></td>'
-            '<td class="dls"><a href="/%(csv)s" aria-label="%(mf)s %(md)s CSV">CSV</a>'
-            '<a href="/%(ede)s" aria-label="%(mf)s %(md)s EDE">EDE</a></td></tr>') % {
-        "mf": esc(m["manufacturer"]), "md": esc(m["model"]), "n": n, "w": w,
+            '<td class="dls"><a href="/%(csv)s" aria-label="%(fn)s CSV">CSV</a>'
+            '<a href="/%(ede)s" aria-label="%(fn)s EDE">EDE</a></td></tr>') % {
+        "mf": esc(m["manufacturer"]), "md": esc(m["model"]), "fn": esc(full_name(m)), "n": n, "w": w,
         "mfa": "" if m["model"].lower().startswith(m["manufacturer"].lower()) else
                '<span class="sr-only">%s </span>' % esc(m["manufacturer"]),
         "kinds": category_of(m)[0] if show_type else " ".join(t[0] for t in mt), "href": model_path(m), "ap": esc(m.get("applies_to") or ""),
@@ -831,7 +898,7 @@ def cat_page(cat, models, all_cats):
         desc = ("Free BACnet points lists for %d %s models: object types, instances, units, minimum BMS "
                 "points and CSV/EDE downloads." % (len(models), noun))
     h1 = ('<p class="eyebrow">Equipment type</p><h1><span class="mfr">%s</span> BACnet points lists</h1>'
-          '<p class="updated">Updated %s</p>' % (esc(heading), UPDATED_HUMAN))
+          '<p class="updated">Updated %s</p>' % (esc(heading), human_date(newest(models))))
     body = """
 <p class="lede">%(n)d %(heading_l)s BACnet points lists from %(nm)d manufacturer%(nms)s &mdash; %(mfrs)s. Each one has the
 full object table, the minimum points an integrator needs, enable and heartbeat notes, and CSV/EDE downloads.
@@ -863,7 +930,7 @@ Click a column heading to sort.</p>
         {"@type": "ListItem", "position": i, "url": clean(model_path(m)), "name": model_title(m)}
         for i, m in enumerate(models, 1)]}
     page_ld = {"@type": "CollectionPage", "@id": url, "url": url, "name": title, "description": desc,
-               "dateModified": UPDATED, "isPartOf": {"@id": BASE_URL + "/#site"}, "mainEntity": item_list,
+               "dateModified": newest(models), "isPartOf": {"@id": BASE_URL + "/#site"}, "mainEntity": item_list,
                "publisher": {"@id": ORG["@id"]}}
     return shell(relpath, title, desc, h1, body, graph(ORG, page_ld, breadcrumb_ld(crumbs, url)), crumbs)
 
@@ -893,8 +960,19 @@ def access_label(a):
     return {"R": "Read", "W": "Write", "C": "Command"}[a]
 
 
+def model_rest(m):
+    """Model name without a leading brand that repeats the manufacturer ("Condair RS" -> "RS")."""
+    mf, md = m["manufacturer"], m["model"]
+    return md[len(mf) + 1:] if md.lower().startswith(mf.lower() + " ") else md
+
+
+def full_name(m):
+    """Manufacturer + model without doubling the brand ("Condair Condair RS" -> "Condair RS")."""
+    return "%s %s" % (m["manufacturer"], model_rest(m))
+
+
 def model_title(m):
-    return "%s %s BACnet Points List" % (m["manufacturer"], m["model"])
+    return "%s BACnet Points List" % full_name(m)
 
 
 def model_desc(m):
@@ -985,8 +1063,7 @@ def integration_html(m):
     it = integration_of(m)
     if not it:
         return ""
-    mfr, model = esc(m["manufacturer"]), esc(m["model"])
-    out = ['<section class="integ" id="bms-integration"><h2>BMS integration notes: %s %s</h2>' % (mfr, model)]
+    out = ['<section class="integ" id="bms-integration"><h2>BMS integration notes: %s</h2>' % esc(full_name(m))]
     if it["summary"]:
         out.append('<div class="answer"><b>Integration in brief</b><p>%s</p></div>' % esc(it["summary"]))
     if it["minimum_points"]:
@@ -1156,16 +1233,16 @@ def model_faq(m):
                    for t, c in type_counts(m["points"]))
     s = m["source"]
     qa = [
-        ("How many BACnet points does the %s %s have?" % (m["manufacturer"], m["model"]),
+        ("How many BACnet points does the %s have?" % full_name(m),
          "This list has %d BACnet objects: %s. The exact set on a given unit depends on its "
          "firmware, installed options and configuration." % (n, tc)),
-        ("Which %s %s BACnet points are writable?" % (m["manufacturer"], m["model"]),
+        ("Which %s BACnet points are writable?" % full_name(m),
          (("%d of the %d objects accept a write. Points marked Command have a priority array: a write "
            "holds until it is released, so release it back to automatic when you are done." % (w, n))
           if w else "None of the listed objects are marked writable in the source documentation.")
          + (" The source has no read/write column, so this is inferred from object type."
             if m.get("access_inferred") else "")),
-        ("Where is the official %s %s BACnet documentation?" % (m["manufacturer"], m["model"]),
+        ("Where is the official %s BACnet documentation?" % full_name(m),
          "The source is %s%s%s, published free by %s at %s." % (
              s.get("title") or "the manufacturer's BACnet documentation",
              (" (" + s["doc_number"] + ")") if s.get("doc_number") else "",
@@ -1184,7 +1261,7 @@ def integration_faq(m):
     it = integration_of(m)
     if not it:
         return []
-    mm = "%s %s" % (m["manufacturer"], m["model"])
+    mm = full_name(m)
     qa = []
     if it["minimum_points"]:
         qa.append(("What are the minimum BACnet points to integrate the %s?" % mm,
@@ -1228,6 +1305,11 @@ def model_page(m, siblings):
         facts.append(("Default device instance", esc(m["default_device_instance"])))
     if aliases:
         facts.append(("Also known as", esc(", ".join(aliases))))
+    if m.get("covers_brands"):
+        # Every covered brand has a page at mfr_path(brand_slug(b)): its own manufacturer page,
+        # or a gateway-only brand page written by build().
+        facts.append(("Brands covered", ", ".join(
+            '<a href="/%s">%s</a>' % (mfr_path(brand_slug(b)), esc(b)) for b in m["covers_brands"])))
     cat = category_of(m)
     facts.insert(3, ("Equipment type", '<a href="/%s">%s</a>' % (cat_path(cat[0]), esc(cat[1]))))
     facts.append(("Source document", '<a href="%s" rel="nofollow noopener" target="_blank">%s</a>'
@@ -1247,21 +1329,21 @@ def model_page(m, siblings):
         sib_html = ('<h2>More %s BACnet points lists</h2><ul class="grid">%s</ul>'
                     % (esc(m["manufacturer"]), "".join(card(x) for x in sib)))
 
-    faq_html = '<h2>Questions about the %s %s</h2><div class="faq">%s</div>' % (
-        esc(m["manufacturer"]), esc(m["model"]),
+    faq_html = '<h2>Questions about the %s</h2><div class="faq">%s</div>' % (
+        esc(full_name(m)),
         "".join("<details%s><summary>%s</summary><p>%s</p></details>"
                 % (" open" if i == 0 else "", esc(q), esc(a)) for i, (q, a) in enumerate(faq)))
 
     h1 = ('<p class="eyebrow">%s &middot; BACnet points list</p>'
           '<h1><span class="mfr">%s</span> %s BACnet points list</h1>'
           '<p class="updated">Updated %s</p>' % (
-              esc(m.get("equipment_type") or "Equipment"), esc(m["manufacturer"]), esc(m["model"]),
-              UPDATED_HUMAN))
+              esc(m.get("equipment_type") or "Equipment"), esc(m["manufacturer"]), esc(model_rest(m)),
+              human_date(m.get("_modified") or UPDATED)))
 
     base = "/" + model_path(m, "")
     body = """
 <div class="answer"><b>Short answer</b><p>%(summary)s</p>
-<p>This page lists <strong>%(n)d BACnet objects</strong> for the %(mfr)s %(model)s &mdash; %(w)d of them
+<p>This page lists <strong>%(n)d BACnet objects</strong> for the %(full)s &mdash; %(w)d of them
 writable &mdash; with each object&rsquo;s type, instance number, name, engineering units and access.
 It is re-typed from %(mfr)s&rsquo;s own free documentation, linked below.</p></div>
 %(facts)s
@@ -1273,7 +1355,7 @@ It is re-typed from %(mfr)s&rsquo;s own free documentation, linked below.</p></d
   <a class="btn app" href="%(play_pdf)s" rel="noopener" target="_blank">Download Easy BACnet Mobile App <small>Google Play</small></a>
 </div>
 %(integ)s
-<h2 id="points">%(mfr)s %(model)s BACnet objects</h2>
+<h2 id="points">%(full)s BACnet objects</h2>
 <p class="count">Type: <abbr title="Analog Input">AI</abbr>, AO, AV, BI, BO, BV, MI/MO/MV (multi-state) &middot;
 Access: <span class="acc">Read</span> read-only, <span class="acc W">Write</span> writable,
 <span class="acc C">Command</span> writable with a priority array.</p>
@@ -1294,7 +1376,7 @@ Start with <a href="/guides/what-is-a-bacnet-points-list.html">what a BACnet poi
 Object names, instances and units are reproduced as published; descriptions are our own.</p>
 """ % {
         "summary": esc(m.get("summary") or ""), "n": n, "w": w,
-        "mfr": esc(m["manufacturer"]), "model": esc(m["model"]), "facts": facts_html,
+        "mfr": esc(m["manufacturer"]), "model": esc(m["model"]), "full": esc(full_name(m)), "facts": facts_html,
         "base": base, "src": esc(s["url"]), "play_pdf": PLAY_URL % "pdf", "fbar": filter_bar(m), "table": points_table(m),
         "notes": notes_html, "faq": faq_html, "integ": integration_html(m), "ids": id_index(m),
         "inferred": ('<p class="count"><strong>Note:</strong> the source document has no read/write column, so access '
@@ -1302,17 +1384,17 @@ Object names, instances and units are reproduced as published; descriptions are 
                      'controller before writing.</p>') if m.get("access_inferred") else "", "sib": sib_html, "srcline": source_line(m),
     }
 
-    keywords = [model_title(m), "%s %s BACnet objects" % (m["manufacturer"], m["model"]),
+    keywords = [model_title(m), "%s BACnet objects" % full_name(m),
                 "%s BACnet" % m["manufacturer"]] + ["%s BACnet points list" % a for a in aliases]
     dataset = {
         "@type": "Dataset", "@id": url + "#dataset", "name": model_title(m),
         "description": (m.get("summary") or "") + " " + desc,
         "url": url, "keywords": keywords, "isAccessibleForFree": True,
         "creator": {"@id": ORG["@id"]}, "publisher": {"@id": ORG["@id"]},
-        "dateModified": UPDATED,
+        "dateModified": m.get("_modified") or UPDATED,
         "isBasedOn": {"@type": "CreativeWork", "name": s.get("title") or "", "url": s["url"],
                       "author": {"@type": "Organization", "name": m["manufacturer"]}},
-        "about": {"@type": "Product", "name": "%s %s" % (m["manufacturer"], m["model"]),
+        "about": {"@type": "Product", "name": full_name(m),
                   "brand": {"@type": "Brand", "name": m["manufacturer"]},
                   "category": m.get("equipment_type") or ""},
         "variableMeasured": ["Object type", "Object instance", "Object name", "Engineering units",
@@ -1327,8 +1409,10 @@ Object names, instances and units are reproduced as published; descriptions are 
     }
     faq_ld = {"@type": "FAQPage", "mainEntity": [
         {"@type": "Question", "name": q, "acceptedAnswer": {"@type": "Answer", "text": a}} for q, a in faq]}
+    if m.get("_published"):
+        dataset["datePublished"] = m["_published"]
     page_ld = {"@type": "WebPage", "@id": url, "url": url, "name": title, "description": desc,
-               "dateModified": UPDATED, "isPartOf": {"@id": BASE_URL + "/#site"},
+               "dateModified": m.get("_modified") or UPDATED, "isPartOf": {"@id": BASE_URL + "/#site"},
                "mainEntity": {"@id": url + "#dataset"}, "publisher": {"@id": ORG["@id"]}}
     jsonld = graph(ORG, page_ld, dataset, faq_ld, breadcrumb_ld(crumbs, url))
     return shell(relpath, title, desc, h1, body, jsonld, crumbs, og_type="article")
@@ -1338,7 +1422,7 @@ def card(m):
     pts = m["points"]
     return ('<li><a class="card" href="/%s" data-row><span class="k">%s</span>'
             '<h3>%s %s</h3><p>%s</p><div class="meta">%d objects &middot; %d writable%s</div>%s</a></li>'
-            % (model_path(m), esc(m.get("equipment_type") or ""), esc(m["manufacturer"]), esc(m["model"]),
+            % (model_path(m), esc(m.get("equipment_type") or ""), esc(m["manufacturer"]), esc(model_rest(m)),
                esc(m.get("applies_to") or ""), len(pts), writable_count(pts),
                (" &middot; " + esc(m["source"]["doc_number"])) if m["source"].get("doc_number") else "",
                ('<span class="sr-only"> Also known as: %s</span>' % esc(", ".join(m["aliases"])))
@@ -1365,7 +1449,7 @@ def mfr_page(mslug, models, all_groups, gws=()):
     if len(desc) > 160:
         desc = "Free %s BACnet points lists for %d models: object types, instances, names, units and access, with CSV and EDE downloads." % (name, len(models))
     h1 = ('<p class="eyebrow">Manufacturer</p><h1><span class="mfr">%s</span> BACnet points lists</h1>'
-          '<p class="updated">Updated %s</p>' % (esc(name), UPDATED_HUMAN))
+          '<p class="updated">Updated %s</p>' % (esc(name), human_date(newest(models))))
     body = """
 <p class="lede">Every %(name)s BACnet points list we have: %(nm)d models, %(total)s BACnet objects in all.
 Pick a model to see its full object table with types, instance numbers, units and read/write access,
@@ -1384,7 +1468,7 @@ documentation and links back to the original PDF.</p></div>
         {"@type": "ListItem", "position": i, "url": clean(model_path(m)), "name": model_title(m)}
         for i, m in enumerate(models, 1)]}
     page_ld = {"@type": "CollectionPage", "@id": url, "url": url, "name": title, "description": desc,
-               "dateModified": UPDATED, "isPartOf": {"@id": BASE_URL + "/#site"},
+               "dateModified": newest(models), "isPartOf": {"@id": BASE_URL + "/#site"},
                "about": {"@type": "Brand", "name": name}, "mainEntity": item_list,
                "publisher": {"@id": ORG["@id"]}}
     return shell(relpath, title, desc, h1, body, graph(ORG, page_ld, breadcrumb_ld(crumbs, url)), crumbs)
@@ -1448,7 +1532,7 @@ def brand_page(bslug, brand, gws, groups, brands):
         desc = ("%s BACnet points lists through gateways: objects, minimum BMS points and CSV/EDE downloads."
                 % brand)
     h1 = ('<p class="eyebrow">Brand &middot; via BACnet gateways</p><h1><span class="mfr">%s</span> BACnet '
-          'points lists</h1><p class="updated">Updated %s</p>' % (esc(brand), UPDATED_HUMAN))
+          'points lists</h1><p class="updated">Updated %s</p>' % (esc(brand), human_date(newest(gws))))
     body = """
 <p class="lede">We haven&rsquo;t found a public BACnet points list published by %(brand)s itself. %(brand)s
 units are usually put on BACnet through a protocol gateway, and the gateway makers do publish their object
@@ -1464,7 +1548,7 @@ rule &mdash; see the integration notes on each list.</p></div>
         {"@type": "ListItem", "position": i, "url": clean(model_path(m)), "name": model_title(m)}
         for i, m in enumerate(gws, 1)]}
     page_ld = {"@type": "CollectionPage", "@id": url, "url": url, "name": title, "description": desc,
-               "dateModified": UPDATED, "isPartOf": {"@id": BASE_URL + "/#site"},
+               "dateModified": newest(gws), "isPartOf": {"@id": BASE_URL + "/#site"},
                "about": {"@type": "Brand", "name": brand}, "mainEntity": item_list,
                "publisher": {"@id": ORG["@id"]}}
     return shell(relpath, title, desc, h1, body, graph(ORG, page_ld, breadcrumb_ld(crumbs, url)), crumbs)
@@ -1498,7 +1582,7 @@ def hub_page(groups, brands=None):
              for s, (b, gws) in gw_only.items()]
     options = "".join(o for _, o in sorted(opts, key=lambda x: x[0].lower()))
     h1 = ('<p class="eyebrow">Free library</p><h1>BACnet points lists <span class="mfr">by manufacturer</span></h1>'
-          '<p class="updated">Updated %s</p>' % UPDATED_HUMAN)
+          '<p class="updated">Updated %s</p>' % human_date(newest(models)))
     body = """
 <p class="lede">Need a BACnet points list before you get to site? This library has <strong>%(nm)d models from
 %(ng)d manufacturers</strong> &mdash; %(total)s BACnet objects &mdash; each with object type, instance number,
@@ -1549,7 +1633,7 @@ name, engineering units and read/write access, ready to download as CSV or EDE.<
          "name": "%s BACnet points lists" % g[0]["manufacturer"]}
         for i, (s, g) in enumerate(groups.items(), 1)]}
     page_ld = {"@type": "CollectionPage", "@id": url, "url": url, "name": title, "description": desc,
-               "dateModified": UPDATED, "isPartOf": {"@id": BASE_URL + "/#site"}, "mainEntity": item_list,
+               "dateModified": newest(models), "isPartOf": {"@id": BASE_URL + "/#site"}, "mainEntity": item_list,
                "publisher": {"@id": ORG["@id"]}}
     return shell(relpath, title, desc, h1, body,
                  graph(ORG, page_ld, catalog, breadcrumb_ld(crumbs, url)), crumbs)
@@ -1562,8 +1646,8 @@ name, engineering units and read/write access, ready to download as CSV or EDE.<
 def csv_text(m):
     buf = io.StringIO()
     w = csv.writer(buf, lineterminator="\r\n")
-    w.writerow(["# %s %s BACnet points list - easybacnet.com - source: %s" %
-                (m["manufacturer"], m["model"], m["source"]["url"])])
+    w.writerow(["# %s BACnet points list - easybacnet.com - source: %s" %
+                (full_name(m), m["source"]["url"])])
     w.writerow(["Object type", "Type code", "Instance", "Object name", "Description", "Units", "Access", "States"])
     for pt in m["points"]:
         w.writerow([OBJECT_TYPES[pt["type"]][0], pt["type"],
@@ -1577,9 +1661,9 @@ def ede_text(m):
     dev = "" if dev in (None, "") else str(dev)
     lines = [
         "#Engineering-Data-Exchange - B.I.G.-EU",
-        "PROJECT_NAME;%s %s" % (m["manufacturer"], m["model"]),
+        "PROJECT_NAME;%s" % full_name(m),
         "VERSION_OF_REFERENCEFILE;1",
-        "TIMESTAMP_OF_LAST_CHANGE;%s" % UPDATED,
+        "TIMESTAMP_OF_LAST_CHANGE;%s" % (m.get("_modified") or UPDATED),
         "AUTHOR_OF_LAST_CHANGE;easybacnet.com",
         "VERSION_OF_LAYOUT;2.3",
         "#mandatory;mandatory;mandatory;mandatory;mandatory;optional;optional;optional;optional;optional;optional;optional;optional;optional;optional;optional",
@@ -1625,6 +1709,8 @@ def build(write):
     out_dir = os.path.join(HERE, ROOT)
     if os.path.isdir(out_dir):
         shutil.rmtree(out_dir)
+    assign_dates(models)
+    LASTMOD.clear()
     groups = by_manufacturer(models)
     seen = {}
     for m in models:
@@ -1634,12 +1720,15 @@ def build(write):
             for m in ms:
                 m["_full_title"] = True
     paths = [hub_path()]
+    LASTMOD[hub_path()] = newest(models)
     brands = brand_map(models)
     write(hub_path(), hub_page(groups, brands))
     for mslug, ms in groups.items():
         write(mfr_path(mslug), mfr_page(mslug, ms, groups, brands.get(mslug, ("", []))[1]))
         paths.append(mfr_path(mslug))
+        LASTMOD[mfr_path(mslug)] = newest(ms)
         for m in ms:
+            LASTMOD[model_path(m)] = m["_modified"]
             write(model_path(m), model_page(m, ms))
             write(model_path(m, ".csv"), csv_text(m))
             write(model_path(m, "-ede.csv"), ede_text(m))
@@ -1649,12 +1738,14 @@ def build(write):
         if bslug not in groups:
             write(mfr_path(bslug), brand_page(bslug, bname, gws, groups, brands))
             paths.append(mfr_path(bslug))
+            LASTMOD[mfr_path(bslug)] = newest(gws)
     cats = group_by_category(models)
     for c, ms in cats:
         write(cat_path(c[0]), cat_page(c, ms, cats))
         paths.append(cat_path(c[0]))
+        LASTMOD[cat_path(c[0])] = newest(ms)
     catalogue = {
-        "name": "Easy BACnet points-list library", "url": clean(hub_path()), "updated": UPDATED,
+        "name": "Easy BACnet points-list library", "url": clean(hub_path()), "updated": newest(models),
         "models": [{
             "manufacturer": m["manufacturer"], "model": m["model"], "aliases": m.get("aliases") or [],
             "equipment_type": m.get("equipment_type"), "objects": len(m["points"]),

@@ -1,0 +1,312 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="google-adsense-account" content="ca-pub-8667608030467156">
+<script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-8667608030467156" crossorigin="anonymous"></script>
+<!-- Google Analytics 4 (Consent Mode v2) — analytics cookies gated by the banner -->
+<script>
+(function(){
+  var ID="G-BH9W9B8YRJ", KEY="ga-consent", P="https://easybacnet.com/privacy";
+  window.dataLayer=window.dataLayer||[];function gtag(){dataLayer.push(arguments);}window.gtag=gtag;
+  gtag('js',new Date());
+  gtag('consent','default',{analytics_storage:'denied',wait_for_update:500});
+  var v=null;try{v=localStorage.getItem(KEY);}catch(e){}
+  function load(){if(window.__ga)return;window.__ga=1;var s=document.createElement('script');s.async=true;s.src='https://www.googletagmanager.com/gtag/js?id='+ID;document.head.appendChild(s);gtag('config',ID,{anonymize_ip:true,allow_google_signals:false,allow_ad_personalization_signals:false});}
+  function grant(){gtag('consent','update',{analytics_storage:'granted'});load();}
+  if(v==='granted'){grant();}
+  function banner(){
+    if(v==='granted'||v==='denied')return;
+    var d=document.createElement('div');d.className='cookie-consent';
+    d.innerHTML='<p>We use Google Analytics to see which guides help. Ads from Google AdSense keep the guides free. <a href="'+P+'">Privacy policy</a>.</p><div class="cc-row"><button type="button" id="cc-no">Decline</button><button type="button" id="cc-yes">Accept</button></div>';
+    document.body.appendChild(d);
+    d.querySelector('#cc-yes').onclick=function(){try{localStorage.setItem(KEY,'granted');}catch(e){}grant();d.remove();};
+    d.querySelector('#cc-no').onclick=function(){try{localStorage.setItem(KEY,'denied');}catch(e){}d.remove();};
+  }
+  if(document.readyState==='loading'){document.addEventListener('DOMContentLoaded',banner);}else{banner();}
+})();
+</script>
+<style>
+.cookie-consent{position:fixed;left:1rem;right:1rem;bottom:1rem;max-width:660px;margin:0 auto;z-index:9999;background:#1d2227;color:#f3f5f6;border:1px solid #2f363d;border-radius:12px;padding:1rem 1.15rem;box-shadow:0 14px 44px rgba(0,0,0,.55);font-family:"Manrope",system-ui,-apple-system,"Segoe UI",Roboto,Arial,sans-serif;font-size:.92rem;line-height:1.5}
+.cookie-consent p{margin:0 0 .8rem}
+.cookie-consent a{color:#ff9a1f}
+.cookie-consent .cc-row{display:flex;gap:.6rem;justify-content:flex-end}
+.cookie-consent button{font:inherit;font-weight:700;padding:.5rem 1.15rem;border-radius:8px;border:1px solid #3a424c;background:transparent;color:#f3f5f6;cursor:pointer}
+.cookie-consent #cc-yes{background:#ff9a1f;border-color:#ff9a1f;color:#0d0f11}
+</style>
+
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<link rel="icon" type="image/svg+xml" href="icon.svg">
+<link rel="apple-touch-icon" href="/apple-touch-icon.png">
+<title>BACnet COV vs polling explained | Easy BACnet</title>
+<meta name="description" content="COV lets a BACnet device report a value when it changes instead of being polled. How subscriptions, COV_Increment and lifetimes work, and what goes wrong.">
+<link rel="canonical" href="https://easybacnet.com/guides/bacnet-cov-vs-polling">
+<meta name="robots" content="index, follow">
+<meta name="theme-color" content="#14171a">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Archivo:wght@600;800;900&family=Manrope:wght@400;500;600;700&family=IBM+Plex+Mono:wght@500;600&display=swap" rel="stylesheet">
+<meta property="og:type" content="article">
+<meta property="og:site_name" content="Easy BACnet">
+<meta property="og:title" content="BACnet COV vs polling explained | Easy BACnet">
+<meta property="og:description" content="COV lets a BACnet device report a value when it changes instead of being polled. How subscriptions, COV_Increment and lifetimes work, and what goes wrong.">
+<meta property="og:url" content="https://easybacnet.com/guides/bacnet-cov-vs-polling">
+<meta property="og:image" content="https://easybacnet.com/img/og-image.png">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="BACnet COV vs polling explained | Easy BACnet">
+<meta name="twitter:description" content="COV lets a BACnet device report a value when it changes instead of being polled. How subscriptions, COV_Increment and lifetimes work, and what goes wrong.">
+<meta name="twitter:image" content="https://easybacnet.com/img/og-image.png">
+<style>
+  :root { color-scheme: dark; --fg:#f3f5f6; --bg:#14171a; --muted:#9aa4ad;
+          --accent:#ff9a1f; --box:#1d2227; --line:#2f363d; --code:#101418; --ink:#0d0f11; }
+  * { box-sizing: border-box; }
+  body { max-width: 48rem; margin: 0 auto; padding: 2rem 1.25rem 5rem;
+         font-family:"Manrope",system-ui,-apple-system,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
+         font-size:17px; line-height:1.7; color:var(--fg); background:var(--bg);
+         -webkit-font-smoothing:antialiased; }
+  header.site { display:flex; align-items:center; gap:.6rem; flex-wrap:wrap;
+                padding-bottom:1.25rem; border-bottom:1px solid var(--line); margin-bottom:2.25rem; }
+  header.site a { color:var(--fg); text-decoration:none; }
+  header.site .brand { font-family:"Archivo",sans-serif; font-weight:900;
+                       text-transform:uppercase; letter-spacing:.02em; font-size:1.05rem; }
+  header.site .muted { margin-left:auto; font-family:"IBM Plex Mono",ui-monospace,monospace;
+                       font-size:.7rem; letter-spacing:.14em; text-transform:uppercase; }
+  h1, h2, h3 { font-family:"Archivo",sans-serif; letter-spacing:-.01em; line-height:1.12; }
+  h1 { font-weight:900; text-transform:uppercase; font-size:clamp(1.7rem,4.5vw,2.5rem);
+       margin:0 0 .6rem; }
+  .updated { color:var(--muted); font-size:.8rem; margin:0 0 1.5rem;
+             font-family:"IBM Plex Mono",ui-monospace,monospace; letter-spacing:.06em; }
+  h2 { font-weight:800; font-size:1.35rem; margin:2.6rem 0 .6rem; }
+  h3 { font-weight:800; font-size:1.06rem; margin:1.8rem 0 .4rem; }
+  a { color:var(--accent); }
+  strong { color:#fff; }
+  .answer { background:var(--box); border:1px solid var(--line); border-left:3px solid var(--accent);
+            border-radius:12px; padding:1.1rem 1.3rem; margin:1.5rem 0 2rem; }
+  .answer > strong { display:block; margin-bottom:.5rem; text-transform:uppercase;
+                   font-family:"IBM Plex Mono",ui-monospace,monospace; font-weight:600;
+                   font-size:.72rem; letter-spacing:.18em; color:var(--accent); }
+  .answer p { margin:.6rem 0; }
+  .answer p strong { color:#fff; font-weight:700; }
+  code { background:var(--code); padding:.1rem .4rem; border-radius:4px; font-size:.9em;
+         font-family:"IBM Plex Mono",ui-monospace,monospace; }
+  pre { background:var(--code); padding:1rem; border-radius:10px; overflow-x:auto;
+        border:1px solid var(--line); }
+  pre code { background:none; padding:0; }
+  table { border-collapse:collapse; width:100%; margin:1.25rem 0; display:block; overflow-x:auto; }
+  th, td { text-align:left; padding:.55rem .75rem; border-bottom:1px solid var(--line); }
+  th { font-family:"IBM Plex Mono",ui-monospace,monospace; font-size:.72rem;
+       text-transform:uppercase; letter-spacing:.1em; color:var(--accent); font-weight:600; }
+  ul, ol { padding-left:1.3rem; }
+  li { margin:.45rem 0; }
+  .muted { color:var(--muted); font-size:.92rem; }
+  nav.more { margin-top:3rem; padding-top:1.5rem; border-top:1px solid var(--line); }
+  nav.more h2 { margin-top:0; }
+  nav.more ul { list-style:none; padding:0; }
+  nav.more li { margin:0; border-bottom:1px solid var(--line); padding:.85rem 0; }
+  nav.more li:last-child { border-bottom:none; }
+  nav.more a { font-family:"Archivo",sans-serif; font-weight:600; }
+  footer { margin-top:3.5rem; padding-top:1.5rem; border-top:1px solid var(--line);
+           color:var(--muted); font-size:.9rem; }
+  footer a { color:var(--accent); }
+  .shotrow { display:flex; flex-wrap:wrap; gap:1rem; margin:1.75rem 0; }
+  .shotrow figure { margin:0; flex:0 1 200px; }
+  .shotrow img { width:100%; height:auto; border:1px solid var(--line);
+                 border-radius:16px; display:block; background:var(--ink); }
+  .shotrow figcaption { color:var(--muted); font-size:.82rem; margin-top:.5rem;
+                        text-align:center; line-height:1.35; }
+  .callout { background:var(--box); border:1px solid var(--line);
+             border-left:3px solid var(--accent); border-radius:12px;
+             padding:1rem 1.25rem; margin:1.75rem 0; }
+  .callout p:last-child { margin-bottom:0; }
+  header.site .getapp { margin-left:.9rem; padding:.3rem .7rem; border-radius:8px;
+                        background:var(--accent); color:var(--ink); font-weight:700;
+                        font-family:"IBM Plex Mono",ui-monospace,monospace; font-size:.7rem;
+                        letter-spacing:.1em; text-transform:uppercase; }
+  .appcta { background:var(--box); border:1px solid var(--line);
+            border-left:3px solid var(--accent); border-radius:12px;
+            padding:1.1rem 1.3rem; margin:2.5rem 0 0; display:flex; gap:1rem;
+            align-items:center; flex-wrap:wrap; }
+  .appcta p { margin:0; flex:1 1 18rem; }
+  .appcta a.btn { background:var(--accent); color:var(--ink); text-decoration:none;
+                  font-weight:700; padding:.6rem 1rem; border-radius:10px; white-space:nowrap; }
+  /* Phones: the tagline wrapped onto its own line and the nav onto a third;
+     the footer already links the points library. */
+  @media (max-width:520px) {
+    header.site .muted, header.site .navl { display:none; }
+    header.site .getapp { margin-left:auto; }
+    code { overflow-wrap:anywhere; }
+  }
+
+  figure.diagram { margin:2rem 0; background:#171b1f; border:1px solid var(--line);
+                   border-radius:14px; padding:1rem 1rem .85rem; }
+  figure.diagram svg { display:block; width:100%; height:auto; max-width:560px; margin:0 auto; }
+  figure.diagram svg text { font-family:"Manrope",system-ui,-apple-system,"Segoe UI",Roboto,Arial,sans-serif; }
+  figure.diagram svg .mono { font-family:"IBM Plex Mono",ui-monospace,Consolas,monospace; }
+  figure.diagram figcaption { color:var(--muted); font-size:.86rem; line-height:1.45;
+                              margin-top:.75rem; text-align:center; }
+  /* Phones: go edge to edge and keep labels readable; wide diagrams swipe. */
+  @media (max-width: 520px) {
+    figure.diagram { margin:1.75rem -1.25rem; border-radius:0; border-left:0; border-right:0;
+                     padding:.85rem 0 .75rem; }
+    figure.diagram .dg-scroll { overflow-x:auto; -webkit-overflow-scrolling:touch; padding:0 .75rem; }
+    figure.diagram svg { min-width:480px; }
+    figure.diagram figcaption { padding:0 1.25rem; }
+    figure.diagram figcaption::after { content:" (swipe to see it all)"; opacity:.7; }
+  }
+</style>
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@graph": [
+    {
+      "@type": "FAQPage",
+      "datePublished": "2026-11-04",
+      "dateModified": "2026-11-04",
+      "mainEntity": [{
+        "@type": "Question",
+        "name": "What is BACnet COV, and when is it better than polling?",
+        "acceptedAnswer": { "@type": "Answer", "text": "Polling means the client reads a point on a timer, whether it changed or not. COV (Change of Value) means the client subscribes once and the device sends a notification when the value moves by more than its COV_Increment, or when a binary or multi-state point changes state. COV cuts traffic, which matters most on slow MS/TP trunks, but it's optional in BACnet, devices can hold only so many subscriptions, and subscriptions expire. When a head-end shows a value that never moves, a lapsed COV subscription is a common reason." }
+      }]
+    },
+    {
+      "@type": "Article",
+      "headline": "What is BACnet COV, and when is it better than polling?",
+      "datePublished": "2026-11-04",
+      "dateModified": "2026-11-04",
+      "mainEntityOfPage": "https://easybacnet.com/guides/bacnet-cov-vs-polling",
+      "image": "https://easybacnet.com/img/og-image.png",
+      "author": { "@id": "https://easybacnet.com/#org" },
+      "publisher": {
+        "@type": "Organization",
+        "@id": "https://easybacnet.com/#org",
+        "name": "Easy BACnet",
+        "url": "https://easybacnet.com/",
+        "logo": { "@type": "ImageObject", "url": "https://easybacnet.com/logo-512.png" }
+      }
+    },
+    {
+      "@type": "BreadcrumbList",
+      "itemListElement": [
+        { "@type": "ListItem", "position": 1, "name": "Home", "item": "https://easybacnet.com/" },
+        { "@type": "ListItem", "position": 2, "name": "What is BACnet COV, and when is it better than polling?", "item": "https://easybacnet.com/guides/bacnet-cov-vs-polling" }
+      ]
+    }
+  ]
+}
+</script>
+</head>
+<body>
+
+<header class="site">
+  <a href="../" style="display:inline-flex;align-items:center;gap:.5rem;text-decoration:none"><img src="icon.svg" alt="" width="28" height="28" style="border-radius:7px"><b class="brand">Easy BACnet</b></a>
+  <span class="muted">&middot; BACnet IP Controls made Easy</span>
+  <a class="navl" href="../bacnet-points-lists/" style="margin-left:1rem;font-family:'IBM Plex Mono',monospace;font-size:.72rem;letter-spacing:.12em;text-transform:uppercase;color:#ff9a1f">Points lists</a>
+  <a class="getapp" href="https://play.google.com/store/apps/details?id=com.easybacnet.app&amp;utm_source=easybacnet.com&amp;utm_medium=nav&amp;utm_campaign=bacnet-cov-vs-polling" rel="noopener">Get the app</a>
+</header>
+
+<article>
+  <h1>What is BACnet COV, and when is it better than polling?</h1>
+  <p class="updated">Updated 4 November 2026</p>
+
+  <div class="answer">
+    <strong>Short answer</strong>
+    <p><strong>Polling</strong> means the client reads a point on a timer,
+    whether it changed or not. <strong>COV</strong> (Change of Value) means the client
+    subscribes once and the device sends a notification when the value moves by more than its
+    <code>COV_Increment</code>, or when a binary or multi-state point changes state. COV cuts
+    traffic, which matters most on slow MS/TP trunks, but it's optional in BACnet, devices
+    can hold only so many subscriptions, and subscriptions expire. When a head-end shows a
+    value that never moves, a lapsed COV subscription is a common reason.</p>
+  </div>
+
+
+  <h2>Polling</h2>
+  <p>The client sends ReadProperty (or ReadPropertyMultiple, several properties in one
+  request) for each point every so many seconds. Every BACnet device supports reads, so
+  polling always works. The cost is traffic: 400 points every 10 seconds is 40 reads a second
+  whether anything changed or not. On BACnet IP that rarely matters; on a 38,400-baud MS/TP
+  trunk shared by 40 controllers, it does.</p>
+
+  <h2>COV</h2>
+  <p>The client sends <em>SubscribeCOV</em> for an object, naming itself as the recipient, a
+  lifetime, and whether it wants confirmed or unconfirmed notifications. From then on the
+  device sends a notification carrying <code>Present_Value</code> and
+  <code>Status_Flags</code>:</p>
+  <ul>
+    <li>for <strong>analog</strong> objects, when the value moves by more than
+    <code>COV_Increment</code> since the last notification;</li>
+    <li>for <strong>binary and multi-state</strong> objects, on any change of state;</li>
+    <li>for any of them, when a status flag changes (into alarm, fault, overridden, out of
+    service).</li>
+  </ul>
+  <p><em>SubscribeCOVProperty</em> does the same for one named property, on devices that
+  support it.</p>
+
+  <h2>Lifetime and renewal</h2>
+  <p>A subscription runs for its lifetime in seconds, then the device drops it without
+  telling anyone. The client is expected to resubscribe before it runs out. A lifetime of 0
+  means "indefinite", but subscriptions are usually held in RAM and lost when the device
+  restarts, so a client that never renews stops getting updates after the first power
+  blip. That's the classic "the graphic says 72 and has said 72 since Tuesday" fault. A
+  good head-end renews on a schedule and falls back to polling when a subscription is
+  refused.</p>
+
+  <h2>COV_Increment</h2>
+  <p>On analog objects <code>COV_Increment</code> sets how far the value has to move before
+  a notification goes out. Too small, say 0.01 on a noisy duct static, and the device floods
+  the network. Too large, say 5 on a zone temperature, and the trend looks flat and the
+  graphic looks stuck. It's a property on the object, and on many devices it is writable.</p>
+
+  <h2>Why COV sometimes doesn't work</h2>
+  <ul>
+    <li><strong>The device doesn't support it.</strong> COV is optional. Check the device's
+    <a href="bacnet-pics-explained">PICS</a> for the <code>DS-COV-B</code> building
+    block.</li>
+    <li><strong>The device is out of subscription slots.</strong> Small controllers may hold
+    only a handful. When the head-end, an analytics platform and a second front end all
+    subscribe, the last one is refused.</li>
+    <li><strong>Notifications can't get back.</strong> They are sent to the address in the
+    subscription. Through NAT, a VPN or a firewall that allows your requests out but not
+    unsolicited packets back in, the subscription succeeds and nothing ever arrives.</li>
+    <li><strong>The subscription lapsed</strong> after a device restart, and the client never
+    renewed it.</li>
+  </ul>
+
+  <h2>Which one to use</h2>
+  <p>Integrators commonly use COV for points behind MS/TP routers and for status points that
+  rarely change, and poll fast-moving analogs on BACnet IP or anything on a device with weak
+  COV support. Many head-ends let you choose per device or per point. When a value looks
+  frozen, read it directly with a tool that polls. If the direct read shows a different
+  value, the device is fine and the head-end's subscription is the problem.</p>
+  <p><a href="../">Easy BACnet</a> doesn't subscribe to anything. It reads a point
+  when you open it or tap <strong>Refresh</strong>, so it leaves nothing behind in the
+  device, and it's a quick way to make that direct-read check.</p>
+
+  <div class="appcta">
+    <p><strong>Check it on your own network.</strong> Easy BACnet is a free Android app
+    that finds BACnet IP devices and reads their points in a couple of taps.</p>
+    <a class="btn" href="https://play.google.com/store/apps/details?id=com.easybacnet.app&amp;utm_source=easybacnet.com&amp;utm_medium=guide_cta&amp;utm_campaign=bacnet-cov-vs-polling" rel="noopener">Get it on Google Play</a>
+  </div>
+</article>
+  <nav class="more">
+    <h2>Related</h2>
+    <ul>
+      <li><a href="../guides/bacnet-pics-explained">How do I read a BACnet PICS?</a></li>
+      <li><a href="../guides/bacnet-mstp-troubleshooting">How do I troubleshoot a BACnet MS/TP trunk?</a></li>
+      <li><a href="../guides/read-bacnet-values-from-phone">How do I read BACnet values from a phone?</a></li>
+      <li><a href="../guides/bacnet-object-types-explained">BACnet object types explained</a></li>
+    </ul>
+  </nav>
+
+<footer>
+  <p>Published alongside <a href="../">Easy BACnet</a>, a
+  <a href="https://play.google.com/store/apps/details?id=com.easybacnet.app&amp;utm_source=easybacnet.com&amp;utm_medium=footer&amp;utm_campaign=bacnet-cov-vs-polling" rel="noopener">free Android app</a> that scans a building network for BACnet IP devices, reads and
+  commands their points, and exports the results as an Excel (.xlsx) spreadsheet.</p>
+  <p><a href="../#guides">All guides</a> &middot;
+  <a href="../bacnet-points-lists/">BACnet points lists by manufacturer</a> &middot;
+  <a href="../terms">Terms of use</a> &middot;
+  <a href="../privacy">Privacy policy</a></p>
+</footer>
+
+</body>
+</html>

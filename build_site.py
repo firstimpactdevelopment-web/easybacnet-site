@@ -14,6 +14,7 @@ BASE_URL below is the only thing that needs changing once the GitHub Pages
 URL is known. Everything else is relative.
 """
 
+import datetime
 import io
 import json
 import os
@@ -39,6 +40,16 @@ INDEXNOW_KEY = "e9a7c4f20b8d46139f5c1a7e63d02b8f"
 # Freshness signal. Bump when guide content is meaningfully revised.
 UPDATED = "2026-10-11"            # ISO, for JSON-LD and sitemap <lastmod>
 UPDATED_HUMAN = "11 October 2026"  # for the visible "Updated" line
+
+
+def human_date(iso):
+    """2026-11-04 -> 4 November 2026 (for the visible "Updated" line)."""
+    d = datetime.date.fromisoformat(iso)
+    return "%d %s %d" % (d.day, d.strftime("%B"), d.year)
+
+
+def guide_lastmod(g):
+    return g.get("updated") or g.get("published") or UPDATED
 
 
 def play_url(medium, campaign="site"):
@@ -233,7 +244,8 @@ def screenshot_block(slug, prefix):
     return '<div class="shotrow">%s</div>' % figs
 
 
-def page(slug, title, question, answer_html, body_html, related, description):
+def page(slug, title, question, answer_html, body_html, related, description,
+         published=None, updated=None):
     """One guide page: semantic HTML plus FAQPage JSON-LD."""
     prefix = "../" if slug.startswith("guides/") else ""
     rel = ""
@@ -253,7 +265,7 @@ def page(slug, title, question, answer_html, body_html, related, description):
     {
       "@type": "FAQPage",
       "datePublished": "%(pub)s",
-      "dateModified": "%(pub)s",
+      "dateModified": "%(mod)s",
       "mainEntity": [{
         "@type": "Question",
         "name": %(q)s,
@@ -264,8 +276,8 @@ def page(slug, title, question, answer_html, body_html, related, description):
       "@type": "Article",
       "headline": %(q)s,
       "datePublished": "%(pub)s",
-      "dateModified": "%(pub)s",
-      "mainEntityOfPage": "%(base)s/%(slug)s.html",
+      "dateModified": "%(mod)s",
+      "mainEntityOfPage": "%(base)s/%(slug)s",
       "image": "%(base)s/img/og-image.png",
       "author": { "@id": "%(base)s/#org" },
       "publisher": {
@@ -287,7 +299,8 @@ def page(slug, title, question, answer_html, body_html, related, description):
 }""" % {
         "q": jstr(html_module.unescape(question)),
         "a": jstr(html_module.unescape(strip_tags(answer_html))),
-        "pub": UPDATED,
+        "pub": published or UPDATED,
+        "mod": updated or published or UPDATED,
         "base": BASE_URL,
         "slug": slug,
     }
@@ -373,7 +386,7 @@ def page(slug, title, question, answer_html, body_html, related, description):
         "body": re.sub(r"\{\{fig:(\w+)\}\}", lambda m: diagrams.figure(m.group(1)), body_html),
         "rel": rel,
         "prefix": prefix,
-        "updated_h": UPDATED_HUMAN,
+        "updated_h": human_date(updated or published or UPDATED),
         "play_nav": play_url("nav", slug.split("/")[-1]),
         "play_cta": play_url("guide_cta", slug.split("/")[-1]),
         "play_footer": play_url("footer", slug.split("/")[-1]),
@@ -496,7 +509,7 @@ GUIDES.append(dict(
     <li><strong>Multi-state</strong> (Input, Output, Value): a short list of named
     states, such as Off / Low / High or Occupied / Unoccupied / Standby.</li>
   </ul>
-  <p>As a rule of thumb, <em>Input</em> is a wired sensor, <em>Output</em> a wired
+  <p>Roughly, <em>Input</em> is a wired sensor, <em>Output</em> a wired
   actuator and <em>Value</em> a software point, though gateways and equipment
   controllers bend that rule often. Outputs and many Values can be commanded; see
   <a href="bacnet-priority-and-stuck-overrides.html">BACnet priority and stuck overrides</a>
@@ -517,7 +530,9 @@ GUIDES.append(dict(
   <p>If someone has asked you for one, see
   <a href="vendor-asking-for-bacnet-information.html">what to send when a vendor
   asks for your BACnet information</a>. To pull one from a live system, see
-  <a href="how-to-find-your-bacnet-points-list.html">how to find your BACnet IP points list</a>.</p>
+  <a href="how-to-find-your-bacnet-points-list.html">how to find your BACnet IP points list</a>.
+  For packaged equipment, the manufacturer's own list is often in our
+  <a href="../bacnet-points-lists/index.html">free points list library</a>.</p>
 """,
     related=[
         ("bacnet-points-lists/index", "Free BACnet points lists by manufacturer"),
@@ -531,13 +546,13 @@ GUIDES.append(dict(
     slug="guides/how-to-find-your-bacnet-points-list",
     title="How do I find my BACnet IP points list? | Easy BACnet",
     question="How do I find my BACnet IP points list?",
-    description="Four ways to get a BACnet IP points list: contractor submittals, a BMS export, a network scan from your phone, or reading Object_List directly.",
-    answer_html="""<p>Four routes, roughly easiest first: ask your controls contractor
+    description="Five ways to get a BACnet IP points list: contractor submittals, a BMS export, the manufacturer's published list, a network scan, or reading Object_List.",
+    answer_html="""<p>Five routes, roughly easiest first: ask your controls contractor
     for the submittals or as-builts, export a point report from the BMS head-end,
-    scan the network with a BACnet IP discovery tool, or read the
-    <code>Object_List</code> property from each controller yourself. A scan is the one
-    that shows what's actually on the network today rather than what was drawn up at
-    the start of the job.</p>""",
+    look up the manufacturer's published list for the equipment, scan the network with a
+    BACnet IP discovery tool, or read the <code>Object_List</code> property from each
+    controller yourself. A scan is the one that shows what's actually on the network today
+    rather than what was drawn up at the start of the job.</p>""",
     body_html="""
   <h2>1. Ask the controls contractor</h2>
   <p>Whoever installed or services the BAS usually has a points list in the
@@ -553,7 +568,16 @@ GUIDES.append(dict(
   what the head-end has mapped, which is usually a subset: anything nobody brought
   into the front end won't be there.</p>
 
-  <h2>3. Scan the network</h2>
+  <h2>3. Look up the manufacturer's list</h2>
+  <p>Packaged equipment (rooftops, chillers, boilers, VRF gateways, drives) ships with a
+  fixed object list that the manufacturer publishes, usually in an integration guide
+  rather than anything called a points list. It tells you what each instance means, which
+  a scan can't. Our <a href="../bacnet-points-lists/index.html">free points list
+  library</a> has hundreds of them searchable by model or controller; see
+  <a href="find-bacnet-points-list-for-your-equipment.html">finding the points list for
+  your equipment</a> for what to search for when it isn't there.</p>
+
+  <h2>4. Scan the network</h2>
   <p>A scanning tool finds every BACnet IP device on the network you're connected to,
   then reads each one's list of points. It finds the undocumented controllers too.</p>
   <p>You need:</p>
@@ -573,7 +597,7 @@ GUIDES.append(dict(
   Results</strong>. It reads every point on each device it found and builds an Excel
   spreadsheet (<code>.xlsx</code>) you can email from the phone.</p>
 
-  <h2>4. Read Object_List directly</h2>
+  <h2>5. Read Object_List directly</h2>
   <p>If you're writing your own tooling: every device object has an
   <code>Object_List</code> property (property ID 76) listing every object on that
   device. Read array index 0 to get the count, then each index in turn, then
@@ -601,7 +625,7 @@ GUIDES.append(dict(
 
 GUIDES.append(dict(
     slug="guides/find-bacnet-points-list-for-your-equipment",
-    title="Find the BACnet Points List for Your Equipment | Easy BACnet",
+    title="Find a BACnet Points List by Equipment Model | Easy BACnet",
     question="How do I find the BACnet points list for my equipment?",
     description="Where a manufacturer's BACnet points list hides, how to tell which controller you have, and how to check the list against the live unit before mapping.",
     answer_html="""<p>Work out which <strong>controller</strong> the unit has, not just the
@@ -663,8 +687,9 @@ GUIDES.append(dict(
   </table>
   <p>A <strong>PICS</strong> (Protocol Implementation Conformance Statement) is not a
   points list. It says which BACnet services and object types the device supports,
-  usually with no instance numbers. If the manufacturer only publishes a PICS, the
-  device itself is your list: scan it.</p>
+  usually with no instance numbers (see <a href="bacnet-pics-explained.html">how to
+  read a PICS</a>). If the manufacturer only publishes a PICS, the device itself is your
+  list: scan it.</p>
   <p>If you call the rep, ask for the "BACnet integration guide" for the exact
   controller and software version. You'll get the right document faster than asking
   for "the points".</p>
@@ -2124,8 +2149,9 @@ GUIDES.append(dict(
     <li><strong>Vendor ID</strong> &mdash; the ASHRAE-assigned number for the manufacturer.</li>
   </ul>
   <p>The source address of the I-Am matters too. A device behind a BACnet router answers
-  through the router, so its reply comes from the router's IP with a network number and
-  MAC address inside the BACnet header.</p>
+  through the router, so its reply comes from the router's IP with a
+  <a href="bacnet-network-numbers-and-routers.html">network number</a> and MAC address
+  inside the BACnet header.</p>
 
   <h2>Why a scan sometimes finds nothing</h2>
   <p>Who-Is is a broadcast, and IP routers do not forward broadcasts, so a device on a
@@ -2170,11 +2196,14 @@ GUIDES.append(dict(
   address to the next, and only the holder may transmit. It works well when the trunk is
   healthy, but it limits throughput. A heavily loaded trunk (40 to 60 devices), a bad
   termination or a duplicate MAC address slows every device on it. That is part of why
-  reading a large MS/TP controller from the IP side takes a while.</p>
+  reading a large MS/TP controller from the IP side takes a while. When a trunk misbehaves,
+  work through the <a href="bacnet-mstp-troubleshooting.html">MS/TP troubleshooting
+  checklist</a>.</p>
 
   <h2>Addressing and how they meet</h2>
   <p>On MS/TP a device has a one-byte <strong>MAC address</strong> on its trunk (0&ndash;127
-  for masters), and the trunk has its own BACnet <strong>network number</strong>. A
+  for masters), and the trunk has its own BACnet
+  <a href="bacnet-network-numbers-and-routers.html"><strong>network number</strong></a>. A
   <strong>BACnet router</strong> (often built into the JACE or supervisory controller) joins
   the trunk to BACnet/IP. From the IP side each MS/TP device still has its own Device
   Instance and answers scans through the router. That is how Easy BACnet, which speaks BACnet
@@ -2190,7 +2219,8 @@ GUIDES.append(dict(
 """,
     related=[
         ("guides/does-easy-bacnet-support-mstp-rs485", "Does Easy BACnet support MS/TP or RS-485?"),
-        ("guides/who-is-i-am-explained", "BACnet Who-Is and I-Am explained"),
+        ("guides/bacnet-mstp-troubleshooting", "How do I troubleshoot a BACnet MS/TP trunk?"),
+        ("guides/bacnet-network-numbers-and-routers", "BACnet network numbers and routers"),
         ("guides/what-port-does-bacnet-use", "What port does BACnet IP use?"),
         ("guides/why-cant-i-find-my-bacnet-devices", "Why can't I find my BACnet IP devices?"),
     ],
@@ -2230,11 +2260,13 @@ GUIDES.append(dict(
   BBMD on each subnet, and the BBMDs need unicast 47808
   open between them. <a href="bacnet-mstp-vs-bacnet-ip.html">MS/TP</a> devices have no IP
   port; they sit on an RS-485 trunk and reach IP through a BACnet router. BACnet Secure
-  Connect (BACnet/SC) is different again: it runs over TLS on TCP, typically port 443, and
-  is not something Easy BACnet speaks.</p>
+  Connect (BACnet/SC) is different again: it runs over TLS on TCP, often port 443, and
+  is not something Easy BACnet speaks. See <a href="what-is-bacnet-sc.html">what is
+  BACnet/SC?</a></p>
 """,
     related=[
         ("guides/bacnet-mstp-vs-bacnet-ip", "BACnet MS/TP vs BACnet/IP"),
+        ("guides/what-is-bacnet-sc", "What is BACnet/SC, and is BACnet IP secure?"),
         ("guides/why-cant-i-find-my-bacnet-devices", "Why can't I find my BACnet IP devices?"),
     ],
 ))
@@ -2457,7 +2489,10 @@ GUIDES.append(dict(
 
   <h3>6. It really is down</h3>
   <p>Lost power, a pulled patch cable, a dead switch port, or an MS/TP trunk that has gone
-  quiet behind its router (open wire, missing termination, a shorted device). Check the
+  quiet behind its router (open wire, missing termination, a shorted device; see the
+  <a href="bacnet-mstp-troubleshooting.html">MS/TP checklist</a>). If routed devices come
+  and go across several trunks, ask whether two routers share a
+  <a href="bacnet-network-numbers-and-routers.html">network number</a>. Check the
   controller's power and link lights. A ping from a laptop on the same network shows
   whether the IP side is alive: see
   <a href="is-my-bacnet-device-online-ping-test.html">is my BACnet device online?</a></p>
@@ -2700,7 +2735,9 @@ GUIDES.append(dict(
   list between tools. If someone specifically asks for &ldquo;an EDE&rdquo;, they mean that
   layout. If they just say &ldquo;send me the points&rdquo;, a spreadsheet with clear names
   and values is usually what they want, and it can be reshaped into an EDE template later
-  if needed.</p>
+  if needed. For packaged equipment, the lists in our
+  <a href="../bacnet-points-lists/index.html">points list library</a> can each be
+  downloaded as an EDE file.</p>
 
   <div class="callout">
   <p>An export read from the live devices shows what the controllers actually contain
@@ -2842,7 +2879,8 @@ GUIDES.append(dict(
     not IT.</li>
     <li><strong>Missing a whole trunk?</strong> If the IP controllers show up but the VAVs on
     one trunk don't, suspect the router or that trunk (wiring, termination, a dead
-    controller pulling the bus down) before the app.</li>
+    controller pulling the bus down) before the app. See the
+    <a href="bacnet-mstp-troubleshooting.html">MS/TP troubleshooting checklist</a>.</li>
   </ul>
 
   <h2>Will the app ever do MS/TP directly?</h2>
@@ -3094,11 +3132,22 @@ GUIDES.append(dict(
     <tr><td><strong>BACnet IP</strong></td><td>BACnet in UDP over Ethernet, normally on <a href="what-port-does-bacnet-use.html">port 47808</a> (0xBAC0). What a phone can reach.</td></tr>
     <tr><td><strong><a href="bacnet-mstp-vs-bacnet-ip.html">MS/TP</a></strong></td><td>BACnet over an RS-485 twisted pair, common for VAVs and unit controllers. Devices are addressed by a MAC (0&ndash;127 for masters). A phone can't reach it directly.</td></tr>
     <tr><td><strong>BACnet router</strong></td><td>Connects BACnet networks, typically MS/TP trunks to BACnet IP, so routed devices can be reached from IP.</td></tr>
-    <tr><td><strong>Network number</strong></td><td>The BACnet number of a network segment (e.g. each MS/TP trunk). Routed devices are addressed by network number plus MAC.</td></tr>
+    <tr><td><strong><a href="bacnet-network-numbers-and-routers.html">Network number</a></strong></td><td>The BACnet number of a network segment (e.g. each MS/TP trunk). Routed devices are addressed by network number plus MAC. Must be unique on the site.</td></tr>
+    <tr><td><strong>Max_Master</strong></td><td>An MS/TP setting: the highest MAC a device will pass the token to. Set too low, higher-addressed controllers never talk. See <a href="bacnet-mstp-troubleshooting.html">MS/TP troubleshooting</a>.</td></tr>
     <tr><td><strong>BBMD</strong></td><td>BACnet/IP Broadcast Management Device. Forwards BACnet broadcasts such as Who-Is between IP subnets, and accepts foreign-device registrations.</td></tr>
     <tr><td><strong>Foreign device</strong></td><td>A tool on another subnet that registers with a BBMD so it can send and receive broadcasts through it.</td></tr>
     <tr><td><strong><a href="subnets.html">Subnet</a></strong></td><td>The IP range your phone is on. A broadcast scan only reaches devices on the same subnet unless a BBMD is used.</td></tr>
-    <tr><td><strong>BACnet/SC</strong></td><td>Secure Connect, a newer TLS-based BACnet transport. Easy BACnet doesn't speak it; it's BACnet IP only.</td></tr>
+    <tr><td><strong><a href="what-is-bacnet-sc.html">BACnet/SC</a></strong></td><td>Secure Connect, a newer TLS-based BACnet transport that runs through hubs with per-device certificates. Easy BACnet doesn't speak it; it's BACnet IP only.</td></tr>
+  </table>
+
+  <h2>Documents and data exchange</h2>
+  <table>
+    <tr><th>Term</th><th>What it means</th></tr>
+    <tr><td><strong><a href="bacnet-cov-vs-polling.html">COV</a></strong></td><td>Change of Value. A client subscribes and the device reports a point when it changes, instead of being polled on a timer.</td></tr>
+    <tr><td><strong><a href="bacnet-pics-explained.html">PICS</a></strong></td><td>Protocol Implementation Conformance Statement: the maker's list of which BACnet services, objects and network options a device supports. Not a points list.</td></tr>
+    <tr><td><strong>BIBB</strong></td><td>BACnet Interoperability Building Block, a named capability such as DS-RP-B (answers reads). A PICS lists them.</td></tr>
+    <tr><td><strong>BTL</strong></td><td>BACnet Testing Laboratories. A BTL listing means the device's claims were tested.</td></tr>
+    <tr><td><strong>EDE file</strong></td><td>Engineering Data Exchange: a fixed-column CSV for moving a point list between tools. See <a href="export-bacnet-points-to-csv.html">exporting points</a>.</td></tr>
   </table>
 
   <div class="callout">
@@ -3267,7 +3316,7 @@ GUIDES.append(dict(
     answer_html="""<p><strong>Reading doesn't change anything. Writing commands live
     equipment.</strong> A write to a commandable point sits in its
     <a href="bacnet-priority-and-stuck-overrides.html">priority array</a> and holds until
-    someone <a href="bacnet-priority-and-stuck-overrides.html">releases</a> it. If you know the
+    someone releases it. If you know the
     point, write at a sensible priority (normally 8) and release when you're done, it's routine
     work. Commanding points you don't understand on an occupied building can upset comfort,
     waste energy or trip equipment. Easy BACnet keeps write mode off until you turn it on, and
@@ -3317,7 +3366,7 @@ GUIDES.append(dict(
     space, a lab, a grow room or a data hall has immediate effects.</li>
     <li><strong>Equipment.</strong> Forcing a valve or damper against the sequence can waste
     energy, freeze a coil on a cold day, or short-cycle a compressor.</li>
-    <li><strong>Inputs.</strong> A write to an AI or BI is ignored unless Out_Of_Service is
+    <li><strong>Inputs.</strong> A write to an AI or BI is refused unless Out_Of_Service is
     true. Putting an input out of service to force it means the sequence runs on your fake
     value until someone sets it back.</li>
     <li><strong>The forgotten override.</strong> The command was fine; leaving it in place is
@@ -3331,12 +3380,472 @@ GUIDES.append(dict(
   multi-state pick act at once; a button and a release ask first), and the app re-reads the point afterwards so you see what actually
   happened. On an input it warns you that the write will be ignored unless the point is out of
   service. <a href="bacnet-priority-and-stuck-overrides.html">Release to Auto</a> is on the same
-  screen. The judgement is still yours.</p>
+  screen.</p>
 """,
     related=[
         ("guides/how-to-write-to-a-bacnet-point", "How to write to a BACnet point"),
         ("guides/bacnet-priority-and-stuck-overrides", "BACnet priority and stuck overrides"),
         ("guides/who-to-call-it-hvac-or-controls", "Who do I call &mdash; IT, HVAC, or controls/BMS?"),
+    ],
+))
+
+GUIDES.append(dict(
+    slug="guides/bacnet-mstp-troubleshooting",
+    title="BACnet MS/TP troubleshooting checklist | Easy BACnet",
+    question="How do I troubleshoot a BACnet MS/TP trunk?",
+    description="Devices dropping off an MS/TP trunk? Check wiring, termination, bias, baud rate, MAC addresses and Max_Master in that order. What each fault looks like.",
+    answer_html="""<p>Work from the wire up. Check polarity and the signal common, then
+    termination (120&nbsp;&Omega; at the two ends of the trunk and nowhere else) and bias
+    (one set, at most two). Then make sure every device runs the same baud rate, no two
+    devices share a MAC address, and <code>Max_Master</code> is at least the highest master
+    MAC on the trunk. Most dead or flaky trunks are one of those. The pattern of which devices
+    are missing usually tells you which.</p>""",
+    body_html="""
+  <h2>Read the symptom first</h2>
+  <p>Before you open a panel, look at <em>which</em> devices are missing and
+  <em>when</em>. A scan from the IP side through the trunk's BACnet router gives you the
+  list: every MS/TP device that answers shows up at the router's IP address with a network
+  number and MAC.</p>
+  <table>
+    <tr><th>What you see</th><th>Look at first</th></tr>
+    <tr><td>Whole trunk gone</td><td>The router's MS/TP port, a short or open at the start of the run, a device holding the bus</td></tr>
+    <tr><td>Every device past one point is missing</td><td>A break or bad splice at that point; termination in the wrong place</td></tr>
+    <tr><td>Devices with high MACs never appear, low ones are fine</td><td><code>Max_Master</code> set too low on one or more devices</td></tr>
+    <tr><td>Two devices trade places, or one appears and vanishes</td><td>Duplicate MAC address</td></tr>
+    <tr><td>Everything is there but slow, and drops out now and then</td><td>Baud mismatch on one device, reversed polarity, noise, or a trunk that is simply too long or too full</td></tr>
+    <tr><td>One device missing, the rest fine</td><td>That device: power, its MAC, its baud rate, its wiring at the terminal</td></tr>
+  </table>
+{{fig:network}}
+
+  <h2>1. Wiring</h2>
+  <ul>
+    <li><strong>Daisy chain, no stars.</strong> MS/TP is RS-485: one cable in, one cable
+    out at each controller. A tee or a star off a terminal block causes reflections that
+    show up as random errors.</li>
+    <li><strong>Polarity.</strong> One device with + and &minus; swapped won't just drop
+    off; it can disturb the whole trunk every time it tries to talk. Vendors label the
+    terminals differently (+/&minus;, A/B, Net+/Net&minus;), and A/B is not consistent
+    between brands, so go by the manual, not the letter.</li>
+    <li><strong>Signal common and shield.</strong> Run the reference conductor to every
+    device that has a terminal for it. Ground the shield at one point only, usually at the
+    router end, and keep it continuous through each device.</li>
+    <li><strong>Cable.</strong> Use the low-capacitance shielded twisted pair the vendor
+    specifies. Leftover thermostat cable or Cat5 pulled in a hurry is a common source of
+    trouble on longer runs.</li>
+  </ul>
+
+  <h2>2. Termination and bias</h2>
+  <p>Termination is a 120&nbsp;&Omega; resistor (or a jumper or switch on the controller)
+  at the two physical ends of the trunk. Not on every device, and not on stubs. Bias holds
+  the idle line in a known state; the trunk needs one set, often provided by the router,
+  and no more than two. Too many terminators or bias sets load the line down; none at all
+  lets it float. If two short segments each work alone but fail when joined, count the
+  terminators and bias jumpers first.</p>
+
+  <h2>3. Baud rate</h2>
+  <p>Every device on a trunk must run the same rate: usually 38,400 or 76,800 on newer
+  jobs, 9,600 or 19,200 on older ones, and some newer devices offer 115,200. A device on the
+  wrong rate doesn't just go missing; it sees garbage, may answer with garbage, and causes
+  errors for everyone. Some controllers auto-detect the baud rate at power-up and lock onto
+  whatever they hear first, so a trunk that was briefly wrong can stay wrong until those
+  devices are power-cycled.</p>
+
+  <h2>4. MAC addresses</h2>
+  <p>Masters use MAC 0&ndash;127; slaves, which never get the token, use 128&ndash;254.
+  Every MAC on one trunk must be unique. Two controllers on the same MAC answer for each
+  other, corrupt each other's replies and slow the trunk; the symptom is a device whose name
+  or Device ID changes between scans. MACs are usually set on DIP switches or rotary
+  switches, and a replaced controller is the usual culprit. Easy BACnet warns after a scan
+  when it sees two devices at the same network number and MAC.</p>
+  <p>The MAC is only local to the trunk. The <a href="bacnet-device-id-explained.html">Device
+  ID</a> is separate and has to be unique across the whole site; many integrators build it
+  from the network number and MAC so the two stay in step.</p>
+
+  <h2>5. Max_Master and Max_Info_Frames</h2>
+  <p>Each master passes the token to the next MAC it knows about, and now and then polls the
+  addresses above its own to see if anyone new has joined, but only up to its
+  <code>Max_Master</code> setting. If a device's Max_Master is 31 and there is a controller
+  at MAC 40, that controller may never be offered the token and never talks. Set Max_Master
+  at or above the highest master MAC on the trunk, on every device. The default of 127 always
+  works but wastes time polling empty addresses, so a tuned value speeds a small trunk
+  up.</p>
+  <p><code>Max_Info_Frames</code> is how many messages a device may send each time it holds
+  the token. Field controllers are fine at 1; the router or supervisory controller handles
+  traffic for the whole trunk and usually needs a higher value, or reads from the IP side
+  queue up behind it.</p>
+
+  <h2>6. Size and load</h2>
+  <p>RS-485 is good for about 4,000&nbsp;ft (1,200&nbsp;m) per segment and a limited number
+  of unit loads before you need a repeater. In practice, vendors recommend somewhere around
+  30 to 60 controllers per trunk depending on baud rate and how much each one is polled. A
+  trunk that has grown past that works, slowly, and falls over when something else goes
+  wrong. Splitting it onto a second router port is often the real fix.</p>
+
+  <h2>Tools that help</h2>
+  <ul>
+    <li><strong>A scan from the IP side</strong> through the router shows which MACs are
+    answering. <a href="../index.html">Easy BACnet</a>'s Browser Mode lists each routed
+    device with its network number and MAC, which makes the missing-above-MAC-40 pattern easy
+    to spot. It can't connect to the trunk directly; see
+    <a href="does-easy-bacnet-support-mstp-rs485.html">does Easy BACnet support
+    MS/TP?</a></li>
+    <li><strong>The router's diagnostics.</strong> Most routers and supervisory controllers
+    keep per-port counters: token losses, CRC and framing errors. Climbing CRC errors point to
+    wiring, noise or a baud mismatch.</li>
+    <li><strong>A USB-to-RS-485 adapter and an MS/TP capture tool</strong> on a laptop, to
+    watch the token go round and see which MAC is causing errors. Wireshark can decode MS/TP
+    captures.</li>
+    <li><strong>A meter.</strong> With power off, resistance between + and &minus; at the end
+    of a correctly terminated trunk reads around 60&nbsp;&Omega; (two 120s in parallel);
+    120 means one terminator is missing, 40 means there's a third.</li>
+  </ul>
+""",
+    related=[
+        ("guides/bacnet-mstp-vs-bacnet-ip", "BACnet MS/TP vs BACnet/IP"),
+        ("guides/bacnet-network-numbers-and-routers", "BACnet network numbers and routers"),
+        ("guides/does-easy-bacnet-support-mstp-rs485", "Does Easy BACnet support MS/TP or RS-485?"),
+        ("guides/bacnet-device-shows-offline", "Why does my BACnet IP device show offline?"),
+    ],
+))
+
+GUIDES.append(dict(
+    slug="guides/bacnet-network-numbers-and-routers",
+    title="BACnet network numbers and routers | Easy BACnet",
+    question="What is a BACnet network number, and what does a BACnet router do?",
+    description="Every BACnet network, each MS/TP trunk and each BACnet IP network, needs its own number. How routers use them and what a duplicate network number breaks.",
+    answer_html="""<p>A <strong>network number</strong> (1&ndash;65534) names one BACnet
+    network: one MS/TP trunk, or one BACnet IP network (a subnet and UDP port, plus any
+    subnets joined to it by BBMDs). A <strong>BACnet router</strong> joins networks and
+    forwards messages between them by number. Each number must be unique on the site, and
+    every router on the same network must use the same number for it. A duplicate makes
+    routed devices drop out or answer from the wrong place, and head-ends report it as a
+    router loop or duplicate network.</p>""",
+    body_html="""
+  <h2>Why BACnet has its own network numbers</h2>
+  <p>An IP router moves IP packets between subnets. It knows nothing about MS/TP trunks.
+  BACnet needs its own routing so a head-end on Ethernet can reach a VAV controller on an
+  RS-485 pair, and for that every BACnet network gets a number. A message to a routed device
+  carries the destination network number and the device's MAC on that network; routers pass
+  it along until it reaches the router attached to that network, which delivers it
+  locally.</p>
+{{fig:network}}
+
+  <h2>What counts as one network</h2>
+  <ul>
+    <li><strong>An MS/TP trunk</strong> is one network. Each router port with a trunk on it
+    needs its own number.</li>
+    <li><strong>A BACnet IP network</strong> is all the devices on one IP subnet and UDP
+    port, plus any other subnets tied in by BBMDs. Every router with a port on that BACnet
+    IP network must be configured with the same number for it.</li>
+    <li><strong>Field devices don't know their network number.</strong> It lives in the
+    routers. A VAV controller only knows its MAC and its Device ID.</li>
+  </ul>
+
+  <h2>What a router does</h2>
+  <p>Typically it's built into the supervisory controller (JACE, NAE/SNE, PXC, AS-P and so
+  on) or is a small standalone box in the panel. It has a BACnet IP side and one or more
+  MS/TP ports, each with its own network number. It announces the networks it can reach
+  with <em>I-Am-Router-To-Network</em>, passes a Who-Is down each trunk and the I-Ams back
+  up, and forwards reads and writes. To a tool on the IP side, every device behind it seems
+  to come from the router's IP address, with the trunk's network number and the device's MAC
+  in the BACnet header.</p>
+  <p>Not every supervisory controller routes. Many poll their trunks for their own use and
+  only republish selected points; those field controllers never appear in a scan. See
+  <a href="does-easy-bacnet-support-mstp-rs485.html">does Easy BACnet support MS/TP?</a></p>
+
+  <h2>When numbers clash</h2>
+  <p>The two common faults:</p>
+  <ul>
+    <li><strong>Two networks, one number.</strong> Two trunks on different routers were both
+    given network 2, often because each contractor started at 1 or a replacement router went
+    in with the old settings. Routers now have two paths to "network 2"; devices on one trunk
+    or the other disappear, or a read reaches the wrong controller.</li>
+    <li><strong>One network, two numbers.</strong> Two routers on the same BACnet IP subnet
+    call it by different numbers. Each one's idea of where things are disagrees with the
+    other's, and discovery through them gets erratic.</li>
+  </ul>
+  <p>Niagara and other head-ends flag these as router loops or duplicate network alarms. A
+  related fault, two routers both offering a path to the same trunk, isn't allowed by the
+  standard either: one network, one route.</p>
+
+  <h2>Numbering that holds up</h2>
+  <p>Write a plan down before the job and keep it with the as-builts. A common pattern is a
+  low number for the BACnet IP network and blocks per building or per supervisory controller
+  for trunks, such as 1001&ndash;1009 for the trunks on controller 1 in building 1. Many
+  integrators then build Device IDs from the network number and MAC, so device 14 on network
+  1003 becomes 100314, which keeps Device IDs unique too. See
+  <a href="bacnet-device-id-explained.html">BACnet Device IDs explained</a>.</p>
+
+  <h2>Checking from the IP side</h2>
+  <p>A scan on the BACnet IP network shows every routed device with its router's IP,
+  network number and MAC. In <a href="../index.html">Easy BACnet</a>, Browser Mode lists that
+  for each device, so you can see at a glance which trunks are behind which router, and
+  whether two routers are claiming the same network number. Changing network numbers is done
+  in the routers' own configuration tools, usually by the
+  <a href="who-to-call-it-hvac-or-controls.html">controls contractor</a>.</p>
+""",
+    related=[
+        ("guides/bacnet-mstp-vs-bacnet-ip", "BACnet MS/TP vs BACnet/IP"),
+        ("guides/bacnet-mstp-troubleshooting", "How do I troubleshoot a BACnet MS/TP trunk?"),
+        ("guides/bacnet-device-id-explained", "What is a BACnet Device ID?"),
+        ("guides/who-is-i-am-explained", "BACnet Who-Is and I-Am explained"),
+    ],
+))
+
+GUIDES.append(dict(
+    slug="guides/bacnet-cov-vs-polling",
+    title="BACnet COV vs polling explained | Easy BACnet",
+    question="What is BACnet COV, and when is it better than polling?",
+    description="COV lets a BACnet device report a value when it changes instead of being polled. How subscriptions, COV_Increment and lifetimes work, and what goes wrong.",
+    answer_html="""<p><strong>Polling</strong> means the client reads a point on a timer,
+    whether it changed or not. <strong>COV</strong> (Change of Value) means the client
+    subscribes once and the device sends a notification when the value moves by more than its
+    <code>COV_Increment</code>, or when a binary or multi-state point changes state. COV cuts
+    traffic, which matters most on slow MS/TP trunks, but it's optional in BACnet, devices
+    can hold only so many subscriptions, and subscriptions expire. When a head-end shows a
+    value that never moves, a lapsed COV subscription is a common reason.</p>""",
+    body_html="""
+  <h2>Polling</h2>
+  <p>The client sends ReadProperty (or ReadPropertyMultiple, several properties in one
+  request) for each point every so many seconds. Every BACnet device supports reads, so
+  polling always works. The cost is traffic: 400 points every 10 seconds is 40 reads a second
+  whether anything changed or not. On BACnet IP that rarely matters; on a 38,400-baud MS/TP
+  trunk shared by 40 controllers, it does.</p>
+
+  <h2>COV</h2>
+  <p>The client sends <em>SubscribeCOV</em> for an object, naming itself as the recipient, a
+  lifetime, and whether it wants confirmed or unconfirmed notifications. From then on the
+  device sends a notification carrying <code>Present_Value</code> and
+  <code>Status_Flags</code>:</p>
+  <ul>
+    <li>for <strong>analog</strong> objects, when the value moves by more than
+    <code>COV_Increment</code> since the last notification;</li>
+    <li>for <strong>binary and multi-state</strong> objects, on any change of state;</li>
+    <li>for any of them, when a status flag changes (into alarm, fault, overridden, out of
+    service).</li>
+  </ul>
+  <p><em>SubscribeCOVProperty</em> does the same for one named property, on devices that
+  support it.</p>
+
+  <h2>Lifetime and renewal</h2>
+  <p>A subscription runs for its lifetime in seconds, then the device drops it without
+  telling anyone. The client is expected to resubscribe before it runs out. A lifetime of 0
+  means "indefinite", but subscriptions are usually held in RAM and lost when the device
+  restarts, so a client that never renews stops getting updates after the first power
+  blip. That's the classic "the graphic says 72 and has said 72 since Tuesday" fault. A
+  good head-end renews on a schedule and falls back to polling when a subscription is
+  refused.</p>
+
+  <h2>COV_Increment</h2>
+  <p>On analog objects <code>COV_Increment</code> sets how far the value has to move before
+  a notification goes out. Too small, say 0.01 on a noisy duct static, and the device floods
+  the network. Too large, say 5 on a zone temperature, and the trend looks flat and the
+  graphic looks stuck. It's a property on the object, and on many devices it is writable.</p>
+
+  <h2>Why COV sometimes doesn't work</h2>
+  <ul>
+    <li><strong>The device doesn't support it.</strong> COV is optional. Check the device's
+    <a href="bacnet-pics-explained.html">PICS</a> for the <code>DS-COV-B</code> building
+    block.</li>
+    <li><strong>The device is out of subscription slots.</strong> Small controllers may hold
+    only a handful. When the head-end, an analytics platform and a second front end all
+    subscribe, the last one is refused.</li>
+    <li><strong>Notifications can't get back.</strong> They are sent to the address in the
+    subscription. Through NAT, a VPN or a firewall that allows your requests out but not
+    unsolicited packets back in, the subscription succeeds and nothing ever arrives.</li>
+    <li><strong>The subscription lapsed</strong> after a device restart, and the client never
+    renewed it.</li>
+  </ul>
+
+  <h2>Which one to use</h2>
+  <p>Integrators commonly use COV for points behind MS/TP routers and for status points that
+  rarely change, and poll fast-moving analogs on BACnet IP or anything on a device with weak
+  COV support. Many head-ends let you choose per device or per point. When a value looks
+  frozen, read it directly with a tool that polls. If the direct read shows a different
+  value, the device is fine and the head-end's subscription is the problem.</p>
+  <p><a href="../index.html">Easy BACnet</a> doesn't subscribe to anything. It reads a point
+  when you open it or tap <strong>Refresh</strong>, so it leaves nothing behind in the
+  device, and it's a quick way to make that direct-read check.</p>
+""",
+    related=[
+        ("guides/bacnet-pics-explained", "How do I read a BACnet PICS?"),
+        ("guides/bacnet-mstp-troubleshooting", "How do I troubleshoot a BACnet MS/TP trunk?"),
+        ("guides/read-bacnet-values-from-phone", "How do I read BACnet values from a phone?"),
+        ("guides/bacnet-object-types-explained", "BACnet object types explained"),
+    ],
+))
+
+GUIDES.append(dict(
+    slug="guides/what-is-bacnet-sc",
+    title="What is BACnet/SC (Secure Connect)? | Easy BACnet",
+    question="What is BACnet/SC, and is BACnet IP secure?",
+    description="Plain BACnet IP has no login and no encryption. What BACnet/SC adds (TLS, certificates, hubs), what it changes on site, and how to protect BACnet IP now.",
+    answer_html="""<p><strong>Plain BACnet IP has no security of its own.</strong> Anything on
+    the same network that speaks BACnet can read every point and command any writable one,
+    with no password and nothing encrypted. <strong>BACnet Secure Connect
+    (BACnet/SC)</strong> fixes that by carrying BACnet over TLS-encrypted WebSocket
+    connections, with every device holding a certificate issued for that site and talking
+    through a hub instead of by broadcast. Most installed systems are still BACnet IP and
+    MS/TP, so for now the protection is a separate controls network and tight firewall
+    rules.</p>""",
+    body_html="""
+  <h2>What plain BACnet IP leaves open</h2>
+  <p>BACnet IP is UDP on <a href="what-port-does-bacnet-use.html">port 47808</a>. A device
+  answers any request that reaches it. There is no user, no password and no encryption, so
+  the security is entirely in who can reach the network. An optional security layer was
+  added to the standard years ago but was rarely implemented. That's why a phone plugged
+  into the controls switch can scan and read a whole building, and why the same is true for
+  anyone else who gets onto that network.</p>
+
+  <h2>How BACnet/SC works</h2>
+  <ul>
+    <li><strong>TLS over WebSockets.</strong> Each device opens an encrypted connection,
+    over TCP, to a <strong>hub</strong>. The hub passes messages between devices. A site can
+    have a primary and a failover hub, and devices that support it can also connect to each
+    other directly.</li>
+    <li><strong>Certificates.</strong> Every device has its own operational certificate,
+    signed by a certificate authority set up for that site, and only accepts connections from
+    devices with certificates from the same issuer. These are private site certificates, not
+    the public ones a website uses, and they have expiry dates that have to be managed.</li>
+    <li><strong>No broadcasts.</strong> A Who-Is goes to the hub, which hands it to every
+    connected node. Nothing depends on IP broadcasts, so SC crosses routers, VPNs and NAT
+    without BBMDs.</li>
+    <li><strong>Same BACnet above.</strong> Objects, properties, priorities and services are
+    unchanged. SC is a new data link, like BACnet IP or MS/TP, and BACnet routers join SC
+    networks to IP and MS/TP ones.</li>
+  </ul>
+
+  <h2>What changes on site</h2>
+  <ul>
+    <li><strong>Firewalls get simpler.</strong> Nodes make outbound TCP connections to the
+    hub's address and port (often 443, set by the site). No inbound UDP, no broadcast
+    forwarding.</li>
+    <li><strong>Commissioning gets an extra job.</strong> Someone has to run the certificate
+    authority, issue a certificate to every device, and renew them before they expire.
+    Agree who owns that, IT or the controls contractor, before the job starts.</li>
+    <li><strong>Your tools need a certificate.</strong> A BACnet IP scanner can't see an SC
+    network; a tool has to be given its own certificate to join. Mixed sites, with an SC
+    backbone between supervisory controllers and BACnet IP or MS/TP underneath, are common,
+    and the IP and MS/TP parts below the router stay as open as before.</li>
+  </ul>
+  <p><a href="../index.html">Easy BACnet</a> is BACnet IP only and doesn't connect to
+  BACnet/SC networks.</p>
+
+  <h2>Protecting BACnet IP today</h2>
+  <ul>
+    <li><strong>Keep controls on their own VLAN or network</strong>, not the office or guest
+    network. See <a href="subnets.html">what is a subnet?</a></li>
+    <li><strong>Firewall between VLANs.</strong> Allow UDP 47808 only between the hosts
+    that need it: head-end, supervisory controllers, BBMDs.</li>
+    <li><strong>Never put BACnet IP on the internet.</strong> Search engines that index
+    exposed devices find thousands of BACnet controllers answering from public addresses.
+    Remote access goes through a VPN you can turn off per user.</li>
+    <li><strong>Watch foreign-device registration.</strong> A BBMD that accepts foreign
+    devices from anywhere lets a remote host join the network. Restrict it to known
+    addresses where the BBMD allows it.</li>
+    <li><strong>Lock down the head-end and supervisory controllers.</strong> Their web and
+    workstation logins are the real front door: change default passwords and keep them
+    patched.</li>
+  </ul>
+""",
+    related=[
+        ("guides/what-port-does-bacnet-use", "What port does BACnet IP use?"),
+        ("guides/is-it-safe-to-write-to-bacnet", "Is it safe to write to a BACnet point?"),
+        ("guides/subnets", "Why am I on the wrong network even though I'm plugged into the switch?"),
+        ("guides/what-is-bacnet", "What is BACnet?"),
+    ],
+))
+
+GUIDES.append(dict(
+    slug="guides/bacnet-pics-explained",
+    title="How to read a BACnet PICS | Easy BACnet",
+    question="What is a BACnet PICS, and how do I read one?",
+    description="A PICS says which BACnet services, objects and network options a device supports. How to read profiles and BIBBs, and what to check before you buy or integrate.",
+    answer_html="""<p>A <strong>PICS</strong> (Protocol Implementation Conformance
+    Statement) is the manufacturer's declaration of what BACnet a device supports: its device
+    profile (B-BC, B-AAC, B-ASC and so on), the BIBBs or building blocks it implements, the
+    object types it has and which properties are writable, its data links and baud rates,
+    whether it supports segmentation, and whether it can act as a router or BBMD. It tells you
+    whether a device <em>can</em> integrate the way you want. It is not a
+    <a href="find-bacnet-points-list-for-your-equipment.html">points list</a>: it rarely
+    names a single point.</p>""",
+    body_html="""
+  <h2>Where to find one</h2>
+  <p>Search the manufacturer's site for the product name plus "PICS". For products that have
+  been tested by the BACnet Testing Laboratories (BTL), the BACnet International product
+  catalog lists the PICS alongside the listing, and a BTL listing means the claims were
+  tested rather than just written down. The format comes from Annex A of the BACnet standard,
+  so most PICS read the same whoever wrote them.</p>
+
+  <h2>The sections, and what to look for</h2>
+  <table>
+    <tr><th>Section</th><th>What it tells you</th></tr>
+    <tr><td>Product and revision</td><td>Model, firmware, and the BACnet protocol revision it claims. Match it to the firmware actually installed.</td></tr>
+    <tr><td>Standardized device profile</td><td>The class of device: B-BC, B-AAC, B-ASC, B-SA, B-SS, B-OWS and others.</td></tr>
+    <tr><td>BIBBs supported</td><td>The real detail: which services it handles, as client (A) or server (B).</td></tr>
+    <tr><td>Object types</td><td>Which object types it has, whether it can create or delete them, and which properties are writable or optional.</td></tr>
+    <tr><td>Data link layers</td><td>BACnet IP, MS/TP (with the baud rates it supports), BACnet/SC, Ethernet and so on.</td></tr>
+    <tr><td>Segmentation</td><td>Whether it can send or receive segmented messages, and the window size.</td></tr>
+    <tr><td>Networking options</td><td>Router, BBMD, foreign device registration.</td></tr>
+    <tr><td>Character sets</td><td>Usually UTF-8 or ANSI X3.4. Matters for point names in other languages.</td></tr>
+  </table>
+
+  <h2>Device profiles in one line each</h2>
+  <ul>
+    <li><strong>B-BC</strong> (Building Controller): supervisory or plant controller;
+    scheduling, alarming, trending, usually routing.</li>
+    <li><strong>B-AAC</strong> (Advanced Application Controller): a programmable field
+    controller that can also handle alarms and schedules.</li>
+    <li><strong>B-ASC</strong> (Application Specific Controller): built for one job, such as
+    a VAV box or a unit controller; mostly shares data.</li>
+    <li><strong>B-SA / B-SS</strong> (Smart Actuator / Smart Sensor): the smallest devices,
+    a few points each.</li>
+    <li><strong>B-OWS</strong> (Operator Workstation): the front end.</li>
+  </ul>
+  <p>A profile sets the minimum. A B-ASC can support far more than B-ASC requires, so read the
+  BIBB list rather than stopping at the profile box.</p>
+
+  <h2>Reading BIBBs</h2>
+  <p>A BIBB name has three parts: the area, the service, and A or B. <code>DS-RP-B</code> is
+  Data Sharing, ReadProperty, server side: the device answers reads. <code>DS-RP-A</code>
+  would mean it can read other devices. The ones that come up most:</p>
+  <table>
+    <tr><th>BIBB</th><th>Means the device can&hellip;</th></tr>
+    <tr><td>DS-RP-B / DS-WP-B</td><td>answer reads / accept writes</td></tr>
+    <tr><td>DS-RPM-B / DS-WPM-B</td><td>answer ReadPropertyMultiple / WritePropertyMultiple, which head-ends use to poll efficiently</td></tr>
+    <tr><td>DS-COV-B</td><td>accept <a href="bacnet-cov-vs-polling.html">COV subscriptions</a></td></tr>
+    <tr><td>DM-DDB-B</td><td>answer Who-Is with I-Am (<a href="who-is-i-am-explained.html">discovery</a>)</td></tr>
+    <tr><td>DM-DOB-B</td><td>answer Who-Has (find an object by name or ID)</td></tr>
+    <tr><td>DM-DCC-B / DM-RD-B</td><td>accept DeviceCommunicationControl / ReinitializeDevice</td></tr>
+    <tr><td>DM-TS-B / DM-UTC-B</td><td>accept time synchronization (local / UTC)</td></tr>
+    <tr><td>AE-N-I-B</td><td>generate alarm and event notifications</td></tr>
+    <tr><td>SCHED-I-B / T-VMT-I-B</td><td>hold its own schedules / trend logs</td></tr>
+  </table>
+
+  <h2>Questions a PICS answers before you commit</h2>
+  <ul>
+    <li><strong>Will the head-end be able to use COV?</strong> Look for DS-COV-B.</li>
+    <li><strong>Can it be commanded the way the sequence needs?</strong> Check DS-WP-B and
+    whether Present_Value on its Value objects is writable, and whether they have a priority
+    array.</li>
+    <li><strong>Will it work on this trunk?</strong> Check the MS/TP baud rates against the
+    trunk you're putting it on.</li>
+    <li><strong>Will big reads work?</strong> No segmentation means a head-end has to read
+    long lists a piece at a time.</li>
+    <li><strong>Does it route?</strong> If you need its MS/TP devices visible on BACnet IP,
+    the networking section has to say router.</li>
+  </ul>
+  <p>For the points themselves, use the manufacturer's integration guide, the free
+  <a href="../bacnet-points-lists/index.html">points list library</a>, or scan the device: a
+  scan reads its actual object list. See
+  <a href="how-to-find-your-bacnet-points-list.html">how to find your BACnet IP points
+  list</a>.</p>
+""",
+    related=[
+        ("guides/find-bacnet-points-list-for-your-equipment", "How do I find the BACnet points list for my equipment?"),
+        ("guides/bacnet-cov-vs-polling", "What is BACnet COV, and when is it better than polling?"),
+        ("guides/bacnet-object-types-explained", "BACnet object types explained"),
+        ("bacnet-points-lists/index", "Free BACnet points lists by manufacturer"),
     ],
 ))
 
@@ -3367,6 +3876,7 @@ GUIDE_GROUPS = [
         "bacnet-device-shows-offline",
         "duplicate-bacnet-device-id",
         "does-easy-bacnet-support-mstp-rs485",
+        "bacnet-mstp-troubleshooting",
         "who-to-call-it-hvac-or-controls",
     ]),
     ("Writing and overrides", [
@@ -3387,6 +3897,10 @@ GUIDE_GROUPS = [
         "who-is-i-am-explained",
         "what-port-does-bacnet-use",
         "bacnet-mstp-vs-bacnet-ip",
+        "bacnet-network-numbers-and-routers",
+        "bacnet-cov-vs-polling",
+        "bacnet-pics-explained",
+        "what-is-bacnet-sc",
     ]),
 ]
 
@@ -3868,7 +4382,8 @@ footer a{color:var(--mut); text-decoration:underline}
     <a href="bacnet-points-lists/equipment/cooling-towers/index.html">Cooling towers</a> &middot;
     <a href="bacnet-points-lists/equipment/drives-pumps/index.html">VFDs &amp; pumps</a> &middot;
     <a href="bacnet-points-lists/equipment/valves-actuators/index.html">Valves &amp; actuators</a> &middot;
-    <a href="bacnet-points-lists/equipment/terminal-units/index.html">VAV &amp; fan coils</a></p>
+    <a href="bacnet-points-lists/equipment/terminal-units/index.html">VAV &amp; fan coils</a> &middot;
+    <a href="bacnet-points-lists/equipment/sensors-thermostats/index.html">Sensors &amp; meters</a></p>
   </div>
 </section>
 
@@ -3926,6 +4441,13 @@ def ping_indexnow(urls):
         print("IndexNow: ping skipped/failed — %s" % e)
 
 
+# Per-guide dates (JSON-LD, visible "Updated" line and sitemap lastmod).
+# Guides not listed here keep UPDATED. Add a published=/updated= key to a
+# GUIDES entry instead when touching a guide in future.
+GUIDES_NEW_20261104 = ['bacnet-cov-vs-polling', 'bacnet-mstp-troubleshooting', 'bacnet-network-numbers-and-routers', 'bacnet-pics-explained', 'find-bacnet-points-list-for-your-equipment', 'what-is-bacnet-sc']
+GUIDES_EDITED_20261104 = ['bacnet-device-shows-offline', 'bacnet-glossary', 'bacnet-mstp-vs-bacnet-ip', 'does-easy-bacnet-support-mstp-rs485', 'export-bacnet-points-to-csv', 'how-to-find-your-bacnet-points-list', 'is-it-safe-to-write-to-bacnet', 'what-is-a-bacnet-points-list', 'what-port-does-bacnet-use', 'who-is-i-am-explained']
+
+
 def check_lengths():
     """Warn (don't fail) when a title or meta description drifts out of range."""
     rows = [(g["slug"], g["title"], g["description"]) for g in GUIDES]
@@ -3941,11 +4463,18 @@ def check_lengths():
 def main(ping=False):
     check_lengths()
     for g in GUIDES:
+        name = g["slug"].split("/")[-1]
+        if name in GUIDES_NEW_20261104:
+            g.setdefault("published", "2026-11-04")
+        elif name in GUIDES_EDITED_20261104:
+            g.setdefault("updated", "2026-11-04")
+    for g in GUIDES:
         write(
             g["slug"] + ".html",
             page(
                 g["slug"], g["title"], g["question"], g["answer_html"],
                 g["body_html"], g["related"], g["description"],
+                g.get("published"), g.get("updated"),
             ),
         )
 
@@ -4009,8 +4538,12 @@ def main(ping=False):
             + lib_paths)
     sm = ['<?xml version="1.0" encoding="UTF-8"?>',
           '<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">']
+    lastmod = {g["slug"] + ".html": guide_lastmod(g) for g in GUIDES}
+    lastmod.update(points_library.LASTMOD)
+    lastmod["index.html"] = max(lastmod.values())
     for u in urls:
-        sm.append("  <url><loc>%s/%s</loc><lastmod>%s</lastmod></url>" % (BASE_URL, u, UPDATED))
+        sm.append("  <url><loc>%s/%s</loc><lastmod>%s</lastmod></url>"
+                  % (BASE_URL, u, lastmod.get(u, UPDATED)))
     sm.append("</urlset>")
     write("sitemap.xml", "\n".join(sm) + "\n")
 
