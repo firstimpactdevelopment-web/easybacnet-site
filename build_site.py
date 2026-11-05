@@ -593,7 +593,113 @@ GUIDES.append(dict(
     related=[
         ("bacnet-points-lists/index", "Free BACnet points lists by manufacturer"),
         ("guides/what-is-a-bacnet-points-list", "What is a BACnet IP points list?"),
+        ("guides/find-bacnet-points-list-for-your-equipment", "How do I find the BACnet points list for my equipment?"),
         ("guides/why-cant-i-find-my-bacnet-devices", "Why can't I find my BACnet IP devices?"),
+        ("guides/vendor-asking-for-bacnet-information", "A vendor asked for my BACnet information &mdash; what do I send?"),
+    ],
+))
+
+GUIDES.append(dict(
+    slug="guides/find-bacnet-points-list-for-your-equipment",
+    title="Find the BACnet Points List for Your Equipment | Easy BACnet",
+    question="How do I find the BACnet points list for my equipment?",
+    description="Where a manufacturer's BACnet points list hides, how to tell which controller you have, and how to check the list against the live unit before mapping.",
+    answer_html="""<p>Work out which <strong>controller</strong> the unit has, not just the
+    unit model, because the points list belongs to the controller. Then look for that
+    controller's integration guide or protocol document, not the brochure or the IOM
+    front section. Our <a href="../bacnet-points-lists/index.html">free points list
+    library</a> already has hundreds of them re-typed, searchable by model, controller or
+    document number. Whatever list you end up with, check it against the live unit
+    before you map anything.</p>""",
+    body_html="""
+  <h2>1. Identify the controller, not just the unit</h2>
+  <p>The same rooftop or chiller can ship with different controllers, and each one
+  has its own object list. A Carrier 48/50LC can have SystemVu or, on the VAV "B"
+  models, a VAV-RTU Open board. The two lists share almost nothing. Get these off the
+  unit before you start searching:</p>
+  <ul>
+    <li><strong>Full model number</strong> from the nameplate, including the
+    revision or vintage letter. Daikin and York lists change between vintages.</li>
+    <li><strong>Controller name</strong> from the board, the display or the start-up
+    sheet: SystemVu, Symbio 800, MicroTech, UPC Open, Prodigy, CORE and so on.</li>
+    <li><strong>Firmware or software version</strong> if the display shows it. Newer
+    software often adds points, and sometimes renumbers them.</li>
+    <li><strong>Any gateway</strong> between the unit and the network. If BACnet
+    comes from a ProtoNode, an Intesis box or a VRF gateway, the list belongs to that
+    gateway and often numbers points per unit.</li>
+  </ul>
+
+  <h2>2. Search the library first</h2>
+  <p>The <a href="../bacnet-points-lists/index.html">BACnet points list library</a>
+  covers everything from rooftops and chillers to VAV boxes, boilers, drives,
+  humidifiers and meters. Type a model number, a controller name or a manufacturer
+  document number into the search box. Other names a product is sold under are
+  searchable too, so <code>48LC</code>, <code>SystemVu</code> and
+  <code>S-VU-LC-4-26-06T</code> all land on the same list. You can also browse by
+  manufacturer or by <a href="../bacnet-points-lists/equipment/rooftop-ahu-doas/index.html">equipment type</a>.</p>
+  <p>Each list page gives you:</p>
+  <ul>
+    <li>Every object with its type, instance, name, units and read/write access,
+    filterable by object type and access.</li>
+    <li>A short set of <strong>minimum points to map</strong> (enable, mode,
+    setpoints, key temperatures, alarm), plus notes on network setup and things
+    that catch integrators out.</li>
+    <li>An <strong>object ID lookup</strong>, handy when a front end shows you only
+    <code>AV 7012</code> and you need to know what it is.</li>
+    <li>Downloads as CSV and as an EDE file for tools that import one.</li>
+    <li>A link straight to the manufacturer's own PDF, so you can check the source.</li>
+  </ul>
+
+  <h2>3. If it isn't there, know what the document is called</h2>
+  <p>Manufacturers rarely call it a "points list". Search their documentation site
+  for these instead:</p>
+  <table>
+    <tr><th>Look for</th><th>Where you'll see it</th></tr>
+    <tr><td>Integration guide</td><td>Carrier i-Vu Open controllers, Trane Tracer and Symbio, many gateways.</td></tr>
+    <tr><td>Protocol information / protocol data</td><td>Daikin Applied (ED 15xxx and ED 19xxx documents).</td></tr>
+    <tr><td>Appendix in the controls or start-up manual</td><td>Packaged rooftops: the table is often hundreds of pages in, titled "BACnet Points List".</td></tr>
+    <tr><td>Start-up guide for a ProtoNode or FieldServer</td><td>Boilers, water heaters, pumps and lighting panels that use an add-on gateway.</td></tr>
+    <tr><td>Object list / data point list</td><td>European makers, often in the BMS or communication manual.</td></tr>
+  </table>
+  <p>A <strong>PICS</strong> (Protocol Implementation Conformance Statement) is not a
+  points list. It says which BACnet services and object types the device supports,
+  usually with no instance numbers. If the manufacturer only publishes a PICS, the
+  device itself is your list: scan it.</p>
+  <p>If you call the rep, ask for the "BACnet integration guide" for the exact
+  controller and software version. You'll get the right document faster than asking
+  for "the points".</p>
+
+  <h2>4. Check the list against the live unit</h2>
+  <p>A published list tells you what the controller <em>can</em> expose. The unit on
+  the roof exposes what was ordered and configured. Points for options that aren't
+  installed are often missing or out of service, and some controllers switch between
+  English and metric units with a single setting.</p>
+  <p><a href="../index.html">Easy BACnet</a> does this check from an Android phone.
+  Connect to the controls network, scan, open the device and you'll see every object
+  it actually has, with live values. Compare that with the published list, then
+  export the result to a spreadsheet for whoever is doing the mapping. If the scan
+  finds nothing, see <a href="why-cant-i-find-my-bacnet-devices.html">why can't I find
+  my BACnet IP devices</a>.</p>
+
+  <h2>Things that trip people up</h2>
+  <ul>
+    <li><strong>Wrong revision.</strong> Match the document's software version to the
+    unit's. A newer list on an older controller shows points that don't exist.</li>
+    <li><strong>Gateway formulas.</strong> Multi-unit gateways (VRF, boiler cascades,
+    ProtoNodes) number each unit's points with a formula. The document prints one
+    unit; work out the rest from the formula, not by guessing.</li>
+    <li><strong>Network inputs need refreshing.</strong> Many controllers drop a
+    BMS-written value back to its own default if it isn't rewritten within a
+    timeout. The library notes say so where the manufacturer documents it.</li>
+    <li><strong>Writing is not free.</strong> Read
+    <a href="is-it-safe-to-write-to-bacnet.html">is it safe to write to BACnet</a>
+    before commanding anything off a list you just found.</li>
+  </ul>
+""",
+    related=[
+        ("bacnet-points-lists/index", "Free BACnet points lists by manufacturer"),
+        ("guides/what-is-a-bacnet-points-list", "What is a BACnet IP points list?"),
+        ("guides/how-to-find-your-bacnet-points-list", "How do I find my BACnet IP points list?"),
         ("guides/vendor-asking-for-bacnet-information", "A vendor asked for my BACnet information &mdash; what do I send?"),
     ],
 ))
@@ -3249,6 +3355,7 @@ GUIDE_GROUPS = [
         "export-bacnet-points-to-csv",
         "read-bacnet-values-from-phone",
         "how-to-find-your-bacnet-points-list",
+        "find-bacnet-points-list-for-your-equipment",
         "vendor-asking-for-bacnet-information",
         "test-bacnet-device-without-bms",
     ]),
