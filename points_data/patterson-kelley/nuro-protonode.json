@@ -1,0 +1,670 @@
+{
+  "manufacturer": "Patterson-Kelley",
+  "manufacturer_slug": "patterson-kelley",
+  "model": "NURO boiler control (ProtoNode FPC-N34/N35)",
+  "model_slug": "nuro-protonode",
+  "aliases": [
+    "NURO",
+    "P-K NURO",
+    "Patterson-Kelley NURO",
+    "ProtoNode FPC-N34"
+  ],
+  "equipment_type": "Boiler controller gateway",
+  "applies_to": "Patterson-Kelley boilers with the NURO control (SOLA based), read through the ProtoNode FPC-N34 / FPC-N35.",
+  "summary": "The ProtoNode maps the Patterson-Kelley NURO boiler control to 64 objects: temperatures, burner I/O bit maps, active setpoints, demand source and status, boiler state, flame, fan, firing rate, error code and type, counters, relay and safety input states, plus BMS demand, setpoint and heartbeat objects and BMS-supplied sensor values.",
+  "bacnet_transport": [
+    "BACnet IP",
+    "BACnet MS/TP"
+  ],
+  "firmware": null,
+  "default_device_instance": null,
+  "access_inferred": true,
+  "notes": [
+    "Appendix B.3 NURO of the guide (pages 43-45).",
+    "The table has no read/write column; access is inferred from the N2 type (AO/DO = writable).",
+    "The guide is hosted on weil-mclain.com and prints no boiler brand (only the ProtoNode vendor code Harsco12); ENVI, LOVE and NURO are listed here under Patterson-Kelley.",
+    "Code meanings for state, demand source and error type come from the notes under the table."
+  ],
+  "integration": {
+    "summary": "Program the NURO to take its demand and setpoint from the BMS, then write BMS CH Demand (BV 28) and BMS CH Setpoint (AV 27) and keep the BMS Heartbeat (AV 53) alternating. Read boiler state, supply temperature, firing rate, error type and error code.",
+    "minimum_points": [
+      {
+        "ref": "BV 28",
+        "name": "BMS CH Demand",
+        "why": "CH demand from the BMS"
+      },
+      {
+        "ref": "AV 27",
+        "name": "BMS CH Setpoint",
+        "why": "CH setpoint from the BMS"
+      },
+      {
+        "ref": "AV 53",
+        "name": "BMS Heartbeat",
+        "why": "Alternate 43981 and 56506 within the timeout"
+      },
+      {
+        "ref": "AI 18",
+        "name": "Boiler State",
+        "why": "Boiler state; 10 = run, 2 = lockout"
+      },
+      {
+        "ref": "AI 1",
+        "name": "Supply Temperature",
+        "why": "Supply temperature, °F (1 decimal)"
+      },
+      {
+        "ref": "AI 21",
+        "name": "Firing Rate",
+        "why": "Firing rate"
+      },
+      {
+        "ref": "AI 23",
+        "name": "Error Type",
+        "why": "Error type; 0 = none, 1 = lockout"
+      },
+      {
+        "ref": "AI 22",
+        "name": "Error Code",
+        "why": "Error code"
+      }
+    ],
+    "enable": "The NURO control must be programmed to take its demand and setpoints from the BMS. Then BV 28 BMS CH Demand and AV 27 BMS CH Setpoint run central heat; AV 57 BMS DHW Demand with AV 30/31 run DHW. BV 26 / BV 29 are the CH and DHW boiler control objects.",
+    "heartbeat": "AV 53 BMS Heartbeat: the BMS must alternate between 0xABCD (43981) and 0xDCBA (56506) within the NURO BMSHeartbeatTimeoutPeriod. If it stops, the NURO treats BMS comms as lost; it can be set to drop the BMS demand, and BMS-supplied temperatures go to 33024 (Sensor Open).",
+    "remote_sensors": "Header, outdoor, analog input and DHW values from the BMS use a pair of objects each (AI 54-56/58 and AV 61-64). The heartbeat must be running; on power-up or heartbeat loss these read 33024 (Sensor Open), and out-of-range values become 34048 (Sensor Not Reliable).",
+    "setup": [
+      "ProtoNode FPC-N34 (BACnet MS/TP, BACnet IP, Metasys N2, Modbus TCP) or FPC-N35 (LonWorks).",
+      "Boiler side: Modbus RTU, 9600, 19200 or 38400 baud, 1 or 2 stop bits, no parity, 8 data bits; Node-ID 1-255 per boiler. Mixed ENVI/LOVE/NURO networks must run at 9600.",
+      "BACnet device instance = Node_Offset (default 50,000) + Modbus Node-ID."
+    ],
+    "gotchas": [
+      "Temperatures are °F with one decimal; 32768 = sensor short, 33024 = open, 33536/33792 = out of range, 34048 = not reliable.",
+      "The guide's note 13 says AI 54 is for writing and AV 61 for reading the BMS header temperature, the opposite of what the N2 types suggest; check on site.",
+      "AI 12/13 are legacy x10 bit maps; use AI 59/60 or BI 32-52 for new work."
+    ]
+  },
+  "source": {
+    "title": "ProtoNode FPC-N34 and FPC-N35 Startup Guide For Interfacing Products: ENVI, LOVE, NURO, Appendix B.3 NURO",
+    "doc_number": "Document Revision 14.B",
+    "revision_date": "2016-04 (effective date)",
+    "url": "https://www.weil-mclain.com/wp-content/uploads/Nuro-Controller-ProtoNode-Startup-Guide_1.pdf"
+  },
+  "points": [
+    {
+      "type": "AI",
+      "instance": 1,
+      "name": "Supply Temperature",
+      "description": "Supply temperature, °F (1 decimal); 32768+ = sensor fault",
+      "units": "",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AI",
+      "instance": 2,
+      "name": "Return Temperature",
+      "description": "",
+      "units": "",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AI",
+      "instance": 3,
+      "name": "Stack Temperature",
+      "description": "",
+      "units": "",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AI",
+      "instance": 4,
+      "name": "DHW Temperature",
+      "description": "",
+      "units": "",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AI",
+      "instance": 5,
+      "name": "Header Temperature",
+      "description": "",
+      "units": "",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AI",
+      "instance": 6,
+      "name": "HX Temperature",
+      "description": "",
+      "units": "",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AI",
+      "instance": 7,
+      "name": "ODA Temperature Filtered",
+      "description": "",
+      "units": "",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AI",
+      "instance": 8,
+      "name": "Extra Field Temperature",
+      "description": "",
+      "units": "",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AI",
+      "instance": 9,
+      "name": "Wireless Temperature",
+      "description": "",
+      "units": "",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AI",
+      "instance": 10,
+      "name": "Analog Input",
+      "description": "",
+      "units": "",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AI",
+      "instance": 11,
+      "name": "Analog Output",
+      "description": "",
+      "units": "",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AI",
+      "instance": 12,
+      "name": "Burner Control Digital I/O",
+      "description": "Legacy bit map x10; use AI 59",
+      "units": "",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AI",
+      "instance": 13,
+      "name": "Burner Control Digital I/O 2",
+      "description": "Legacy bit map x10; use AI 60",
+      "units": "",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AI",
+      "instance": 14,
+      "name": "CH Mode Active Setpoint",
+      "description": "",
+      "units": "",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AI",
+      "instance": 15,
+      "name": "DHW Mode Active Setpoint",
+      "description": "",
+      "units": "",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AI",
+      "instance": 16,
+      "name": "Demand Source",
+      "description": "",
+      "units": "",
+      "access": "R",
+      "states": "0=none, 1=CH, 2=DHW, 3=freeze protection, 4=manual, 5=CH & DHW, 6=DHW & CH"
+    },
+    {
+      "type": "AI",
+      "instance": 17,
+      "name": "Active Demand Status",
+      "description": "",
+      "units": "",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AI",
+      "instance": 18,
+      "name": "Boiler State",
+      "description": "",
+      "units": "",
+      "access": "R",
+      "states": "0=waiting for communication, 1=standby, 2=lockout, 3=hold, 8=pre-purge, 9=post purge, 10=run, 14=pre-ignition, 15=ignition, 23=starting, 24=fan only, 25=stopping (other codes in manual)"
+    },
+    {
+      "type": "AI",
+      "instance": 19,
+      "name": "Flame Signal",
+      "description": "",
+      "units": "",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AI",
+      "instance": 20,
+      "name": "Fan Speed",
+      "description": "",
+      "units": "",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AI",
+      "instance": 21,
+      "name": "Firing Rate",
+      "description": "",
+      "units": "",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AI",
+      "instance": 22,
+      "name": "Error Code",
+      "description": "Error code",
+      "units": "",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AI",
+      "instance": 23,
+      "name": "Error Type",
+      "description": "",
+      "units": "",
+      "access": "R",
+      "states": "0=no error, 1=lockout, 2=boiler hold, 3=mode hold, 4=alert caused alarm"
+    },
+    {
+      "type": "AI",
+      "instance": 24,
+      "name": "Burner Control Cycle Count",
+      "description": "",
+      "units": "",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AI",
+      "instance": 25,
+      "name": "Burner Control Run Hours",
+      "description": "",
+      "units": "",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "BV",
+      "instance": 26,
+      "name": "CH Boiler Control",
+      "description": "",
+      "units": "",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 27,
+      "name": "BMS CH Setpoint",
+      "description": "",
+      "units": "",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "BV",
+      "instance": 28,
+      "name": "BMS CH Demand",
+      "description": "",
+      "units": "",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "BV",
+      "instance": 29,
+      "name": "DHW Boiler Control",
+      "description": "",
+      "units": "",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 30,
+      "name": "BMS DHW Setpoint",
+      "description": "",
+      "units": "",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 31,
+      "name": "BMS DHW Tank Setpoint",
+      "description": "",
+      "units": "",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "BI",
+      "instance": 32,
+      "name": "Relay A",
+      "description": "",
+      "units": "",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "BI",
+      "instance": 33,
+      "name": "Relay B",
+      "description": "",
+      "units": "",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "BI",
+      "instance": 34,
+      "name": "Relay C",
+      "description": "",
+      "units": "",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "BI",
+      "instance": 35,
+      "name": "Relay D",
+      "description": "",
+      "units": "",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "BI",
+      "instance": 36,
+      "name": "External Ignition",
+      "description": "",
+      "units": "",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "BI",
+      "instance": 37,
+      "name": "Gas Valve",
+      "description": "",
+      "units": "",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "BI",
+      "instance": 38,
+      "name": "Alarm Relay",
+      "description": "",
+      "units": "",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "BI",
+      "instance": 39,
+      "name": "Interlock Control Circuit",
+      "description": "",
+      "units": "",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "BI",
+      "instance": 40,
+      "name": "Damper End Switch",
+      "description": "",
+      "units": "",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "BI",
+      "instance": 41,
+      "name": "Limit Control Circuit",
+      "description": "",
+      "units": "",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "BI",
+      "instance": 42,
+      "name": "Enable",
+      "description": "",
+      "units": "",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "BI",
+      "instance": 43,
+      "name": "Night Setback Input",
+      "description": "",
+      "units": "",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "BI",
+      "instance": 44,
+      "name": "Safety Relay",
+      "description": "",
+      "units": "",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "BI",
+      "instance": 45,
+      "name": "Air Switch",
+      "description": "",
+      "units": "",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "BI",
+      "instance": 46,
+      "name": "Start Interlock 1",
+      "description": "",
+      "units": "",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "BI",
+      "instance": 47,
+      "name": "Start Interlock 2",
+      "description": "",
+      "units": "",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "BI",
+      "instance": 48,
+      "name": "Auxiliary Input 1",
+      "description": "",
+      "units": "",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "BI",
+      "instance": 49,
+      "name": "High Temperature Limit",
+      "description": "",
+      "units": "",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "BI",
+      "instance": 50,
+      "name": "Low Water Cutoff",
+      "description": "",
+      "units": "",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "BI",
+      "instance": 51,
+      "name": "High Gas Pressure",
+      "description": "",
+      "units": "",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "BI",
+      "instance": 52,
+      "name": "Aux Input 2 or Flow Switch",
+      "description": "",
+      "units": "",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 53,
+      "name": "BMS Heartbeat",
+      "description": "Alternate 43981 / 56506 within the timeout",
+      "units": "",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "AI",
+      "instance": 54,
+      "name": "BMS Header Temperature",
+      "description": "Header temperature from the BMS (see notes)",
+      "units": "",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AI",
+      "instance": 55,
+      "name": "BMS Outdoor Air Temperature",
+      "description": "Outdoor temperature from the BMS (see notes)",
+      "units": "",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AI",
+      "instance": 56,
+      "name": "BMS Analog Input",
+      "description": "Analog input from the BMS (see notes)",
+      "units": "",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 57,
+      "name": "BMS DHW Demand",
+      "description": "",
+      "units": "",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "AI",
+      "instance": 58,
+      "name": "BMS DHW Temperature",
+      "description": "DHW temperature from the BMS (see notes)",
+      "units": "",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AI",
+      "instance": 59,
+      "name": "Burner Control Dig I/O",
+      "description": "Burner control I/O bit map",
+      "units": "",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AI",
+      "instance": 60,
+      "name": "Burner Control Dig I/O 2",
+      "description": "Burner control I/O bit map 2",
+      "units": "",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 61,
+      "name": "BMS Header Temperature",
+      "description": "BMS header temperature (see notes)",
+      "units": "",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 62,
+      "name": "BMS Outdoor Air Temperature",
+      "description": "BMS outdoor air temperature (see notes)",
+      "units": "",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 63,
+      "name": "BMS Analog Input",
+      "description": "BMS analog input (see notes)",
+      "units": "",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 64,
+      "name": "BMS DHW Temperature",
+      "description": "BMS DHW temperature (see notes)",
+      "units": "",
+      "access": "W",
+      "states": ""
+    }
+  ]
+}

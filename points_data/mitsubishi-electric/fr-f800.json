@@ -1,0 +1,849 @@
+{
+  "manufacturer": "Mitsubishi Electric",
+  "manufacturer_slug": "mitsubishi-electric",
+  "model": "FR-F800 inverter (BACnet MS/TP; FR-F800-E BACnet IP)",
+  "model_slug": "fr-f800",
+  "aliases": [
+    "FR-F800",
+    "FR-F800-E",
+    "FR-F820",
+    "FR-F840",
+    "FR-F842",
+    "FR-F846",
+    "FR-F820-E",
+    "FR-F840-E",
+    "FR-F842-E",
+    "FR-F846-E",
+    "Mitsubishi FR-F800 BACnet",
+    "IB-0600547ENG",
+    "IB-0600628ENG"
+  ],
+  "equipment_type": "Variable frequency drive (HVAC fan and pump)",
+  "applies_to": "Mitsubishi Electric FR-F800 fan and pump inverters (FR-F820/F840/F842/F846) on the RS-485 terminals, and FR-F800-E models on the built-in Ethernet port.",
+  "summary": "The FR-F800 runs BACnet MS/TP on its RS-485 terminals when Pr.549 = 2; the FR-F800-E Ethernet models also offer BACnet IP. Both manuals print the same fixed object list: terminal inputs and outputs, run/stop, direction and fault reset BVs, the Speed scale frequency command (% of Pr.390), PID setpoint and feedback commands, output monitors, fault history and a mailbox for other parameters. The drive is a B-ASC.",
+  "bacnet_transport": [
+    "BACnet MS/TP",
+    "BACnet IP"
+  ],
+  "firmware": "PICS firmware revision 2.00 (MS/TP manual); 1.00 in the Ethernet manual PICS",
+  "default_device_instance": 0,
+  "access_inferred": false,
+  "notes": [
+    "Points are from the FR-F800 Instruction Manual (Detailed) IB-0600547ENG-G, section 5.12.7 (PDF pp546-550). The FR-A800-E/F800-E Ethernet Function Manual IB-0600628ENG-D (PDF pp85-88) lists the same objects, names and units for BACnet IP; that manual says only FR-F800-E drives support BACnet IP.",
+    "The Ethernet manual marks BO 1-6 as R and BV 300-306 as R or blank; the MS/TP manual marks them all C. The MS/TP manual values are used here.",
+    "BO 0-6 only drive their terminals when that terminal's function (Pr.190-Pr.196) is 82 or 182.",
+    "BV 305 JOG, BV 307 STOP, BV 308 RES and BV 309 CS have no effect at the factory setting; reassign those signals with Pr.185, Pr.186, Pr.188 and Pr.189 to use them.",
+    "AV 398/399 mailbox: write a register number to AV 398, then read or write AV 399. Register numbers follow the manual (for example 41000 + parameter number for Pr.0-999).",
+    "Writes to C objects stay in the priority array even when the drive refuses them (Write Access Denied) because of the operation mode."
+  ],
+  "source": {
+    "title": "FR-F800 Instruction Manual (Detailed), 5.12.7 BACnet MS/TP protocol, Supported BACnet object; also FR-A800-E/FR-F800-E Ethernet Function Manual, 2.5.7 BACnet/IP",
+    "doc_number": "IB-0600547ENG-G (BACnet IP: IB-0600628ENG-D)",
+    "revision_date": "2024-10",
+    "url": "https://dl.mitsubishielectric.com/dl/fa/document/manual/inv/ib0600547eng/ib0600547engg.pdf"
+  },
+  "integration": {
+    "summary": "For MS/TP set Pr.549 = 2, the MAC address in Pr.331, the baud rate in Pr.332 and the device instance in Pr.728/Pr.729. For BACnet IP on an F800-E set 47808 in one of Pr.1427-Pr.1429 and allow the BMS IP range in Pr.1449-Pr.1454. With the drive in Network operation mode and NET as command and speed source, write AV 300 Speed scale and BV 400 Run/Stop, and read BV 0, AV 1, AV 2 and BV 99.",
+    "minimum_points": [
+      {
+        "ref": "BV 400",
+        "name": "Run/Stop",
+        "why": "Start/stop command (1 = start)"
+      },
+      {
+        "ref": "AV 300",
+        "name": "Speed scale",
+        "why": "Frequency command, % of Pr.390"
+      },
+      {
+        "ref": "BV 402",
+        "name": "Fault reset",
+        "why": "Clears the fault output"
+      },
+      {
+        "ref": "BV 0",
+        "name": "Inverter running",
+        "why": "Running status"
+      },
+      {
+        "ref": "BV 11",
+        "name": "Inverter operation ready",
+        "why": "Drive ready to run"
+      },
+      {
+        "ref": "AV 1",
+        "name": "Output frequency",
+        "why": "Output frequency, Hz"
+      },
+      {
+        "ref": "AV 2",
+        "name": "Output current",
+        "why": "Motor amps"
+      },
+      {
+        "ref": "AV 14",
+        "name": "Output power",
+        "why": "Output power, kW"
+      },
+      {
+        "ref": "BV 99",
+        "name": "Fault output",
+        "why": "Any active drive fault"
+      },
+      {
+        "ref": "AV 200",
+        "name": "Alarm history 1",
+        "why": "Latest fault record"
+      }
+    ],
+    "enable": "BV 400/401 and the AV 300-322 commands can be written at any time but are only applied when the communication operation command source and speed command source are NET (Pr.338/Pr.339) and the drive is in Network operation mode. The start command takes effect after Speed scale is applied.",
+    "heartbeat": "The MS/TP section gives no BACnet-specific timeout. For RS-485 terminal communication, Pr.502 sets the action on a communication error (coast, decelerate to stop, or keep running at the Pr.779 frequency) and the LF alarm turns on. On an F800-E, Pr.1432 Ethernet communication check time interval (default 9999 = off) trips E.EHR if the devices in the Pr.1449-Pr.1454 range stop sending; Pr.1431 sets the action on a physical Ethernet loss.",
+    "remote_sensors": "AV 311 PID measured value CMD lets the BMS write the PID feedback (and AV 310 the setpoint) when Pr.128 = 60 or 61; AV 321/AV 320 do the same for the second PID when Pr.753 = 60 or 61.",
+    "setup": [
+      "MS/TP: Pr.549 = 2 (BACnet MS/TP), Pr.331 MAC address 0-127 (default 0), Pr.332 baud rate = setting x 100 bps (96 default, up to 1152).",
+      "Pr.726 Auto Baudrate/Max Master: bit 7 turns on auto baud, bits 0-6 are Max Master (default 255). Pr.727 Max Info Frames, default 1.",
+      "Device instance = Pr.728 (upper 3 digits) and Pr.729 (lower 4 digits), 0 to 4194302, default 0.",
+      "MS/TP is fixed at 8 data bits, no parity, 1 stop bit. The drive has local bias resistors only, so at least one node on the segment must provide network bias.",
+      "BACnet IP (FR-F800-E only): set 47808 in one of Pr.1427-Pr.1429 Ethernet function selection and set Pr.1449-Pr.1454 to the BMS IP range; while those are 0, no commands are accepted over Ethernet.",
+      "Pr.390 % setting reference frequency (default 60 Hz FM / 50 Hz CA) is the 100 % point for AV 300."
+    ],
+    "gotchas": [
+      "Pr.342 = 0 (default) stores parameters written over the network in EEPROM; set Pr.342 = 1 if the BMS writes parameters often.",
+      "The set frequency only changes when AV 300 is written, not when Pr.390 changes, and it is held in RAM.",
+      "BACnet IP: do not include other inverters' IP addresses in the Pr.1449-Pr.1454 range, or the drive trips E.EHR.",
+      "Segmentation is not supported.",
+      "Automatic baud rate recognition writes the detected baud rate to Pr.332 in EEPROM."
+    ]
+  },
+  "points": [
+    {
+      "type": "AI",
+      "instance": 0,
+      "name": "Terminal 1",
+      "description": "Terminal 1 input level (range per Pr.73/Pr.267)",
+      "units": "%",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AI",
+      "instance": 1,
+      "name": "Terminal 2",
+      "description": "Terminal 2 input level (range per Pr.73/Pr.267)",
+      "units": "%",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AI",
+      "instance": 2,
+      "name": "Terminal 4",
+      "description": "Terminal 4 input level (range per Pr.73/Pr.267)",
+      "units": "%",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AO",
+      "instance": 0,
+      "name": "Terminal FM (CA)",
+      "description": "Terminal FM/CA output level, 0-200 %; needs Pr.54 = 85",
+      "units": "%",
+      "access": "C",
+      "states": ""
+    },
+    {
+      "type": "AO",
+      "instance": 1,
+      "name": "Terminal AM",
+      "description": "Terminal AM output level, -200 to 200 %; needs Pr.158 = 86",
+      "units": "%",
+      "access": "C",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 1,
+      "name": "Output frequency",
+      "description": "Output frequency",
+      "units": "Hz",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 2,
+      "name": "Output current",
+      "description": "Output current",
+      "units": "A",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 3,
+      "name": "Output voltage",
+      "description": "Output voltage",
+      "units": "V",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 6,
+      "name": "Running speed",
+      "description": "Running speed",
+      "units": "rpm",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 8,
+      "name": "Converter output voltage",
+      "description": "Converter (DC bus) output voltage",
+      "units": "V",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 14,
+      "name": "Output power",
+      "description": "Output power",
+      "units": "kW",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 17,
+      "name": "Load meter",
+      "description": "Load meter",
+      "units": "%",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 20,
+      "name": "Cumulative energization time",
+      "description": "Cumulative power-on time",
+      "units": "h",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 23,
+      "name": "Actual operation time",
+      "description": "Actual run time",
+      "units": "h",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 25,
+      "name": "Cumulative power",
+      "description": "Cumulative energy",
+      "units": "kWh",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 52,
+      "name": "PID set point",
+      "description": "PID setpoint monitor",
+      "units": "",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 54,
+      "name": "PID deviation",
+      "description": "PID deviation monitor",
+      "units": "",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 67,
+      "name": "PID measured value2",
+      "description": "PID measured value 2 monitor",
+      "units": "",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 92,
+      "name": "Second PID set point",
+      "description": "Second PID setpoint monitor",
+      "units": "",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 94,
+      "name": "Second PID deviation",
+      "description": "Second PID deviation monitor",
+      "units": "",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 95,
+      "name": "Second PID measured value 2",
+      "description": "Second PID measured value 2 monitor",
+      "units": "",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 200,
+      "name": "Alarm history 1",
+      "description": "Fault record 1 (latest)",
+      "units": "",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 201,
+      "name": "Alarm history 2",
+      "description": "Fault record 2",
+      "units": "",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 202,
+      "name": "Alarm history 3",
+      "description": "Fault record 3",
+      "units": "",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 203,
+      "name": "Alarm history 4",
+      "description": "Fault record 4",
+      "units": "",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 300,
+      "name": "Speed scale",
+      "description": "Frequency command as % of Pr.390, 0.00-100.00",
+      "units": "%",
+      "access": "C",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 310,
+      "name": "PID set point CMD",
+      "description": "PID setpoint when Pr.128 = 60 or 61, 0-100",
+      "units": "",
+      "access": "C",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 311,
+      "name": "PID measured value CMD",
+      "description": "PID measured value when Pr.128 = 60 or 61, 0-100",
+      "units": "",
+      "access": "C",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 312,
+      "name": "PID deviation CMD",
+      "description": "PID deviation when Pr.128 = 50 or 51, -100 to 100",
+      "units": "%",
+      "access": "C",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 320,
+      "name": "Second PID set point CMD",
+      "description": "Second PID setpoint when Pr.753 = 60 or 61",
+      "units": "",
+      "access": "C",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 321,
+      "name": "Second PID measured value CMD",
+      "description": "Second PID measured value when Pr.753 = 60 or 61",
+      "units": "",
+      "access": "C",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 322,
+      "name": "Second PID deviation CMD",
+      "description": "Second PID deviation when Pr.753 = 50 or 51",
+      "units": "%",
+      "access": "C",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 398,
+      "name": "Mailbox parameter",
+      "description": "Register number for indirect access",
+      "units": "",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 399,
+      "name": "Mailbox value",
+      "description": "Value read or written through the mailbox",
+      "units": "",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 10007,
+      "name": "Acceleration time",
+      "description": "Pr.7 acceleration time",
+      "units": "s",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 10008,
+      "name": "Deceleration time",
+      "description": "Pr.8 deceleration time",
+      "units": "s",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "BI",
+      "instance": 0,
+      "name": "Terminal STF",
+      "description": "Input terminal STF state",
+      "units": "",
+      "access": "R",
+      "states": "0=Inactive, 1=Active"
+    },
+    {
+      "type": "BI",
+      "instance": 1,
+      "name": "Terminal STR",
+      "description": "Input terminal STR state",
+      "units": "",
+      "access": "R",
+      "states": "0=Inactive, 1=Active"
+    },
+    {
+      "type": "BI",
+      "instance": 2,
+      "name": "Terminal AU",
+      "description": "Input terminal AU state",
+      "units": "",
+      "access": "R",
+      "states": "0=Inactive, 1=Active"
+    },
+    {
+      "type": "BI",
+      "instance": 3,
+      "name": "Terminal RT",
+      "description": "Input terminal RT state",
+      "units": "",
+      "access": "R",
+      "states": "0=Inactive, 1=Active"
+    },
+    {
+      "type": "BI",
+      "instance": 4,
+      "name": "Terminal RL",
+      "description": "Input terminal RL state",
+      "units": "",
+      "access": "R",
+      "states": "0=Inactive, 1=Active"
+    },
+    {
+      "type": "BI",
+      "instance": 5,
+      "name": "Terminal RM",
+      "description": "Input terminal RM state",
+      "units": "",
+      "access": "R",
+      "states": "0=Inactive, 1=Active"
+    },
+    {
+      "type": "BI",
+      "instance": 6,
+      "name": "Terminal RH",
+      "description": "Input terminal RH state",
+      "units": "",
+      "access": "R",
+      "states": "0=Inactive, 1=Active"
+    },
+    {
+      "type": "BI",
+      "instance": 7,
+      "name": "Terminal JOG",
+      "description": "Input terminal JOG state",
+      "units": "",
+      "access": "R",
+      "states": "0=Inactive, 1=Active"
+    },
+    {
+      "type": "BI",
+      "instance": 8,
+      "name": "Terminal MRS",
+      "description": "Input terminal MRS state",
+      "units": "",
+      "access": "R",
+      "states": "0=Inactive, 1=Active"
+    },
+    {
+      "type": "BI",
+      "instance": 9,
+      "name": "Terminal STOP",
+      "description": "Input terminal STOP state",
+      "units": "",
+      "access": "R",
+      "states": "0=Inactive, 1=Active"
+    },
+    {
+      "type": "BI",
+      "instance": 10,
+      "name": "Terminal RES",
+      "description": "Input terminal RES state",
+      "units": "",
+      "access": "R",
+      "states": "0=Inactive, 1=Active"
+    },
+    {
+      "type": "BI",
+      "instance": 11,
+      "name": "Terminal CS",
+      "description": "Input terminal CS state",
+      "units": "",
+      "access": "R",
+      "states": "0=Inactive, 1=Active"
+    },
+    {
+      "type": "BI",
+      "instance": 100,
+      "name": "Terminal RUN",
+      "description": "Output terminal RUN state",
+      "units": "",
+      "access": "R",
+      "states": "0=Inactive, 1=Active"
+    },
+    {
+      "type": "BI",
+      "instance": 101,
+      "name": "Terminal SU",
+      "description": "Output terminal SU state",
+      "units": "",
+      "access": "R",
+      "states": "0=Inactive, 1=Active"
+    },
+    {
+      "type": "BI",
+      "instance": 102,
+      "name": "Terminal IPF",
+      "description": "Output terminal IPF state",
+      "units": "",
+      "access": "R",
+      "states": "0=Inactive, 1=Active"
+    },
+    {
+      "type": "BI",
+      "instance": 103,
+      "name": "Terminal OL",
+      "description": "Output terminal OL state",
+      "units": "",
+      "access": "R",
+      "states": "0=Inactive, 1=Active"
+    },
+    {
+      "type": "BI",
+      "instance": 104,
+      "name": "Terminal FU",
+      "description": "Output terminal FU state",
+      "units": "",
+      "access": "R",
+      "states": "0=Inactive, 1=Active"
+    },
+    {
+      "type": "BI",
+      "instance": 105,
+      "name": "Terminal ABC1",
+      "description": "Output terminal ABC1 state",
+      "units": "",
+      "access": "R",
+      "states": "0=Inactive, 1=Active"
+    },
+    {
+      "type": "BI",
+      "instance": 106,
+      "name": "Terminal ABC2",
+      "description": "Output terminal ABC2 state",
+      "units": "",
+      "access": "R",
+      "states": "0=Inactive, 1=Active"
+    },
+    {
+      "type": "BI",
+      "instance": 107,
+      "name": "Terminal So (SO)",
+      "description": "Output terminal So (SO) state",
+      "units": "",
+      "access": "R",
+      "states": "0=Inactive, 1=Active"
+    },
+    {
+      "type": "BO",
+      "instance": 0,
+      "name": "Terminal RUN CMD",
+      "description": "Drives output RUN; needs Pr.190 = 82 or 182",
+      "units": "",
+      "access": "C",
+      "states": "0=Inactive, 1=Active"
+    },
+    {
+      "type": "BO",
+      "instance": 1,
+      "name": "Terminal SU CMD",
+      "description": "Drives output SU; needs Pr.191 = 82 or 182",
+      "units": "",
+      "access": "C",
+      "states": "0=Inactive, 1=Active"
+    },
+    {
+      "type": "BO",
+      "instance": 2,
+      "name": "Terminal IPF CMD",
+      "description": "Drives output IPF; needs Pr.192 = 82 or 182",
+      "units": "",
+      "access": "C",
+      "states": "0=Inactive, 1=Active"
+    },
+    {
+      "type": "BO",
+      "instance": 3,
+      "name": "Terminal OL CMD",
+      "description": "Drives output OL; needs Pr.193 = 82 or 182",
+      "units": "",
+      "access": "C",
+      "states": "0=Inactive, 1=Active"
+    },
+    {
+      "type": "BO",
+      "instance": 4,
+      "name": "Terminal FU CMD",
+      "description": "Drives output FU; needs Pr.194 = 82 or 182",
+      "units": "",
+      "access": "C",
+      "states": "0=Inactive, 1=Active"
+    },
+    {
+      "type": "BO",
+      "instance": 5,
+      "name": "Terminal ABC1 CMD",
+      "description": "Drives output ABC1; needs Pr.195 = 82 or 182",
+      "units": "",
+      "access": "C",
+      "states": "0=Inactive, 1=Active"
+    },
+    {
+      "type": "BO",
+      "instance": 6,
+      "name": "Terminal ABC2 CMD",
+      "description": "Drives output ABC2; needs Pr.196 = 82 or 182",
+      "units": "",
+      "access": "C",
+      "states": "0=Inactive, 1=Active"
+    },
+    {
+      "type": "BV",
+      "instance": 0,
+      "name": "Inverter running",
+      "description": "Running (RUN signal)",
+      "units": "",
+      "access": "R",
+      "states": "0=Inactive, 1=Active"
+    },
+    {
+      "type": "BV",
+      "instance": 11,
+      "name": "Inverter operation ready",
+      "description": "Ready to run (RY signal)",
+      "units": "",
+      "access": "R",
+      "states": "0=Inactive, 1=Active"
+    },
+    {
+      "type": "BV",
+      "instance": 98,
+      "name": "Alarm output",
+      "description": "Alarm (LF signal)",
+      "units": "",
+      "access": "R",
+      "states": "0=Inactive, 1=Active"
+    },
+    {
+      "type": "BV",
+      "instance": 99,
+      "name": "Fault output",
+      "description": "Fault (ALM signal)",
+      "units": "",
+      "access": "R",
+      "states": "0=Inactive, 1=Active"
+    },
+    {
+      "type": "BV",
+      "instance": 200,
+      "name": "Inverter running reverse",
+      "description": "Running in reverse",
+      "units": "",
+      "access": "R",
+      "states": "0=Inactive, 1=Active"
+    },
+    {
+      "type": "BV",
+      "instance": 300,
+      "name": "Control input instruction AU",
+      "description": "Turns on the function set in Pr.184 (terminal AU)",
+      "units": "",
+      "access": "C",
+      "states": "0=Inactive, 1=Active"
+    },
+    {
+      "type": "BV",
+      "instance": 301,
+      "name": "Control input instruction RT",
+      "description": "Turns on the function set in Pr.183 (terminal RT)",
+      "units": "",
+      "access": "C",
+      "states": "0=Inactive, 1=Active"
+    },
+    {
+      "type": "BV",
+      "instance": 302,
+      "name": "Control input instruction RL",
+      "description": "Turns on the function set in Pr.180 (terminal RL)",
+      "units": "",
+      "access": "C",
+      "states": "0=Inactive, 1=Active"
+    },
+    {
+      "type": "BV",
+      "instance": 303,
+      "name": "Control input instruction RM",
+      "description": "Turns on the function set in Pr.181 (terminal RM)",
+      "units": "",
+      "access": "C",
+      "states": "0=Inactive, 1=Active"
+    },
+    {
+      "type": "BV",
+      "instance": 304,
+      "name": "Control input instruction RH",
+      "description": "Turns on the function set in Pr.182 (terminal RH)",
+      "units": "",
+      "access": "C",
+      "states": "0=Inactive, 1=Active"
+    },
+    {
+      "type": "BV",
+      "instance": 305,
+      "name": "Control input instruction JOG",
+      "description": "Turns on the function set in Pr.185 (terminal JOG)",
+      "units": "",
+      "access": "C",
+      "states": "0=Inactive, 1=Active"
+    },
+    {
+      "type": "BV",
+      "instance": 306,
+      "name": "Control input instruction MRS",
+      "description": "Turns on the function set in Pr.187 (terminal MRS)",
+      "units": "",
+      "access": "C",
+      "states": "0=Inactive, 1=Active"
+    },
+    {
+      "type": "BV",
+      "instance": 307,
+      "name": "Control input instruction STOP",
+      "description": "Turns on the function set in Pr.188 (terminal STOP)",
+      "units": "",
+      "access": "C",
+      "states": "0=Inactive, 1=Active"
+    },
+    {
+      "type": "BV",
+      "instance": 308,
+      "name": "Control input instruction RES",
+      "description": "Turns on the function set in Pr.189 (terminal RES)",
+      "units": "",
+      "access": "C",
+      "states": "0=Inactive, 1=Active"
+    },
+    {
+      "type": "BV",
+      "instance": 309,
+      "name": "Control input instruction CS",
+      "description": "Turns on the function set in Pr.186 (terminal CS)",
+      "units": "",
+      "access": "C",
+      "states": "0=Inactive, 1=Active"
+    },
+    {
+      "type": "BV",
+      "instance": 400,
+      "name": "Run/Stop",
+      "description": "Start/stop command",
+      "units": "",
+      "access": "C",
+      "states": "0=Stop, 1=Start"
+    },
+    {
+      "type": "BV",
+      "instance": 401,
+      "name": "Forward/Reverse",
+      "description": "Rotation direction",
+      "units": "",
+      "access": "C",
+      "states": "0=Forward rotation, 1=Reverse rotation"
+    },
+    {
+      "type": "BV",
+      "instance": 402,
+      "name": "Fault reset",
+      "description": "Clears the fault output without resetting the drive",
+      "units": "",
+      "access": "C",
+      "states": ""
+    }
+  ]
+}

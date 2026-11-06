@@ -1,0 +1,613 @@
+{
+  "manufacturer": "Daikin Applied",
+  "manufacturer_slug": "daikin-applied",
+  "model": "Maverick II Packaged Rooftop Unit Controller (MicroTech II MPS)",
+  "model_slug": "maverick-ii-rooftop-mps",
+  "short_model": "Maverick II MPS rooftop",
+  "aliases": [
+    "Maverick II",
+    "MPS",
+    "McQuay Maverick II",
+    "MicroTech II MPS",
+    "ED 15102",
+    "MTIIUC_MPS"
+  ],
+  "equipment_type": "Rooftop unit controller",
+  "applies_to": "Daikin McQuay Maverick II (MPS) packaged commercial rooftop units with the MicroTech II MPS unit controller, DAC or SCC control, application software 1.10 and later.",
+  "summary": "The MicroTech II MPS controller on Maverick II rooftop units talks BACnet IP, BACnet Ethernet or BACnet MS/TP through a MicroTech II communication module (LonWorks is the other option). The table covers unit status, application and occupancy commands, occupied/unoccupied setpoints, discharge air and duct and building static pressure control, network sensor inputs, cool/heat/economizer enables and alarm read and clear. Several network inputs are guarded by a receive heartbeat.",
+  "bacnet_transport": [
+    "BACnet IP",
+    "BACnet MS/TP"
+  ],
+  "firmware": "MPS application 1.10 and later",
+  "default_device_instance": 3001,
+  "access_inferred": false,
+  "notes": [
+    "Object names are the short codes from the guide's full BACnet references (MTIIUC_MPS#########.Name); the point table itself prints longer property names, used here as descriptions.",
+    "Points marked N/A for SCC (zone control) only apply to DAC (discharge air control) units, e.g. duct static pressure and discharge air cooling setpoints.",
+    "Effective Setpoint Output AV 12 is printed twice in the table (cooling and heating rows); it is one object.",
+    "The detail page for Current Alarm shows no instance; the alarm section of the guide names it AV 1019.",
+    "Local Space Temperature (AV 17) and Local OA Temperature (AV 16) have no type or instance in the summary table; they come from their detail pages.",
+    "BACnet Ethernet is also offered as a module option."
+  ],
+  "source": {
+    "title": "MicroTech II McQuay Maverick II Rooftop Unit Controller Protocol Information, BACnet Networks, LonWorks Networks",
+    "doc_number": "ED 15102-3",
+    "revision_date": "2010-02",
+    "url": "https://tahoeweb.daikinapplied.com/api/general/DownloadDocumentByName/media/ED15102-3.pdf"
+  },
+  "integration": {
+    "summary": "Set Control Mode to AUTO and the network Type at the keypad. Turn the unit on and off with Application Mode (or shut it down with Emergency Override), schedule it with the occupancy scheduler input, write the setpoints and keep the heartbeat-guarded inputs refreshed. Read unit status, temperatures and the current alarm number.",
+    "minimum_points": [
+      {
+        "ref": "MV 1002",
+        "name": "ApplicCmd",
+        "why": "Off / heat only / cool only / fan only / auto"
+      },
+      {
+        "ref": "MV 1011",
+        "name": "OccState",
+        "why": "Occupancy schedule state from the BMS"
+      },
+      {
+        "ref": "AV 1003",
+        "name": "EmergOverride",
+        "why": "Network shutdown (4 = shut down, 0 = normal)"
+      },
+      {
+        "ref": "AV 6",
+        "name": "OccCoolSP",
+        "why": "Occupied cooling setpoint"
+      },
+      {
+        "ref": "AV 8",
+        "name": "OccHeatSetpt",
+        "why": "Occupied heating setpoint"
+      },
+      {
+        "ref": "AV 1004",
+        "name": "DuctStaticSPInput",
+        "why": "Duct static pressure setpoint (DAC units)"
+      },
+      {
+        "ref": "BV 4",
+        "name": "ClearAllAlarms",
+        "why": "Write 1 to clear all alarms"
+      },
+      {
+        "ref": "MV 1025",
+        "name": "UnitStatus",
+        "why": "Unit operating state"
+      },
+      {
+        "ref": "AV 10",
+        "name": "EffectDATemp",
+        "why": "Discharge air temperature"
+      },
+      {
+        "ref": "AV 1019",
+        "name": "Alarm",
+        "why": "Highest-priority active alarm number"
+      }
+    ],
+    "enable": "At the keypad (password 4545) set Control Mode to AUTO and Network Config Type to the BACnet network in use. Application Mode (MV 1002) then switches the unit off or between auto, heat only, cool only and fan only; it has no effect unless Control Mode is Auto. Emergency Override (AV 1003) = 4 shuts the unit down from the network. For network scheduling set Occupancy Mode to Auto at the keypad and write the occupancy scheduler input.",
+    "heartbeat": "Receive Heartbeat (AV 5, default 30 s; 0 keeps network values after a comm loss, which Daikin advises against) guards the occupancy scheduler input, application mode, building static pressure, fan capacity, space and outdoor temperature, IAQ and the cool/heat/economizer enable inputs. If they are not rewritten in time they revert to the sensor value, normal operation or, for some, keep the last value until power is cycled.",
+    "remote_sensors": "Space Temperature Input (AV 4), Outdoor Air Temperature Input (AV 3), Building Static Pressure Input (AV 1005) and Space IAQ Input (AV 1010) take BMS values; Effective values (AV 15, 13, 1020, 1031) show what the unit uses. Keep writing them within the heartbeat time.",
+    "setup": [
+      "Defaults: device instance 3001; BACnet IP 172.16.5.8 /16, UDP 47808, router 0.0.0.0; BACnet MS/TP MAC 0, 38400 baud, Max Master 127, Max Info Frames 1.",
+      "Device object name is MTIIUC_MPS plus the device instance; the alpha part and the UDP port change only with the BACnet Communication Module Configuration Tool (UM 855).",
+      "Network parameters are set from the keypad Network Config menu (password 4545)."
+    ],
+    "gotchas": [
+      "Alarm AV 1019 shows only the highest-priority active alarm: 1-99 warning, 100-199 problem, 200-255 fault.",
+      "Clear one alarm by writing its number to AV 1029 (e.g. 250 for an emergency fault).",
+      "Some network inputs keep their last value after the heartbeat expires until power is cycled; send them again after a restart."
+    ]
+  },
+  "points": [
+    {
+      "type": "MV",
+      "instance": 1025,
+      "name": "UnitStatus",
+      "description": "Unit Status",
+      "units": "",
+      "access": "R",
+      "states": "1=Off, 2=Startup, 3=Recirc, 4=Fan Only, 5=MinDAT, 6=Heating, 7=Economizer, 8=Cooling"
+    },
+    {
+      "type": "AV",
+      "instance": 1016,
+      "name": "CoolOutput",
+      "description": "Cooling Capacity",
+      "units": "%",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 1015,
+      "name": "HeatOutput",
+      "description": "Primary Heating Capacity",
+      "units": "%",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "MV",
+      "instance": 1023,
+      "name": "CoolStatus",
+      "description": "Cooling Status",
+      "units": "",
+      "access": "R",
+      "states": "1=Enabled, 2=None, 3=Off Manual, 4=Off Net, 5=Off Alarm, 6=Off Ambient"
+    },
+    {
+      "type": "MV",
+      "instance": 1024,
+      "name": "HeatStatus",
+      "description": "Heating Status",
+      "units": "",
+      "access": "R",
+      "states": "1=Enabled, 2=None, 3=Off Manual, 4=Off Net, 6=Off Ambient"
+    },
+    {
+      "type": "MV",
+      "instance": 1022,
+      "name": "EconStatus",
+      "description": "Economizer Status",
+      "units": "",
+      "access": "R",
+      "states": "1=Enabled, 2=None, 3=Off Manual, 4=Off Net, 6=Off Ambient"
+    },
+    {
+      "type": "AV",
+      "instance": 1017,
+      "name": "EconOutput",
+      "description": "Outdoor Air Damper Position",
+      "units": "%",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "MV",
+      "instance": 1014,
+      "name": "EffectOcc",
+      "description": "Occupancy",
+      "units": "",
+      "access": "R",
+      "states": "1=Occupied, 2=Unoccupied, 3=Bypass, 4=Standby"
+    },
+    {
+      "type": "MV",
+      "instance": 1011,
+      "name": "OccState",
+      "description": "Occupancy scheduler input: current state",
+      "units": "",
+      "access": "W",
+      "states": "1=Occupied, 2=Unoccupied, 4=Standby, 5=Auto"
+    },
+    {
+      "type": "MV",
+      "instance": 1012,
+      "name": "NextOccState",
+      "description": "Occupancy scheduler input: next state",
+      "units": "",
+      "access": "W",
+      "states": "1=Occupied, 2=Unoccupied, 4=Standby, 5=Auto"
+    },
+    {
+      "type": "AV",
+      "instance": 1013,
+      "name": "TimeToNextOccState",
+      "description": "Occupancy scheduler input: time to next state (default 0 seconds)",
+      "units": "s",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 10,
+      "name": "EffectDATemp",
+      "description": "Discharge Air Temperature",
+      "units": "°F",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 14,
+      "name": "EffectRAT",
+      "description": "Return Air Temperature",
+      "units": "°F",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 15,
+      "name": "EffectSpaceT",
+      "description": "Space Temperature",
+      "units": "°F",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 13,
+      "name": "EffectOAT",
+      "description": "Outdoor Air Temperature",
+      "units": "°F",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 16,
+      "name": "LocalOAT",
+      "description": "Local outdoor air temperature sensor reading",
+      "units": "°F",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 17,
+      "name": "LocalSpaceT",
+      "description": "Local space temperature sensor reading",
+      "units": "°F",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 1021,
+      "name": "EffectDuctStaticP",
+      "description": "Duct Static Pressure",
+      "units": "inH2O",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 1018,
+      "name": "FanOutput",
+      "description": "Discharge Fan Capacity",
+      "units": "%",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 1020,
+      "name": "EffectBldgStaticP",
+      "description": "Building Static Pressure",
+      "units": "inH2O",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 1006,
+      "name": "BldgStaticSPInput",
+      "description": "Building Static Pressure Setpoint (default 0.050” WC)",
+      "units": "inH2O",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 1030,
+      "name": "ExhFanCap",
+      "description": "Exhaust Fan Capacity",
+      "units": "%",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 2,
+      "name": "MinDATClgSetpt",
+      "description": "Minimum Discharge Air Cooling Setpoint (default 55°F)",
+      "units": "°F",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 12,
+      "name": "EffectSetpt",
+      "description": "Effective setpoint used for heat/cool enable",
+      "units": "°F",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 6,
+      "name": "OccCoolSP",
+      "description": "Occupied Cooling Setpoint (default 72°F)",
+      "units": "°F",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 7,
+      "name": "UnoccCoolSetpt",
+      "description": "Unoccupied Cooling Setpoint (default 85°F)",
+      "units": "°F",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 8,
+      "name": "OccHeatSetpt",
+      "description": "Occupied Heating Setpoint (default 68°F)",
+      "units": "°F",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 9,
+      "name": "UnoccHeatSetpt",
+      "description": "Unoccupied Heating Setpoint (default 55°F)",
+      "units": "°F",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 19,
+      "name": "MaxDATHtgSetpt",
+      "description": "Max Discharge Air Heating Setpoint (default 113°F/45°C)",
+      "units": "°F",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 18,
+      "name": "DAHtgSetpt",
+      "description": "Discharge Air Heating Setpoint",
+      "units": "°F",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 11,
+      "name": "EffectDATSetpt",
+      "description": "Effective Discharge Air Temperature Setpoint",
+      "units": "°F",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 1009,
+      "name": "OAMinPos",
+      "description": "Outdoor Air Damper Minimum Position Input (default 10%)",
+      "units": "%",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 1031,
+      "name": "EffectSpaceCO2",
+      "description": "Space CO2",
+      "units": "ppm",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 1028,
+      "name": "EconEnaPercent",
+      "description": "Economizer enable, percent form",
+      "units": "%",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "BV",
+      "instance": 3,
+      "name": "EconEnable",
+      "description": "Economizer enable, on/off form",
+      "units": "",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 1032,
+      "name": "AppVersion",
+      "description": "Application Version",
+      "units": "",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 1007,
+      "name": "SupFanCapInput",
+      "description": "Remote Discharge Fan Capacity Setpoint (default 0%)",
+      "units": "%",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "MV",
+      "instance": 1002,
+      "name": "ApplicCmd",
+      "description": "Application Mode",
+      "units": "",
+      "access": "W",
+      "states": "1=Off, 2=HeatOnly, 3=CoolOnly, 4=FanOnly, 5=Auto"
+    },
+    {
+      "type": "MV",
+      "instance": 1001,
+      "name": "OccManCmd",
+      "description": "Occupancy Mode",
+      "units": "",
+      "access": "W",
+      "states": "1=Occupied, 2=Unoccupied, 3=Bypass, 4=Standby, 5=Auto"
+    },
+    {
+      "type": "AV",
+      "instance": 1003,
+      "name": "EmergOverride",
+      "description": "Network emergency override (4 = shut down)",
+      "units": "",
+      "access": "W",
+      "states": "0=Normal, 4=Shutdown"
+    },
+    {
+      "type": "AV",
+      "instance": 1004,
+      "name": "DuctStaticSPInput",
+      "description": "Duct Static Pressure Setpoint (default 1.00” WC)",
+      "units": "inH2O",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 4,
+      "name": "SpaceTempInput",
+      "description": "Space Temperature Input",
+      "units": "°F",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 3,
+      "name": "OutdoorTempInput",
+      "description": "Outdoor Air Temperature Input",
+      "units": "°F",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 1,
+      "name": "DAClgSetpt",
+      "description": "Discharge air cooling setpoint from the network (DAC)",
+      "units": "°F",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 1005,
+      "name": "BldgStaticPressInput",
+      "description": "Building static pressure from the network",
+      "units": "inH2O",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 1008,
+      "name": "ExhFanCapInput",
+      "description": "Exhaust Fan Capacity Input",
+      "units": "%",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "BV",
+      "instance": 2,
+      "name": "HeatEnable",
+      "description": "Primary heat enable, on/off form",
+      "units": "",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 1027,
+      "name": "HeatEnaPercent",
+      "description": "Primary heat enable, percent form",
+      "units": "%",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "BV",
+      "instance": 1,
+      "name": "CoolEnable",
+      "description": "Primary cool enable, on/off form",
+      "units": "",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 1026,
+      "name": "CoolEnaPercent",
+      "description": "Primary cool enable, percent form",
+      "units": "%",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 1010,
+      "name": "SpaceIAQInput",
+      "description": "Space IAQ Input",
+      "units": "",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 5,
+      "name": "ReceiveHrtBt",
+      "description": "Receive heartbeat time for network inputs (default 30 s)",
+      "units": "s",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 1019,
+      "name": "Alarm",
+      "description": "Highest-priority active alarm number (0 = none)",
+      "units": "",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "BV",
+      "instance": 4,
+      "name": "ClearAllAlarms",
+      "description": "Write 1 to clear all active alarms",
+      "units": "",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 1029,
+      "name": "ClearOneAlarm",
+      "description": "Write an alarm number to clear that alarm",
+      "units": "",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "BV",
+      "instance": 5,
+      "name": "ExhFanOn_Off",
+      "description": "Exhaust Fan Status",
+      "units": "",
+      "access": "R",
+      "states": ""
+    }
+  ]
+}

@@ -1,0 +1,969 @@
+{
+  "manufacturer": "Belimo",
+  "manufacturer_slug": "belimo",
+  "model": "ZoneEase VAV zone control actuator (BACnet MS/TP)",
+  "model_slug": "zoneease-vav",
+  "short_model": "ZoneEase VAV",
+  "aliases": [
+    "ZoneEase VAV",
+    "LMV-BAC-..",
+    "NMV-BAC-..",
+    "Belimo ZoneEase"
+  ],
+  "equipment_type": "VAV zone controller / actuator",
+  "applies_to": "Belimo ZoneEase VAV actuators LMV-BAC-.. and NMV-BAC-.. with the built-in zone control applications, application software ZoneEase 1.7.",
+  "summary": "ZoneEase VAV is a VAV damper actuator with a built-in differential pressure sensor and zone control applications (cooling, changeover, electric or hydronic reheat, parallel or series fan, CO2 and plain VAV). It runs on BACnet MS/TP. The BMS mostly sets the system mode, room setpoint, airflow limits and the heating/cooling changeover, and reads room temperature, airflow and status.",
+  "bacnet_transport": [
+    "BACnet MS/TP"
+  ],
+  "firmware": "Application ZoneEase 1.7",
+  "default_device_instance": 1,
+  "access_inferred": false,
+  "notes": [
+    "The interface description lists every object twice (alphabetical, then grouped); the alphabetical list (pdf pp5-11) was used.",
+    "Multi-state state numbers are as printed in the guide.",
+    "Many values exist in several units (m³/h, cfm, °C, °F) plus a _UnitSel copy that follows MV 121 / MV 128.",
+    "Which objects are used depends on the application chosen in MV 2; CO2 and VAV-only objects are marked in the descriptions.",
+    "MI 101 is printed W in the alphabetical list and R in the grouped list; listed as R. MV 4 has no access mark and is listed as R."
+  ],
+  "source": {
+    "title": "BACnet Interface description, ZoneEase VAV (VAV zone control actuator)",
+    "doc_number": "V1.7",
+    "revision_date": "2025-05",
+    "url": "https://www.belimo.com/mam/general-documents/system_integration/BACnet/belimo_BACnet_Interface-description_ZoneEase-VAV_V1_7_en-gb.pdf"
+  },
+  "integration": {
+    "summary": "Pick the application in MV 2 during commissioning, then run the zone from the BMS with MV 1 SystemMode, AV 108 room setpoint and BV 1 changeover (where the application uses it). Read room temperature, airflow and damper position, and watch the status MIs. If a bus fail action is set, keep writing within the watchdog time.",
+    "minimum_points": [
+      {
+        "ref": "MV 1",
+        "name": "SystemMode",
+        "why": "Off / Active / Eco / Boost"
+      },
+      {
+        "ref": "AV 108",
+        "name": "SpRmT_C",
+        "why": "Room temperature setpoint, °C"
+      },
+      {
+        "ref": "BV 1",
+        "name": "BMS Changeover",
+        "why": "Heating or cooling air from the AHU"
+      },
+      {
+        "ref": "AI 20",
+        "name": "RmT_C",
+        "why": "Room temperature, °C"
+      },
+      {
+        "ref": "AI 12",
+        "name": "AbsAirFlow_m3h",
+        "why": "Measured airflow, m³/h"
+      },
+      {
+        "ref": "AI 1",
+        "name": "RelPosDmp",
+        "why": "Damper position, %"
+      },
+      {
+        "ref": "MI 101",
+        "name": "StatusSystem",
+        "why": "System health: sensor and config faults"
+      },
+      {
+        "ref": "MI 106",
+        "name": "StatusActuator",
+        "why": "Actuator status and errors"
+      }
+    ],
+    "enable": "MV 1 SystemMode switches the zone between Off, Active, Eco and Boost. In the VAV application (#9 in MV 2) the BMS sets the airflow directly with AV 102-104. MO 1 Override can force the damper or a fixed airflow, temperature or CO2 setpoint (types 8-13 use AO 10).",
+    "heartbeat": "AV 130 BusWatchdog, 5-3600 s, default 120 s. If no write arrives within the timeout the actuator runs MV 130 BusFailAction (default None).",
+    "remote_sensors": "BV 1 BMS Changeover tells the zone whether the AHU supplies cool or warm air (all applications except #2, #8 and #9). Room temperature, humidity and CO2 come from the connected room operating unit or analog input, not from the BMS.",
+    "setup": [
+      "MS/TP only: baud 9600-115200, default 38400; address 0-127, default 1; max 32 nodes without repeater.",
+      "Device instance 0-4194302, default 1.",
+      "Configure with the Belimo ZoneEase VAV app (Android).",
+      "AV 200 TrunkNoCloud records the MS/TP trunk for the cloud twin and helps spot MAC collisions."
+    ],
+    "gotchas": [
+      "Persistent writable objects (limits, tuning, configuration) should not be written cyclically.",
+      "Airflow and temperature objects come in several unit versions; map one set and stick to it.",
+      "Max 5 active COV subscriptions, lifetime up to 8 hours."
+    ]
+  },
+  "points": [
+    {
+      "type": "AI",
+      "instance": 1,
+      "name": "RelPosDmp",
+      "description": "Relative damper position",
+      "units": "%",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AI",
+      "instance": 2,
+      "name": "AbsPosDmp",
+      "description": "Absolute damper position",
+      "units": "°",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AI",
+      "instance": 3,
+      "name": "RelativeHumdity",
+      "description": "Room relative humidity",
+      "units": "%",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AI",
+      "instance": 7,
+      "name": "RelPosValve",
+      "description": "Reheat valve position (none for on/off valve)",
+      "units": "%",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AI",
+      "instance": 10,
+      "name": "RelAirFlow",
+      "description": "Relative airflow, based on V'nom",
+      "units": "%",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AI",
+      "instance": 12,
+      "name": "AbsAirFlow_m3h",
+      "description": "Absolute airflow",
+      "units": "m³/h",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AI",
+      "instance": 13,
+      "name": "AbsAirFlow_cfm",
+      "description": "Absolute airflow",
+      "units": "cfm",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AI",
+      "instance": 15,
+      "name": "RelPosDmpSec",
+      "description": "Secondary damper position",
+      "units": "%",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AI",
+      "instance": 16,
+      "name": "RelAirFlowSec",
+      "description": "Secondary damper relative airflow",
+      "units": "%",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AI",
+      "instance": 19,
+      "name": "AbsAirFlow_UnitSel",
+      "description": "Absolute airflow in the unit set by MV 121",
+      "units": "",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AI",
+      "instance": 20,
+      "name": "RmT_C",
+      "description": "Room temperature",
+      "units": "°C",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AI",
+      "instance": 21,
+      "name": "RmT_F",
+      "description": "Room temperature",
+      "units": "°F",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AI",
+      "instance": 23,
+      "name": "RmT_UnitSel",
+      "description": "Room temperature in the unit set by MV 128",
+      "units": "",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AI",
+      "instance": 29,
+      "name": "DeltaP_Pa",
+      "description": "Differential pressure",
+      "units": "Pa",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AI",
+      "instance": 61,
+      "name": "CO2Concentration",
+      "description": "CO2 concentration",
+      "units": "ppm",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AI",
+      "instance": 110,
+      "name": "SpAbsAirFlow_UnitSel",
+      "description": "Airflow setpoint in the unit set by MV 121",
+      "units": "",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AO",
+      "instance": 10,
+      "name": "OverrideValue",
+      "description": "Override setpoint used when MO 1 is 8-13",
+      "units": "",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 1,
+      "name": "BoostModeTime",
+      "description": "Boost mode time (default 100)",
+      "units": "min",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 2,
+      "name": "EcoModeHeatSpShift",
+      "description": "Eco mode heating setpoint shift (default 4)",
+      "units": "°C",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 3,
+      "name": "EcoModeCoolSpShift",
+      "description": "Eco mode cooling setpoint shift (default 4)",
+      "units": "°C",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 20,
+      "name": "SpRelAirFlowSec",
+      "description": "Setpoint sent to the secondary damper",
+      "units": "%",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 31,
+      "name": "TempCtrlPBand",
+      "description": "Temperature loop P-band (default 2)",
+      "units": "",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 32,
+      "name": "TempCtrlTn",
+      "description": "Temperature loop integral time (default 600)",
+      "units": "s",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 33,
+      "name": "DeadbandTemp",
+      "description": "Temperature loop deadband (default 1)",
+      "units": "°C",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 34,
+      "name": "CO2CtrlPBand",
+      "description": "CO2 loop P-band (CO2 app only)",
+      "units": "",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 35,
+      "name": "CO2CtrlTn",
+      "description": "CO2 loop integral time (CO2 app only)",
+      "units": "s",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 36,
+      "name": "DeadbandCO2",
+      "description": "CO2 loop deadband (CO2 app only)",
+      "units": "ppm",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 80,
+      "name": "HysteresisFan",
+      "description": "Parallel fan hysteresis",
+      "units": "%",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 81,
+      "name": "HysteresisElHeater1",
+      "description": "Electric heater 1 hysteresis",
+      "units": "%",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 82,
+      "name": "HysteresisElHeater2",
+      "description": "Electric heater 2 hysteresis",
+      "units": "%",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 83,
+      "name": "AggregateStart",
+      "description": "Electric reheat start value (default 10)",
+      "units": "%",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 84,
+      "name": "SpRmTHL_C",
+      "description": "High limit of room setpoint at the room unit",
+      "units": "°C",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 85,
+      "name": "SpRmTLL_C",
+      "description": "Low limit of room setpoint at the room unit",
+      "units": "°C",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 86,
+      "name": "Vmin_m3h",
+      "description": "Minimum airflow",
+      "units": "m³/h",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 87,
+      "name": "VmaxC_m3h",
+      "description": "Maximum cooling airflow",
+      "units": "m³/h",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 88,
+      "name": "Vmin_UnitSel",
+      "description": "Minimum airflow in the unit set by MV 121",
+      "units": "",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 89,
+      "name": "VmaxC_UnitSel",
+      "description": "Maximum cooling airflow in the unit set by MV 121",
+      "units": "",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 90,
+      "name": "Vmin_cfm",
+      "description": "Minimum airflow",
+      "units": "cfm",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 91,
+      "name": "VmaxC_cfm",
+      "description": "Maximum cooling airflow",
+      "units": "cfm",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 93,
+      "name": "VmaxH_m3/h",
+      "description": "Maximum heating airflow",
+      "units": "m³/h",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 94,
+      "name": "VmaxH_UnitSel",
+      "description": "Maximum heating airflow in the unit set by MV 121",
+      "units": "",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 95,
+      "name": "VmaxH_cfm",
+      "description": "Maximum heating airflow",
+      "units": "cfm",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 102,
+      "name": "SpAbsVAVAirFlow_m3h",
+      "description": "Airflow setpoint (VAV application #9 only)",
+      "units": "m³/h",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 103,
+      "name": "SpAbsVAVAirFlow_cfm",
+      "description": "Airflow setpoint (VAV application #9 only)",
+      "units": "cfm",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 104,
+      "name": "SpAbsVAVAirFlow_UnitSel",
+      "description": "Airflow setpoint in MV 121 unit (VAV app #9 only)",
+      "units": "",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 108,
+      "name": "SpRmT_C",
+      "description": "Room temperature setpoint (default 22)",
+      "units": "°C",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 109,
+      "name": "SpRmT_F",
+      "description": "Room temperature setpoint",
+      "units": "°F",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 110,
+      "name": "SpRmT_UnitSel",
+      "description": "Room temperature setpoint in the unit set by MV 128",
+      "units": "",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 111,
+      "name": "SpCO2",
+      "description": "CO2 setpoint (CO2 app only)",
+      "units": "ppm",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 112,
+      "name": "Vnom_m3h",
+      "description": "Nominal airflow",
+      "units": "m³/h",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 113,
+      "name": "Vnom_cfm",
+      "description": "Nominal airflow",
+      "units": "cfm",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 115,
+      "name": "AirQualityGoodLimit",
+      "description": "CO2 limit for good air quality LED (default 1000)",
+      "units": "ppm",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 116,
+      "name": "AirQualityMediumLimit",
+      "description": "CO2 limit for moderate air quality LED (default 1500)",
+      "units": "ppm",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 117,
+      "name": "FlowGainSec",
+      "description": "Secondary damper airflow gain",
+      "units": "",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 119,
+      "name": "Vnom_UnitSel",
+      "description": "Nominal airflow in the unit set by MV 121",
+      "units": "",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 120,
+      "name": "VnomSec_m3h",
+      "description": "Secondary damper nominal airflow",
+      "units": "m³/h",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 121,
+      "name": "VnomSec_UnitSel",
+      "description": "Secondary damper nominal airflow, MV 121 unit",
+      "units": "",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 122,
+      "name": "VmaxSec_m3h",
+      "description": "Secondary damper maximum airflow",
+      "units": "m³/h",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 123,
+      "name": "VmaxSec_UnitSel",
+      "description": "Secondary damper maximum airflow, MV 121 unit",
+      "units": "",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 124,
+      "name": "VminSec_m3h",
+      "description": "Secondary damper minimum airflow",
+      "units": "m³/h",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 125,
+      "name": "VminSec_UnitSel",
+      "description": "Secondary damper minimum airflow, MV 121 unit",
+      "units": "",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 128,
+      "name": "SetFlowCutOffPressureValue",
+      "description": "Differential pressure zero-point cut-off",
+      "units": "Pa",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 130,
+      "name": "BusWatchdog",
+      "description": "Bus watchdog timeout (5-3600 s, default 120)",
+      "units": "s",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 200,
+      "name": "TrunkNoCloud",
+      "description": "MS/TP trunk number for the cloud twin",
+      "units": "",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "BI",
+      "instance": 4,
+      "name": "FrostModeState",
+      "description": "Frost mode state",
+      "units": "",
+      "access": "R",
+      "states": "0=Inactive, 1=Active"
+    },
+    {
+      "type": "BI",
+      "instance": 5,
+      "name": "DigitalInputStatus",
+      "description": "Room unit digital input",
+      "units": "",
+      "access": "R",
+      "states": "0=Inactive, 1=Active"
+    },
+    {
+      "type": "BI",
+      "instance": 6,
+      "name": "HighCutState",
+      "description": "Reheat safety (high cut) state",
+      "units": "",
+      "access": "R",
+      "states": "0=Inactive, 1=Active"
+    },
+    {
+      "type": "BI",
+      "instance": 10,
+      "name": "Heater1State",
+      "description": "Electric heater 1 / on-off valve state",
+      "units": "",
+      "access": "R",
+      "states": "0=Off, 1=On"
+    },
+    {
+      "type": "BI",
+      "instance": 11,
+      "name": "Heater2State",
+      "description": "Electric heater 2 state",
+      "units": "",
+      "access": "R",
+      "states": "0=Off, 1=On"
+    },
+    {
+      "type": "BI",
+      "instance": 12,
+      "name": "FanState",
+      "description": "Fan state",
+      "units": "",
+      "access": "R",
+      "states": "0=Off, 1=On"
+    },
+    {
+      "type": "BI",
+      "instance": 15,
+      "name": "RmOccupState",
+      "description": "Presence sensor state",
+      "units": "",
+      "access": "R",
+      "states": "0=Not occupied, 1=Occupied"
+    },
+    {
+      "type": "BV",
+      "instance": 1,
+      "name": "BMS Changeover",
+      "description": "Heating/cooling air supplied, written by the BMS",
+      "units": "",
+      "access": "W",
+      "states": "0=Cooling, 1=Heating"
+    },
+    {
+      "type": "BV",
+      "instance": 2,
+      "name": "RUOpRights",
+      "description": "Room unit operating rights (default enabled)",
+      "units": "",
+      "access": "W",
+      "states": "0=Room unit access disabled, 1=Room unit access enabled"
+    },
+    {
+      "type": "BV",
+      "instance": 3,
+      "name": "OpStateSec",
+      "description": "Secondary damper setpoint reached",
+      "units": "",
+      "access": "R",
+      "states": "0=Setpoint not reached, 1=Setpoint reached"
+    },
+    {
+      "type": "BV",
+      "instance": 10,
+      "name": "SyncPos",
+      "description": "Damper synchronization position",
+      "units": "",
+      "access": "W",
+      "states": "0=0% (damper closed), 1=100% (damper open)"
+    },
+    {
+      "type": "BV",
+      "instance": 11,
+      "name": "SyncStart",
+      "description": "Start synchronization",
+      "units": "",
+      "access": "W",
+      "states": "0=No sync., 1=Start sync."
+    },
+    {
+      "type": "BV",
+      "instance": 13,
+      "name": "OccupSensEn",
+      "description": "Enable occupancy sensor (toggles Active/Eco)",
+      "units": "",
+      "access": "W",
+      "states": "0=Disabled, 1=Enabled"
+    },
+    {
+      "type": "BV",
+      "instance": 21,
+      "name": "OffModeDmpPos",
+      "description": "Damper position in Off mode",
+      "units": "",
+      "access": "W",
+      "states": "0=Damper closed, 1=Damper controlled to V'min"
+    },
+    {
+      "type": "BV",
+      "instance": 111,
+      "name": "ColorScheme",
+      "description": "Room unit display colors",
+      "units": "",
+      "access": "W",
+      "states": "0=Black on white, 1=White on black"
+    },
+    {
+      "type": "BV",
+      "instance": 117,
+      "name": "EnFlowCutOff",
+      "description": "Suppress creep flow with closed damper",
+      "units": "",
+      "access": "W",
+      "states": "0=Disabled, 1=Enabled"
+    },
+    {
+      "type": "BV",
+      "instance": 125,
+      "name": "ShowAirQualityIndication",
+      "description": "Air quality LED on the room unit",
+      "units": "",
+      "access": "W",
+      "states": "0=Disabled, 1=Enabled"
+    },
+    {
+      "type": "BV",
+      "instance": 127,
+      "name": "ROUDisplaySensorValues",
+      "description": "Show sensor values on the room unit",
+      "units": "",
+      "access": "W",
+      "states": "0=Invisible, 1=Visible"
+    },
+    {
+      "type": "BV",
+      "instance": 128,
+      "name": "EnSec",
+      "description": "Enable secondary damper",
+      "units": "",
+      "access": "W",
+      "states": "0=Disabled, 1=Enabled"
+    },
+    {
+      "type": "MI",
+      "instance": 101,
+      "name": "StatusSystem",
+      "description": "Health of the standalone VAV system",
+      "units": "",
+      "access": "R",
+      "states": "1=System OK, 2=Invalid application, 3=Room temp. sensor broken, 4=Room temp. out of range, 5=Deadband temp. not reached, 6=AI sensor error, 7=AI sensor value out of range, 8=Deadband CO2 not reached, 9=V'min invalid, 10=CtrlRefVal"
+    },
+    {
+      "type": "MI",
+      "instance": 106,
+      "name": "StatusActuator",
+      "description": "Actuator status",
+      "units": "",
+      "access": "R",
+      "states": "1=Actuator OK, 2=Adaptation in progress, 3=Sync. in progress, 4=Motor stop, 5=Actuator setpoint position cannot be reached (error), 6=Flow with closed damper position, 7=Actuator setpoint position cannot be reached (warning)"
+    },
+    {
+      "type": "MI",
+      "instance": 108,
+      "name": "StatusMPBus",
+      "description": "MP-Bus and connected device status",
+      "units": "",
+      "access": "R",
+      "states": "1=MP-Bus OK, 2=MP-Bus not alive, 3=MP-Bus room unit/ceiling unit not alive, 4=MP-Bus I/O module not alive, 5=MP-Bus reheat valve not alive, 6=MP-Bus secondary damper not alive"
+    },
+    {
+      "type": "MI",
+      "instance": 109,
+      "name": "StatusPressure",
+      "description": "Differential pressure sensor and duct pressure status",
+      "units": "",
+      "access": "R",
+      "states": "1=Pressure OK, 2=dp sensor broken, 3=dp sensor out of range, 4=dp sensor connected incorrectly or back flow detected, 5=Insufficient pressure"
+    },
+    {
+      "type": "MO",
+      "instance": 1,
+      "name": "Override",
+      "description": "Override control; types 8-13 use AO 10",
+      "units": "",
+      "access": "W",
+      "states": "1=None, 2=Open damper, 3=Close damper, 4=Airflow V'max, 5=Airflow V'min, 6=Airflow V'nom, 7=MotorStop, 8=Pos. damper in %, 9=Airflow in %, 10=Airflow in m³/h, 11=-, 12=Temp. SP in °C, 13=CO2 SP in ppm"
+    },
+    {
+      "type": "MV",
+      "instance": 1,
+      "name": "SystemMode",
+      "description": "System mode (default Active)",
+      "units": "",
+      "access": "W",
+      "states": "1=Off, 2=Active, 3=Eco, 4=Boost"
+    },
+    {
+      "type": "MV",
+      "instance": 2,
+      "name": "ApplicationSel",
+      "description": "VAV zone application selection",
+      "units": "",
+      "access": "W",
+      "states": "1=none, 2=c, 3=c/h, 4=c+el-rh1, 5=c+el-rh2, 6=c+on/off-rh, 7=c+mod-rh, 8=CO2, 9=VAV, 10=c+p-f, 11=c+p-f+el-rh1, 12=c+p-f+el-rh2, 13=c+p-f+on/off-rh, 14=c+p-f+mod-rh, 15=c+s-f, 16=c/h+s-f, 17=c+s-f+el-rh1, 18=c+s-f+el-rh2, 19=c+s-f+on/off-rh, 20=c+s-f+mod-rh"
+    },
+    {
+      "type": "MV",
+      "instance": 3,
+      "name": "PowerOnMode",
+      "description": "Action at power-on (default Synchronization)",
+      "units": "",
+      "access": "W",
+      "states": "1=No action, 2=Synchronization, 3=Adaptation"
+    },
+    {
+      "type": "MV",
+      "instance": 4,
+      "name": "RUDisplaySet",
+      "description": "Room unit display setting (22RT-A00.. units)",
+      "units": "",
+      "access": "R",
+      "states": "1=Room temp. and setpoint display, 2=Setpoint display only, 3=Room temperature only"
+    },
+    {
+      "type": "MV",
+      "instance": 5,
+      "name": "ReheatEn",
+      "description": "When reheat is allowed (default heating only)",
+      "units": "",
+      "access": "W",
+      "states": "1=Always allowed, 2=Allowed in heating mode only, 3=Allowed in cooling mode only, 4=Never allowed"
+    },
+    {
+      "type": "MV",
+      "instance": 6,
+      "name": "CtrlRefVal",
+      "description": "Reference values for VAV control",
+      "units": "",
+      "access": "W",
+      "states": "1=Temperature only, 2=Temperature and CO2 analog input, 3=Temperature and CO2 room operating unit"
+    },
+    {
+      "type": "MV",
+      "instance": 121,
+      "name": "UnitSelAirFlow",
+      "description": "Airflow unit for the _UnitSel objects",
+      "units": "",
+      "access": "W",
+      "states": "1=m³/h, 2=l/s, 3=cfm"
+    },
+    {
+      "type": "MV",
+      "instance": 128,
+      "name": "UnitSelTemp",
+      "description": "Temperature unit for the _UnitSel objects",
+      "units": "",
+      "access": "W",
+      "states": "1=K, 2=°C, 3=°F"
+    },
+    {
+      "type": "MV",
+      "instance": 130,
+      "name": "BusFailAction",
+      "description": "Action when the bus watchdog expires",
+      "units": "",
+      "access": "W",
+      "states": "1=None, 2=Open, 3=Close, 4=Max, 5=Min, 6=-, 7=Stop"
+    }
+  ]
+}

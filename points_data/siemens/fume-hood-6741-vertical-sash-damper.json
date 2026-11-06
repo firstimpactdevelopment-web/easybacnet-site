@@ -1,0 +1,1019 @@
+{
+  "manufacturer": "Siemens",
+  "manufacturer_slug": "siemens",
+  "model": "BACnet Programmable Fume Hood Controller - Application 6741 (Vertical Sash with Damper)",
+  "model_slug": "fume-hood-6741-vertical-sash-damper",
+  "short_model": "Fume Hood Controller 6741",
+  "aliases": [
+    "Application 6741",
+    "App 6741",
+    "Siemens fume hood controller",
+    "Siemens FHC",
+    "VAV fume hood",
+    "vertical sash fume hood"
+  ],
+  "equipment_type": "Laboratory VAV controller (fume hood)",
+  "applies_to": "Variable air volume fume hoods with one or two vertical sashes and an exhaust damper, run by the Siemens BACnet programmable fume hood controller with sash sensors and an operator display panel.",
+  "summary": "Application 6741 runs a VAV fume hood with vertical sashes and an exhaust damper on a Siemens BACnet programmable fume hood controller over BACnet MS/TP. It calculates the open sash area from the sash sensors, sets the exhaust airflow setpoint to hold the face velocity setpoint, and drives the damper with a floating (extend/retract) actuator. Occupied and unoccupied face velocity setpoints, sash alerts, flow warnings and alarms, and an emergency purge mode are built in.",
+  "bacnet_transport": [
+    "BACnet MS/TP"
+  ],
+  "firmware": null,
+  "default_device_instance": null,
+  "access_inferred": true,
+  "notes": [
+    "AI and BI objects are read-only. AO and BO objects are BACnet output objects with a priority array; the guide has no access column, so access is inferred from object type. Many AOs are calculated status values, not commands.",
+    "Instances shown in braces in the guide may be unbundled at a field panel; that marking is not reproduced here.",
+    "Units are given in US units (cfm, fpm, ft², in, inH2O); the guide also lists SI factory defaults.",
+    "The same guide (140-1344) also covers application 6742 (Venturi valve); that table is a separate entry.",
+    "EXH STPT = FACE AREA x FVEL STPT; FVEL STPT follows OCC FV STPT or UNOC FV STPT through OCC.UNOCC, with OCC DELAY before switching to unoccupied.",
+    "STARTUP MODE (AO 21): 0 = normal, 1 and 2 = decommission modes, 3 = start-up with alarms off (factory default).",
+    "The point database for application 6741 is on pages 31-34 of the guide."
+  ],
+  "source": {
+    "title": "BACnet Programmable Fume Hood Controller Vertical Sash Configuration with Damper or Venturi Valve, Application 6741 and Application 6742, Application Note",
+    "doc_number": "140-1344",
+    "revision_date": "2015-11-09",
+    "url": "https://sid.siemens.com/api/khub/documents/jZXTMijdgHr2UijYRScCYw/content"
+  },
+  "integration": {
+    "summary": "Address the controller on the BACnet MS/TP trunk (manually or with auto addressing) and set STARTUP MODE to normal. The BMS can set occupancy with OCC.UNOCC (BO 20) and the face velocity setpoints, and reads face velocity, exhaust airflow, sash area and the alarm points.",
+    "minimum_points": [
+      {
+        "ref": "BO 20",
+        "name": "OCC.UNOCC",
+        "why": "OCC = occupied face velocity setpoint in use"
+      },
+      {
+        "ref": "AO 84",
+        "name": "OCC FV STPT",
+        "why": "Occupied face velocity setpoint, fpm"
+      },
+      {
+        "ref": "AO 85",
+        "name": "UNOC FV STPT",
+        "why": "Unoccupied face velocity setpoint, fpm"
+      },
+      {
+        "ref": "AO 4",
+        "name": "FACE VEL",
+        "why": "Calculated face velocity, fpm"
+      },
+      {
+        "ref": "AI 31",
+        "name": "EXH VOL",
+        "why": "Measured hood exhaust airflow, cfm"
+      },
+      {
+        "ref": "AO 54",
+        "name": "FACE AREA",
+        "why": "Sash open area, ft²"
+      },
+      {
+        "ref": "BO 5",
+        "name": "LOW ALM",
+        "why": "Low flow alarm"
+      },
+      {
+        "ref": "BO 6",
+        "name": "HIGH ALM",
+        "why": "High flow alarm"
+      },
+      {
+        "ref": "BO 7",
+        "name": "EMER ALM",
+        "why": "Emergency purge alarm"
+      },
+      {
+        "ref": "BO 8",
+        "name": "GEN FAILURE",
+        "why": "General failure (sensor or hardware)"
+      }
+    ],
+    "enable": "No enable point: the controller runs its sequence once STARTUP MODE (AO 21) is 0. OCC.UNOCC (BO 20) picks the occupied or unoccupied face velocity setpoint; the guide drives it from DI 2.",
+    "heartbeat": null,
+    "remote_sensors": null,
+    "setup": [
+      "BACnet MS/TP only. CTLR ADDRESS (AO 1) holds the MS/TP address; the point table lists its factory value as 99.",
+      "APPLICATION (AO 2) holds the application number; the point table lists its factory default as 6700."
+    ],
+    "gotchas": [
+      "STARTUP MODE (AO 21) ships at 3 (start-up: control works but alarms are off and the display shows Startup). Set it to 0 for normal operation; 1 and 2 are decommission modes.",
+      "Emergency purge from the display button (or DI 6) overrides all other control: EMER ALM is set at BACnet priority 1, the damper opens fully for EMER TIMER, then flow holds at EXH STPT raised by EMER STPT until the button is pressed again.",
+      "If the controller loses power, the exhaust damper goes fully open.",
+      "With a digital room unit (revision 26 and later), a command sent through the room unit puts the matching BACnet input Out Of Service.",
+      "Loop gains, duct and sash dimensions, calibration and display settings are commissioning values; don't write them from the BMS routinely."
+    ]
+  },
+  "points": [
+    {
+      "type": "AO",
+      "instance": 1,
+      "name": "CTLR ADDRESS",
+      "description": "Controller MS/TP address",
+      "units": "",
+      "access": "C",
+      "states": ""
+    },
+    {
+      "type": "AO",
+      "instance": 2,
+      "name": "APPLICATION",
+      "description": "Application number running in the controller",
+      "units": "",
+      "access": "C",
+      "states": ""
+    },
+    {
+      "type": "AO",
+      "instance": 4,
+      "name": "FACE VEL",
+      "description": "Calculated face velocity",
+      "units": "fpm",
+      "access": "C",
+      "states": ""
+    },
+    {
+      "type": "BO",
+      "instance": 5,
+      "name": "LOW ALM",
+      "description": "Low flow alarm",
+      "units": "",
+      "access": "C",
+      "states": "0=OFF, 1=ON"
+    },
+    {
+      "type": "BO",
+      "instance": 6,
+      "name": "HIGH ALM",
+      "description": "High flow alarm",
+      "units": "",
+      "access": "C",
+      "states": "0=OFF, 1=ON"
+    },
+    {
+      "type": "BO",
+      "instance": 7,
+      "name": "EMER ALM",
+      "description": "Emergency purge alarm",
+      "units": "",
+      "access": "C",
+      "states": "0=OFF, 1=ON"
+    },
+    {
+      "type": "BO",
+      "instance": 8,
+      "name": "GEN FAILURE",
+      "description": "General failure (sensor or hardware)",
+      "units": "",
+      "access": "C",
+      "states": "0=OFF, 1=ON"
+    },
+    {
+      "type": "AO",
+      "instance": 10,
+      "name": "HI ALM LMT",
+      "description": "High flow alarm limit, % of setpoint",
+      "units": "%",
+      "access": "C",
+      "states": ""
+    },
+    {
+      "type": "AO",
+      "instance": 11,
+      "name": "HI WARN LMT",
+      "description": "High flow warning limit, % of setpoint",
+      "units": "%",
+      "access": "C",
+      "states": ""
+    },
+    {
+      "type": "AO",
+      "instance": 12,
+      "name": "LOW WARN LMT",
+      "description": "Low flow warning limit, % of setpoint",
+      "units": "%",
+      "access": "C",
+      "states": ""
+    },
+    {
+      "type": "AO",
+      "instance": 13,
+      "name": "LOW ALM LMT",
+      "description": "Low flow alarm limit, % of setpoint",
+      "units": "%",
+      "access": "C",
+      "states": ""
+    },
+    {
+      "type": "AO",
+      "instance": 14,
+      "name": "EMER TIMER",
+      "description": "Emergency full-open time",
+      "units": "s",
+      "access": "C",
+      "states": ""
+    },
+    {
+      "type": "AO",
+      "instance": 15,
+      "name": "EMER STPT",
+      "description": "Emergency flow, % of the exhaust setpoint",
+      "units": "%",
+      "access": "C",
+      "states": ""
+    },
+    {
+      "type": "BO",
+      "instance": 16,
+      "name": "LOW WARN",
+      "description": "Low flow warning",
+      "units": "",
+      "access": "C",
+      "states": "0=OFF, 1=ON"
+    },
+    {
+      "type": "BO",
+      "instance": 17,
+      "name": "HIGH WARN",
+      "description": "High flow warning",
+      "units": "",
+      "access": "C",
+      "states": "0=OFF, 1=ON"
+    },
+    {
+      "type": "AO",
+      "instance": 18,
+      "name": "ALARM TIME",
+      "description": "Delay before a warning or alarm is set",
+      "units": "s",
+      "access": "C",
+      "states": ""
+    },
+    {
+      "type": "BO",
+      "instance": 19,
+      "name": "ALM AKNLG",
+      "description": "Alarm silenced from the display panel",
+      "units": "",
+      "access": "C",
+      "states": "0=OFF, 1=ON"
+    },
+    {
+      "type": "BO",
+      "instance": 20,
+      "name": "OCC.UNOCC",
+      "description": "Occupied/unoccupied mode",
+      "units": "",
+      "access": "C",
+      "states": "0=OCC, 1=UNOCC"
+    },
+    {
+      "type": "AO",
+      "instance": 21,
+      "name": "STARTUP MODE",
+      "description": "Normal, decommission or startup mode (code)",
+      "units": "",
+      "access": "C",
+      "states": ""
+    },
+    {
+      "type": "BO",
+      "instance": 22,
+      "name": "LEFT SWITCH",
+      "description": "Left display panel button",
+      "units": "",
+      "access": "C",
+      "states": "0=OFF, 1=ON"
+    },
+    {
+      "type": "BO",
+      "instance": 23,
+      "name": "RIGHT SWITCH",
+      "description": "Right display panel button",
+      "units": "",
+      "access": "C",
+      "states": "0=OFF, 1=ON"
+    },
+    {
+      "type": "BO",
+      "instance": 24,
+      "name": "ATTN.UNATTN",
+      "description": "Hood attended or unattended",
+      "units": "",
+      "access": "C",
+      "states": "0=ATTN, 1=UNATTN"
+    },
+    {
+      "type": "AO",
+      "instance": 25,
+      "name": "AT ALRT AREA",
+      "description": "Sash open area alert limit, attended",
+      "units": "ft²",
+      "access": "C",
+      "states": ""
+    },
+    {
+      "type": "AO",
+      "instance": 26,
+      "name": "UN ALRT AREA",
+      "description": "Sash open area alert limit, unattended",
+      "units": "ft²",
+      "access": "C",
+      "states": ""
+    },
+    {
+      "type": "AO",
+      "instance": 27,
+      "name": "OPEN TIME",
+      "description": "Time the sash alert can be silenced",
+      "units": "s",
+      "access": "C",
+      "states": ""
+    },
+    {
+      "type": "BO",
+      "instance": 28,
+      "name": "SASH TONE",
+      "description": "Sash alert horn enabled",
+      "units": "",
+      "access": "C",
+      "states": "0=OFF, 1=ON"
+    },
+    {
+      "type": "BO",
+      "instance": 30,
+      "name": "SASH OP ALRT",
+      "description": "Sash open too far alert",
+      "units": "",
+      "access": "C",
+      "states": "0=OFF, 1=ON"
+    },
+    {
+      "type": "AI",
+      "instance": 31,
+      "name": "EXH VOL",
+      "description": "Measured hood exhaust airflow",
+      "units": "cfm",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AO",
+      "instance": 32,
+      "name": "FLOW COEF",
+      "description": "Airflow pickup coefficient",
+      "units": "",
+      "access": "C",
+      "states": ""
+    },
+    {
+      "type": "AO",
+      "instance": 33,
+      "name": "DUCT AREA",
+      "description": "Exhaust duct area",
+      "units": "ft²",
+      "access": "C",
+      "states": ""
+    },
+    {
+      "type": "AO",
+      "instance": 34,
+      "name": "TRANS RANGE",
+      "description": "Pressure transmitter range",
+      "units": "inH2O",
+      "access": "C",
+      "states": ""
+    },
+    {
+      "type": "AO",
+      "instance": 35,
+      "name": "LINEAR FL RG",
+      "description": "Range of a linear flow input",
+      "units": "cfm",
+      "access": "C",
+      "states": ""
+    },
+    {
+      "type": "AI",
+      "instance": 36,
+      "name": "AVS2 PRESS",
+      "description": "Air velocity sensor 2 pressure",
+      "units": "inH2O",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "BI",
+      "instance": 37,
+      "name": "DI 2",
+      "description": "Digital input 2",
+      "units": "",
+      "access": "R",
+      "states": "0=OFF, 1=ON"
+    },
+    {
+      "type": "BI",
+      "instance": 38,
+      "name": "DI 6",
+      "description": "Digital input 6",
+      "units": "",
+      "access": "R",
+      "states": "0=OFF, 1=ON"
+    },
+    {
+      "type": "AO",
+      "instance": 39,
+      "name": "AO 1",
+      "description": "Analog output 1",
+      "units": "V",
+      "access": "C",
+      "states": ""
+    },
+    {
+      "type": "AO",
+      "instance": 40,
+      "name": "AO 3",
+      "description": "Analog output 3",
+      "units": "V",
+      "access": "C",
+      "states": ""
+    },
+    {
+      "type": "BO",
+      "instance": 41,
+      "name": "EXTN DO1",
+      "description": "Damper actuator extend output on DO 1",
+      "units": "",
+      "access": "C",
+      "states": "0=HOLD, 1=EXTN"
+    },
+    {
+      "type": "BO",
+      "instance": 42,
+      "name": "RETC DO2",
+      "description": "Damper actuator retract output on DO 2",
+      "units": "",
+      "access": "C",
+      "states": "0=RETC, 1=HOLD"
+    },
+    {
+      "type": "BO",
+      "instance": 43,
+      "name": "DO 3",
+      "description": "Digital output 3",
+      "units": "",
+      "access": "C",
+      "states": "0=OFF, 1=ON"
+    },
+    {
+      "type": "BO",
+      "instance": 44,
+      "name": "DO 4",
+      "description": "Digital output 4",
+      "units": "",
+      "access": "C",
+      "states": "0=OFF, 1=ON"
+    },
+    {
+      "type": "BO",
+      "instance": 45,
+      "name": "DO 5",
+      "description": "Digital output 5",
+      "units": "",
+      "access": "C",
+      "states": "0=OFF, 1=ON"
+    },
+    {
+      "type": "BO",
+      "instance": 46,
+      "name": "DECOM DO6",
+      "description": "Decommission output on DO 6",
+      "units": "",
+      "access": "C",
+      "states": "0=OFF, 1=ON"
+    },
+    {
+      "type": "BO",
+      "instance": 47,
+      "name": "ALARM DO7",
+      "description": "Local alarm output on DO 7",
+      "units": "",
+      "access": "C",
+      "states": "0=OFF, 1=ON"
+    },
+    {
+      "type": "BO",
+      "instance": 48,
+      "name": "AUTOZERO DO8",
+      "description": "Autozero module output on DO 8",
+      "units": "",
+      "access": "C",
+      "states": "0=OFF, 1=ON"
+    },
+    {
+      "type": "AI",
+      "instance": 49,
+      "name": "AI 3",
+      "description": "Spare analog input 3",
+      "units": "V",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AI",
+      "instance": 50,
+      "name": "AI 4",
+      "description": "Spare analog input 4",
+      "units": "V",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AI",
+      "instance": 51,
+      "name": "AI 5",
+      "description": "Spare analog input 5",
+      "units": "kΩ",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AO",
+      "instance": 52,
+      "name": "VERT SASH1",
+      "description": "Vertical sash 1 position",
+      "units": "in",
+      "access": "C",
+      "states": ""
+    },
+    {
+      "type": "AO",
+      "instance": 53,
+      "name": "VERT SASH2",
+      "description": "Vertical sash 2 position",
+      "units": "in",
+      "access": "C",
+      "states": ""
+    },
+    {
+      "type": "AO",
+      "instance": 54,
+      "name": "FACE AREA",
+      "description": "Calculated sash open area",
+      "units": "ft²",
+      "access": "C",
+      "states": ""
+    },
+    {
+      "type": "AO",
+      "instance": 55,
+      "name": "CAL SASH POS",
+      "description": "Sash position used for calibration",
+      "units": "in",
+      "access": "C",
+      "states": ""
+    },
+    {
+      "type": "BO",
+      "instance": 56,
+      "name": "CAL SASH LOC",
+      "description": "Sash sensor calibration position select",
+      "units": "",
+      "access": "C",
+      "states": "0=MIN, 1=MAX"
+    },
+    {
+      "type": "AO",
+      "instance": 57,
+      "name": "CAL SASH NUM",
+      "description": "Sash sensor number to calibrate",
+      "units": "",
+      "access": "C",
+      "states": ""
+    },
+    {
+      "type": "AO",
+      "instance": 58,
+      "name": "DMPR CMD",
+      "description": "Exhaust damper drive command (-100 to 100)",
+      "units": "%",
+      "access": "C",
+      "states": ""
+    },
+    {
+      "type": "BO",
+      "instance": 59,
+      "name": "INVERT DO2",
+      "description": "Invert the DO 2 output",
+      "units": "",
+      "access": "C",
+      "states": "0=NO, 1=YES"
+    },
+    {
+      "type": "BO",
+      "instance": 60,
+      "name": "AVS FAILMODE",
+      "description": "Damper action if the air velocity sensor fails",
+      "units": "",
+      "access": "C",
+      "states": "0=HOLD, 1=OPEN"
+    },
+    {
+      "type": "AO",
+      "instance": 61,
+      "name": "EXH P GAIN",
+      "description": "Exhaust flow loop proportional gain",
+      "units": "",
+      "access": "C",
+      "states": ""
+    },
+    {
+      "type": "AO",
+      "instance": 62,
+      "name": "EXH I GAIN",
+      "description": "Exhaust flow loop integral gain",
+      "units": "",
+      "access": "C",
+      "states": ""
+    },
+    {
+      "type": "AO",
+      "instance": 63,
+      "name": "EXH D GAIN",
+      "description": "Exhaust flow loop derivative gain",
+      "units": "",
+      "access": "C",
+      "states": ""
+    },
+    {
+      "type": "AO",
+      "instance": 64,
+      "name": "FIXED AREA",
+      "description": "Fixed open area always included",
+      "units": "ft²",
+      "access": "C",
+      "states": ""
+    },
+    {
+      "type": "AO",
+      "instance": 65,
+      "name": "VERT WIDTH1",
+      "description": "Vertical sash 1 width",
+      "units": "in",
+      "access": "C",
+      "states": ""
+    },
+    {
+      "type": "AO",
+      "instance": 66,
+      "name": "VERT WIDTH2",
+      "description": "Vertical sash 2 width",
+      "units": "in",
+      "access": "C",
+      "states": ""
+    },
+    {
+      "type": "AO",
+      "instance": 67,
+      "name": "VSASH HGHT1",
+      "description": "Vertical sash 1 full height",
+      "units": "in",
+      "access": "C",
+      "states": ""
+    },
+    {
+      "type": "AO",
+      "instance": 68,
+      "name": "VSASH HGHT2",
+      "description": "Vertical sash 2 full height",
+      "units": "in",
+      "access": "C",
+      "states": ""
+    },
+    {
+      "type": "AO",
+      "instance": 69,
+      "name": "TRACK HEIGHT",
+      "description": "Sash track height",
+      "units": "in",
+      "access": "C",
+      "states": ""
+    },
+    {
+      "type": "AO",
+      "instance": 70,
+      "name": "BYPASS HGHT",
+      "description": "Bypass opening height",
+      "units": "in",
+      "access": "C",
+      "states": ""
+    },
+    {
+      "type": "AO",
+      "instance": 71,
+      "name": "BYPASS OPEN",
+      "description": "Bypass open setting",
+      "units": "%",
+      "access": "C",
+      "states": ""
+    },
+    {
+      "type": "AO",
+      "instance": 72,
+      "name": "FAIL AREA",
+      "description": "Face area used if the sash sensor fails",
+      "units": "ft²",
+      "access": "C",
+      "states": ""
+    },
+    {
+      "type": "AO",
+      "instance": 73,
+      "name": "EXTERNAL A",
+      "description": "External face area added to the calculation",
+      "units": "ft²",
+      "access": "C",
+      "states": ""
+    },
+    {
+      "type": "AO",
+      "instance": 74,
+      "name": "MAX EXT AREA",
+      "description": "External area at full AI 3 signal",
+      "units": "ft²",
+      "access": "C",
+      "states": ""
+    },
+    {
+      "type": "AO",
+      "instance": 75,
+      "name": "MIN EXTVOLTS",
+      "description": "AI 3 voltage for zero external area",
+      "units": "V",
+      "access": "C",
+      "states": ""
+    },
+    {
+      "type": "AO",
+      "instance": 80,
+      "name": "EXH MAX",
+      "description": "Maximum exhaust airflow",
+      "units": "cfm",
+      "access": "C",
+      "states": ""
+    },
+    {
+      "type": "AO",
+      "instance": 81,
+      "name": "EXH MIN",
+      "description": "Minimum exhaust airflow",
+      "units": "cfm",
+      "access": "C",
+      "states": ""
+    },
+    {
+      "type": "AO",
+      "instance": 82,
+      "name": "EXH STPT",
+      "description": "Active exhaust airflow setpoint",
+      "units": "cfm",
+      "access": "C",
+      "states": ""
+    },
+    {
+      "type": "AO",
+      "instance": 83,
+      "name": "FVEL STPT",
+      "description": "Active face velocity setpoint",
+      "units": "fpm",
+      "access": "C",
+      "states": ""
+    },
+    {
+      "type": "AO",
+      "instance": 84,
+      "name": "OCC FV STPT",
+      "description": "Face velocity setpoint, occupied",
+      "units": "fpm",
+      "access": "C",
+      "states": ""
+    },
+    {
+      "type": "AO",
+      "instance": 85,
+      "name": "UNOC FV STPT",
+      "description": "Face velocity setpoint, unoccupied",
+      "units": "fpm",
+      "access": "C",
+      "states": ""
+    },
+    {
+      "type": "AO",
+      "instance": 86,
+      "name": "OCC LOW FV",
+      "description": "Low face velocity choice from the display buttons",
+      "units": "fpm",
+      "access": "C",
+      "states": ""
+    },
+    {
+      "type": "AO",
+      "instance": 87,
+      "name": "OCC HIGH FV",
+      "description": "High face velocity choice from the display buttons",
+      "units": "fpm",
+      "access": "C",
+      "states": ""
+    },
+    {
+      "type": "AO",
+      "instance": 88,
+      "name": "OCC DELAY",
+      "description": "Delay before switching to the unoccupied face velocity",
+      "units": "s",
+      "access": "C",
+      "states": ""
+    },
+    {
+      "type": "AO",
+      "instance": 89,
+      "name": "EXH SIG AO2",
+      "description": "Exhaust flow signal out on AO 2",
+      "units": "V",
+      "access": "C",
+      "states": ""
+    },
+    {
+      "type": "AO",
+      "instance": 90,
+      "name": "AO2 RANGE",
+      "description": "Exhaust flow at 10 V on AO 2",
+      "units": "cfm",
+      "access": "C",
+      "states": ""
+    },
+    {
+      "type": "AO",
+      "instance": 91,
+      "name": "AO2 DEADBAND",
+      "description": "Deadband for the AO 2 flow signal",
+      "units": "%",
+      "access": "C",
+      "states": ""
+    },
+    {
+      "type": "AO",
+      "instance": 92,
+      "name": "AO2 V MIN",
+      "description": "Minimum AO 2 output voltage",
+      "units": "V",
+      "access": "C",
+      "states": ""
+    },
+    {
+      "type": "BO",
+      "instance": 94,
+      "name": "CAL AIR",
+      "description": "Start air velocity sensor calibration",
+      "units": "",
+      "access": "C",
+      "states": "0=NO, 1=YES"
+    },
+    {
+      "type": "AO",
+      "instance": 95,
+      "name": "CAL SETUP",
+      "description": "Calibration setup code",
+      "units": "",
+      "access": "C",
+      "states": ""
+    },
+    {
+      "type": "AO",
+      "instance": 96,
+      "name": "CAL TIMER",
+      "description": "Hours between automatic calibrations",
+      "units": "h",
+      "access": "C",
+      "states": ""
+    },
+    {
+      "type": "AI",
+      "instance": 97,
+      "name": "AVS1 PRESS",
+      "description": "Air velocity sensor 1 pressure",
+      "units": "inH2O",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AO",
+      "instance": 98,
+      "name": "LOOP TIME",
+      "description": "Control loop interval",
+      "units": "s",
+      "access": "C",
+      "states": ""
+    },
+    {
+      "type": "AO",
+      "instance": 99,
+      "name": "ERROR STATUS",
+      "description": "Controller error status code",
+      "units": "",
+      "access": "C",
+      "states": ""
+    },
+    {
+      "type": "AO",
+      "instance": 106,
+      "name": "DISPLAY WT",
+      "description": "Display smoothing weight",
+      "units": "%",
+      "access": "C",
+      "states": ""
+    },
+    {
+      "type": "AO",
+      "instance": 107,
+      "name": "DISPLAY RES",
+      "description": "Change needed to update the display",
+      "units": "fpm",
+      "access": "C",
+      "states": ""
+    },
+    {
+      "type": "BO",
+      "instance": 108,
+      "name": "BLANK DSPLY",
+      "description": "Blank the operator display panel",
+      "units": "",
+      "access": "C",
+      "states": "0=OFF, 1=ON"
+    },
+    {
+      "type": "BO",
+      "instance": 109,
+      "name": "LAMP TEST",
+      "description": "Test the display lamps",
+      "units": "",
+      "access": "C",
+      "states": "0=OFF, 1=ON"
+    },
+    {
+      "type": "BO",
+      "instance": 110,
+      "name": "ENG UNITS",
+      "description": "Display in English or SI units",
+      "units": "",
+      "access": "C",
+      "states": "0=ENG, 1=SI"
+    },
+    {
+      "type": "AO",
+      "instance": 121,
+      "name": "HI LIMIT",
+      "description": "Feedback loop high limit (not described in the guide)",
+      "units": "",
+      "access": "C",
+      "states": ""
+    },
+    {
+      "type": "AO",
+      "instance": 122,
+      "name": "LO LIMIT",
+      "description": "Feedback loop low limit (not described in the guide)",
+      "units": "",
+      "access": "C",
+      "states": ""
+    },
+    {
+      "type": "BO",
+      "instance": 123,
+      "name": "EMER DI6",
+      "description": "Remote emergency purge input on DI 6",
+      "units": "",
+      "access": "C",
+      "states": "0=OFF, 1=ON"
+    },
+    {
+      "type": "AO",
+      "instance": 126,
+      "name": "AVE FACE VEL",
+      "description": "Averaged face velocity shown on the display",
+      "units": "fpm",
+      "access": "C",
+      "states": ""
+    },
+    {
+      "type": "BO",
+      "instance": 127,
+      "name": "PPCL STATE",
+      "description": "PPCL program loaded or empty",
+      "units": "",
+      "access": "C",
+      "states": "0=EMPTY, 1=LOADED"
+    }
+  ]
+}

@@ -1,0 +1,712 @@
+{
+  "manufacturer": "Daikin Applied",
+  "manufacturer_slug": "daikin-applied",
+  "model": "MicroTech II Vertical Self-Contained Unit Controller (SWP / SWT)",
+  "model_slug": "microtech-ii-vertical-self-contained",
+  "short_model": "MicroTech II self-contained SWP/SWT",
+  "aliases": [
+    "ED 15061",
+    "SWP",
+    "SWT",
+    "MicroTech II self-contained",
+    "MTII SCUC",
+    "McQuay self-contained"
+  ],
+  "equipment_type": "Self-contained unit controller",
+  "applies_to": "Daikin McQuay SWP self-contained and SWT modular self-contained air conditioning units with the MicroTech II controller (application 1.28), DAC or SCC control.",
+  "summary": "The MicroTech II controller on SWP and SWT vertical self-contained units talks BACnet IP or BACnet MS/TP through a communication module (LonWorks is the other option). The table covers unit status, application and occupancy commands, zone and discharge air setpoints, water and air temperatures, duct and building pressure, waterside and airside economizer data, SCC dehumidification, a keypad schedule and calendar, and alarm read and clear objects.",
+  "bacnet_transport": [
+    "BACnet IP",
+    "BACnet MS/TP"
+  ],
+  "firmware": "Application 1.28",
+  "default_device_instance": null,
+  "access_inferred": false,
+  "notes": [
+    "Names are the point names from the guide's BACnet table; the guide does not print separate object names for them.",
+    "Six table rows use Daikin proprietary object types (runtime totalization for cooling hours, and application objects for the cooling/heating reset enables and OA ambient); they are left out.",
+    "Space Temperature (AI 120), Outdoor Air Temperature (AI 145), Building Static Pressure (AI 1425) and Water Flow (BI 225) are marked R*: a BMS may write them after setting Out_Of_Service to TRUE.",
+    "Most multistate settings are analog values carrying an enumeration number (e.g. Application Mode AV 3715).",
+    "Points marked NA for SCC or DAC apply only to the other control type; dehumidification objects are SCC only.",
+    "The device instance is factory set to the last six digits of the main control board bar-code number."
+  ],
+  "source": {
+    "title": "MicroTech II Vertical Self-Contained Unit Controller Protocol Information, BACnet Networks, LonWorks Networks",
+    "doc_number": "ED 15061-6",
+    "revision_date": "2012-05",
+    "url": "https://tahoeweb.daikinapplied.com/api/general/DownloadDocumentByName/media/ED15061-6.pdf"
+  },
+  "integration": {
+    "summary": "Set switch S7 to AUTO and Control Mode to AUTO at the keypad. Leave Occupancy Mode on Auto and command occupancy with the Occupancy Scheduler Input BV at a priority above 15 (e.g. 8). Use Application Mode for on/off, write setpoints as needed and read status, temperatures and the alarm notification values.",
+    "minimum_points": [
+      {
+        "ref": "AV 3715",
+        "name": "Application Mode",
+        "why": "Off / heat-cool / heat only / cool only / fan only"
+      },
+      {
+        "ref": "BV 1380",
+        "name": "Occupancy Scheduler Input",
+        "why": "Occupied command; write at priority 8, not 15"
+      },
+      {
+        "ref": "AV 3720",
+        "name": "Emergency Override Mode Flag",
+        "why": "Network shutdown (1 = off)"
+      },
+      {
+        "ref": "AV 3765",
+        "name": "Occupied Cooling Setpoint",
+        "why": "Occupied cooling setpoint"
+      },
+      {
+        "ref": "AV 3820",
+        "name": "Occupied Heating Setpoint",
+        "why": "Occupied heating setpoint"
+      },
+      {
+        "ref": "AV 3840",
+        "name": "Duct Static Pressure Setpoint",
+        "why": "Duct static pressure setpoint (DAC units)"
+      },
+      {
+        "ref": "BV 4150",
+        "name": "Alarm, Faults: Clear All",
+        "why": "Fault alarm flag; write to clear faults"
+      },
+      {
+        "ref": "AV 3915",
+        "name": "Unit Status",
+        "why": "Unit operating state"
+      },
+      {
+        "ref": "AI 135",
+        "name": "Discharge Air Temperature",
+        "why": "Discharge air temperature"
+      },
+      {
+        "ref": "AV 5328",
+        "name": "Alarms-Fault Individual Notification",
+        "why": "Highest-priority active fault number"
+      }
+    ],
+    "enable": "Set rocker switch S7 to AUTO and the keypad Control Mode to AUTO (password 4545). Application Mode (AV 3715) then turns the unit off or selects heat/cool, heat only, cool only or fan only; Emergency Override Mode Flag (AV 3720) = 1 shuts it off from the network. Occupancy Mode (AV 3930) is an override and should stay Auto.",
+    "heartbeat": "The guide's receive heartbeat (occupancy scheduler input, application mode, fan capacity, building static pressure, outdoor, return and space temperature, humidity) is a LonWorks feature with no BACnet equivalent. Over BACnet, an input written with Out_Of_Service TRUE keeps its last value if communication is lost.",
+    "remote_sensors": "Space temperature (AI 120), outdoor air temperature (AI 145) and building static pressure (AI 1425) accept BMS values after Out_Of_Service is set TRUE. Space Setpoint Type (AV 3725) must be Network for network setpoint control on SCC units.",
+    "setup": [
+      "Defaults: BACnet IP 172.16.83.46, mask 255.255.0.0, UDP 47808; MS/TP MAC 2 (set on the module's dip switches), 19200 baud.",
+      "Device instance = last six digits of the MCB bar-code number; device name MTII SCUC plus the last nine digits.",
+      "Communication parameters are changed with MicroTech II ServiceTools; after changing the communication option do a Reset, Archive and Cold Reset."
+    ],
+    "gotchas": [
+      "The keypad schedule writes BV 1380 at priority 15; command it at a higher priority and write NULL to give control back.",
+      "Alarm notification AVs show only the highest-priority active alarm of each class.",
+      "Cooling hours and reset-enable objects use proprietary object types that many BMS front ends cannot read."
+    ]
+  },
+  "points": [
+    {
+      "type": "AV",
+      "instance": 3915,
+      "name": "Unit Status",
+      "description": "Unit Status",
+      "units": "",
+      "access": "R",
+      "states": "1=OffNet, 2=Off Sw, 3=OffAlm, 4=Calib, 5=Startup, 6=Recirc, 7=FanOnly, 8=Econo, 9=Cooling, 10=MWU, 11=Heating, 12=MinDAT, 13=UnocEcon, 14=UnocFanO, 15=UnocDAT, 16=UnocClg, 17=UnocHtg, 18=Balance, 19=OffMan, 20=ManCtrl"
+    },
+    {
+      "type": "AV",
+      "instance": 3730,
+      "name": "Cooling Capacity",
+      "description": "Cooling Capacity",
+      "units": "%",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 3805,
+      "name": "Heating Capacity",
+      "description": "Heating Capacity",
+      "units": "%",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 3775,
+      "name": "Cooling Control Status",
+      "description": "Cooling Control Status",
+      "units": "",
+      "access": "R",
+      "states": "0=All Clg, 1=Econo, 2=Mech Clg, 3=Off Amb, 4=Off Alarm, 5=Off None, 6=Off No Flow, 7=Off Sw, 8=Off Net, 9=Off Man"
+    },
+    {
+      "type": "AV",
+      "instance": 3825,
+      "name": "Heating Control Status",
+      "description": "Heating Control Status",
+      "units": "",
+      "access": "R",
+      "states": "0=HtEna, 1=OffAmb, 2=OffAlarm, 3=OffNone, 4=N/A, 5=OffSw, 6=OffNet, 7=OffMan"
+    },
+    {
+      "type": "AV",
+      "instance": 3715,
+      "name": "Application Mode",
+      "description": "Unit mode command: heat/cool, off, heat only, cool only, fan only",
+      "units": "",
+      "access": "W",
+      "states": "0=Heat/Cool, 1=Off, 2=HeatOnly, 3=CoolOnly, 4=FanOnly"
+    },
+    {
+      "type": "BV",
+      "instance": 3950,
+      "name": "VAV Box Output",
+      "description": "VAV box output state (heat/cool)",
+      "units": "",
+      "access": "R",
+      "states": "0=Heat, 1=Cool"
+    },
+    {
+      "type": "AV",
+      "instance": 3920,
+      "name": "Occupancy",
+      "description": "Occupancy",
+      "units": "",
+      "access": "R",
+      "states": "0=Occ, 1=Unocc, 2=Tnt Ovrd"
+    },
+    {
+      "type": "AV",
+      "instance": 3930,
+      "name": "Occupancy Mode",
+      "description": "Occupancy override; leave on Auto for normal operation",
+      "units": "",
+      "access": "W",
+      "states": "0=Occ, 1=Unocc, 2=Tnt Ovrd, 3=Auto"
+    },
+    {
+      "type": "BV",
+      "instance": 1380,
+      "name": "Occupancy Scheduler Input",
+      "description": "Occupied/unoccupied command used when Occupancy Mode = Auto",
+      "units": "",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 3925,
+      "name": "Occupancy Source",
+      "description": "Occupancy Source",
+      "units": "",
+      "access": "R",
+      "states": "0=None, 1=Int Sched, 2=Net Sched, 3=Occ Mode, 4=Remote Sw, 5=N/A"
+    },
+    {
+      "type": "AV",
+      "instance": 3720,
+      "name": "Emergency Override Mode Flag",
+      "description": "Network shutdown (1 = off, unit status OffNet)",
+      "units": "",
+      "access": "W",
+      "states": "0=Norm, 1=Off"
+    },
+    {
+      "type": "AV",
+      "instance": 165,
+      "name": "Control Temperature",
+      "description": "Control Temperature",
+      "units": "°F",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AI",
+      "instance": 135,
+      "name": "Discharge Air Temperature",
+      "description": "Discharge Air Temperature",
+      "units": "°F",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AI",
+      "instance": 140,
+      "name": "Return Air Temperature",
+      "description": "Return Air Temperature",
+      "units": "°F",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AI",
+      "instance": 120,
+      "name": "Space Temperature",
+      "description": "Space Temperature",
+      "units": "°F",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AI",
+      "instance": 145,
+      "name": "Outdoor Air Temperature",
+      "description": "Outdoor Air Temperature",
+      "units": "°F",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AI",
+      "instance": 150,
+      "name": "Mixed Air Temp",
+      "description": "Mixed Air Temp",
+      "units": "°F",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AI",
+      "instance": 155,
+      "name": "Entering Water Temp",
+      "description": "Entering Water Temp",
+      "units": "°F",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AI",
+      "instance": 160,
+      "name": "Leaving Water Temp",
+      "description": "Leaving Water Temp",
+      "units": "°F",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "BI",
+      "instance": 225,
+      "name": "Water Flow",
+      "description": "Water Flow",
+      "units": "",
+      "access": "R",
+      "states": "0=Yes, 1=No"
+    },
+    {
+      "type": "AV",
+      "instance": 3885,
+      "name": "Head Pressure Setpoint",
+      "description": "Head Pressure Setpoint",
+      "units": "°F",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "BI",
+      "instance": 190,
+      "name": "Airflow Status",
+      "description": "Airflow Status",
+      "units": "",
+      "access": "R",
+      "states": "0=Noflo, 1=Flow"
+    },
+    {
+      "type": "BV",
+      "instance": 3935,
+      "name": "Discharge Fan Status",
+      "description": "Discharge Fan Status",
+      "units": "",
+      "access": "R",
+      "states": "0=Off, 1=On"
+    },
+    {
+      "type": "BV",
+      "instance": 3945,
+      "name": "Fan Operation Output",
+      "description": "Fan Operation Output",
+      "units": "",
+      "access": "R",
+      "states": "0=Off, 1=On"
+    },
+    {
+      "type": "AV",
+      "instance": 3895,
+      "name": "Duct Static Pressure",
+      "description": "Duct Static Pressure",
+      "units": "inH2O",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 3840,
+      "name": "Duct Static Pressure Setpoint",
+      "description": "Duct Static Pressure Setpoint (default 1.00\" WC)",
+      "units": "inH2O",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 3845,
+      "name": "Discharge Fan Capacity",
+      "description": "Discharge Fan Capacity",
+      "units": "%",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AI",
+      "instance": 1425,
+      "name": "Building Static Pressure",
+      "description": "Building Static Pressure",
+      "units": "inH2O",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 3750,
+      "name": "Effective Cooling Enable Setpoint",
+      "description": "Effective Cooling Enable Setpoint",
+      "units": "°F",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 3765,
+      "name": "Occupied Cooling Setpoint",
+      "description": "Occupied Cooling Setpoint (default 75°F)",
+      "units": "°F",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 3710,
+      "name": "Control Temperature Source",
+      "description": "Control Temperature Source",
+      "units": "",
+      "access": "W",
+      "states": "0=Return, 1=Space, 2=OAT, 3=MAT"
+    },
+    {
+      "type": "AV",
+      "instance": 3900,
+      "name": "Unoccupied Cooling Setpoint",
+      "description": "Unoccupied Cooling Setpoint (default 85°F)",
+      "units": "°F",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 3800,
+      "name": "Effective Heating Enable Setpoint",
+      "description": "Effective Heating Enable Setpoint",
+      "units": "°F",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 3820,
+      "name": "Occupied Heating Setpoint",
+      "description": "Occupied Heating Setpoint (default 70°F)",
+      "units": "°F",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 3905,
+      "name": "Unoccupied Heating Setpoint",
+      "description": "Unoccupied Heating Setpoint (default 55°F)",
+      "units": "°F",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 3745,
+      "name": "Effective Cooling Discharge Setpoint",
+      "description": "Effective Cooling Discharge Setpoint",
+      "units": "°F",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 3740,
+      "name": "Discharge Air Cooling Setpoint",
+      "description": "Discharge Air Cooling Setpoint (default 55°F)",
+      "units": "°F",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 3755,
+      "name": "Min Discharge Air Cooling Setpoint",
+      "description": "Min Discharge Air Cooling Setpoint (default 55°F)",
+      "units": "°F",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 3760,
+      "name": "Max Discharge Air Cooling Setpoint",
+      "description": "Max Discharge Air Cooling Setpoint (default 65°F)",
+      "units": "°F",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "AI",
+      "instance": 1320,
+      "name": "Economizer Valve Position",
+      "description": "Economizer Valve Position",
+      "units": "%",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AI",
+      "instance": 1315,
+      "name": "Outdoor Air Damper Position",
+      "description": "Outdoor Air Damper Position",
+      "units": "%",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 3870,
+      "name": "Effective Min Outdoor Damper Pos Spt",
+      "description": "Effective Min Outdoor Damper Pos Spt",
+      "units": "%",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 3875,
+      "name": "Outdoor Air Damper Min Position",
+      "description": "Outdoor Air Damper Min Position (default 10%)",
+      "units": "%",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 3890,
+      "name": "Economizer Changeover Method",
+      "description": "Economizer Changeover Method",
+      "units": "",
+      "access": "W",
+      "states": "0=Enthalpy, 1=Dry Bulb"
+    },
+    {
+      "type": "AV",
+      "instance": 3865,
+      "name": "Economizer Changeover Temp Spt",
+      "description": "Economizer changeover temperature, dry bulb method (default 60°F)",
+      "units": "°F",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 3795,
+      "name": "Effective Heating Discharge Setpoint",
+      "description": "Effective Heating Discharge Setpoint",
+      "units": "°F",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 3790,
+      "name": "Discharge Air Heating Setpoint",
+      "description": "Discharge Air Heating Setpoint (default 100°F)",
+      "units": "°F",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 3910,
+      "name": "Min Discharge Air Temperature Limit",
+      "description": "Min Discharge Air Temperature Limit (default 55°F)",
+      "units": "°F",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 3810,
+      "name": "Min Discharge Air Heating Setpoint",
+      "description": "Min Discharge Air Heating Setpoint (default 60°F)",
+      "units": "°F",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 3815,
+      "name": "Max Discharge Air Heating Setpoint",
+      "description": "Max Discharge Air Heating Setpoint (default 120°F)",
+      "units": "°F",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 3785,
+      "name": "Dehumidification Status",
+      "description": "Dehumidification Status",
+      "units": "",
+      "access": "R",
+      "states": "0=False, 1=True"
+    },
+    {
+      "type": "AV",
+      "instance": 1505,
+      "name": "Relative Humidity",
+      "description": "Relative Humidity",
+      "units": "%RH",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 660,
+      "name": "Dew Point Temperature",
+      "description": "Dew Point Temperature",
+      "units": "°F",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 3780,
+      "name": "Dehumidification Method",
+      "description": "Dehumidification Method",
+      "units": "",
+      "access": "W",
+      "states": "0=None, 1=RelHum, 2=DewPnt"
+    },
+    {
+      "type": "AV",
+      "instance": 3770,
+      "name": "Relative Humidity Setpoint",
+      "description": "Relative humidity setpoint, RelHum control (default 50%)",
+      "units": "%RH",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 3735,
+      "name": "Dew Point Setpoint",
+      "description": "Dew point setpoint, DewPnt control (default 50°F)",
+      "units": "°F",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 3725,
+      "name": "Space Setpoint Type",
+      "description": "Setpoint source: thermostat or network (SCC units)",
+      "units": "",
+      "access": "W",
+      "states": "0=Tstat, 1=Network"
+    },
+    {
+      "type": "BV",
+      "instance": 3940,
+      "name": "Outdoor Air Damper Open/Close",
+      "description": "Manual force of the outdoor air damper open/closed",
+      "units": "",
+      "access": "W",
+      "states": "0=Close, 1=Open"
+    },
+    {
+      "type": "BV",
+      "instance": 4150,
+      "name": "Alarm, Faults: Clear All",
+      "description": "Fault alarm active; write to clear all faults",
+      "units": "",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "BV",
+      "instance": 4145,
+      "name": "Alarm, Problems: Clear All",
+      "description": "Problem alarm active; write to clear all problems",
+      "units": "",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "BV",
+      "instance": 4140,
+      "name": "Alarm, Warnings: Clear All",
+      "description": "Warning alarm active; write to clear all warnings",
+      "units": "",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 5328,
+      "name": "Alarms-Fault Individual Notification",
+      "description": "Highest-priority active fault alarm number",
+      "units": "",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 5327,
+      "name": "Alarms-Problem Individual Notification",
+      "description": "Highest-priority active problem alarm number",
+      "units": "",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 5326,
+      "name": "Alarms-Warning Individual Notification",
+      "description": "Highest-priority active warning alarm number",
+      "units": "",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "SCH",
+      "instance": 1385,
+      "name": "Daily Schedule",
+      "description": "Keypad daily schedule; writes Occupancy Scheduler Input at priority 15",
+      "units": "",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "CAL",
+      "instance": 1390,
+      "name": "Holiday",
+      "description": "Keypad holiday date list",
+      "units": "",
+      "access": "W",
+      "states": ""
+    }
+  ]
+}

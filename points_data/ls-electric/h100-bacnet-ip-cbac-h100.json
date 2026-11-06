@@ -1,0 +1,795 @@
+{
+  "manufacturer": "LS Electric",
+  "manufacturer_slug": "ls-electric",
+  "model": "H100 drive with CBAC-H100 Ethernet module (BACnet IP)",
+  "model_slug": "h100-bacnet-ip-cbac-h100",
+  "aliases": [
+    "H100",
+    "LSLV-H100",
+    "CBAC-H100",
+    "H100 BACnet IP",
+    "H100 Ethernet option",
+    "LS H100 BACnet/IP"
+  ],
+  "equipment_type": "Variable frequency drive (BACnet IP option module)",
+  "applies_to": "LS Electric LSLV-H100 HVAC inverters (OS 1.22 or later) fitted with the CBAC-H100 Ethernet communication module set to BACnet IP.",
+  "summary": "The CBAC-H100 Ethernet module adds BACnet IP, EtherNet/IP or Modbus TCP to the H100; COM-21 = 0 selects BACnet IP (default). The object list matches the H100+ embedded MS/TP map without the extension I/O objects: AVs for frequency reference, ramps, PID reference/feedback and command timeout, BVs for run/stop/reset and relays, AIs for monitors and trip words, BIs for drive state and terminals.",
+  "bacnet_transport": [
+    "BACnet IP"
+  ],
+  "firmware": "Needs H100 inverter OS 1.22 or later",
+  "default_device_instance": 237000,
+  "access_inferred": false,
+  "notes": [
+    "From the H100 BACnet IP (Ethernet) User Manual EN V1.2, section 11.2.5 (PDF pp33-39).",
+    "Compared with the H100+ embedded MS/TP map, this list has no AV 7-9 (comm analog outputs), AI 28 or BI 31-35 (extension I/O).",
+    "AV 2, AV 3 and AV 4 can be written in AUTO mode only; AV 4 cannot exceed DRV-20 Max Freq.",
+    "To drive relays from BV 6-10, set OUT-31 to OUT-35 to 0 (None).",
+    "For priority control, the manual says to write clear (255) to give the priority back.",
+    "AI 24 RunTimeMin is printed with units Day though it is run time in minutes. The printed MSI is listed as MI; MSV as MV."
+  ],
+  "source": {
+    "title": "H100 BACnet IP (Ethernet) Communication Module User Manual",
+    "doc_number": "V1.2",
+    "revision_date": "2026-09-30",
+    "url": "https://www.lselectricamerica.com/api/v1/fo/ctpApi/fileDownUrl?filePath=CTP%2FManual%2F790179813%2FH100%20BACNET%20IP(Ethernet)_User%20Manual_EN_V1.2_260930.pdf"
+  },
+  "integration": {
+    "summary": "Install the CBAC-H100 module, set COM-21 = 0 (BACnet IP), the IP address, subnet and gateway in COM-12 to COM-20 and the device instance in COM-84/COM-85, then set COM-94 = Yes to apply. Set DRV-06 Cmd Source and DRV-07 Freq Ref Src to Field Bus, write BV 2 to run, BV 1 to stop and AV 4 for speed, and read BI 2, AI 5, AI 4 and BI 4.",
+    "minimum_points": [
+      {
+        "ref": "BV 2",
+        "name": "RunForwardCmd",
+        "why": "Run forward command (True = run)"
+      },
+      {
+        "ref": "BV 1",
+        "name": "StopCmd",
+        "why": "Stop command (True = stop)"
+      },
+      {
+        "ref": "AV 4",
+        "name": "CommandFreqSet",
+        "why": "Frequency reference, Hz"
+      },
+      {
+        "ref": "BV 4",
+        "name": "ResetFaultCmd",
+        "why": "Reset a tripped drive"
+      },
+      {
+        "ref": "BI 2",
+        "name": "RunningForward",
+        "why": "Running forward status"
+      },
+      {
+        "ref": "AI 5",
+        "name": "OutputFreq",
+        "why": "Output frequency, Hz"
+      },
+      {
+        "ref": "AI 4",
+        "name": "OutputCurrent",
+        "why": "Motor amps"
+      },
+      {
+        "ref": "AI 8",
+        "name": "OutputPower",
+        "why": "Output power, kW"
+      },
+      {
+        "ref": "BI 4",
+        "name": "Tripped",
+        "why": "Any active trip"
+      },
+      {
+        "ref": "BI 30",
+        "name": "Warning",
+        "why": "Any active warning"
+      }
+    ],
+    "enable": "DRV-06 Cmd Source = 4 (Field Bus) for run/stop and DRV-07 Freq Ref Src = 7 (Field Bus) for AV 4. AV 2-4 can be written in AUTO mode only.",
+    "heartbeat": "PRT-12 Lost Cmd Mode (default None: keep the last state; Free-Run, Dec, Hold Input, Hold Output, Lost Preset) and PRT-13 Lost Cmd Time (0.1-120 s, default 1.0 s) set the action when the network command is lost; PRT-14 is the Lost Preset speed. AV 1 CommTimeoutSet and MV 1 LostCommand have the same range and options.",
+    "remote_sensors": "AV 6 PIDFeedbackSet lets the BMS write the PID feedback and AV 5 PIDReferenceSet the PID setpoint.",
+    "setup": [
+      "COM-21 Opt Parameter-12 = 0 selects BACnet IP (default); 1 EtherNet/IP, 2 Modbus TCP.",
+      "COM-10 selects DHCP (1) or static (0); COM-12 to COM-15 IP address, COM-16 subnet as CIDR bits (default 24), COM-17 to COM-20 gateway.",
+      "With BACnet IP selected, COM-22 sets the UDP port (default 0xBAC0 = 47808) and COM-23 the Out of Service mode.",
+      "Device instance = COM-84 x 1000 + COM-85 (defaults 237 and 0, so 237000). COM-86 password (default 0) protects warm/cold start and the web server.",
+      "Set COM-94 Comm Update = 1 (Yes) after changing COM-07 or COM-10 to COM-23; the drive restarts when the IP or option type changes.",
+      "CNF-30 shows the installed module as BACnet IP (or Reserved-18/19 on older inverter software)."
+    ],
+    "gotchas": [
+      "BV 1 StopCmd, BV 2 RunForwardCmd and BV 3 RunReverseCmd are separate commands; write the stop BV to stop.",
+      "Lost Cmd Mode defaults to None, so the drive keeps its last command when the BMS goes quiet.",
+      "ReadPropertyMultiple is not in the listed services; poll with ReadProperty.",
+      "The module's web server is monitoring only; it cannot run the drive."
+    ]
+  },
+  "points": [
+    {
+      "type": "AV",
+      "instance": 1,
+      "name": "CommTimeoutSet",
+      "description": "Command timeout setting, 0.1-120.0",
+      "units": "s",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 2,
+      "name": "AccelTimeSet",
+      "description": "Acceleration time setting, 0.0-600.0",
+      "units": "s",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 3,
+      "name": "DecelTimeSet",
+      "description": "Deceleration time setting, 0.0-600.0",
+      "units": "s",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 4,
+      "name": "CommandFreqSet",
+      "description": "Frequency reference, 0.00 to DRV-20 max frequency",
+      "units": "Hz",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 5,
+      "name": "PIDReferenceSet",
+      "description": "PID reference (setpoint), 0-100.0",
+      "units": "%",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 6,
+      "name": "PIDFeedbackSet",
+      "description": "PID feedback from the network, 0-100.0",
+      "units": "%",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "MV",
+      "instance": 1,
+      "name": "LostCommand",
+      "description": "Action on lost command",
+      "units": "",
+      "access": "W",
+      "states": "0=None, 1=FreeRun, 2=Dec, 3=HoldInput, 4=HoldOutput, 5=LostPreset"
+    },
+    {
+      "type": "BV",
+      "instance": 1,
+      "name": "StopCmd",
+      "description": "Stop command",
+      "units": "",
+      "access": "W",
+      "states": "False(0)/True(1)"
+    },
+    {
+      "type": "BV",
+      "instance": 2,
+      "name": "RunForwardCmd",
+      "description": "Run forward command",
+      "units": "",
+      "access": "W",
+      "states": "False(0)/True(1)"
+    },
+    {
+      "type": "BV",
+      "instance": 3,
+      "name": "RunReverseCmd",
+      "description": "Run reverse command",
+      "units": "",
+      "access": "W",
+      "states": "False(0)/True(1)"
+    },
+    {
+      "type": "BV",
+      "instance": 4,
+      "name": "ResetFaultCmd",
+      "description": "Fault reset command",
+      "units": "",
+      "access": "W",
+      "states": "False(0)/True(1)"
+    },
+    {
+      "type": "BV",
+      "instance": 5,
+      "name": "FreeRunStopCmd",
+      "description": "Free-run (coast) stop command",
+      "units": "",
+      "access": "W",
+      "states": "False(0)/True(1)"
+    },
+    {
+      "type": "BV",
+      "instance": 6,
+      "name": "Relay1Cmd",
+      "description": "Relay 1 on/off command",
+      "units": "",
+      "access": "W",
+      "states": "False(0)/True(1)"
+    },
+    {
+      "type": "BV",
+      "instance": 7,
+      "name": "Relay2Cmd",
+      "description": "Relay 2 on/off command",
+      "units": "",
+      "access": "W",
+      "states": "False(0)/True(1)"
+    },
+    {
+      "type": "BV",
+      "instance": 8,
+      "name": "Relay3Cmd",
+      "description": "Relay 3 on/off command",
+      "units": "",
+      "access": "W",
+      "states": "False(0)/True(1)"
+    },
+    {
+      "type": "BV",
+      "instance": 9,
+      "name": "Relay4Cmd",
+      "description": "Relay 4 on/off command",
+      "units": "",
+      "access": "W",
+      "states": "False(0)/True(1)"
+    },
+    {
+      "type": "BV",
+      "instance": 10,
+      "name": "Relay5Cmd",
+      "description": "Relay 5 on/off command",
+      "units": "",
+      "access": "W",
+      "states": "False(0)/True(1)"
+    },
+    {
+      "type": "BV",
+      "instance": 11,
+      "name": "Q1Cmd",
+      "description": "Q1 output on/off command",
+      "units": "",
+      "access": "W",
+      "states": "False(0)/True(1)"
+    },
+    {
+      "type": "AI",
+      "instance": 1,
+      "name": "InvCap (kW)",
+      "description": "Inverter capacity",
+      "units": "kW",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AI",
+      "instance": 2,
+      "name": "InvCap(HP)",
+      "description": "Inverter capacity",
+      "units": "hp",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AI",
+      "instance": 3,
+      "name": "InvVoltageClass",
+      "description": "Inverter voltage class",
+      "units": "V",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AI",
+      "instance": 4,
+      "name": "OutputCurrent",
+      "description": "Output current",
+      "units": "A",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AI",
+      "instance": 5,
+      "name": "OutputFreq",
+      "description": "Output frequency",
+      "units": "Hz",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AI",
+      "instance": 6,
+      "name": "OutputVolgate",
+      "description": "Output voltage",
+      "units": "V",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AI",
+      "instance": 7,
+      "name": "DCLinkVoltage",
+      "description": "DC link voltage",
+      "units": "V",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AI",
+      "instance": 8,
+      "name": "OutputPower",
+      "description": "Output power",
+      "units": "kW",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AI",
+      "instance": 9,
+      "name": "AI1",
+      "description": "Analog input 1 value",
+      "units": "%",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AI",
+      "instance": 10,
+      "name": "AI2",
+      "description": "Analog input 2 value",
+      "units": "%",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AI",
+      "instance": 11,
+      "name": "OutputRPM",
+      "description": "Output speed",
+      "units": "rpm",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AI",
+      "instance": 12,
+      "name": "Pole",
+      "description": "Motor pole number",
+      "units": "",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AI",
+      "instance": 13,
+      "name": "InvStatus",
+      "description": "Inverter state word (common area 0h0305)",
+      "units": "",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AI",
+      "instance": 14,
+      "name": "LatchTripInfo1",
+      "description": "Latch-type trip flags 1 (0h0330)",
+      "units": "",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AI",
+      "instance": 15,
+      "name": "LatchTripInfo2",
+      "description": "Latch-type trip flags 2 (0h0331)",
+      "units": "",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AI",
+      "instance": 16,
+      "name": "LatchTripInfo3",
+      "description": "Latch-type trip flags 3 (0h0335)",
+      "units": "",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AI",
+      "instance": 17,
+      "name": "LevelTripInfo",
+      "description": "Level-type trip flags (0h0332)",
+      "units": "",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AI",
+      "instance": 18,
+      "name": "HWDIagInfo",
+      "description": "H/W diagnosis trip flags (0h0333)",
+      "units": "",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AI",
+      "instance": 19,
+      "name": "WarningInfo",
+      "description": "Warning flags (0h0334)",
+      "units": "",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AI",
+      "instance": 20,
+      "name": "KiloWattHour",
+      "description": "Energy, kWh part",
+      "units": "kWh",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AI",
+      "instance": 21,
+      "name": "MegaWattHour",
+      "description": "Energy, MWh part",
+      "units": "MWh",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AI",
+      "instance": 22,
+      "name": "PowerFactor",
+      "description": "Power factor",
+      "units": "",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AI",
+      "instance": 23,
+      "name": "RunTimeDay",
+      "description": "Run time, days",
+      "units": "Day",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AI",
+      "instance": 24,
+      "name": "RunTimeMin",
+      "description": "Run time, minutes",
+      "units": "Day",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AI",
+      "instance": 25,
+      "name": "PidOutValue",
+      "description": "PID output value",
+      "units": "%",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AI",
+      "instance": 26,
+      "name": "PidReferenceValue",
+      "description": "PID setpoint value",
+      "units": "%",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AI",
+      "instance": 27,
+      "name": "PidFeedbackValue",
+      "description": "PID feedback value",
+      "units": "%",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "BI",
+      "instance": 1,
+      "name": "Stopped",
+      "description": "Stopped",
+      "units": "",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "BI",
+      "instance": 2,
+      "name": "RunningForward",
+      "description": "Running forward",
+      "units": "",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "BI",
+      "instance": 3,
+      "name": "RunningReverse",
+      "description": "Running reverse",
+      "units": "",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "BI",
+      "instance": 4,
+      "name": "Tripped",
+      "description": "Trip active",
+      "units": "",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "BI",
+      "instance": 5,
+      "name": "Accelerating",
+      "description": "Accelerating",
+      "units": "",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "BI",
+      "instance": 6,
+      "name": "Decelerating",
+      "description": "Decelerating",
+      "units": "",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "BI",
+      "instance": 7,
+      "name": "SteadySpeed",
+      "description": "At steady speed",
+      "units": "",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "BI",
+      "instance": 8,
+      "name": "RunningDC",
+      "description": "Operating at 0 step speed",
+      "units": "",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "BI",
+      "instance": 9,
+      "name": "Stopping",
+      "description": "Stopping",
+      "units": "",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "BI",
+      "instance": 10,
+      "name": "FwdRunCommandState",
+      "description": "Forward run command state",
+      "units": "",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "BI",
+      "instance": 11,
+      "name": "RevRunCommandState",
+      "description": "Reverse run command state",
+      "units": "",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "BI",
+      "instance": 12,
+      "name": "P1",
+      "description": "Input P1 state",
+      "units": "",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "BI",
+      "instance": 13,
+      "name": "P2",
+      "description": "Input P2 state",
+      "units": "",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "BI",
+      "instance": 14,
+      "name": "P3",
+      "description": "Input P3 state",
+      "units": "",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "BI",
+      "instance": 15,
+      "name": "P4",
+      "description": "Input P4 state",
+      "units": "",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "BI",
+      "instance": 16,
+      "name": "P5",
+      "description": "Input P5 state",
+      "units": "",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "BI",
+      "instance": 17,
+      "name": "P6",
+      "description": "Input P6 state",
+      "units": "",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "BI",
+      "instance": 18,
+      "name": "P7",
+      "description": "Input P7 state",
+      "units": "",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "BI",
+      "instance": 19,
+      "name": "Relay1",
+      "description": "Relay 1 state",
+      "units": "",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "BI",
+      "instance": 20,
+      "name": "Relay2",
+      "description": "Relay 2 state",
+      "units": "",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "BI",
+      "instance": 21,
+      "name": "Relay3",
+      "description": "Relay 3 state",
+      "units": "",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "BI",
+      "instance": 22,
+      "name": "Relay4",
+      "description": "Relay 4 state",
+      "units": "",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "BI",
+      "instance": 23,
+      "name": "Relay5",
+      "description": "Relay 5 state",
+      "units": "",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "BI",
+      "instance": 24,
+      "name": "Q1",
+      "description": "Q1 output state",
+      "units": "",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "BI",
+      "instance": 25,
+      "name": "SpeedSearch",
+      "description": "Speed search active",
+      "units": "",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "BI",
+      "instance": 26,
+      "name": "HWOCS",
+      "description": "H/W overcurrent (OCS) occurred",
+      "units": "",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "BI",
+      "instance": 27,
+      "name": "SWOCS",
+      "description": "S/W overcurrent (OCS) occurred",
+      "units": "",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "BI",
+      "instance": 28,
+      "name": "RunningDwell",
+      "description": "Dwell operation active",
+      "units": "",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "BI",
+      "instance": 29,
+      "name": "SteadyState",
+      "description": "Steady state",
+      "units": "",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "BI",
+      "instance": 30,
+      "name": "Warning",
+      "description": "Warning active",
+      "units": "",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "MI",
+      "instance": 1,
+      "name": "UnitsDisplay",
+      "description": "Speed display unit setting",
+      "units": "",
+      "access": "R",
+      "states": "1=Hz, 2=RPM"
+    }
+  ]
+}

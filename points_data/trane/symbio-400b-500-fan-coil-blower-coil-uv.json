@@ -1,0 +1,1157 @@
+{
+  "manufacturer": "Trane",
+  "manufacturer_slug": "trane",
+  "model": "Symbio 400-B/500 Fan Coil, Blower Coil and Unit Ventilator",
+  "model_slug": "symbio-400b-500-fan-coil-blower-coil-uv",
+  "short_model": "Symbio 400-B/500 FC/BC/UV",
+  "aliases": [
+    "Symbio 400-B",
+    "Symbio 400B",
+    "Symbio 500",
+    "Symbio fan coil",
+    "Symbio blower coil",
+    "Symbio unit ventilator",
+    "BAS-SVP060A-EN"
+  ],
+  "equipment_type": "Fan coil, blower coil and unit ventilator controller",
+  "applies_to": "Trane fan coils, blower coils and unit ventilators controlled by a Symbio 400-B or Symbio 500 programmable controller.",
+  "summary": "The Symbio 400-B/500 is Trane's programmable unit controller, BTL listed as a B-BC. For fan coil, blower coil and unit ventilator applications it exposes about 115 objects: local and BAS sensor values, occupancy, heat/cool mode and fan speed requests, valve, damper and heat outputs, setpoint limits and diagnostics. Symbio UI sets the protocol and chooses BAS or local per sensor and setpoint.",
+  "bacnet_transport": [
+    "BACnet MS/TP"
+  ],
+  "firmware": null,
+  "default_device_instance": null,
+  "access_inferred": true,
+  "notes": [
+    "The guide has no read/write column; access is inferred (BAS, Request, Setpoint, Enable and Reset objects as writable; inputs, outputs, Active, Status and Diagnostic objects as read-only).",
+    "Each point exists only on units with the matching option (the guide has a \"when the point exists\" column: economizer, hydronic, DX, electric heat, ECM fan, CO2 and so on).",
+    "BO 4 is printed twice: Chilled Water Valve Command Binary, or Compressor 1 Command, depending on the unit type; the first is listed.",
+    "BO 6 is printed twice: Heating Valve Command Binary, or Electric Heat Output 1, depending on the unit type; the first is listed.",
+    "BO 7 is printed twice: Reversing Valve Output, or Electric Heat Output 2, depending on the unit type; the first is listed.",
+    "MO 1 and MV 8 are both printed with the name Supply Fan Speed BAS; MV 8 carries Auto/Off/Low/Medium/High.",
+    "MV 2 Cooling Fan Speed Default appears only in the alphabetical table, marked do not use.",
+    "Units shown are imperial; System Units in Symbio UI switch BACnet units to SI. The guide also offers IP settings on IP-capable controllers but describes MS/TP addressing."
+  ],
+  "source": {
+    "title": "Integration Guide - Symbio 400-B/500 Programmable Controller for Fan Coil, Blower Coil and Unit Ventilator",
+    "doc_number": "BAS-SVP060A-EN",
+    "revision_date": "October 2022",
+    "url": "https://elibrary.tranetechnologies.com/public/commercial-hvac/Literature/Integration/BAS-SVP060A-EN_10082022.pdf"
+  },
+  "integration": {
+    "summary": "Set the rotary address, then use Symbio UI (USB, http://198.80.18.1) BAS Control Selection to pick BAS or Local for each sensor and setpoint. Schedule with MV 6 Occupancy Request, write AV 27 Space Temperature Setpoint BAS, MV 4 Heat Cool Mode Request and MV 8 fan speed, and refresh any BAS sensor objects at least every 15 minutes.",
+    "minimum_points": [
+      {
+        "ref": "MV 6",
+        "name": "Occupancy Request",
+        "why": "Occupancy command from the BMS schedule"
+      },
+      {
+        "ref": "MV 4",
+        "name": "Heat Cool Mode Request",
+        "why": "Heat/cool mode command"
+      },
+      {
+        "ref": "MV 8",
+        "name": "Supply Fan Speed BAS",
+        "why": "Fan speed command (1 = Auto)"
+      },
+      {
+        "ref": "AV 27",
+        "name": "Space Temperature Setpoint BAS",
+        "why": "Space setpoint from the BMS"
+      },
+      {
+        "ref": "BV 2",
+        "name": "Reset Diagnostic Request",
+        "why": "Reset diagnostics (self-clears)"
+      },
+      {
+        "ref": "MV 7",
+        "name": "Occupancy Status",
+        "why": "Confirms the occupancy in effect"
+      },
+      {
+        "ref": "MV 5",
+        "name": "Heat Cool Mode Status",
+        "why": "Heat/cool mode in effect"
+      },
+      {
+        "ref": "BI 5",
+        "name": "Supply Fan Status",
+        "why": "Fan running (1 = on)"
+      },
+      {
+        "ref": "AV 59",
+        "name": "Space Temperature Active",
+        "why": "Space temperature the unit controls to"
+      },
+      {
+        "ref": "AI 4",
+        "name": "Discharge Air Temperature",
+        "why": "Discharge air temperature"
+      }
+    ],
+    "enable": "The BAS controls the unit by writing values and putting points in or out of service. BAS Control Selection in Symbio UI chooses BAS or Local per sensor and setpoint. MV 9 Emergency Override BAS shuts the unit down for any value other than 1 = Normal.",
+    "heartbeat": "BAS-supplied sensor objects (Space Temperature BAS, Outdoor Air Temperature BAS, Space Humidity BAS, Entering Water Temperature BAS) must be rewritten at least every 15 minutes. If no write is seen in time the object goes to fault and the unit falls back to its own sensor; at power-up they start in fault until written.",
+    "remote_sensors": "Put the BAS sensor objects in service (they are out of service by default), then write AV 14 Space Temperature BAS, AV 1 Outdoor Air Temperature BAS, AV 2 Space Humidity BAS, AV 4 Entering Water Temperature BAS or AV 112 Space CO2 Concentration BAS. The matching Active objects (AV 59, AV 3, AV 6, AV 5, AV 113) show the value in use.",
+    "setup": [
+      "Three rotary switches set the BACnet MAC address and Device ID; each controller on a link needs a unique value.",
+      "Symbio UI (USB only, http://198.80.18.1) sets protocol, IP, identification and system units; saving restarts the controller.",
+      "Tracer SC+ sets a software Device ID automatically during discovery; third-party systems must set it themselves.",
+      "System units (IP/SI) chosen in Symbio UI change the units sent over BACnet."
+    ],
+    "gotchas": [
+      "BAS sensor objects are out of service by default; put them in service before writing.",
+      "BV 2 Reset Diagnostic Request clears all diagnostics except Filter Change Required; BV 12 resets the filter timer. Both self-clear.",
+      "BO 4, BO 6 and BO 7 change meaning with the unit type (hydronic vs DX/heat pump vs electric heat).",
+      "Only the points for the unit's options are present."
+    ]
+  },
+  "points": [
+    {
+      "type": "AI",
+      "instance": 1,
+      "name": "Space Temperature Local",
+      "description": "Local zone temperature or return air temperature",
+      "units": "°F",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AI",
+      "instance": 2,
+      "name": "Space Temperature Setpoint Local",
+      "description": "Local zone sensor setpoint",
+      "units": "°F",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AI",
+      "instance": 3,
+      "name": "Space Humidity Local",
+      "description": "Local relative humidity sensor value",
+      "units": "%",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AI",
+      "instance": 4,
+      "name": "Discharge Air Temperature",
+      "description": "Discharge air temperature from equipment",
+      "units": "°F",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AI",
+      "instance": 5,
+      "name": "Entering Water Temperature Local",
+      "description": "Local sensor entering water temperature",
+      "units": "°F",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AI",
+      "instance": 8,
+      "name": "Outside Air Temperature Local",
+      "description": "Local outside air temperature sensor",
+      "units": "°F",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AI",
+      "instance": 20,
+      "name": "Face and Bypass Damper Position Status",
+      "description": "Face and bypass damper position, % of stroke",
+      "units": "",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AI",
+      "instance": 21,
+      "name": "Space CO2 Concentration Local",
+      "description": "Local carbon dioxide concentration",
+      "units": "ppm",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AO",
+      "instance": 1,
+      "name": "Outdoor Air Damper Position",
+      "description": "Analog outdoor air damper output command",
+      "units": "",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AO",
+      "instance": 2,
+      "name": "Chilled Water Valve Command",
+      "description": "Analog chilled water valve command 0% closed",
+      "units": "",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AO",
+      "instance": 3,
+      "name": "Heating Valve Command",
+      "description": "Analog heating valve output command 0% closed",
+      "units": "",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AO",
+      "instance": 4,
+      "name": "Electric Heat Command",
+      "description": "Analog electric heat output command",
+      "units": "",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 1,
+      "name": "Outdoor Air Temperature BAS",
+      "description": "Communicated outdoor air temperature",
+      "units": "°F",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 2,
+      "name": "Space Humidity BAS",
+      "description": "Communicated space relative humidity",
+      "units": "%",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 3,
+      "name": "Outdoor Air Temperature Active",
+      "description": "Outdoor air temperature in use",
+      "units": "°F",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 4,
+      "name": "Entering Water Temperature BAS",
+      "description": "Communicated entering water temperature",
+      "units": "°F",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 5,
+      "name": "Entering Water Temperature Active",
+      "description": "Actively used entering water temperature",
+      "units": "°F",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 6,
+      "name": "Space Humidity Active",
+      "description": "Actively used space relative humidity",
+      "units": "%",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 8,
+      "name": "Economizer Minimum Position Setpoint BAS",
+      "description": "Communicated value for minimum economizer position setpoint",
+      "units": "%",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 9,
+      "name": "Fan Off Delay Time",
+      "description": "Fan off delay time",
+      "units": "seconds",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 10,
+      "name": "Compressor Enable BAS",
+      "description": "Compressor capacity limit; 0 % disables compressors",
+      "units": "%",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 12,
+      "name": "Filter Runtime Hours Setpoint",
+      "description": "Fan run hours before a filter maintenance diagnostic; 0 disables",
+      "units": "hours",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 14,
+      "name": "Space Temperature BAS",
+      "description": "Communicated space temperature",
+      "units": "°F",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 16,
+      "name": "Economizer Request",
+      "description": "Economizer position request for manual override",
+      "units": "%",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 18,
+      "name": "Cool Valve Request",
+      "description": "Cool valve position request for manual override",
+      "units": "%",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 19,
+      "name": "DX Cool Request",
+      "description": "DX compressor output request for manual override",
+      "units": "%",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 20,
+      "name": "Heat Valve Request",
+      "description": "Heat valve position request for manual override",
+      "units": "%",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 21,
+      "name": "Discharge Air Temperature Low Limit Setpoint",
+      "description": "Discharge air low limit; trips freeze protection after 3 min",
+      "units": "°F",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 22,
+      "name": "Electric Heat Request",
+      "description": "Electric heat request for manual override",
+      "units": "%",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 23,
+      "name": "Unoccupied Cooling Setpoint",
+      "description": "Cooling setpoint used in unoccupied mode",
+      "units": "°F",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 24,
+      "name": "Unoccupied Heating Setpoint",
+      "description": "Heating setpoint used in unoccupied mode",
+      "units": "°F",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 27,
+      "name": "Space Temperature Setpoint BAS",
+      "description": "Communicated space temperature setpoint",
+      "units": "°F",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 28,
+      "name": "Space Temperature Setpoint Active",
+      "description": "The currently used space temperature setpoint",
+      "units": "°F",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 29,
+      "name": "Freeze Avoidance Setpoint",
+      "description": "Freeze avoidance setpoint",
+      "units": "°F",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 30,
+      "name": "Occupied Offset",
+      "description": "Offset from the setpoint for occupied heat/cool setpoints",
+      "units": "°F",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 31,
+      "name": "Economizer Minimum Position Setpoint Local",
+      "description": "Minimum outside air damper position during occupied mode",
+      "units": "%",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 32,
+      "name": "Economizer Enable Minimum Outdoor Air Temperature Setpoint",
+      "description": "Economizing is allowed only above this outdoor air temperature",
+      "units": "°F",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 33,
+      "name": "Occupied Bypass Time",
+      "description": "Occupied bypass time remaining",
+      "units": "minutes",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 34,
+      "name": "Standby Offset",
+      "description": "Offset from the setpoint for standby heat/cool setpoints",
+      "units": "°F",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 35,
+      "name": "Exhaust fan Enable Position",
+      "description": "Economizer position that turns the exhaust fan on (default 10 %)",
+      "units": "%",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 36,
+      "name": "Space Dehumidification Setpoint BAS",
+      "description": "Space humidity setpoint for dehumidification",
+      "units": "%",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 37,
+      "name": "Space Temperature Setpoint Default",
+      "description": "Fallback space setpoint when no valid setpoint exists",
+      "units": "°F",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 38,
+      "name": "Filter Runtime Hours",
+      "description": "Fan run hours since the filter timer was reset",
+      "units": "hours",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 58,
+      "name": "Standby Minimum Position Setpoint",
+      "description": "Minimum position in occupied standby mode",
+      "units": "%",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 59,
+      "name": "Space Temperature Active",
+      "description": "The currently used space temperature",
+      "units": "°F",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 60,
+      "name": "Occupied Low Fan Min Position Setpoint",
+      "description": "Minimum position in occupied with low fan speed",
+      "units": "%",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 63,
+      "name": "Supply Fan Speed Request",
+      "description": "Supply fan speed request; below the low limit counts as off",
+      "units": "%",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 64,
+      "name": "Fan Capacity Low Limit",
+      "description": "Minimum fan speed as a fraction of maximum speed",
+      "units": "%",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 65,
+      "name": "Compressor Lockout Setpoint",
+      "description": "Outdoor air temperature that locks out the compressors",
+      "units": "°F",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 67,
+      "name": "Auxiliary Heat Control Request",
+      "description": "Auxiliary heat capacity limit; 0 % disables auxiliary heat",
+      "units": "%",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 68,
+      "name": "Space Relative Humidity Offset",
+      "description": "Dehumidification stops at setpoint minus this offset (default 8 %)",
+      "units": "%",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 69,
+      "name": "Economizer Minimum Position Setpoint Active",
+      "description": "Current minimum allowed economizer position",
+      "units": "%",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 71,
+      "name": "Face and Bypass Damper Request",
+      "description": "Face and bypass damper capacity after curve and diagnostics",
+      "units": "%",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 73,
+      "name": "Supply Fan Speed Status",
+      "description": "Supply fan speed; discrete fans show 0/33/66/100 %",
+      "units": "%",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 74,
+      "name": "Heating Capacity Primary",
+      "description": "Primary heating source heat capacity",
+      "units": "%",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 75,
+      "name": "Heating Capacity Secondary",
+      "description": "Secondary heating source heat capacity",
+      "units": "%",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 76,
+      "name": "Cooling Capacity Status",
+      "description": "Cooling source cool capacity",
+      "units": "%",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 77,
+      "name": "Discharge Air Temperature Maximum Heat Limit",
+      "description": "Heating capacity is limited to keep discharge air below this",
+      "units": "°F",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 78,
+      "name": "Discharge Air Temperature Minimum Cool Limit",
+      "description": "Cooling capacity is limited to keep discharge air above this",
+      "units": "°F",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 81,
+      "name": "Electric Heat Stage 1 Fan Output",
+      "description": "Minimum fan speed with electric heat stage 1",
+      "units": "%",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 82,
+      "name": "Electric Heat Stage 2 Fan Output",
+      "description": "Minimum fan speed with electric heat stage 2",
+      "units": "%",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 87,
+      "name": "Cooling Setpoint High Limit",
+      "description": "Upper limit for the cooling setpoint",
+      "units": "°F",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 88,
+      "name": "Cooling Setpoint Low Limit",
+      "description": "Lower limit for the cooling setpoint",
+      "units": "°F",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 89,
+      "name": "Heating Setpoint High Limit",
+      "description": "Upper limit for the heating setpoint",
+      "units": "°F",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 90,
+      "name": "Heating Setpoint Low Limit",
+      "description": "Lower limit for the heating setpoint",
+      "units": "°F",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 96,
+      "name": "Discharge Air Temperature Design Cool Limit",
+      "description": "Fan speeds up to hold discharge air above this in cooling",
+      "units": "°F",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 97,
+      "name": "Discharge Air Temperature Design Heat Limit",
+      "description": "Fan speeds up to hold discharge air below this in heating",
+      "units": "°F",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 108,
+      "name": "DCV Minimum Economizer Position at Max Fan Speed",
+      "description": "Damper position with fan speed at maximum",
+      "units": "%",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 109,
+      "name": "DCV Minimum Economizer Position at Min Fan Speed",
+      "description": "Damper position with fan speed at minimum",
+      "units": "%",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 110,
+      "name": "Space CO2 Limit",
+      "description": "CO2 Maximum Setpoint",
+      "units": "ppm",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 111,
+      "name": "Space CO2 Low Limit",
+      "description": "CO2 Minimum Setpoint",
+      "units": "ppm",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 112,
+      "name": "Space CO2 Concentration BAS",
+      "description": "BAS communicated CO2 value",
+      "units": "ppm",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 113,
+      "name": "Space CO2 Concentration Active",
+      "description": "Arbitrated BAS and Local CO2 value",
+      "units": "ppm",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "BI",
+      "instance": 1,
+      "name": "Occupancy Input",
+      "description": "Normally open input",
+      "units": "",
+      "access": "R",
+      "states": "0=Occupied, 1=Unoccupied"
+    },
+    {
+      "type": "BI",
+      "instance": 2,
+      "name": "Condensate Overflow Input",
+      "description": "Normally closed input",
+      "units": "",
+      "access": "R",
+      "states": "0=Overflow, 1=Normal"
+    },
+    {
+      "type": "BI",
+      "instance": 3,
+      "name": "Low Coil Temperature Detection",
+      "description": "Normally closed input",
+      "units": "",
+      "access": "R",
+      "states": "0=Low temperature, 1=Normal"
+    },
+    {
+      "type": "BI",
+      "instance": 4,
+      "name": "Frost Detection Input",
+      "description": "Normally closed input",
+      "units": "",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "BI",
+      "instance": 5,
+      "name": "Supply Fan Status",
+      "description": "Normally open input",
+      "units": "",
+      "access": "R",
+      "states": "0=Off, 1=On"
+    },
+    {
+      "type": "BO",
+      "instance": 2,
+      "name": "Exhaust Fan Start Stop Command",
+      "description": "Exhaust fan start/stop output",
+      "units": "",
+      "access": "R",
+      "states": "0=Off, 1=Running"
+    },
+    {
+      "type": "BO",
+      "instance": 4,
+      "name": "Chilled Water Valve Command Binary",
+      "description": "Binary chilled water command",
+      "units": "",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "BO",
+      "instance": 5,
+      "name": "Compressor 2 Command",
+      "description": "Compressor 2 command",
+      "units": "",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "BO",
+      "instance": 6,
+      "name": "Heating Valve Command Binary",
+      "description": "Binary heating valve output",
+      "units": "",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "BO",
+      "instance": 7,
+      "name": "Reversing Valve Output",
+      "description": "Reversing valve output",
+      "units": "",
+      "access": "R",
+      "states": "On=Cooling, Off=Heating"
+    },
+    {
+      "type": "BO",
+      "instance": 8,
+      "name": "Outside Air Damper Binary Output",
+      "description": "Binary outdoor air damper output command",
+      "units": "",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "BV",
+      "instance": 1,
+      "name": "Supply Fan Configuration Command",
+      "description": "Occupied fan mode: cycle with capacity or run continuously",
+      "units": "",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "BV",
+      "instance": 2,
+      "name": "Reset Diagnostic Request",
+      "description": "Reset all diagnostics except filter; self-clears",
+      "units": "",
+      "access": "W",
+      "states": "1=Reset"
+    },
+    {
+      "type": "BV",
+      "instance": 3,
+      "name": "Diagnostic: Discharge Air Temperature Low Limit",
+      "description": "Freeze protection: discharge air below low limit",
+      "units": "",
+      "access": "R",
+      "states": "0=Inactive, 1=Active"
+    },
+    {
+      "type": "BV",
+      "instance": 4,
+      "name": "Diagnostic: Condensate Overflow",
+      "description": "Condensate overflow diagnostic (latching)",
+      "units": "",
+      "access": "R",
+      "states": "0=Inactive, 1=Active"
+    },
+    {
+      "type": "BV",
+      "instance": 5,
+      "name": "Diagnostic: Low Coil Temperature Detect",
+      "description": "Low coil temperature detection diagnostic",
+      "units": "",
+      "access": "R",
+      "states": "0=Inactive, 1=Active"
+    },
+    {
+      "type": "BV",
+      "instance": 6,
+      "name": "Diagnostic: Low Air Flow- Supply Fan Failure",
+      "description": "Low airflow / supply fan failure diagnostic",
+      "units": "",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "BV",
+      "instance": 7,
+      "name": "Diagnostic: Freeze Avoidance Mode",
+      "description": "Freeze avoidance active (hydronic units)",
+      "units": "",
+      "access": "R",
+      "states": "0=Inactive, 1=Active"
+    },
+    {
+      "type": "BV",
+      "instance": 8,
+      "name": "Diagnostic: Filter Change Required",
+      "description": "Filter change required (fan run hours)",
+      "units": "",
+      "access": "R",
+      "states": "0=Inactive, 1=Active"
+    },
+    {
+      "type": "BV",
+      "instance": 10,
+      "name": "Exhaust Fan Enable",
+      "description": "Exhaust fan enable",
+      "units": "",
+      "access": "W",
+      "states": "0=Disable, 1=Enable"
+    },
+    {
+      "type": "BV",
+      "instance": 11,
+      "name": "Dehumidification Status",
+      "description": "Dehumidification active",
+      "units": "",
+      "access": "R",
+      "states": "0=Not active, 1=Dehumidification active"
+    },
+    {
+      "type": "BV",
+      "instance": 12,
+      "name": "Filter Timer Reset Request",
+      "description": "Reset the filter runtime timer; self-clears",
+      "units": "",
+      "access": "W",
+      "states": "1=Reset"
+    },
+    {
+      "type": "BV",
+      "instance": 13,
+      "name": "Reversing Valve Request",
+      "description": "Reversing valve request for manual override",
+      "units": "",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "BV",
+      "instance": 14,
+      "name": "Predicted Occupied Heat Cool Mode Status",
+      "description": "Predicted heat/cool mode for the next occupied period",
+      "units": "",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "BV",
+      "instance": 15,
+      "name": "Demand Control Ventilation Enable",
+      "description": "Enables Demand Control Ventilation",
+      "units": "",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "MI",
+      "instance": 1,
+      "name": "Supply Fan Speed Local",
+      "description": "Local fan speed setting",
+      "units": "",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "MI",
+      "instance": 2,
+      "name": "Timed Override Status",
+      "description": "Timed override request from zone sensor",
+      "units": "",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "MI",
+      "instance": 3,
+      "name": "Communication Status",
+      "description": "Communication status",
+      "units": "",
+      "access": "R",
+      "states": "1=Comm Up, 2=Comm Down, 3=No Parent Configured"
+    },
+    {
+      "type": "MI",
+      "instance": 4,
+      "name": "IMC Status",
+      "description": "ECM fan module (IMC) status",
+      "units": "",
+      "access": "R",
+      "states": "1=ok, 2=commLoss, 3=newConfig, 4=hwMismatch, 5=swMismatch, 6=hwVersion, 7=swVersion, 8=nvDataMismatch, 9=dupRotarySwitch, 10=extraDevice, 11=rotarySwitchNotFound"
+    },
+    {
+      "type": "MO",
+      "instance": 1,
+      "name": "Supply Fan Speed BAS",
+      "description": "Fan speed output (1-, 2- or 3-speed fan)",
+      "units": "",
+      "access": "R",
+      "states": "2=Off, 3=Low, 4=Medium, 5=High (1-speed fan: 2/5; 2-speed fan: 2/3/5)"
+    },
+    {
+      "type": "MV",
+      "instance": 1,
+      "name": "Supply Fan Speed Active",
+      "description": "Active supply fan speed for discrete fan speed",
+      "units": "",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "MV",
+      "instance": 2,
+      "name": "Cooling Fan Speed Default",
+      "description": "Do not use (per the guide)",
+      "units": "",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "MV",
+      "instance": 4,
+      "name": "Heat Cool Mode Request",
+      "description": "Heat/cool mode command",
+      "units": "",
+      "access": "W",
+      "states": "1=Auto, 2=Heat, 3=Morning warm-up, 4=Cool, 5=Night Purge (treated as Auto), 6=Pre-Cool, 7=Off, 8=Test (status only), 9=Emergency Heat (treated as Auto), 10=Fan Only (economizer at min), 11=Free Cool"
+    },
+    {
+      "type": "MV",
+      "instance": 5,
+      "name": "Heat Cool Mode Status",
+      "description": "Actual heat/cool mode status",
+      "units": "",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "MV",
+      "instance": 6,
+      "name": "Occupancy Request",
+      "description": "Occupancy command",
+      "units": "",
+      "access": "W",
+      "states": "1=Occupied, 2=Unoccupied, 3=Occupied Bypass, 4=Occupied Standby, 5=Auto"
+    },
+    {
+      "type": "MV",
+      "instance": 7,
+      "name": "Occupancy Status",
+      "description": "Occupancy in effect",
+      "units": "",
+      "access": "R",
+      "states": "1=Occupied, 2=Unoccupied, 3=Occupied Bypass, 4=Occupied Standby"
+    },
+    {
+      "type": "MV",
+      "instance": 8,
+      "name": "Supply Fan Speed BAS",
+      "description": "Fan speed command from the BAS",
+      "units": "",
+      "access": "W",
+      "states": "1=Auto, 2=Off, 3=Low, 4=Medium, 5=High"
+    },
+    {
+      "type": "MV",
+      "instance": 9,
+      "name": "Emergency Override BAS",
+      "description": "Emergency override; anything but Normal shuts the unit down",
+      "units": "",
+      "access": "W",
+      "states": "1=Normal, 2=Pressurize, 3=Depressurize, 4=Purge, 5=Shutdown, 6=Fire (all but Normal treated as shutdown)"
+    },
+    {
+      "type": "MV",
+      "instance": 10,
+      "name": "Economizer Airside Enable BAS",
+      "description": "Airside economizer enable/disable/auto from the BAS",
+      "units": "",
+      "access": "W",
+      "states": "1=Disabled, 2=Enabled, 3=Auto"
+    },
+    {
+      "type": "MV",
+      "instance": 11,
+      "name": "Number of Fan Speeds",
+      "description": "Number of fan speeds configured",
+      "units": "",
+      "access": "W",
+      "states": "1=Zero, 2=One, 3=Two, 4=Three, 5=Variable Speed"
+    },
+    {
+      "type": "MV",
+      "instance": 13,
+      "name": "Outdoor Air Damper Status",
+      "description": "Outdoor air damper position status",
+      "units": "",
+      "access": "R",
+      "states": "1=At or Below Minimum Position, 2=Above Minimum Position, 3=Economizer Not Present"
+    },
+    {
+      "type": "MV",
+      "instance": 22,
+      "name": "Fan Operating Mode Request",
+      "description": "ECM fan operating mode: energy efficient or acoustical",
+      "units": "",
+      "access": "W",
+      "states": "1=Energy Efficient Mode, 2=Acoustical Mode"
+    },
+    {
+      "type": "MV",
+      "instance": 23,
+      "name": "First Stage Compressor Minimum Fan Speed",
+      "description": "Minimum fan speed with the first compressor stage on",
+      "units": "",
+      "access": "W",
+      "states": "1=Low, 2=Medium, 3=High (default)"
+    }
+  ]
+}
