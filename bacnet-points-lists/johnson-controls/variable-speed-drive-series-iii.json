@@ -1,0 +1,814 @@
+{
+ "manufacturer": "Johnson Controls",
+ "manufacturer_slug": "johnson-controls",
+ "model": "Variable Speed Drive Series III (on-board BACnet MS/TP and BACnet IP)",
+ "model_slug": "variable-speed-drive-series-iii",
+ "aliases": [
+  "VSD Series III",
+  "Variable Speed Drive Series 3",
+  "JCI VSD3",
+  "VS3 drive",
+  "LIT-12013000"
+ ],
+ "equipment_type": "Variable frequency drive (HVAC)",
+ "applies_to": "Johnson Controls Variable Speed Drive Series III (VS3) HVAC drives using the on-board RS-485 port (BACnet MS/TP) or the RJ45 Ethernet port (BACnet IP).",
+ "summary": "The VSD Series III has BACnet MS/TP on its RS-485 terminals (P12.3.1.1 RS485 Comm Set = 1) and BACnet IP on its RJ45 port (P12.4.1.9 Enable BACnet IP = 1). Both sections of the manual print the same object list: BVs for drive status, run/stop, direction, reset, control and speed source select, bypass and fire mode, digital I/O; AVs for the speed reference, limits, ramps, AnyParam access and process data in; AIs for monitors and process data out; and MVs for control mode and active fault.",
+ "bacnet_transport": [
+  "BACnet MS/TP",
+  "BACnet IP"
+ ],
+ "firmware": null,
+ "default_device_instance": null,
+ "access_inferred": false,
+ "notes": [
+  "From the Variable Speed Drive Series III Communication Manual LIT-12013000 (September 2018): BACnet MS/TP Tables 58-61 (PDF pp55-57) and the BACnet IP section (PDF pp87-89), which print the same 78 objects.",
+  "Enabling BACnet IP turns off BACnet MS/TP.",
+  "AV 6/AV 7 AnyParam: write a parameter ID to AV 6 and read or write its value in AV 7.",
+  "AV 8-15 and AI 18-25 are raw fieldbus process data; their content follows the P12.1/P12.2 process data selections.",
+  "BV 21-23 (Digital Output 2-4) are described as relay outputs 1-3.",
+  "C = commandable (priority array and relinquish default), per the manual."
+ ],
+ "source": {
+  "title": "Variable Speed Drive Series III Communication Manual (BACnet MS/TP and BACnet/IP on-board communication)",
+  "doc_number": "LIT-12013000",
+  "revision_date": "2018-09",
+  "url": "https://docs.johnsoncontrols.com/bas/api/khub/documents/XEo1PHGCK4nHiMO7HUpp~w/content"
+ },
+ "integration": {
+  "summary": "For MS/TP set P12.3.1.1 = 1 (BACnet MS/TP), then the baud rate, MAC address, instance number and Max Master in P12.3.3. For BACnet IP set the IP mode and static address in P12.4.1 and P12.4.1.9 = 1, then the UDP port and instance in P12.4.3. Write BV 7 and BV 8 to fieldbus control, then BV 9 run/stop and AV 0 speed reference; read BV 1, AI 1, AI 5 and BV 3.",
+  "minimum_points": [
+   {
+    "ref": "BV 9",
+    "name": "Run/Stop CMD",
+    "why": "Start/stop command (Run = start)"
+   },
+   {
+    "ref": "BV 7",
+    "name": "Motor Ctrl source",
+    "why": "Must be FBMotorCtrl for network run/stop"
+   },
+   {
+    "ref": "AV 0",
+    "name": "Speed Reference",
+    "why": "Speed reference, %"
+   },
+   {
+    "ref": "BV 8",
+    "name": "Speed Reference Source",
+    "why": "Must be FBSpeedRef for the network reference"
+   },
+   {
+    "ref": "BV 11",
+    "name": "Reset Fault",
+    "why": "Reset a tripped drive"
+   },
+   {
+    "ref": "BV 1",
+    "name": "Run/Stop State",
+    "why": "Running status"
+   },
+   {
+    "ref": "AI 1",
+    "name": "Output Frequency",
+    "why": "Output frequency, Hz"
+   },
+   {
+    "ref": "AI 5",
+    "name": "Motor Current",
+    "why": "Motor amps"
+   },
+   {
+    "ref": "BV 3",
+    "name": "Fault State",
+    "why": "Any active drive fault"
+   },
+   {
+    "ref": "MV 1",
+    "name": "Active fault code",
+    "why": "Active fault code"
+   }
+  ],
+  "enable": "BV 7 Motor Ctrl source selects local or fieldbus (FBMotorCtrl) control of run/stop, and BV 8 Speed Reference Source selects local or fieldbus (FBSpeedRef) speed reference. MV 0 shows whether the drive is in Local (Hand), Remote or OFF.",
+  "heartbeat": "MS/TP: Comm Timeout BACnet (P12.3.3, default 10000 ms) raises a communication error if the drive is sole master for that long. BACnet IP: BACnet IP Comm Timeout (P12.4.3, 0 = no supervision) raises a fieldbus fault after that many seconds without messages; the parameter table prints default 0, while the text says the default is 10 s. A pulled Ethernet cable faults at once. The Modbus RTU/BACnet Fault Response and BACnet IP Fault Behavior parameters choose whether the fault is raised only in fieldbus control (0, default) or in all control places (1).",
+  "remote_sensors": null,
+  "setup": [
+   "MS/TP: P12.3.1.1 RS485 Comm Set = 1; BACnet baud rate default 38400 (9600-115200); MAC address 0-127, default 1; Max Master default 127.",
+   "MS/TP: the instance number (0-4194302) is set in P12.3.3; its default varies by drive.",
+   "BACnet IP: P12.4.1.1 IP Address Mode (default 1 = DHCP with AutoIP, 0 = static); static defaults 192.168.1.254 / 255.255.255.0 / gateway 192.168.1.1. A change of IP mode needs a power cycle.",
+   "BACnet IP: P12.4.1.9 Enable BACnet IP = 1 (default 0) shows the P12.4.3 settings: UDP port (47808-47823), foreign device, BBMD IP/port, registration interval (default 10 s) and instance number.",
+   "Segmentation is not supported; the drive is a B-ASC."
+  ],
+  "gotchas": [
+   "BACnet IP and BACnet MS/TP cannot run at the same time.",
+   "BV 28 Force Bypass and BV 29 Fire Mode are commandable over BACnet.",
+   "The manual's MS/TP parameter table is laid out unclearly; confirm parameter codes on the keypad (Main Menu > Parameter > Communication > RS485 Bus)."
+  ]
+ },
+ "points": [
+  {
+   "type": "BV",
+   "instance": 0,
+   "name": "Ready State",
+   "description": "Indicates whether the drive is ready or not",
+   "units": "",
+   "access": "R",
+   "states": "Inactive/Active: Not Ready/Ready"
+  },
+  {
+   "type": "BV",
+   "instance": 1,
+   "name": "Run/Stop State",
+   "description": "Indicates whether the drive is running or stopped",
+   "units": "",
+   "access": "R",
+   "states": "Inactive/Active: Stop/Run"
+  },
+  {
+   "type": "BV",
+   "instance": 2,
+   "name": "Fwd/Rev State",
+   "description": "Indicates the rotation direction of motor",
+   "units": "",
+   "access": "R",
+   "states": "Inactive/Active: Fwd/Rev"
+  },
+  {
+   "type": "BV",
+   "instance": 3,
+   "name": "Fault State",
+   "description": "Indicates if a fault is active",
+   "units": "",
+   "access": "R",
+   "states": "Inactive/Active: OK/Fault"
+  },
+  {
+   "type": "BV",
+   "instance": 4,
+   "name": "Warning State",
+   "description": "Indicates if a warning is active",
+   "units": "",
+   "access": "R",
+   "states": "Inactive/Active: OK/Warning"
+  },
+  {
+   "type": "BV",
+   "instance": 5,
+   "name": "At Setpoint",
+   "description": "Ref. Frequency reached",
+   "units": "",
+   "access": "R",
+   "states": "Inactive/Active: False/True"
+  },
+  {
+   "type": "BV",
+   "instance": 6,
+   "name": "At Zero Speed",
+   "description": "Motor Running at zero speed",
+   "units": "",
+   "access": "R",
+   "states": "Inactive/Active: False/True"
+  },
+  {
+   "type": "BV",
+   "instance": 7,
+   "name": "Motor Ctrl source",
+   "description": "Command to change active source for controlling motor",
+   "units": "",
+   "access": "C",
+   "states": "Inactive/Active: LocalMotorCtrl/FBMotorCtrl"
+  },
+  {
+   "type": "BV",
+   "instance": 8,
+   "name": "Speed Reference Source",
+   "description": "Command to change source of motor speed reference",
+   "units": "",
+   "access": "C",
+   "states": "Inactive/Active: LocalSpeedRef/FBSpeedRef"
+  },
+  {
+   "type": "BV",
+   "instance": 9,
+   "name": "Run/Stop CMD",
+   "description": "Command to start drive",
+   "units": "",
+   "access": "C",
+   "states": "Inactive/Active: Stop/Run"
+  },
+  {
+   "type": "BV",
+   "instance": 10,
+   "name": "Fwd/Rev CMD",
+   "description": "Command to change rotational direction",
+   "units": "",
+   "access": "C",
+   "states": "Inactive/Active: Fwd/Rev"
+  },
+  {
+   "type": "BV",
+   "instance": 11,
+   "name": "Reset Fault",
+   "description": "Command to reset active Fault from drive",
+   "units": "",
+   "access": "C",
+   "states": "Inactive/Active: 0/Reset"
+  },
+  {
+   "type": "BV",
+   "instance": 12,
+   "name": "Digital Input 1",
+   "description": "Digital Input 1",
+   "units": "",
+   "access": "R",
+   "states": "Inactive/Active: OFF/ON"
+  },
+  {
+   "type": "BV",
+   "instance": 13,
+   "name": "Digital Input 2",
+   "description": "Digital Input 2",
+   "units": "",
+   "access": "R",
+   "states": "Inactive/Active: OFF/ON"
+  },
+  {
+   "type": "BV",
+   "instance": 14,
+   "name": "Digital Input 3",
+   "description": "Digital Input 3",
+   "units": "",
+   "access": "R",
+   "states": "Inactive/Active: OFF/ON"
+  },
+  {
+   "type": "BV",
+   "instance": 15,
+   "name": "Digital Input 4",
+   "description": "Digital Input 4",
+   "units": "",
+   "access": "R",
+   "states": "Inactive/Active: OFF/ON"
+  },
+  {
+   "type": "BV",
+   "instance": 16,
+   "name": "Digital Input 5",
+   "description": "Digital Input 5",
+   "units": "",
+   "access": "R",
+   "states": "Inactive/Active: OFF/ON"
+  },
+  {
+   "type": "BV",
+   "instance": 17,
+   "name": "Digital Input 6",
+   "description": "Digital Input 6",
+   "units": "",
+   "access": "R",
+   "states": "Inactive/Active: OFF/ON"
+  },
+  {
+   "type": "BV",
+   "instance": 18,
+   "name": "Digital Input 7",
+   "description": "Digital Input 7",
+   "units": "",
+   "access": "R",
+   "states": "Inactive/Active: OFF/ON"
+  },
+  {
+   "type": "BV",
+   "instance": 19,
+   "name": "Digital Input 8",
+   "description": "Digital Input 8",
+   "units": "",
+   "access": "R",
+   "states": "Inactive/Active: OFF/ON"
+  },
+  {
+   "type": "BV",
+   "instance": 20,
+   "name": "Digital Output 1",
+   "description": "Digital Output 1",
+   "units": "",
+   "access": "R",
+   "states": "Inactive/Active: OFF/ON"
+  },
+  {
+   "type": "BV",
+   "instance": 21,
+   "name": "Digital Output 2",
+   "description": "Relay 1 Output",
+   "units": "",
+   "access": "R",
+   "states": "Inactive/Active: OFF/ON"
+  },
+  {
+   "type": "BV",
+   "instance": 22,
+   "name": "Digital Output 3",
+   "description": "Relay 2 Output",
+   "units": "",
+   "access": "R",
+   "states": "Inactive/Active: OFF/ON"
+  },
+  {
+   "type": "BV",
+   "instance": 23,
+   "name": "Digital Output 4",
+   "description": "Relay 3 Output",
+   "units": "",
+   "access": "R",
+   "states": "Inactive/Active: OFF/ON"
+  },
+  {
+   "type": "BV",
+   "instance": 24,
+   "name": "Stop By Coast",
+   "description": "Indicates if drive stop by coast",
+   "units": "",
+   "access": "C",
+   "states": "Inactive/Active: ON/OFF"
+  },
+  {
+   "type": "BV",
+   "instance": 25,
+   "name": "Stop By Ramp",
+   "description": "Indicates if drive stop by Ramp",
+   "units": "",
+   "access": "C",
+   "states": "Inactive/Active: OFF/ON"
+  },
+  {
+   "type": "BV",
+   "instance": 26,
+   "name": "Belt Broken",
+   "description": "Indicates If belt is broken",
+   "units": "",
+   "access": "R",
+   "states": "Inactive/Active: OFF/ON"
+  },
+  {
+   "type": "BV",
+   "instance": 27,
+   "name": "Drive Fan Failure",
+   "description": "Indicates if Drive Fan failed",
+   "units": "",
+   "access": "R",
+   "states": "Inactive/Active: OFF/ON"
+  },
+  {
+   "type": "BV",
+   "instance": 28,
+   "name": "Force Bypass",
+   "description": "Command to take Drive in Bypass Mode",
+   "units": "",
+   "access": "C",
+   "states": "Inactive/Active: OFF/ON"
+  },
+  {
+   "type": "BV",
+   "instance": 29,
+   "name": "Fire Mode",
+   "description": "Enable Fire Mode",
+   "units": "",
+   "access": "C",
+   "states": "Inactive/Active: OFF/ON"
+  },
+  {
+   "type": "BV",
+   "instance": 30,
+   "name": "DIN 1",
+   "description": "Fieldbus Digital Input",
+   "units": "",
+   "access": "C",
+   "states": "Inactive/Active: OFF/ON"
+  },
+  {
+   "type": "BV",
+   "instance": 31,
+   "name": "DIN 2",
+   "description": "Fieldbus Digital Input",
+   "units": "",
+   "access": "C",
+   "states": "Inactive/Active: OFF/ON"
+  },
+  {
+   "type": "BV",
+   "instance": 32,
+   "name": "DIN 3",
+   "description": "Fieldbus Digital Input",
+   "units": "",
+   "access": "C",
+   "states": "Inactive/Active: OFF/ON"
+  },
+  {
+   "type": "BV",
+   "instance": 33,
+   "name": "DIN 4",
+   "description": "Fieldbus Digital Input",
+   "units": "",
+   "access": "C",
+   "states": "Inactive/Active: OFF/ON"
+  },
+  {
+   "type": "AV",
+   "instance": 0,
+   "name": "Speed Reference",
+   "description": "Motor speed reference from network",
+   "units": "%",
+   "access": "C",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 1,
+   "name": "Current Limit",
+   "description": "Current Limit",
+   "units": "A",
+   "access": "W",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 2,
+   "name": "Min Frequency",
+   "description": "Minimum Frequency",
+   "units": "Hz",
+   "access": "W",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 3,
+   "name": "Maximum Frequency",
+   "description": "Maximum Frequency",
+   "units": "Hz",
+   "access": "W",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 4,
+   "name": "Accel Time 1",
+   "description": "Acceleration Time",
+   "units": "s",
+   "access": "W",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 5,
+   "name": "Decel Time 1",
+   "description": "Deceleration Time",
+   "units": "s",
+   "access": "W",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 6,
+   "name": "AnyParam ID",
+   "description": "Parameter ID number to be accessed",
+   "units": "",
+   "access": "W",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 7,
+   "name": "AnyParam Value",
+   "description": "Value of parameter defined by AV6",
+   "units": "",
+   "access": "W",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 8,
+   "name": "Process Data In 1",
+   "description": "Fieldbus Process Data In 1",
+   "units": "",
+   "access": "C",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 9,
+   "name": "Process Data In 2",
+   "description": "Fieldbus Process Data In 2",
+   "units": "",
+   "access": "C",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 10,
+   "name": "Process Data In 3",
+   "description": "Fieldbus Process Data In 3",
+   "units": "",
+   "access": "C",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 11,
+   "name": "Process Data In 4",
+   "description": "Fieldbus Process Data In 4",
+   "units": "",
+   "access": "C",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 12,
+   "name": "Process Data In 5",
+   "description": "Fieldbus Process Data In 5",
+   "units": "",
+   "access": "C",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 13,
+   "name": "Process Data In 6",
+   "description": "Fieldbus Process Data In 6",
+   "units": "",
+   "access": "C",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 14,
+   "name": "Process Data In 7",
+   "description": "Fieldbus Process Data In 7",
+   "units": "",
+   "access": "C",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 15,
+   "name": "Process Data In 8",
+   "description": "Fieldbus Process Data In 8",
+   "units": "",
+   "access": "C",
+   "states": ""
+  },
+  {
+   "type": "AI",
+   "instance": 0,
+   "name": "Frequency Setpoint",
+   "description": "Frequency Setpoint",
+   "units": "Hz",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "AI",
+   "instance": 1,
+   "name": "Output Frequency",
+   "description": "Output Frequency",
+   "units": "Hz",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "AI",
+   "instance": 2,
+   "name": "Motor Speed",
+   "description": "Motor Speed",
+   "units": "rpm",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "AI",
+   "instance": 3,
+   "name": "Motor Load",
+   "description": "Motor Load",
+   "units": "%",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "AI",
+   "instance": 4,
+   "name": "Kilowatt Hours total",
+   "description": "Kilowatt Hour Counter (Total) scaled by 1000",
+   "units": "kWh",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "AI",
+   "instance": 5,
+   "name": "Motor Current",
+   "description": "Motor Current",
+   "units": "A",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "AI",
+   "instance": 6,
+   "name": "DC link Voltage",
+   "description": "DC link Voltage",
+   "units": "V",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "AI",
+   "instance": 7,
+   "name": "Motor Voltage",
+   "description": "Motor Voltage",
+   "units": "V",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "AI",
+   "instance": 8,
+   "name": "Unit Temperature",
+   "description": "Heatsink Temperature",
+   "units": "°C",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "AI",
+   "instance": 9,
+   "name": "Motor Torque",
+   "description": "In % of motor nominal Torque",
+   "units": "%",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "AI",
+   "instance": 10,
+   "name": "Operating Days",
+   "description": "Operating Days (resettable)",
+   "units": "days",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "AI",
+   "instance": 11,
+   "name": "Operating Hours",
+   "description": "Operating Hours (resettable)",
+   "units": "h",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "AI",
+   "instance": 12,
+   "name": "Motor Temperature",
+   "description": "Motor Temperature",
+   "units": "%",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "AI",
+   "instance": 13,
+   "name": "Analog Input 1",
+   "description": "Analog Input 1",
+   "units": "V",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "AI",
+   "instance": 14,
+   "name": "Analog Input 2",
+   "description": "Analog Input 2",
+   "units": "V",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "AI",
+   "instance": 15,
+   "name": "Analog Output 1",
+   "description": "Analog Output 1",
+   "units": "V",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "AI",
+   "instance": 16,
+   "name": "Analog Output 2",
+   "description": "Analog Output 2",
+   "units": "V",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "AI",
+   "instance": 17,
+   "name": "Kilowatt Instantaneous",
+   "description": "Kilowatt Instantaneous",
+   "units": "kW",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "AI",
+   "instance": 18,
+   "name": "Process Data Out 1",
+   "description": "Fieldbus Process Data Out 1",
+   "units": "",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "AI",
+   "instance": 19,
+   "name": "Process Data Out 2",
+   "description": "Fieldbus Process Data Out 2",
+   "units": "",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "AI",
+   "instance": 20,
+   "name": "Process Data Out 3",
+   "description": "Fieldbus Process Data Out 3",
+   "units": "",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "AI",
+   "instance": 21,
+   "name": "Process Data Out 4",
+   "description": "Fieldbus Process Data Out 4",
+   "units": "",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "AI",
+   "instance": 22,
+   "name": "Process Data Out 5",
+   "description": "Fieldbus Process Data Out 5",
+   "units": "",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "AI",
+   "instance": 23,
+   "name": "Process Data Out 6",
+   "description": "Fieldbus Process Data Out 6",
+   "units": "",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "AI",
+   "instance": 24,
+   "name": "Process Data Out 7",
+   "description": "Fieldbus Process Data Out 7",
+   "units": "",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "AI",
+   "instance": 25,
+   "name": "Process Data Out 8",
+   "description": "Fieldbus Process Data Out 8",
+   "units": "",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "MV",
+   "instance": 0,
+   "name": "Control mode",
+   "description": "Drive control mode: local (hand), remote or off",
+   "units": "",
+   "access": "R",
+   "states": "0=Local(Hand), 1=Remote, 2=OFF"
+  },
+  {
+   "type": "MV",
+   "instance": 1,
+   "name": "Active fault code",
+   "description": "Latest active fault code of the drive",
+   "units": "",
+   "access": "R",
+   "states": "State text gives the active fault"
+  }
+ ],
+ "page": "https://easybacnet.com/bacnet-points-lists/johnson-controls/variable-speed-drive-series-iii",
+ "note": "Re-typed from the manufacturer's public documentation (see source). Point availability varies by firmware and options; verify against the live device.",
+ "disclaimer": "DISCLAIMER: reference only, provided AS IS with no warranty. Re-typed by hand from public documents; may contain errors or be out of date. You must verify every point against the manufacturer's current documentation and the live device before use. easybacnet.com accepts no liability for its use and is not affiliated with the manufacturer. Terms: https://easybacnet.com/terms#content"
+}

@@ -1,0 +1,1211 @@
+{
+ "manufacturer": "Elkor",
+ "manufacturer_slug": "elkor",
+ "model": "WattsOn-MCM modular multi-circuit meter (BACnet IP)",
+ "model_slug": "wattson-mcm",
+ "aliases": [
+  "WattsOn-MCM",
+  "WattsOn MCM",
+  "MCM-V",
+  "WMC-PM",
+  "WMC-IM",
+  "Elkor multi-circuit meter BACnet"
+ ],
+ "equipment_type": "Multi-circuit power and energy meter (submeter)",
+ "applies_to": "Elkor WattsOn-MCM modular metering systems (main board, MCM-V voltage interface and up to 20 measurement cards) on BACnet IP.",
+ "summary": "The WattsOn-MCM serves up to 60 metered channels (20 cards x 3) over BACnet IP. Fixed objects give network status, fault bitstrings, read-only settings, the MCM-V voltages, PT ratios, angles and frequency. Card data (per-card info and per-channel current, power, PF, energy) comes in groups that start at 131072; this list gives the first object of each group and the formula for the rest. Everything is read-only over BACnet.",
+ "bacnet_transport": [
+  "BACnet IP"
+ ],
+ "firmware": null,
+ "default_device_instance": "-1 (generated from the MAC address)",
+ "access_inferred": false,
+ "notes": [
+  "Card parameter objects: instance = 131072 + (Parameter ID - 1) x 256 + (card number - 1) for per-card groups, or + (channel number - 1) for per-channel groups (channels 1-60; channel 4 = card 2 phase A). Only the first object of each group is listed, with the template name as printed.",
+  "Card objects exist only when a card is fitted in that slot and supports the parameter; a full system has over 1,000 objects. P14, P15, P23 and P24 are only on some card models.",
+  "P14 (reactive power) is printed with unit code 9 and P15 (apparent power) with code 12; in BACnet those codes mean kVA and kvar, the reverse of the printed unit names. Units here follow the names (kvar, kVA).",
+  "fault_code, card_fault, voltage_fault, missing_fault, cards_present and P18 Chan Cfg are BitString Value objects (listed as type Other). Network status rows are typed 'CS' in the table and listed as CharacterString Values.",
+  "Up to 100 user-defined AIs (instances 0-99) can be created in the web interface; they are not listed. The Structured View objects are also left out.",
+  "All settings are read-only over BACnet and are changed in the web interface (System > Advanced Configuration)."
+ ],
+ "source": {
+  "title": "WattsOn-MCM BACnet Object List",
+  "doc_number": null,
+  "revision_date": null,
+  "url": "https://www.elkor.net/pdfs/MCM-BACnet_Object_List.pdf"
+ },
+ "integration": {
+  "summary": "Set up cards, CT ratios and voltage mapping in the web interface; the BMS only reads. Map per-channel power (P11), net energy (P13) and current (P10) from the card groups using the instance formula, plus the MCM-V voltages and frequency and the fault_code bitstring.",
+  "minimum_points": [
+   {
+    "ref": "AI 133632",
+    "name": "P11-m Power m (ni)",
+    "why": "Channel 1 real power, kW (+1 per channel)"
+   },
+   {
+    "ref": "AI 134144",
+    "name": "P13-m Energy m (ni)",
+    "why": "Channel 1 net energy, kWh (+1 per channel)"
+   },
+   {
+    "ref": "AI 133376",
+    "name": "P10-m Current m (ni)",
+    "why": "Channel 1 current, A (+1 per channel)"
+   },
+   {
+    "ref": "AI 133888",
+    "name": "P12-m PF m (ni)",
+    "why": "Channel 1 power factor (+1 per channel)"
+   },
+   {
+    "ref": "AI 135800",
+    "name": "P19-121 Voltage Va",
+    "why": "Phase A line-to-neutral voltage"
+   },
+   {
+    "ref": "AI 135956",
+    "name": "P20-021 Frequency VI",
+    "why": "Line frequency, Hz"
+   },
+   {
+    "ref": "Other 601",
+    "name": "fault_code",
+    "why": "Device fault bits (card, comms, voltage)"
+   }
+  ],
+  "enable": null,
+  "heartbeat": null,
+  "remote_sensors": null,
+  "setup": [
+   "BACnet port, device instance, APDU size, segmentation and BBMD foreign registration are set in the web interface; objects 3070-3078 (CSV and BI) show the values.",
+   "Device instance -1 means it is generated from the MAC address.",
+   "Ethernet or Wi-Fi, static or DHCP (MI 3202 / MI 3203)."
+  ],
+  "gotchas": [
+   "Channel objects only appear for fitted cards; a polled object can vanish if a card is removed.",
+   "Channel number, not card number, drives the per-channel offset: channel = (card - 1) x 3 + phase (A=1, B=2, C=3).",
+   "P14/P15 unit codes are printed swapped in the source table."
+  ]
+ },
+ "points": [
+  {
+   "type": "FILE",
+   "instance": 10,
+   "name": "/spiffs/template.json",
+   "description": "",
+   "units": "",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "FILE",
+   "instance": 20,
+   "name": "/spiffs/registers.json",
+   "description": "",
+   "units": "",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "MI",
+   "instance": 300,
+   "name": "active_connection",
+   "description": "Active link: 1 Ethernet, 2 Wi-Fi, 3 Wi-Fi AP",
+   "units": "",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "CSV",
+   "instance": 300,
+   "name": "active_ip",
+   "description": "",
+   "units": "",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "DTV",
+   "instance": 300,
+   "name": "utc_datetime",
+   "description": "Current date/time (NTP or battery clock)",
+   "units": "",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "CSV",
+   "instance": 301,
+   "name": "active_nm",
+   "description": "",
+   "units": "",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "CSV",
+   "instance": 302,
+   "name": "active_gw",
+   "description": "",
+   "units": "",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "CSV",
+   "instance": 303,
+   "name": "active_dns0",
+   "description": "",
+   "units": "",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "CSV",
+   "instance": 304,
+   "name": "active_dns1",
+   "description": "",
+   "units": "",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "CSV",
+   "instance": 305,
+   "name": "eth_mac",
+   "description": "",
+   "units": "",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "CSV",
+   "instance": 306,
+   "name": "wifi_mac",
+   "description": "",
+   "units": "",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "Other",
+   "instance": 600,
+   "name": "cards_present",
+   "description": "Bitstring Value: slots with a card fitted",
+   "units": "",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "Other",
+   "instance": 601,
+   "name": "fault_code",
+   "description": "Bitstring Value: device fault flags",
+   "units": "",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "Other",
+   "instance": 602,
+   "name": "card_fault",
+   "description": "Bitstring Value: cards with a fault",
+   "units": "",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "Other",
+   "instance": 603,
+   "name": "voltage_fault",
+   "description": "Bitstring Value: cards with a voltage mismatch",
+   "units": "",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "Other",
+   "instance": 604,
+   "name": "missing_fault",
+   "description": "Bitstring Value: configured cards now missing",
+   "units": "",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "CSV",
+   "instance": 3009,
+   "name": "mbtcp_port",
+   "description": "",
+   "units": "",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "CSV",
+   "instance": 3010,
+   "name": "http_port",
+   "description": "",
+   "units": "",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "CSV",
+   "instance": 3013,
+   "name": "api_udp_port",
+   "description": "",
+   "units": "",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "BI",
+   "instance": 3015,
+   "name": "post_en",
+   "description": "",
+   "units": "",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "CSV",
+   "instance": 3016,
+   "name": "post_seconds",
+   "description": "",
+   "units": "",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "BI",
+   "instance": 3017,
+   "name": "post_auth_en",
+   "description": "",
+   "units": "",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "CSV",
+   "instance": 3018,
+   "name": "post_timeout_s",
+   "description": "",
+   "units": "",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "BI",
+   "instance": 3019,
+   "name": "post_buf_en",
+   "description": "",
+   "units": "",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "CSV",
+   "instance": 3020,
+   "name": "post_buf_limit",
+   "description": "",
+   "units": "",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "BI",
+   "instance": 3021,
+   "name": "ntp_en",
+   "description": "",
+   "units": "",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "CSV",
+   "instance": 3022,
+   "name": "ntp_listen_port",
+   "description": "",
+   "units": "",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "CSV",
+   "instance": 3023,
+   "name": "ntp_port_0",
+   "description": "",
+   "units": "",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "CSV",
+   "instance": 3024,
+   "name": "ntp_port_1",
+   "description": "",
+   "units": "",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "CSV",
+   "instance": 3025,
+   "name": "ntp_port_2",
+   "description": "",
+   "units": "",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "CSV",
+   "instance": 3026,
+   "name": "ntp_rate_m",
+   "description": "",
+   "units": "",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "CSV",
+   "instance": 3027,
+   "name": "ntp_timeout_ms",
+   "description": "",
+   "units": "",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "CSV",
+   "instance": 3028,
+   "name": "ntp_retry_ms",
+   "description": "",
+   "units": "",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "CSV",
+   "instance": 3029,
+   "name": "eth_static_ip",
+   "description": "",
+   "units": "",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "CSV",
+   "instance": 3030,
+   "name": "eth_static_nm",
+   "description": "",
+   "units": "",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "CSV",
+   "instance": 3031,
+   "name": "eth_static_gw",
+   "description": "",
+   "units": "",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "CSV",
+   "instance": 3032,
+   "name": "eth_static_dn0",
+   "description": "",
+   "units": "",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "CSV",
+   "instance": 3033,
+   "name": "eth_static_dn1",
+   "description": "",
+   "units": "",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "CSV",
+   "instance": 3034,
+   "name": "wifi_static_ip",
+   "description": "",
+   "units": "",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "CSV",
+   "instance": 3035,
+   "name": "wifi_static_nm",
+   "description": "",
+   "units": "",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "CSV",
+   "instance": 3036,
+   "name": "wifi_static_gw",
+   "description": "",
+   "units": "",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "CSV",
+   "instance": 3037,
+   "name": "wifi_static_dn0",
+   "description": "",
+   "units": "",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "CSV",
+   "instance": 3038,
+   "name": "wifi_static_dn1",
+   "description": "",
+   "units": "",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "CSV",
+   "instance": 3040,
+   "name": "http_sto_ms",
+   "description": "",
+   "units": "",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "CSV",
+   "instance": 3041,
+   "name": "http_rto_ms",
+   "description": "",
+   "units": "",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "CSV",
+   "instance": 3042,
+   "name": "auto_reboot_s",
+   "description": "",
+   "units": "",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "CSV",
+   "instance": 3043,
+   "name": "reconnect_s",
+   "description": "",
+   "units": "",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "CSV",
+   "instance": 3048,
+   "name": "wifi_chan_start",
+   "description": "",
+   "units": "",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "CSV",
+   "instance": 3049,
+   "name": "wifi_chan_count",
+   "description": "",
+   "units": "",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "CSV",
+   "instance": 3050,
+   "name": "wifi_max_tx_pwr",
+   "description": "",
+   "units": "",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "CSV",
+   "instance": 3070,
+   "name": "bac_port",
+   "description": "BACnet UDP port",
+   "units": "",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "CSV",
+   "instance": 3071,
+   "name": "bac_instance",
+   "description": "Device instance (-1 = from MAC)",
+   "units": "",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "BI",
+   "instance": 3073,
+   "name": "mbtcp_en",
+   "description": "",
+   "units": "",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "CSV",
+   "instance": 3074,
+   "name": "bac_apdu_max",
+   "description": "",
+   "units": "",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "CSV",
+   "instance": 3075,
+   "name": "bac_frgn_reg_ip",
+   "description": "BBMD address for foreign registration",
+   "units": "",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "CSV",
+   "instance": 3076,
+   "name": "bac_frgn_reg_s",
+   "description": "Foreign registration TTL, s",
+   "units": "",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "BI",
+   "instance": 3077,
+   "name": "bac_segment_en",
+   "description": "",
+   "units": "",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "CSV",
+   "instance": 3078,
+   "name": "bac_seg_to_ms",
+   "description": "",
+   "units": "",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "BI",
+   "instance": 3079,
+   "name": "mqtt_retain_en",
+   "description": "",
+   "units": "",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "CSV",
+   "instance": 3080,
+   "name": "mqtt_max_flying",
+   "description": "",
+   "units": "",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "CSV",
+   "instance": 3081,
+   "name": "mqtt_version_id",
+   "description": "",
+   "units": "",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "BI",
+   "instance": 3082,
+   "name": "mqtt_no_cid_en",
+   "description": "",
+   "units": "",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "BI",
+   "instance": 3083,
+   "name": "mqtt_en",
+   "description": "",
+   "units": "",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "BI",
+   "instance": 3084,
+   "name": "mqtt_persist_en",
+   "description": "",
+   "units": "",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "BI",
+   "instance": 3085,
+   "name": "mqtt_aliases_en",
+   "description": "",
+   "units": "",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "MI",
+   "instance": 3202,
+   "name": "eth_mode",
+   "description": "Ethernet mode: 0 static, 1 DHCP",
+   "units": "",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "MI",
+   "instance": 3203,
+   "name": "wifi_mode",
+   "description": "Wi-Fi mode: 0 static, 1 DHCP",
+   "units": "",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "CSV",
+   "instance": 3250,
+   "name": "name",
+   "description": "",
+   "units": "",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "CSV",
+   "instance": 3251,
+   "name": "wifi_ssid",
+   "description": "",
+   "units": "",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "CSV",
+   "instance": 3254,
+   "name": "post_url",
+   "description": "",
+   "units": "",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "CSV",
+   "instance": 3255,
+   "name": "post_auth_user",
+   "description": "",
+   "units": "",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "CSV",
+   "instance": 3257,
+   "name": "ntp_server_0",
+   "description": "",
+   "units": "",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "CSV",
+   "instance": 3258,
+   "name": "ntp_server_1",
+   "description": "",
+   "units": "",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "CSV",
+   "instance": 3259,
+   "name": "ntp_server_2",
+   "description": "",
+   "units": "",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "CSV",
+   "instance": 3260,
+   "name": "post_file_0",
+   "description": "",
+   "units": "",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "CSV",
+   "instance": 3261,
+   "name": "post_file_1",
+   "description": "",
+   "units": "",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "CSV",
+   "instance": 3262,
+   "name": "post_file_2",
+   "description": "",
+   "units": "",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "CSV",
+   "instance": 3263,
+   "name": "post_file_3",
+   "description": "",
+   "units": "",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "CSV",
+   "instance": 3264,
+   "name": "post_file_4",
+   "description": "",
+   "units": "",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "CSV",
+   "instance": 3270,
+   "name": "post_method",
+   "description": "",
+   "units": "",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "CSV",
+   "instance": 3271,
+   "name": "post_headers",
+   "description": "",
+   "units": "",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "CSV",
+   "instance": 3272,
+   "name": "post_ct",
+   "description": "",
+   "units": "",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "CSV",
+   "instance": 3273,
+   "name": "http_headers",
+   "description": "",
+   "units": "",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "CSV",
+   "instance": 3279,
+   "name": "wifi_country",
+   "description": "",
+   "units": "",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "CSV",
+   "instance": 3350,
+   "name": "post_addr_0",
+   "description": "",
+   "units": "",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "CSV",
+   "instance": 3351,
+   "name": "post_addr_1",
+   "description": "",
+   "units": "",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "CSV",
+   "instance": 3352,
+   "name": "post_addr_2",
+   "description": "",
+   "units": "",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "CSV",
+   "instance": 3353,
+   "name": "post_addr_3",
+   "description": "",
+   "units": "",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "CSV",
+   "instance": 3354,
+   "name": "post_addr_4",
+   "description": "",
+   "units": "",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "CSV",
+   "instance": 131072,
+   "name": "P01-n Name n",
+   "description": "P01, first of 20: Friendly name of card in slot n",
+   "units": "",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "CSV",
+   "instance": 131328,
+   "name": "P02-n ClassName n",
+   "description": "P02, first of 20: Type of card in slot n",
+   "units": "",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "CSV",
+   "instance": 131584,
+   "name": "P03-n PartNumber n",
+   "description": "P03, first of 20: Part number of card in slot n",
+   "units": "",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "AI",
+   "instance": 132096,
+   "name": "P05-n ClassID n",
+   "description": "P05, first of 20: Type ID of card in slot n",
+   "units": "",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "AI",
+   "instance": 132352,
+   "name": "P06-n Serial n",
+   "description": "P06, first of 20: Serial number of card in slot n",
+   "units": "",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "AI",
+   "instance": 132608,
+   "name": "P07-n HWVersion n",
+   "description": "P07, first of 20: Hardware version of card n",
+   "units": "",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "AI",
+   "instance": 132864,
+   "name": "P08-n FWVersion n",
+   "description": "P08, first of 20: Firmware version of card n",
+   "units": "",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "AI",
+   "instance": 133120,
+   "name": "P09-x ChanName/Note m (ni)",
+   "description": "P09, first of 120: channel name/note text (interleaved)",
+   "units": "",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "AI",
+   "instance": 133376,
+   "name": "P10-m Current m (ni)",
+   "description": "P10, first of 60: Current of channel m",
+   "units": "A",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "AI",
+   "instance": 133632,
+   "name": "P11-m Power m (ni)",
+   "description": "P11, first of 60: Real Power of channel m",
+   "units": "kW",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "AI",
+   "instance": 133888,
+   "name": "P12-m PF m (ni)",
+   "description": "P12, first of 60: Power factor of channel m",
+   "units": "",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "AI",
+   "instance": 134144,
+   "name": "P13-m Energy m (ni)",
+   "description": "P13, first of 60: Net energy of channel m",
+   "units": "kWh",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "AI",
+   "instance": 134400,
+   "name": "P14-m React Pwr m",
+   "description": "P14, first of 60: Reactive power of channel m",
+   "units": "kvar",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "AI",
+   "instance": 134656,
+   "name": "P15-m Apprnt Pwr m",
+   "description": "P15, first of 60: Apparent power of channel m",
+   "units": "kVA",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "AI",
+   "instance": 134912,
+   "name": "P16-x CTRatioPrimary/Secondary",
+   "description": "P16, first of 60: CT ratio primary/secondary (interleaved)",
+   "units": "",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "AI",
+   "instance": 135168,
+   "name": "P17-m Phase Comp m (ni)",
+   "description": "P17, first of 60: CT phase compensation value",
+   "units": "",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "Other",
+   "instance": 135424,
+   "name": "P18-n Chan Cfg n",
+   "description": "Bitstring Value. P18, first of 20: Channel configuration bitmask",
+   "units": "",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "AI",
+   "instance": 135800,
+   "name": "P19-121 Voltage Va",
+   "description": "",
+   "units": "V",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "AI",
+   "instance": 135801,
+   "name": "P19-121 Voltage Vb",
+   "description": "",
+   "units": "V",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "AI",
+   "instance": 135802,
+   "name": "P19-121 Voltage Vc",
+   "description": "",
+   "units": "V",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "AI",
+   "instance": 135803,
+   "name": "P19-121 Voltage Va-Vb",
+   "description": "",
+   "units": "V",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "AI",
+   "instance": 135804,
+   "name": "P19-121 Voltage Vb-Vc",
+   "description": "",
+   "units": "V",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "AI",
+   "instance": 135805,
+   "name": "P19-121 Voltage Vc-Va",
+   "description": "",
+   "units": "V",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "AI",
+   "instance": 135956,
+   "name": "P20-021 Frequency VI",
+   "description": "",
+   "units": "Hz",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "AI",
+   "instance": 136312,
+   "name": "P21-121 PTRatioPrimary Va",
+   "description": "",
+   "units": "",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "AI",
+   "instance": 136313,
+   "name": "P21-122 PTRatioSecondary Va",
+   "description": "",
+   "units": "",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "AI",
+   "instance": 136314,
+   "name": "P21-123 PTRatioPrimary Vb",
+   "description": "",
+   "units": "",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "AI",
+   "instance": 136315,
+   "name": "P21-124 PTRatioSecondary Vb",
+   "description": "",
+   "units": "",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "AI",
+   "instance": 136316,
+   "name": "P21-125 PTRatioPrimary Vc",
+   "description": "",
+   "units": "",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "AI",
+   "instance": 136317,
+   "name": "P21-126 PTRatioSecondary Vc",
+   "description": "",
+   "units": "",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "AI",
+   "instance": 136508,
+   "name": "P22-061 VAngle Va",
+   "description": "",
+   "units": "",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "AI",
+   "instance": 136509,
+   "name": "P22-062 VAngle Vb",
+   "description": "",
+   "units": "",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "AI",
+   "instance": 136510,
+   "name": "P22-063 VAngle Vc",
+   "description": "",
+   "units": "",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "AI",
+   "instance": 136704,
+   "name": "P23-m Energy Imp m",
+   "description": "P23, first of 60: Import energy of channel m",
+   "units": "kWh",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "AI",
+   "instance": 136960,
+   "name": "P24-m Energy Exp m",
+   "description": "P24, first of 60: Export energy of channel m",
+   "units": "kWh",
+   "access": "R",
+   "states": ""
+  }
+ ],
+ "page": "https://easybacnet.com/bacnet-points-lists/elkor/wattson-mcm",
+ "note": "Re-typed from the manufacturer's public documentation (see source). Point availability varies by firmware and options; verify against the live device.",
+ "disclaimer": "DISCLAIMER: reference only, provided AS IS with no warranty. Re-typed by hand from public documents; may contain errors or be out of date. You must verify every point against the manufacturer's current documentation and the live device before use. easybacnet.com accepts no liability for its use and is not affiliated with the manufacturer. Terms: https://easybacnet.com/terms#content"
+}

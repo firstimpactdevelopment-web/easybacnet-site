@@ -1,0 +1,748 @@
+{
+ "manufacturer": "Danfoss",
+ "manufacturer_slug": "danfoss",
+ "model": "Vacon 100 / 100 FLOW / 100 HVAC internal BACnet (MS/TP and IP)",
+ "model_slug": "vacon-100-internal-bacnet",
+ "aliases": [
+  "Vacon 100",
+  "Vacon 100 FLOW",
+  "Vacon 100 HVAC",
+  "Vacon 100 BACnet",
+  "DPD00091",
+  "AN361179477697"
+ ],
+ "equipment_type": "Variable frequency drive (HVAC)",
+ "applies_to": "Vacon 100, Vacon 100 FLOW and Vacon 100 HVAC AC drives using the built-in RS-485 port (BACnet MS/TP) or the built-in Ethernet port (BACnet IP).",
+ "summary": "Vacon 100 family drives (now Danfoss) have BACnet MS/TP on the RS-485 terminals and BACnet IP on the Ethernet port, both built in. The object list is Binary Values for drive status, run/stop, direction, reset, stop modes and fieldbus control-word bits, and Analog Values for monitors, the speed reference (% of nominal), limits, ramps, process data, AnyParam access and the fixed control/status words.",
+ "bacnet_transport": [
+  "BACnet MS/TP",
+  "BACnet IP"
+ ],
+ "firmware": null,
+ "default_device_instance": "0 = use the number read from the drive (shown in the monitor menu)",
+ "access_inferred": false,
+ "notes": [
+  "From the Vacon 100 Internal BACnet Installation Manual DPD00091B (Danfoss AN361179477697en-000101), Tables 14-15 (PDF pp32-34).",
+  "Fieldbus must be the remote control place (P3.2.1 Rem. Ctrl. Place) for BV 15 and AV 24 to take effect.",
+  "BV 7-14 and AV 15-22 / AV 30-33 are process data whose meaning depends on the application.",
+  "AV 36/AV 37 are IEEE-754 floats; binary coding works only for values without decimals.",
+  "The control word (AV 36) uses bit 0 start/stop, bit 1 direction, bit 2 fault reset; the status word (AV 38) bit 0 ready, 1 run, 2 direction, 3 fault, 4 alarm, 5 at reference, 6 zero speed.",
+  "High and low limits of the objects come from the drive application."
+ ],
+ "source": {
+  "title": "Vacon 100 AC drives, Internal BACnet Installation Manual",
+  "doc_number": "DPD00091B (AN361179477697en-000101)",
+  "revision_date": "2013-06-04",
+  "url": "https://assets.danfoss.com/documents/277119/AN361179477697en-000101.pdf"
+ },
+ "integration": {
+  "summary": "Select the BACnet protocol on RS-485 (M5.8) or Ethernet (M5.9), set the MS/TP MAC address, baud rate and instance (P5.8.3.1) or the IP settings and P5.9.3.1.3 Protocol in use = 1, and make Fieldbus the remote control place (P3.2.1). Then command BV 15 run/stop (or AV 36 control word) and AV 24 speed reference, and read BV 1, AV 1 and the fault points.",
+  "minimum_points": [
+   {
+    "ref": "BV 15",
+    "name": "Run/Stop CMD",
+    "why": "Run/stop command (1 = run)"
+   },
+   {
+    "ref": "AV 24",
+    "name": "Speed Reference",
+    "why": "Speed reference, % of nominal speed"
+   },
+   {
+    "ref": "BV 17",
+    "name": "Reset Fault",
+    "why": "Resets the active fault"
+   },
+   {
+    "ref": "BV 1",
+    "name": "Run/Stop State",
+    "why": "Running status"
+   },
+   {
+    "ref": "AV 1",
+    "name": "Output Frequency",
+    "why": "Output frequency, Hz"
+   },
+   {
+    "ref": "AV 5",
+    "name": "Motor Current",
+    "why": "Motor current, A"
+   },
+   {
+    "ref": "AV 3",
+    "name": "Load (power)",
+    "why": "Motor shaft power, %"
+   },
+   {
+    "ref": "BV 3",
+    "name": "Fault State",
+    "why": "Any active drive fault"
+   },
+   {
+    "ref": "AV 23",
+    "name": "Active Fault Code",
+    "why": "Which fault is active"
+   }
+  ],
+  "enable": "Make Fieldbus the remote control place (Main Menu > Parameters > Start/Stop Setup > P3.2.1 Rem. Ctrl. Place) and choose the fieldbus as the reference source (M3.3). The manual's quick test writes AV 36 control word 0 then 1 to start, AV 24 = 50 for 50 % speed, and 0 to stop.",
+  "heartbeat": "MS/TP: P5.8.3.1.5 Communication time-out (0-65535 s, default 10, 0 = off) raises a communication error if the drive is sole master for that long. BACnet IP: P5.9.3.1.2 Communication time-out (default 0 = not used) is the longest allowed gap between UDP packets from the master; losing the Ethernet link faults at once even with 0.",
+  "remote_sensors": null,
+  "setup": [
+   "MS/TP: P5.8.3.1.1 baud rate (1 = 9600 default, 2 = 19200, 3 = 38400, 4 = 76800), P5.8.3.1.2 autobauding, P5.8.3.1.3 MAC address 1-127 (default 1).",
+   "P5.8.3.1.4 / P5.9.3.1.1 Instance number: 0 (default) uses a number read from the drive, shown in the monitor menu; any other value is used as is.",
+   "BACnet IP: P5.9.1.1 IP address mode (default 1 = DHCP with AutoIP; 0 = fixed, default 192.168.0.10); P5.9.3.1.3 Protocol in use = 1 turns BACnet IP on.",
+   "BACnet IP: P5.9.3.1.4-6 set a BBMD IP, port and time to live for foreign-device registration.",
+   "Terminate the first and last drive on the MS/TP segment.",
+   "PICS lists DS-RP-B, DS-RPM-B, DS-WP-B, DS-WPM-B, DM-DDB-B and DM-DOB-B; the drive is a B-ASC."
+  ],
+  "gotchas": [
+   "BV 15 run/stop only works when the fieldbus is the active control place.",
+   "Process data objects depend on the drive application; check the application manual before mapping them.",
+   "BV 18-22 stop modes and BV 23/24 BusCtrl/BusRef are commandable control-word bits; leave them alone unless needed."
+  ]
+ },
+ "points": [
+  {
+   "type": "BV",
+   "instance": 0,
+   "name": "Ready State",
+   "description": "Indicates whether the drive is ready or not",
+   "units": "",
+   "access": "R",
+   "states": "Inactive/Active: Not Ready/Ready"
+  },
+  {
+   "type": "BV",
+   "instance": 1,
+   "name": "Run/Stop State",
+   "description": "Indicates whether the drive is running or stopped",
+   "units": "",
+   "access": "R",
+   "states": "Inactive/Active: Stop/Run"
+  },
+  {
+   "type": "BV",
+   "instance": 2,
+   "name": "Fwd/Rev State",
+   "description": "Indicates the rotation direction of the motor",
+   "units": "",
+   "access": "R",
+   "states": "Inactive/Active: Fwd/Rev"
+  },
+  {
+   "type": "BV",
+   "instance": 3,
+   "name": "Fault State",
+   "description": "Indicates if a fault is active",
+   "units": "",
+   "access": "R",
+   "states": "Inactive/Active: OK/Fault"
+  },
+  {
+   "type": "BV",
+   "instance": 4,
+   "name": "Alarm State",
+   "description": "Indicates if an alarm is active",
+   "units": "",
+   "access": "R",
+   "states": "Inactive/Active: OK/Alarm"
+  },
+  {
+   "type": "BV",
+   "instance": 5,
+   "name": "At Setpoint",
+   "description": "Ref. Frequency reached",
+   "units": "",
+   "access": "R",
+   "states": "Inactive/Active: False/True"
+  },
+  {
+   "type": "BV",
+   "instance": 6,
+   "name": "At Zero Speed",
+   "description": "Motor Running at zero speed",
+   "units": "",
+   "access": "R",
+   "states": "Inactive/Active: False/True"
+  },
+  {
+   "type": "BV",
+   "instance": 7,
+   "name": "fb_ProcessdataOut_01 Bit_0",
+   "description": "ProcessDataOut1 bit 0",
+   "units": "",
+   "access": "R",
+   "states": "Inactive/Active: 0/1"
+  },
+  {
+   "type": "BV",
+   "instance": 8,
+   "name": "fb_ProcessdataOut_01 Bit_1",
+   "description": "ProcessDataOut1 bit 1",
+   "units": "",
+   "access": "R",
+   "states": "Inactive/Active: 0/1"
+  },
+  {
+   "type": "BV",
+   "instance": 9,
+   "name": "fb_ProcessdataOut_01 Bit_2",
+   "description": "ProcessDataOut1 bit 2",
+   "units": "",
+   "access": "R",
+   "states": "Inactive/Active: 0/1"
+  },
+  {
+   "type": "BV",
+   "instance": 10,
+   "name": "fb_ProcessdataOut_01 Bit_3",
+   "description": "ProcessDataOut1 bit 3",
+   "units": "",
+   "access": "R",
+   "states": "Inactive/Active: 0/1"
+  },
+  {
+   "type": "BV",
+   "instance": 11,
+   "name": "fb_ProcessdataOut_01 Bit_4",
+   "description": "ProcessDataOut1 bit 4",
+   "units": "",
+   "access": "R",
+   "states": "Inactive/Active: 0/1"
+  },
+  {
+   "type": "BV",
+   "instance": 12,
+   "name": "fb_ProcessdataOut_01 Bit_5",
+   "description": "ProcessDataOut1 bit 5",
+   "units": "",
+   "access": "R",
+   "states": "Inactive/Active: 0/1"
+  },
+  {
+   "type": "BV",
+   "instance": 13,
+   "name": "fb_ProcessdataOut_01 Bit_6",
+   "description": "ProcessDataOut1 bit 6",
+   "units": "",
+   "access": "R",
+   "states": "Inactive/Active: 0/1"
+  },
+  {
+   "type": "BV",
+   "instance": 14,
+   "name": "fb_ProcessdataOut_01 Bit_7",
+   "description": "ProcessDataOut1 bit 7",
+   "units": "",
+   "access": "R",
+   "states": "Inactive/Active: 0/1"
+  },
+  {
+   "type": "BV",
+   "instance": 15,
+   "name": "Run/Stop CMD",
+   "description": "Command to start drive (FB control is active)",
+   "units": "",
+   "access": "C",
+   "states": "Inactive/Active: Stop/Run"
+  },
+  {
+   "type": "BV",
+   "instance": 16,
+   "name": "Fwd/Rev CMD",
+   "description": "Command to run forward/ reverse",
+   "units": "",
+   "access": "C",
+   "states": "Inactive/Active: Fwd/Rev"
+  },
+  {
+   "type": "BV",
+   "instance": 17,
+   "name": "Reset Fault",
+   "description": "Command to reset Active Fault from drive",
+   "units": "",
+   "access": "C",
+   "states": "Inactive/Active: 0/Reset"
+  },
+  {
+   "type": "BV",
+   "instance": 18,
+   "name": "Stop By Coast",
+   "description": "Stop Drive by coast",
+   "units": "",
+   "access": "C",
+   "states": "Inactive/Active: 0/1"
+  },
+  {
+   "type": "BV",
+   "instance": 19,
+   "name": "Stop By Ramp",
+   "description": "Stop Drive by ramp",
+   "units": "",
+   "access": "C",
+   "states": "Inactive/Active: 0/1"
+  },
+  {
+   "type": "BV",
+   "instance": 20,
+   "name": "Quick Stop",
+   "description": "Quick Stop",
+   "units": "",
+   "access": "C",
+   "states": "Inactive/Active: 0/1"
+  },
+  {
+   "type": "BV",
+   "instance": 21,
+   "name": "Zero Ramp",
+   "description": "Stop by zero ramp",
+   "units": "",
+   "access": "C",
+   "states": "Inactive/Active: 0/1"
+  },
+  {
+   "type": "BV",
+   "instance": 22,
+   "name": "Hold Ramp",
+   "description": "Hold ramp",
+   "units": "",
+   "access": "C",
+   "states": "Inactive/Active: 0/1"
+  },
+  {
+   "type": "BV",
+   "instance": 23,
+   "name": "BusCtrl",
+   "description": "Activate Bus control",
+   "units": "",
+   "access": "C",
+   "states": "Inactive/Active: 0/1"
+  },
+  {
+   "type": "BV",
+   "instance": 24,
+   "name": "BusRef",
+   "description": "Activate Bus reference",
+   "units": "",
+   "access": "C",
+   "states": "Inactive/Active: 0/1"
+  },
+  {
+   "type": "BV",
+   "instance": 25,
+   "name": "fb_control_word Bit_10",
+   "description": "fb_control_word bit 10",
+   "units": "",
+   "access": "C",
+   "states": "Inactive/Active: 0/1"
+  },
+  {
+   "type": "BV",
+   "instance": 26,
+   "name": "fb_control_word Bit_11",
+   "description": "fb_control_word bit 11",
+   "units": "",
+   "access": "C",
+   "states": "Inactive/Active: 0/1"
+  },
+  {
+   "type": "BV",
+   "instance": 27,
+   "name": "fb_control_word Bit_12",
+   "description": "fb_control_word bit 12",
+   "units": "",
+   "access": "C",
+   "states": "Inactive/Active: 0/1"
+  },
+  {
+   "type": "BV",
+   "instance": 28,
+   "name": "fb_control_word Bit_13",
+   "description": "fb_control_word bit 13",
+   "units": "",
+   "access": "C",
+   "states": "Inactive/Active: 0/1"
+  },
+  {
+   "type": "BV",
+   "instance": 29,
+   "name": "fb_control_word Bit_14",
+   "description": "fb_control_word bit 14",
+   "units": "",
+   "access": "C",
+   "states": "Inactive/Active: 0/1"
+  },
+  {
+   "type": "BV",
+   "instance": 30,
+   "name": "fb_control_word Bit_15",
+   "description": "fb_control_word bit 15",
+   "units": "",
+   "access": "C",
+   "states": "Inactive/Active: 0/1"
+  },
+  {
+   "type": "AV",
+   "instance": 0,
+   "name": "Frequency Setpoint",
+   "description": "Frequency Setpoint",
+   "units": "Hz",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 1,
+   "name": "Output Frequency",
+   "description": "Output Frequency",
+   "units": "Hz",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 2,
+   "name": "Motor Speed",
+   "description": "Motor Speed",
+   "units": "rpm",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 3,
+   "name": "Load (power)",
+   "description": "Motor shaft power",
+   "units": "%",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 4,
+   "name": "Kilowatt Hours total",
+   "description": "Total energy counter",
+   "units": "kWh",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 5,
+   "name": "Motor Current",
+   "description": "Motor Current",
+   "units": "A",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 6,
+   "name": "DC link Voltage",
+   "description": "DC link Voltage",
+   "units": "V",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 7,
+   "name": "Motor Voltage",
+   "description": "Motor Voltage",
+   "units": "V",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 8,
+   "name": "Unit Temperature",
+   "description": "Heatsink Temperature",
+   "units": "°C",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 9,
+   "name": "Motor Torque",
+   "description": "Torque, % of motor nominal",
+   "units": "%",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 10,
+   "name": "Operating Days",
+   "description": "Operating days (resettable)",
+   "units": "days",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 11,
+   "name": "Operating Hours",
+   "description": "Operating hours (resettable)",
+   "units": "h",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 12,
+   "name": "Kilowatt Hours",
+   "description": "Energy counter (resettable)",
+   "units": "kWh",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 13,
+   "name": "Torque Reference",
+   "description": "Torque Reference",
+   "units": "%",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 14,
+   "name": "Temperature Rise",
+   "description": "Calculated motor temperature, 100 % = nominal",
+   "units": "%",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 15,
+   "name": "fb_ProcessdataOut_01",
+   "description": "Process data out 1, application specific",
+   "units": "",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 16,
+   "name": "fb_ProcessdataOut_02",
+   "description": "Process data out 2, application specific",
+   "units": "",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 17,
+   "name": "fb_ProcessdataOut_03",
+   "description": "Process data out 3, application specific",
+   "units": "",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 18,
+   "name": "fb_ProcessdataOut_04",
+   "description": "Process data out 4, application specific",
+   "units": "",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 19,
+   "name": "fb_ProcessdataOut_05",
+   "description": "Process data out 5, application specific",
+   "units": "",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 20,
+   "name": "fb_ProcessdataOut_06",
+   "description": "Process data out 6, application specific",
+   "units": "",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 21,
+   "name": "fb_ProcessdataOut_07",
+   "description": "Process data out 7, application specific",
+   "units": "",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 22,
+   "name": "fb_ProcessdataOut_08",
+   "description": "Process data out 8, application specific",
+   "units": "",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 23,
+   "name": "Active Fault Code",
+   "description": "Active Fault Code",
+   "units": "",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 24,
+   "name": "Speed Reference",
+   "description": "Speed reference, % of nominal speed",
+   "units": "%",
+   "access": "C",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 25,
+   "name": "Current Limit",
+   "description": "Current Limit",
+   "units": "A",
+   "access": "W",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 26,
+   "name": "Min Frequency",
+   "description": "Minimum Frequency",
+   "units": "Hz",
+   "access": "W",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 27,
+   "name": "Maximum Frequency",
+   "description": "Maximum Frequency",
+   "units": "Hz",
+   "access": "W",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 28,
+   "name": "Accel Time",
+   "description": "Acceleration Time",
+   "units": "s",
+   "access": "W",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 29,
+   "name": "Decel Time",
+   "description": "Deceleration Time",
+   "units": "s",
+   "access": "W",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 30,
+   "name": "fb_ProcessdataIn_01",
+   "description": "Process data in 1, application specific",
+   "units": "",
+   "access": "C",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 31,
+   "name": "fb_ProcessdataIn_02",
+   "description": "Process data in 2, application specific",
+   "units": "",
+   "access": "C",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 32,
+   "name": "fb_ProcessdataIn_03",
+   "description": "Process data in 3, application specific",
+   "units": "",
+   "access": "C",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 33,
+   "name": "fb_ProcessdataIn_04",
+   "description": "Process data in 4, application specific",
+   "units": "",
+   "access": "C",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 34,
+   "name": "AnyParam ID",
+   "description": "Parameter ID used by AV35 (0-65535)",
+   "units": "",
+   "access": "W",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 35,
+   "name": "AnyParam Value",
+   "description": "Value of the parameter set in AV34",
+   "units": "",
+   "access": "W",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 36,
+   "name": "Fb_Control_Word Lo16",
+   "description": "Fixed control word, bits 0-15",
+   "units": "",
+   "access": "C",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 37,
+   "name": "Fb_Control_Word Hi16",
+   "description": "Fixed control word, bits 16-31",
+   "units": "",
+   "access": "C",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 38,
+   "name": "Fb_Status_Word Lo16",
+   "description": "Fixed status word, bits 0-15",
+   "units": "",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 39,
+   "name": "Fb_Status_Word Hi16",
+   "description": "Fixed status word, bits 16-31",
+   "units": "",
+   "access": "R",
+   "states": ""
+  }
+ ],
+ "page": "https://easybacnet.com/bacnet-points-lists/danfoss/vacon-100-internal-bacnet",
+ "note": "Re-typed from the manufacturer's public documentation (see source). Point availability varies by firmware and options; verify against the live device.",
+ "disclaimer": "DISCLAIMER: reference only, provided AS IS with no warranty. Re-typed by hand from public documents; may contain errors or be out of date. You must verify every point against the manufacturer's current documentation and the live device before use. easybacnet.com accepts no liability for its use and is not affiliated with the manufacturer. Terms: https://easybacnet.com/terms#content"
+}

@@ -1,0 +1,967 @@
+{
+ "manufacturer": "ABB",
+ "manufacturer_slug": "abb",
+ "model": "PSTX softstarter with Anybus CompactCom BACnet (MS/TP and IP)",
+ "model_slug": "pstx-softstarter-bacnet",
+ "short_model": "PSTX Softstarter BACnet",
+ "aliases": [
+  "PSTX",
+  "PSTX softstarter",
+  "Anybus CompactCom BACnet",
+  "1SFC132381M0201"
+ ],
+ "equipment_type": "Motor softstarter",
+ "applies_to": "ABB PSTX softstarters fitted with the Anybus CompactCom BACnet MS/TP or BACnet IP fieldbus module.",
+ "summary": "The PSTX softstarter talks BACnet MS/TP or BACnet IP through a plug-in Anybus CompactCom module. Binary Values carry run, fault, warning and I/O status plus start/stop, reset, motor heating, emergency mode and relay commands; Analog Values carry mains and motor electrical data, energy, temperatures, event codes and a mailbox for any other parameter. BACnet control starts only after BV 18 Control-Override-Command is set.",
+ "bacnet_transport": [
+  "BACnet MS/TP",
+  "BACnet IP"
+ ],
+ "firmware": null,
+ "default_device_instance": 4194303,
+ "access_inferred": false,
+ "notes": [
+  "Instance gaps are reserved by ABB and do not exist.",
+  "BV 9 Enable-Monitor has no access mark in the manual; listed as read-only.",
+  "AV 125 fault codes include 0 none, 1 high current, 2 phase loss, 3 heat sink overtemperature, 4 bad network quality and more; AV 126 / AV 127 list warning and protection codes the same way (see the manual pp24-25).",
+  "Temperatures are printed as 'in degrees' without a unit; no unit is shown.",
+  "Ranges such as '10 x nominal current' depend on the softstarter size.",
+  "Any other PSTX parameter can be read or written through the mailbox: write its fieldbus ID to AV 25, then read or write AV 26."
+ ],
+ "source": {
+  "title": "Softstarter type PSTX, Fieldbus communication, Anybus CompactCom BACnet MS/TP and BACnet IP",
+  "doc_number": "1SFC132381M0201 Rev C",
+  "revision_date": "2024-07-27",
+  "url": "https://library.e.abb.com/public/f4d2da121be743f4b4172f7534c2c19c/1SFC132381M0201_PSTX_AB_BACnet.pdf"
+ },
+ "integration": {
+  "summary": "Set 12.02 FB interface connector = Anybus and a valid device instance in 12.33 (the default 4194303 does not work), plus the IP or MS/TP address. Write BV 18 = On to give BACnet control, then start/stop with BV 10 and reset faults with BV 14. Read run, fault and ready status and the motor current.",
+  "minimum_points": [
+   {
+    "ref": "BV 10",
+    "name": "RUN-STOP-Command-[0=Stop][1=Run]",
+    "why": "Start / stop command (1 = run)"
+   },
+   {
+    "ref": "BV 18",
+    "name": "Control-Override-Command-[0=Off][1=On]",
+    "why": "Must be On for BACnet to control the starter"
+   },
+   {
+    "ref": "BV 14",
+    "name": "Event-Reset-Command-[0=No-Reset][1=Reset]",
+    "why": "Reset events / faults"
+   },
+   {
+    "ref": "BV 0",
+    "name": "RUN-STOP-Monitor-[0=Stop][1=Run]",
+    "why": "Running status"
+   },
+   {
+    "ref": "BV 7",
+    "name": "Ready-To-Start-Monitor-[0=Not-Ready][1=Ready]",
+    "why": "Ready to start"
+   },
+   {
+    "ref": "BV 4",
+    "name": "REMOTE-LOCAL-Monitor-[0=Remote][1=Local]",
+    "why": "Remote / local mode"
+   },
+   {
+    "ref": "AV 4",
+    "name": "Output-Current-[A]",
+    "why": "Motor current, A"
+   },
+   {
+    "ref": "AV 6",
+    "name": "Output-Power-[kW]",
+    "why": "Output power, kW"
+   },
+   {
+    "ref": "BV 2",
+    "name": "Fault-Monitor-[0=OK][1=Fault]",
+    "why": "Any active fault"
+   },
+   {
+    "ref": "AV 125",
+    "name": "Active-Fault",
+    "why": "Active fault code"
+   }
+  ],
+  "enable": "Write BV 18 Control-Override-Command = 1 (On) to put the softstarter in BACnet control; BACnet then overrides the DI logic for start/stop, motor heating, lock parameters, emergency mode, user-defined trip and stand still brake. Local control from the HMI always has priority. Parameter 12.03 Fieldbus control is not needed for control; it only enables the timeout protection.",
+  "heartbeat": "BACnet has no built-in timeout. To trip on lost communication set 12.03 Fieldbus control = On, 19.03 Fieldbus failure out (event group), 19.04 Fieldbus failure op (action) and 19.12 Fieldbus failure timeout (seconds without a message).",
+  "remote_sensors": null,
+  "setup": [
+   "12.02 FB interface connector = Anybus.",
+   "12.33 Fieldbus BACnet Device Instance: 0-4194302; the default 4194303 is invalid and communication will not work.",
+   "BACnet IP: 12.05 IP address; foreign device registration with 12.34 BBMD IP, 12.35 BBMD UDP port and 12.36 registration interval.",
+   "BACnet MS/TP: 12.04 MAC address 0-127; baud 9600-76800.",
+   "Power-cycle, or set 12.02 to None and back to Anybus, after changing communication parameters."
+  ],
+  "gotchas": [
+   "The HMI local mode always beats BACnet control override.",
+   "Restoring default object names needs a full parameter reset from the HMI, which also resets the communication parameters.",
+   "Device Communication Control default password is Admin."
+  ]
+ },
+ "points": [
+  {
+   "type": "BV",
+   "instance": 0,
+   "name": "RUN-STOP-Monitor-[0=Stop][1=Run]",
+   "description": "Run status (ramp or bypass)",
+   "units": "",
+   "access": "R",
+   "states": "0=Stop, 1=Run"
+  },
+  {
+   "type": "BV",
+   "instance": 2,
+   "name": "Fault-Monitor-[0=OK][1=Fault]",
+   "description": "Fault status of softstarter",
+   "units": "",
+   "access": "R",
+   "states": "0=OK, 1=Fault"
+  },
+  {
+   "type": "BV",
+   "instance": 4,
+   "name": "REMOTE-LOCAL-Monitor-[0=Remote][1=Local]",
+   "description": "Operating mode",
+   "units": "",
+   "access": "R",
+   "states": "0=Remote, 1=Local"
+  },
+  {
+   "type": "BV",
+   "instance": 5,
+   "name": "Warning-Monitor-[0=OK][1=Warning]",
+   "description": "Warning status of softstarter",
+   "units": "",
+   "access": "R",
+   "states": "0=OK, 1=Warning"
+  },
+  {
+   "type": "BV",
+   "instance": 7,
+   "name": "Ready-To-Start-Monitor-[0=Not-Ready][1=Ready]",
+   "description": "Ready to start",
+   "units": "",
+   "access": "R",
+   "states": "0=Not-Ready, 1=Ready"
+  },
+  {
+   "type": "BV",
+   "instance": 9,
+   "name": "Enable-Monitor-[0=Disabled][1=Enabled]",
+   "description": "Enable status of softstarter",
+   "units": "",
+   "access": "R",
+   "states": "0=Disabled, 1=Enabled"
+  },
+  {
+   "type": "BV",
+   "instance": 10,
+   "name": "RUN-STOP-Command-[0=Stop][1=Run]",
+   "description": "Start softstarter",
+   "units": "",
+   "access": "W",
+   "states": "0=Stop, 1=Run"
+  },
+  {
+   "type": "BV",
+   "instance": 14,
+   "name": "Event-Reset-Command-[0=No-Reset][1=Reset]",
+   "description": "Reset event",
+   "units": "",
+   "access": "W",
+   "states": "0=No-Reset, 1=Reset"
+  },
+  {
+   "type": "BV",
+   "instance": 18,
+   "name": "Control-Override-Command-[0=Off][1=On]",
+   "description": "Take BACnet control of the softstarter (local panel has priority)",
+   "units": "",
+   "access": "W",
+   "states": "0=Off, 1=On"
+  },
+  {
+   "type": "BV",
+   "instance": 19,
+   "name": "Control-Override-Monitor-[0=Off][1=On]",
+   "description": "Shows BACnet control override is active",
+   "units": "",
+   "access": "R",
+   "states": "0=Off, 1=On"
+  },
+  {
+   "type": "BV",
+   "instance": 28,
+   "name": "Motor-Heating-Command-[0=Off][1=On]",
+   "description": "Run motor heating",
+   "units": "",
+   "access": "W",
+   "states": "0=Off, 1=On"
+  },
+  {
+   "type": "BV",
+   "instance": 29,
+   "name": "Motor-Heating-Monitor-[0=Off][1=On]",
+   "description": "Status of motor heating mode",
+   "units": "",
+   "access": "R",
+   "states": "0=Off, 1=On"
+  },
+  {
+   "type": "BV",
+   "instance": 71,
+   "name": "In0-Input-Monitor-[0=Off][1=On]",
+   "description": "Status of In0 digital input",
+   "units": "",
+   "access": "R",
+   "states": "0=Off, 1=On"
+  },
+  {
+   "type": "BV",
+   "instance": 72,
+   "name": "In1-Input-Monitor-[0=Off][1=On]",
+   "description": "Status of In1 digital input",
+   "units": "",
+   "access": "R",
+   "states": "0=Off, 1=On"
+  },
+  {
+   "type": "BV",
+   "instance": 73,
+   "name": "In2-Input-Monitor-[0=Off][1=On]",
+   "description": "Status of In2 digital input",
+   "units": "",
+   "access": "R",
+   "states": "0=Off, 1=On"
+  },
+  {
+   "type": "BV",
+   "instance": 74,
+   "name": "1DI0-Input-Monitor-[0=Off][1=On]",
+   "description": "Status of 1DI0 external I/O digital input",
+   "units": "",
+   "access": "R",
+   "states": "0=Off, 1=On"
+  },
+  {
+   "type": "BV",
+   "instance": 75,
+   "name": "1DI1-Input-Monitor-[0=Off][1=On]",
+   "description": "Status of 1DI1 external I/O digital input",
+   "units": "",
+   "access": "R",
+   "states": "0=Off, 1=On"
+  },
+  {
+   "type": "BV",
+   "instance": 76,
+   "name": "1DI2-Input-Monitor-[0=Off][1=On]",
+   "description": "Status of 1DI2 external I/O digital input",
+   "units": "",
+   "access": "R",
+   "states": "0=Off, 1=On"
+  },
+  {
+   "type": "BV",
+   "instance": 77,
+   "name": "1DI3-Input-Monitor-[0=Off][1=On]",
+   "description": "Status of 1DI3 external I/O digital input",
+   "units": "",
+   "access": "R",
+   "states": "0=Off, 1=On"
+  },
+  {
+   "type": "BV",
+   "instance": 78,
+   "name": "1DI4-Input-Monitor-[0=Off][1=On]",
+   "description": "Status of 1DI4 external I/O digital input",
+   "units": "",
+   "access": "R",
+   "states": "0=Off, 1=On"
+  },
+  {
+   "type": "BV",
+   "instance": 79,
+   "name": "2DI5-Input-Monitor-[0=Off][1=On]",
+   "description": "Status of 2DI5 external I/O digital input",
+   "units": "",
+   "access": "R",
+   "states": "0=Off, 1=On"
+  },
+  {
+   "type": "BV",
+   "instance": 80,
+   "name": "2DI6-Input-Monitor-[0=Off][1=On]",
+   "description": "Status of 2DI6 external I/O digital input",
+   "units": "",
+   "access": "R",
+   "states": "0=Off, 1=On"
+  },
+  {
+   "type": "BV",
+   "instance": 81,
+   "name": "2DI7-Input-Monitor-[0=Off][1=On]",
+   "description": "Status of 2DI7 external I/O digital input",
+   "units": "",
+   "access": "R",
+   "states": "0=Off, 1=On"
+  },
+  {
+   "type": "BV",
+   "instance": 82,
+   "name": "K4-Relay-Monitor-[0=Off][1=On]",
+   "description": "Status of K4 relay",
+   "units": "",
+   "access": "R",
+   "states": "0=Off, 1=On"
+  },
+  {
+   "type": "BV",
+   "instance": 83,
+   "name": "K5-Relay-Monitor-[0=Off][1=On]",
+   "description": "Status of K5 relay",
+   "units": "",
+   "access": "R",
+   "states": "0=Off, 1=On"
+  },
+  {
+   "type": "BV",
+   "instance": 84,
+   "name": "K6-Relay-Monitor-[0=Off][1=On]",
+   "description": "Status of K6 relay",
+   "units": "",
+   "access": "R",
+   "states": "0=Off, 1=On"
+  },
+  {
+   "type": "BV",
+   "instance": 85,
+   "name": "K4-Relay-Command-[0=Off][1=On]",
+   "description": "Output state of K4 relay",
+   "units": "",
+   "access": "W",
+   "states": "0=Off, 1=On"
+  },
+  {
+   "type": "BV",
+   "instance": 86,
+   "name": "K5-Relay-Command-[0=Off][1=On]",
+   "description": "Output state of K5 relay",
+   "units": "",
+   "access": "W",
+   "states": "0=Off, 1=On"
+  },
+  {
+   "type": "BV",
+   "instance": 87,
+   "name": "K6-Relay-Command-[0=Off][1=On]",
+   "description": "Output state of K6 relay",
+   "units": "",
+   "access": "W",
+   "states": "0=Off, 1=On"
+  },
+  {
+   "type": "BV",
+   "instance": 88,
+   "name": "1DO0-Output-Monitor-[0=Off][1=On]",
+   "description": "Status of 1DO0 external I/O digital output",
+   "units": "",
+   "access": "R",
+   "states": "0=Off, 1=On"
+  },
+  {
+   "type": "BV",
+   "instance": 89,
+   "name": "1DO1-Output-Monitor-[0=Off][1=On]",
+   "description": "Status of 1DO1 external I/O digital output",
+   "units": "",
+   "access": "R",
+   "states": "0=Off, 1=On"
+  },
+  {
+   "type": "BV",
+   "instance": 90,
+   "name": "2DO2-Output-Monitor-[0=Off][1=On]",
+   "description": "Status of 2DO2 external I/O digital output",
+   "units": "",
+   "access": "R",
+   "states": "0=Off, 1=On"
+  },
+  {
+   "type": "BV",
+   "instance": 91,
+   "name": "2DO3-Output-Monitor-[0=Off][1=On]",
+   "description": "Status of 2DO3 external I/O digital output",
+   "units": "",
+   "access": "R",
+   "states": "0=Off, 1=On"
+  },
+  {
+   "type": "BV",
+   "instance": 92,
+   "name": "1DO0-Output-Command-[0=Off][1=On]",
+   "description": "Output state of 1DO0 external I/O digital output",
+   "units": "",
+   "access": "W",
+   "states": "0=Off, 1=On"
+  },
+  {
+   "type": "BV",
+   "instance": 93,
+   "name": "1DO1-Output-Command-[0=Off][1=On]",
+   "description": "Output state of 1DO1 external I/O digital output",
+   "units": "",
+   "access": "W",
+   "states": "0=Off, 1=On"
+  },
+  {
+   "type": "BV",
+   "instance": 94,
+   "name": "2DO2-Output-Command-[0=Off][1=On]",
+   "description": "Output state of 2DO2 external I/O digital output",
+   "units": "",
+   "access": "W",
+   "states": "0=Off, 1=On"
+  },
+  {
+   "type": "BV",
+   "instance": 95,
+   "name": "2DO3-Output-Command-[0=Off][1=On]",
+   "description": "Output state of 2DO3 external I/O digital output",
+   "units": "",
+   "access": "W",
+   "states": "0=Off, 1=On"
+  },
+  {
+   "type": "BV",
+   "instance": 96,
+   "name": "Lock-Parameters-Command-[0=No-Lock][1=Lock]",
+   "description": "Lock parameters",
+   "units": "",
+   "access": "W",
+   "states": "0=No-Lock, 1=Lock"
+  },
+  {
+   "type": "BV",
+   "instance": 97,
+   "name": "Event-Monitor-[0=OK][1=Event]",
+   "description": "Event status of softstarter",
+   "units": "",
+   "access": "R",
+   "states": "0=OK, 1=Event"
+  },
+  {
+   "type": "BV",
+   "instance": 98,
+   "name": "Stop-Monitor-[0=Not-Stopped][1=Stopped]",
+   "description": "Stop status",
+   "units": "",
+   "access": "R",
+   "states": "0=Not-Stopped, 1=Stopped"
+  },
+  {
+   "type": "BV",
+   "instance": 99,
+   "name": "Event-Reset-Monitor-[0=No-Reset][1=Reset]",
+   "description": "Event reset status of softstarter",
+   "units": "",
+   "access": "R",
+   "states": "0=No-Reset, 1=Reset"
+  },
+  {
+   "type": "BV",
+   "instance": 100,
+   "name": "Top-Of-Ramp-Monitor-[0=Not-TOR][1=TOR]",
+   "description": "Top of ramp: active in bypass mode",
+   "units": "",
+   "access": "R",
+   "states": "0=Not-TOR, 1=TOR"
+  },
+  {
+   "type": "BV",
+   "instance": 101,
+   "name": "Emergency-Mode-Command-[0=Off][1=On]",
+   "description": "Set the softstarter in emergency mode",
+   "units": "",
+   "access": "W",
+   "states": "0=Off, 1=On"
+  },
+  {
+   "type": "BV",
+   "instance": 102,
+   "name": "Emergency-Mode-Monitor-[0=Off][1=On]",
+   "description": "Emergency mode status of softstarter",
+   "units": "",
+   "access": "R",
+   "states": "0=Off, 1=On"
+  },
+  {
+   "type": "BV",
+   "instance": 103,
+   "name": "User-Defined-Trip-Command-[0=Off][1=On]",
+   "description": "Trip the user defined protection function",
+   "units": "",
+   "access": "W",
+   "states": "0=Off, 1=On"
+  },
+  {
+   "type": "BV",
+   "instance": 104,
+   "name": "User-Defined-Trip-Monitor-[0=Off][1=On]",
+   "description": "User defined protection trip status",
+   "units": "",
+   "access": "R",
+   "states": "0=Off, 1=On"
+  },
+  {
+   "type": "BV",
+   "instance": 105,
+   "name": "Stand-Still-Brake-Command-[0=Off][1=On]",
+   "description": "Run stand still brake",
+   "units": "",
+   "access": "W",
+   "states": "0=Off, 1=On"
+  },
+  {
+   "type": "BV",
+   "instance": 106,
+   "name": "Stand-Still-Brake-Monitor-[0=Off][1=On]",
+   "description": "Status of stand still brake mode",
+   "units": "",
+   "access": "R",
+   "states": "0=Off, 1=On"
+  },
+  {
+   "type": "BV",
+   "instance": 107,
+   "name": "Refresh-FB-Parameters-[0=Off][1=On]",
+   "description": "Restart fieldbus interface to refresh communication parameters",
+   "units": "",
+   "access": "W",
+   "states": "0=Off, 1=On"
+  },
+  {
+   "type": "AV",
+   "instance": 1,
+   "name": "Mains-Frequency-[Hz]",
+   "description": "Mains frequency in Hz",
+   "units": "Hz",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 3,
+   "name": "Output-Voltage-[percent]",
+   "description": "AC output voltage in percent",
+   "units": "%",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 4,
+   "name": "Output-Current-[A]",
+   "description": "Output RMS current in A",
+   "units": "A",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 6,
+   "name": "Output-Power-[kW]",
+   "description": "Output active power in kW",
+   "units": "kW",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 7,
+   "name": "Operating-Temperature-Range-[degree]",
+   "description": "Thyristor temperature in degrees",
+   "units": "",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 9,
+   "name": "KiloWatt-Hour-Meter-NR-[kWh]",
+   "description": "Softstarter’s cumulative active energy usage in kWh",
+   "units": "kWh",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 14,
+   "name": "Running-Hours-[h]",
+   "description": "Motor’s resettable run time",
+   "units": "h",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 15,
+   "name": "Motor-Temperature-[percent]",
+   "description": "Motor temperature in percent",
+   "units": "%",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 18,
+   "name": "Active-Event-Code",
+   "description": "Most recent active event code (hex, see manual 10.3)",
+   "units": "",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 21,
+   "name": "Analog-Out-Monitor-[percent]",
+   "description": "Output level of Analog output",
+   "units": "%",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 22,
+   "name": "1AO0-Analog-Out-Monitor-[percent]",
+   "description": "Output level of 1AO0 external I/O Analog output",
+   "units": "%",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 25,
+   "name": "Mailbox-Parameter",
+   "description": "Fieldbus ID of the parameter for the mailbox",
+   "units": "",
+   "access": "W",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 26,
+   "name": "Mailbox-Data",
+   "description": "Mailbox data: reads or writes the parameter in AV 25",
+   "units": "",
+   "access": "W",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 28,
+   "name": "Motor-Heating-Capacity-[W]",
+   "description": "Set the heating capacity in W to be generated in the motor",
+   "units": "W",
+   "access": "W",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 32,
+   "name": "Output-Current-Range-[percent]",
+   "description": "Motor current in percent of rated current IE",
+   "units": "%",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 104,
+   "name": "L1-Current-[A]",
+   "description": "Phase L1 RMS current in A",
+   "units": "A",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 105,
+   "name": "L2-Current-[A]",
+   "description": "Phase L2 RMS current in A",
+   "units": "A",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 106,
+   "name": "L3-Current-[A]",
+   "description": "Phase L3 RMS current in A",
+   "units": "A",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 107,
+   "name": "Output-Power-[HP]",
+   "description": "Output active power in HP",
+   "units": "hp",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 108,
+   "name": "Apparent-Power-[kVA]",
+   "description": "Apparent power in kVA",
+   "units": "kVA",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 109,
+   "name": "Reactive-Power-[kVAr]",
+   "description": "Reactive power in kVAr",
+   "units": "kVAR",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 110,
+   "name": "Mains-Voltage-[V]",
+   "description": "Mains voltage in V",
+   "units": "V",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 111,
+   "name": "Power-Factor",
+   "description": "Power factor",
+   "units": "",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 112,
+   "name": "Reactive-Energy-[kVArH]",
+   "description": "Softstarter’s cumulative reactive energy usage in kVArH",
+   "units": "kVARh",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 113,
+   "name": "EOL-Time-To-Trip-[s]",
+   "description": "Time until the EOL protection trips",
+   "units": "s",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 114,
+   "name": "EOL-Time-To-Cool-[s]",
+   "description": "Time until reset is possible after an EOL trip",
+   "units": "s",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 115,
+   "name": "Max-Phase-Current-[A]",
+   "description": "Max of the three RMS phase currents in [A]",
+   "units": "A",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 116,
+   "name": "Thyristor-Running-Hours-[h]",
+   "description": "Thyristor run time in hours",
+   "units": "h",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 117,
+   "name": "Number-Of-Starts",
+   "description": "Total number of starts",
+   "units": "",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 118,
+   "name": "PT100-Temperature-[degree]",
+   "description": "PT100 temperature in degrees",
+   "units": "",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 119,
+   "name": "PTC-Resistance-[Ohm]",
+   "description": "PTC resistance in Ohm",
+   "units": "Ω",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 120,
+   "name": "Rem-Time-To-Start-[s]",
+   "description": "Remaining time to start in seconds",
+   "units": "s",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 121,
+   "name": "Operating-Temperature-Range-[percent]",
+   "description": "Thyristor temperature in percent",
+   "units": "%",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 122,
+   "name": "Heat-Sink-Temperature-Range-[degree]",
+   "description": "Heat sink temperature in degrees",
+   "units": "",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 123,
+   "name": "Analog-Out-Command-[percent]",
+   "description": "Controls Analog output",
+   "units": "%",
+   "access": "W",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 124,
+   "name": "1AO0-Analog-Out-Command-[percent]",
+   "description": "Controls 1AO0 External I/O Analog output",
+   "units": "%",
+   "access": "W",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 125,
+   "name": "Active-Fault",
+   "description": "Most recent active fault code (see notes)",
+   "units": "",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 126,
+   "name": "Active-Warning",
+   "description": "Most recent active warning code",
+   "units": "",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 127,
+   "name": "Active-Protection",
+   "description": "Most recent active protection code",
+   "units": "",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 128,
+   "name": "Motor-Connection",
+   "description": "Motor connection detected",
+   "units": "",
+   "access": "R",
+   "states": "0=Auto, 1=In Line, 2=Inside delta UI, 3=Inside delta IU, 4=Two phase (L1 shorted), 5=Two phase (L2 shorted), 6=Two phase (L3 shorted), 7=Unknown"
+  },
+  {
+   "type": "AV",
+   "instance": 129,
+   "name": "Phase-Sequence",
+   "description": "Phase sequence detected",
+   "units": "",
+   "access": "R",
+   "states": "0=L1->L2->L3, 1=L1->L3->L2, 2=Unknown"
+  },
+  {
+   "type": "AV",
+   "instance": 130,
+   "name": "Kilowatt-Hour-This-Hour-[kWh]",
+   "description": "Current hour energy consumption in kWh",
+   "units": "kWh",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 131,
+   "name": "Kilowatt-Hour-Last-Hour-[kWh]",
+   "description": "Last hour energy consumption in kWh",
+   "units": "kWh",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 132,
+   "name": "Kilowatt-Hour-This-Day-[kWh]",
+   "description": "Current day energy consumption in kWh",
+   "units": "kWh",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 133,
+   "name": "Kilowatt-Hour-Last-Day-[kWh]",
+   "description": "Last day energy consumption in kWh",
+   "units": "kWh",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 134,
+   "name": "Stand-Still-Brake-Strength-[percent]",
+   "description": "Set the stand still brake strength in percent",
+   "units": "%",
+   "access": "W",
+   "states": ""
+  }
+ ],
+ "page": "https://easybacnet.com/bacnet-points-lists/abb/pstx-softstarter-bacnet",
+ "note": "Re-typed from the manufacturer's public documentation (see source). Point availability varies by firmware and options; verify against the live device.",
+ "disclaimer": "DISCLAIMER: reference only, provided AS IS with no warranty. Re-typed by hand from public documents; may contain errors or be out of date. You must verify every point against the manufacturer's current documentation and the live device before use. easybacnet.com accepts no liability for its use and is not affiliated with the manufacturer. Terms: https://easybacnet.com/terms#content"
+}

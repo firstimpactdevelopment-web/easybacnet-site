@@ -1,0 +1,593 @@
+{
+ "manufacturer": "ABB",
+ "manufacturer_slug": "abb",
+ "model": "ACH580 E-Clipse and packaged bypass (bypass BACnet objects)",
+ "model_slug": "ach580-e-clipse-bypass",
+ "short_model": "ACH580 E-Clipse Bypass",
+ "aliases": [
+  "ACH580 E-Clipse",
+  "E-Clipse bypass",
+  "ACH580 packaged bypass",
+  "ACH580-BxR",
+  "3AXD50000289554"
+ ],
+ "equipment_type": "Variable frequency drive bypass controller (HVAC)",
+ "applies_to": "ABB ACH580 drives with the E-Clipse bypass or packaged bypass (US); this list covers the bypass controller's own BACnet MS/TP objects.",
+ "summary": "The E-Clipse bypass has its own controller with an embedded BACnet MS/TP port. Its objects cover bypass relay and digital I/O status, system run, fault, warning and mode flags, start/stop, override, permissive, interlock and reset commands, and current, voltage, energy and run-time values. With bypass parameter 1625 COMM CTL = SYSTEM, start/stop and interlocks go through these bypass objects instead of the drive's.",
+ "bacnet_transport": [
+  "BACnet MS/TP"
+ ],
+ "firmware": null,
+ "default_device_instance": null,
+ "access_inferred": false,
+ "notes": [
+  "The drive's own objects (manual pp135-144) follow the ACH580 drive list and are in the separate ACH580 entry.",
+  "With 1625 COMM CTL = DRIVE ONLY, bypass objects BV10-BV18 are not valid and the drive objects are used; with 1625 = SYSTEM the drive's control objects are not available.",
+  "Commands need their bypass source parameter set to COMM: 1601 for BV10 run/stop, 1602 BV12 permissive, 1607 BV14 reset, 1603-1606 BV15-BV18 interlocks, 1701 BV11 override; relay outputs BO0-BO4 need 1401/1404/1407/1410/1413.",
+  "AV12 is printed with the name 'C-B VOLT' but described as phase C - phase A voltage; kept as printed.",
+  "AV5 WARNING WORD 2 is described in the manual as the 'first' warning word, apparently a copy error."
+ ],
+ "source": {
+  "title": "ACH580 E-Clipse and Packaged Bypass User/Hardware Manual, US",
+  "doc_number": "3AXD50000289554 Rev C",
+  "revision_date": null,
+  "url": "https://library.e.abb.com/public/a8d8ce51a16e4deab6469e1d15bd7171/3AXD50000289554_en_C_ACH580%20E-Clipse%20and%20Packaged%20Bypass%20Hardware%20Manual%2C%20US.pdf"
+ },
+ "integration": {
+  "summary": "Set 9802 COMM PROT SEL = BACNET (5). The bypass is its own MS/TP node: give it a unique MAC in 5003 (default 256 keeps it off the network) and a device instance in 5040/5099. Then set 1625 COMM CTL = SYSTEM and 1601 = COMM, command BV10 and read BV0, BV3, BV4 and AV0.",
+  "minimum_points": [
+   {
+    "ref": "BV 10",
+    "name": "RUN/STOP CMD",
+    "why": "System run / stop command"
+   },
+   {
+    "ref": "BV 12",
+    "name": "RUN PERMISSIVE CMD",
+    "why": "Run permissive command"
+   },
+   {
+    "ref": "BV 14",
+    "name": "FAULT RESET",
+    "why": "Reset a bypass fault"
+   },
+   {
+    "ref": "BV 0",
+    "name": "SYS RUN ACT",
+    "why": "System running"
+   },
+   {
+    "ref": "BV 4",
+    "name": "SYSTEM MODE",
+    "why": "Motor on bypass or drive"
+   },
+   {
+    "ref": "AV 1",
+    "name": "BYPASS MODE",
+    "why": "Hand / off / auto: 0 off, 1 hand, 2 auto"
+   },
+   {
+    "ref": "AV 0",
+    "name": "CURRENT",
+    "why": "Output current, A"
+   },
+   {
+    "ref": "BV 3",
+    "name": "SYS FLT ACT",
+    "why": "System fault"
+   },
+   {
+    "ref": "AV 3",
+    "name": "LAST FLT",
+    "why": "Last bypass fault code"
+   }
+  ],
+  "enable": "Bypass parameter 1625 COMM CTL = (1) SYSTEM makes the bypass objects the control path; 1601 = COMM is needed for BV10 run/stop and 1701 = COMM for BV11 override. BV20 CTL OVERRIDE CMD puts the bypass in BACnet control override; panel HAND mode still has priority.",
+  "heartbeat": "Bypass parameters 3004 COMM LOSS (action) and 3005 COMM TIME (timeout) set the reaction to lost communication; fault 3028 EXT COMM LOSS shows when the BMS does not poll within 3005.",
+  "remote_sensors": null,
+  "setup": [
+   "9802 COMM PROT SEL = BACNET (5) turns on the shared EIA-485 port; baud (5804) and parity (5805) in group 58 apply to both the drive and bypass nodes.",
+   "Bypass node: MS/TP MAC in 5003 (default 256 = not visible on the network; set a unique value 1-127 to use the bypass objects). Setting 5003 to 0 holds the channel in reset.",
+   "Bypass device instance = 5040 (lower word) + 5099 (upper word).",
+   "The drive node is set separately in group 58 (MAC 5803, device instance 5840/5899); drive and bypass addresses must be unique.",
+   "After changing communication settings, cycle power or set the station ID to 0 and back.",
+   "Only the Device object name is writable; set it from the BMS so it is unique."
+  ],
+  "gotchas": [
+   "BV10-BV18 do nothing while 1625 COMM CTL = DRIVE ONLY.",
+   "Panel HAND mode beats BACnet control override (BV20).",
+   "Bypass MS/TP token counter 5013 should keep rising when communication is healthy."
+  ]
+ },
+ "points": [
+  {
+   "type": "BI",
+   "instance": 0,
+   "name": "RO 1 ACT",
+   "description": "Status of bypass Relay Output 1",
+   "units": "",
+   "access": "R",
+   "states": "Active: ON, Inactive: OFF"
+  },
+  {
+   "type": "BI",
+   "instance": 1,
+   "name": "RO 2 ACT",
+   "description": "Status of bypass Relay Output 2",
+   "units": "",
+   "access": "R",
+   "states": "Active: ON, Inactive: OFF"
+  },
+  {
+   "type": "BI",
+   "instance": 2,
+   "name": "RO 3 ACT",
+   "description": "Status of bypass Relay Output 3",
+   "units": "",
+   "access": "R",
+   "states": "Active: ON, Inactive: OFF"
+  },
+  {
+   "type": "BI",
+   "instance": 3,
+   "name": "RO 4 ACT",
+   "description": "Status of bypass Relay Output 4",
+   "units": "",
+   "access": "R",
+   "states": "Active: ON, Inactive: OFF"
+  },
+  {
+   "type": "BI",
+   "instance": 4,
+   "name": "RO 5 ACT",
+   "description": "Status of bypass Relay Output 5",
+   "units": "",
+   "access": "R",
+   "states": "Active: ON, Inactive: OFF"
+  },
+  {
+   "type": "BI",
+   "instance": 5,
+   "name": "DI 1 ACT",
+   "description": "Status of bypass Digital Input 1",
+   "units": "",
+   "access": "R",
+   "states": "Active: ON, Inactive: OFF"
+  },
+  {
+   "type": "BI",
+   "instance": 6,
+   "name": "DI 2 ACT",
+   "description": "Status of bypass Digital Input 2",
+   "units": "",
+   "access": "R",
+   "states": "Active: ON, Inactive: OFF"
+  },
+  {
+   "type": "BI",
+   "instance": 7,
+   "name": "DI 3 ACT",
+   "description": "Status of bypass Digital Input 3",
+   "units": "",
+   "access": "R",
+   "states": "Active: ON, Inactive: OFF"
+  },
+  {
+   "type": "BI",
+   "instance": 8,
+   "name": "DI 4 ACT",
+   "description": "Status of bypass Digital Input 4",
+   "units": "",
+   "access": "R",
+   "states": "Active: ON, Inactive: OFF"
+  },
+  {
+   "type": "BI",
+   "instance": 9,
+   "name": "DI 5 ACT",
+   "description": "Status of bypass Digital Input 5",
+   "units": "",
+   "access": "R",
+   "states": "Active: ON, Inactive: OFF"
+  },
+  {
+   "type": "BI",
+   "instance": 10,
+   "name": "DI 6 ACT",
+   "description": "Status of bypass Digital Input 6",
+   "units": "",
+   "access": "R",
+   "states": "Active: ON, Inactive: OFF"
+  },
+  {
+   "type": "BO",
+   "instance": 0,
+   "name": "RO1 COMMAND",
+   "description": "Bypass relay output 1 command (needs 1401 = COMM)",
+   "units": "",
+   "access": "C",
+   "states": "Active: ON, Inactive: OFF"
+  },
+  {
+   "type": "BO",
+   "instance": 1,
+   "name": "RO2 COMMAND",
+   "description": "Bypass relay output 2 command (needs 1404 = COMM)",
+   "units": "",
+   "access": "C",
+   "states": "Active: ON, Inactive: OFF"
+  },
+  {
+   "type": "BO",
+   "instance": 2,
+   "name": "RO3 COMMAND",
+   "description": "Bypass relay output 3 command (needs 1407 = COMM)",
+   "units": "",
+   "access": "C",
+   "states": "Active: ON, Inactive: OFF"
+  },
+  {
+   "type": "BO",
+   "instance": 3,
+   "name": "RO4 COMMAND",
+   "description": "Bypass relay output 4 command (needs 1410 = COMM, OREL-01 option)",
+   "units": "",
+   "access": "C",
+   "states": "Active: ON, Inactive: OFF"
+  },
+  {
+   "type": "BO",
+   "instance": 4,
+   "name": "RO5 COMMAND",
+   "description": "Bypass relay output 5 command (needs 1413 = COMM, OREL-01 option)",
+   "units": "",
+   "access": "C",
+   "states": "Active: ON, Inactive: OFF"
+  },
+  {
+   "type": "BV",
+   "instance": 0,
+   "name": "SYS RUN ACT",
+   "description": "System run status regardless of the control source",
+   "units": "",
+   "access": "R",
+   "states": "Active: RUN, Inactive: STOP"
+  },
+  {
+   "type": "BV",
+   "instance": 1,
+   "name": "SYST START ACT",
+   "description": "System started status regardless of the control source",
+   "units": "",
+   "access": "R",
+   "states": "Active: START, Inactive: NO START"
+  },
+  {
+   "type": "BV",
+   "instance": 2,
+   "name": "BYP FLT ACT",
+   "description": "Bypass fault status",
+   "units": "",
+   "access": "R",
+   "states": "Active: FAULT, Inactive: OK"
+  },
+  {
+   "type": "BV",
+   "instance": 3,
+   "name": "SYS FLT ACT",
+   "description": "System fault status",
+   "units": "",
+   "access": "R",
+   "states": "Active: FAULT, Inactive: OK"
+  },
+  {
+   "type": "BV",
+   "instance": 4,
+   "name": "SYSTEM MODE",
+   "description": "Whether bypass or drive runs the motor",
+   "units": "",
+   "access": "R",
+   "states": "Active: BYPASS, Inactive: DRIVE"
+  },
+  {
+   "type": "BV",
+   "instance": 5,
+   "name": "WARNING ACT",
+   "description": "Bypass warning status",
+   "units": "",
+   "access": "R",
+   "states": "Active: WARNING, Inactive: OK"
+  },
+  {
+   "type": "BV",
+   "instance": 6,
+   "name": "BYP RUN ACT",
+   "description": "Bypass run status regardless of the control source",
+   "units": "",
+   "access": "R",
+   "states": "Active: RUN, Inactive: STOP"
+  },
+  {
+   "type": "BV",
+   "instance": 7,
+   "name": "READY TO RUN",
+   "description": "Whether the system is ready to receive a run command",
+   "units": "",
+   "access": "R",
+   "states": "Active: READY, Inactive: NO READY"
+  },
+  {
+   "type": "BV",
+   "instance": 8,
+   "name": "UNDERLOAD",
+   "description": "Whether the system is in an underload condition",
+   "units": "",
+   "access": "R",
+   "states": "Active: YES, Inactive: NO"
+  },
+  {
+   "type": "BV",
+   "instance": 9,
+   "name": "ENABLE ACT",
+   "description": "System enable status (all run and start interlocks)",
+   "units": "",
+   "access": "R",
+   "states": "Active: ENABLE, Inactive: DISABLE"
+  },
+  {
+   "type": "BV",
+   "instance": 10,
+   "name": "RUN/STOP CMD",
+   "description": "System start command (needs 1601 = COMM)",
+   "units": "",
+   "access": "C",
+   "states": "Active: RUN, Inactive: STOP"
+  },
+  {
+   "type": "BV",
+   "instance": 11,
+   "name": "OVERRIDE CMD",
+   "description": "Override 2 command (needs 1701 = COMM)",
+   "units": "",
+   "access": "C",
+   "states": "Active: YES, Inactive: NO"
+  },
+  {
+   "type": "BV",
+   "instance": 12,
+   "name": "RUN PERMISSIVE CMD",
+   "description": "System run permissive command",
+   "units": "",
+   "access": "C",
+   "states": "Active: ENABLE, Inactive: DISABLE"
+  },
+  {
+   "type": "BV",
+   "instance": 13,
+   "name": "OVERRIDE ACT",
+   "description": "Override 1 or 2 active, regardless of control source",
+   "units": "",
+   "access": "R",
+   "states": "Active: YES, Inactive: NO"
+  },
+  {
+   "type": "BV",
+   "instance": 14,
+   "name": "FAULT RESET",
+   "description": "Reset a faulted bypass",
+   "units": "",
+   "access": "C",
+   "states": "Active: RESET, Inactive: NO"
+  },
+  {
+   "type": "BV",
+   "instance": 15,
+   "name": "START INTERLOCK 1",
+   "description": "System Start Interlock 1",
+   "units": "",
+   "access": "C",
+   "states": "Active: ENABLE, Inactive: DISABLE"
+  },
+  {
+   "type": "BV",
+   "instance": 16,
+   "name": "START INTERLOCK 2",
+   "description": "System Start Interlock 2",
+   "units": "",
+   "access": "C",
+   "states": "Active: ENABLE, Inactive: DISABLE"
+  },
+  {
+   "type": "BV",
+   "instance": 17,
+   "name": "START INTERLOCK 3",
+   "description": "System Start Interlock 3",
+   "units": "",
+   "access": "C",
+   "states": "Active: ENABLE, Inactive: DISABLE"
+  },
+  {
+   "type": "BV",
+   "instance": 18,
+   "name": "START INTERLOCK 4",
+   "description": "System Start Interlock 4",
+   "units": "",
+   "access": "C",
+   "states": "Active: ENABLE, Inactive: DISABLE"
+  },
+  {
+   "type": "BV",
+   "instance": 19,
+   "name": "PAR LOCK",
+   "description": "When switched to locked prevents parameter changes from the panel",
+   "units": "",
+   "access": "W",
+   "states": "Active: LOCK, Inactive: UNLOCK"
+  },
+  {
+   "type": "BV",
+   "instance": 20,
+   "name": "CTL OVERRIDE CMD",
+   "description": "BACnet control override (panel HAND has priority)",
+   "units": "",
+   "access": "C",
+   "states": "Active: ON, Inactive: OFF"
+  },
+  {
+   "type": "BV",
+   "instance": 21,
+   "name": "MBOX READ",
+   "description": "Mailbox read of the parameter in AV13",
+   "units": "",
+   "access": "W",
+   "states": "Active: READ, Inactive: RESET"
+  },
+  {
+   "type": "BV",
+   "instance": 22,
+   "name": "MBOX WRITE",
+   "description": "Mailbox write of AV14 to the parameter in AV13",
+   "units": "",
+   "access": "W",
+   "states": "Active: WRITE, Inactive: RESET"
+  },
+  {
+   "type": "AV",
+   "instance": 0,
+   "name": "CURRENT",
+   "description": "Measured output current",
+   "units": "A",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 1,
+   "name": "BYPASS MODE",
+   "description": "Hand/Off/Auto status of the bypass",
+   "units": "",
+   "access": "R",
+   "states": "0=OFF, 1=HAND, 2=AUTO"
+  },
+  {
+   "type": "AV",
+   "instance": 2,
+   "name": "BYP RUN DLY",
+   "description": "Bypass Run delay",
+   "units": "s",
+   "access": "W",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 3,
+   "name": "LAST FLT",
+   "description": "Last fault recorded by the bypass",
+   "units": "",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 4,
+   "name": "WARNING WORD 1",
+   "description": "First warning status word of the bypass",
+   "units": "",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 5,
+   "name": "WARNING WORD 2",
+   "description": "First warning status word of the bypass",
+   "units": "",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 6,
+   "name": "INPUT VOLT",
+   "description": "Average of line-line input voltage",
+   "units": "V",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 7,
+   "name": "PCB TEMP",
+   "description": "DEG C of bypass board",
+   "units": "°C",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 8,
+   "name": "KW HOURS",
+   "description": "Bypass mode kilowatt hours",
+   "units": "kWh",
+   "access": "W",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 9,
+   "name": "RUN TIME",
+   "description": "Bypass mode run hours",
+   "units": "h",
+   "access": "W",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 10,
+   "name": "A-B VOLT",
+   "description": "Phase A - Phase B voltage",
+   "units": "V",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 11,
+   "name": "B-C VOLT",
+   "description": "Phase B - Phase C voltage",
+   "units": "V",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 12,
+   "name": "C-B VOLT",
+   "description": "Phase C - Phase A voltage",
+   "units": "V",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 13,
+   "name": "MBOX PARAM",
+   "description": "Parameter to be read or written to by the mailbox function",
+   "units": "",
+   "access": "W",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 14,
+   "name": "MBOX DATA",
+   "description": "Mailbox value read from, or to write to, the AV13 parameter",
+   "units": "",
+   "access": "W",
+   "states": ""
+  }
+ ],
+ "page": "https://easybacnet.com/bacnet-points-lists/abb/ach580-e-clipse-bypass",
+ "note": "Re-typed from the manufacturer's public documentation (see source). Point availability varies by firmware and options; verify against the live device.",
+ "disclaimer": "DISCLAIMER: reference only, provided AS IS with no warranty. Re-typed by hand from public documents; may contain errors or be out of date. You must verify every point against the manufacturer's current documentation and the live device before use. easybacnet.com accepts no liability for its use and is not affiliated with the manufacturer. Terms: https://easybacnet.com/terms#content"
+}

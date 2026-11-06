@@ -1,0 +1,263 @@
+{
+ "manufacturer": "Toshiba",
+ "manufacturer_slug": "toshiba",
+ "model": "RBC-BP2 Black Pear II BMS interface",
+ "model_slug": "rbc-bp2-black-pear-2",
+ "short_model": "RBC-BP2 Black Pear II",
+ "aliases": [
+  "RBC-BP2",
+  "Black Pear 2",
+  "Black Pear II",
+  "BlackPear2",
+  "RBCBP2"
+ ],
+ "equipment_type": "VRF / split AC BACnet IP gateway",
+ "applies_to": "Toshiba VRF and split indoor units on the U3/U4 TCC-Link network, up to 64 unit addresses per Black Pear II.",
+ "summary": "The Black Pear II (RBC-BP2) is a BMS interface with a touch screen that connects to the Toshiba TCC-Link (U3/U4) network and serves up to 64 indoor unit addresses over BACnet IP, Modbus RTU/TCP or Trend. Each unit address gets the same block of setup (_w) and state (_r) objects named after the unit name set in the Black Pear, plus two system objects. BACnet is off by default and has to be enabled in the protocol settings.",
+ "bacnet_transport": [
+  "BACnet IP"
+ ],
+ "firmware": "Black Pear II V1_00",
+ "default_device_instance": 200,
+ "access_inferred": false,
+ "notes": [
+  "Per-unit instance = 1xxxPP: xxx = unit address 001-064, PP = point 01-22. Instances here use unit 001 (e.g. 100101); object names start with the configured unit name (nnn).",
+  "Points 1xxx15, 1xxx16 and 1xxx20-1xxx22 are listed as unused. 1xxx17 is an Analog Input marked {HVAC Specific} with no object name and is left out.",
+  "The object name for 1xxx11 is printed as 'nnn (LI_w' with the closing bracket missing.",
+  "Only the group master address accepts commands; other units in a group report the master's status, apart from return air temperature and error code.",
+  "Setting the setpoint to one decimal place only works if the indoor unit accepts that resolution."
+ ],
+ "source": {
+  "title": "Black Pear II Display Controller v1_00 Installation & Owners Manual (RBC-BP2)",
+  "doc_number": null,
+  "revision_date": "V1_00",
+  "url": "https://www.toshiba-aircon.co.uk/content/dam/public-toshiba/gb/documents/products/controls/central-controller/rbc-bp2-black-pear-bms-interface/RBC-BP2_BlackPear2_user_manual_v1_00.pdf/_jcr_content/renditions/original./RBC-BP2_BlackPear2_user_manual_v1_00.pdf"
+ },
+ "integration": {
+  "summary": "Enable BACnet in the Black Pear protocol settings, set the device ID and unit names, group the units, then map each group master's _w (command) and _r (state) objects. Wait for Sys_HVAC_Network_Status = Ready before sending commands.",
+  "minimum_points": [
+   {
+    "ref": "BO 100101",
+    "name": "nnn (ON_w)",
+    "why": "Start/stop the unit"
+   },
+   {
+    "ref": "MO 100104",
+    "name": "nnn (MD_w)",
+    "why": "Command the operating mode"
+   },
+   {
+    "ref": "AO 100109",
+    "name": "nnn (SP_w)",
+    "why": "Setpoint command, 18-29 °C"
+   },
+   {
+    "ref": "MO 100106",
+    "name": "nnn (FS_w)",
+    "why": "Fan speed: 1 low, 2 medium, 3 high, 4 auto"
+   },
+   {
+    "ref": "BI 100102",
+    "name": "nnn (ON_r)",
+    "why": "Confirm run status"
+   },
+   {
+    "ref": "AI 100108",
+    "name": "nnn (RA)",
+    "why": "Room temperature"
+   },
+   {
+    "ref": "MI 100023",
+    "name": "Sys_HVAC_Network_Status",
+    "why": "Gateway link status; commands work only when Ready"
+   },
+   {
+    "ref": "AI 100103",
+    "name": "nnn (ECode)",
+    "why": "Error code (8000 = no error)"
+   }
+  ],
+  "enable": "No enable point is needed per unit; only the group master address accepts commands. The digital input is a normally-closed volt-free Global Forced Off contact: opening it switches all fan coils off and inhibits their remotes (refreshed every 10 s). Sys_Force_Off (BV 100024) is the BACnet global off; Global-Off can be enabled or disabled per group.",
+  "heartbeat": "No BMS heartbeat. Sys_HVAC_Network_Status reads Waiting/Searching after a restart; commands sent before it reads Ready are ignored.",
+  "remote_sensors": null,
+  "setup": [
+   "Factory defaults: BACnet disabled, device ID 200, UDP port 47808, IP 192.168.1.20, mask 255.255.255.0, DHCP off.",
+   "Foreign device registration is off by default (BBMD 192.168.1.22, TTL 1800 s when enabled).",
+   "Device ID, device name and object names (unit names) are set from the touch screen or the built-in web pages.",
+   "Connect to outdoor unit terminals U3/U4 like a central controller; each indoor unit needs a network address 1-64."
+  ],
+  "gotchas": [
+   "Writes to non-master units in a group have no effect.",
+   "No segmentation and a 480-octet maximum APDU; keep ReadPropertyMultiple requests short.",
+   "Units grouped on the remote-controller wiring (AB) share one address, so follower status is not available.",
+   "Up to 256 COV subscriptions are supported."
+  ]
+ },
+ "points": [
+  {
+   "type": "BO",
+   "instance": 100101,
+   "name": "nnn (ON_w)",
+   "description": "On/off command",
+   "units": "",
+   "access": "C",
+   "states": "Inactive=Off, Active=On"
+  },
+  {
+   "type": "BI",
+   "instance": 100102,
+   "name": "nnn (ON_r)",
+   "description": "On/off state",
+   "units": "",
+   "access": "R",
+   "states": "Inactive=Off, Active=On"
+  },
+  {
+   "type": "AI",
+   "instance": 100103,
+   "name": "nnn (ECode)",
+   "description": "4-digit error code (8000 = no error, 6999 = unit not present)",
+   "units": "",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "MO",
+   "instance": 100104,
+   "name": "nnn (MD_w)",
+   "description": "Operation mode command (7-8 not settable, 9-11 VN units)",
+   "units": "",
+   "access": "C",
+   "states": "1=Fan, 2=Cool, 3=Heat, 4=Dry, 5=Auto, 6=N/A, 7=Auto Cool, 8=Auto Heat, 9=Heat Exchange, 10=VN-Auto, 11=VN-Bypass"
+  },
+  {
+   "type": "MI",
+   "instance": 100105,
+   "name": "nnn (MD_r)",
+   "description": "Operation mode state",
+   "units": "",
+   "access": "R",
+   "states": "1=Fan, 2=Cool, 3=Heat, 4=Dry, 5=Auto, 6=N/A, 7=Auto Cool, 8=Auto Heat, 9=Heat Exchange, 10=VN-Auto, 11=VN-Bypass"
+  },
+  {
+   "type": "MO",
+   "instance": 100106,
+   "name": "nnn (FS_w)",
+   "description": "Fan speed command",
+   "units": "",
+   "access": "C",
+   "states": "1=Low, 2=Medium, 3=High, 4=Auto"
+  },
+  {
+   "type": "MI",
+   "instance": 100107,
+   "name": "nnn (FS_r)",
+   "description": "Fan speed state",
+   "units": "",
+   "access": "R",
+   "states": "1=Low, 2=Medium, 3=High, 4=Auto"
+  },
+  {
+   "type": "AI",
+   "instance": 100108,
+   "name": "nnn (RA)",
+   "description": "Room temperature, -35.0 to 92.0",
+   "units": "°C",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "AO",
+   "instance": 100109,
+   "name": "nnn (SP_w)",
+   "description": "Setpoint command, 18.0 to 29.0",
+   "units": "°C",
+   "access": "C",
+   "states": ""
+  },
+  {
+   "type": "AI",
+   "instance": 100110,
+   "name": "nnn (SP_r)",
+   "description": "Setpoint state, 18.0 to 29.0",
+   "units": "°C",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "BO",
+   "instance": 100111,
+   "name": "nnn (LI_w",
+   "description": "Local remote controller inhibit command",
+   "units": "",
+   "access": "C",
+   "states": "Inactive=Off, Active=Inhibit"
+  },
+  {
+   "type": "BI",
+   "instance": 100112,
+   "name": "nnn (LI_r)",
+   "description": "Local remote controller inhibit state",
+   "units": "",
+   "access": "R",
+   "states": "Inactive=Off, Active=Inhibited"
+  },
+  {
+   "type": "MO",
+   "instance": 100113,
+   "name": "nnn (AD_w)",
+   "description": "Air direction command",
+   "units": "",
+   "access": "C",
+   "states": "1=Horizontal, 2=22.5 deg, 3=45 deg, 4=67.5 deg, 5=Vertical, 6=Swing, 7=Hold"
+  },
+  {
+   "type": "MI",
+   "instance": 100114,
+   "name": "nnn (AD_r)",
+   "description": "Air direction state",
+   "units": "",
+   "access": "R",
+   "states": "1=Horizontal, 2=22.5 deg, 3=45 deg, 4=67.5 deg, 5=Vertical, 6=Swing, 7=Hold"
+  },
+  {
+   "type": "CSV",
+   "instance": 100118,
+   "name": "nnn (Error Text)",
+   "description": "Manufacturer error code text",
+   "units": "",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "BI",
+   "instance": 100119,
+   "name": "nnn (Error State)",
+   "description": "Unit error state",
+   "units": "",
+   "access": "R",
+   "states": "Inactive=Ok, Active=In Error"
+  },
+  {
+   "type": "MI",
+   "instance": 100023,
+   "name": "Sys_HVAC_Network_Status",
+   "description": "Link status to the TCC-Link network; commands ignored until Ready",
+   "units": "",
+   "access": "R",
+   "states": "1=Waiting, 2=Searching, 3=Ready, 4=Unknown"
+  },
+  {
+   "type": "BV",
+   "instance": 100024,
+   "name": "Sys_Force_Off",
+   "description": "Global off command",
+   "units": "",
+   "access": "W",
+   "states": "Inactive=Off, Active=On"
+  }
+ ],
+ "page": "https://easybacnet.com/bacnet-points-lists/toshiba/rbc-bp2-black-pear-2",
+ "note": "Re-typed from the manufacturer's public documentation (see source). Point availability varies by firmware and options; verify against the live device.",
+ "disclaimer": "DISCLAIMER: reference only, provided AS IS with no warranty. Re-typed by hand from public documents; may contain errors or be out of date. You must verify every point against the manufacturer's current documentation and the live device before use. easybacnet.com accepts no liability for its use and is not affiliated with the manufacturer. Terms: https://easybacnet.com/terms#content"
+}

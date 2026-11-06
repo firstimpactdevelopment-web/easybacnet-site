@@ -1,0 +1,840 @@
+{
+ "manufacturer": "Fuji Electric",
+ "manufacturer_slug": "fuji-electric",
+ "model": "FRENIC-Eco OPC-F1-BAC (BACnet MS/TP)",
+ "model_slug": "frenic-eco-opc-f1-bac",
+ "aliases": [
+  "OPC-F1-BAC",
+  "FRENIC-Eco",
+  "Frenic Eco BACnet",
+  "Fuji FRENIC-Eco",
+  "FECA-IN-112",
+  "FECA-TE-124"
+ ],
+ "equipment_type": "Variable frequency drive",
+ "applies_to": "Fuji Electric FRENIC-Eco HVAC drives fitted with the OPC-F1-BAC BACnet MS/TP option card in option port A.",
+ "summary": "The OPC-F1-BAC card gives the FRENIC-Eco a BACnet MS/TP port. It maps the drive's communication command words (S06/S07), status words (M13/M14) and monitor values to fixed objects: BVs for run/reverse/reset commands, drive status bits and the X-terminal link commands, BIs for the final X-terminal states, BOs for the Y and 30 relay outputs, AVs for frequency, current, voltage, temperatures, hour meters and fault history, plus select/value AV pairs that read or write any parameter by group.",
+ "bacnet_transport": [
+  "BACnet MS/TP"
+ ],
+ "firmware": null,
+ "default_device_instance": "37000 + address DIP switch value (37000-37255)",
+ "access_inferred": false,
+ "notes": [
+  "Object list from the Start-Up Guide FECA-IN-112 (pages 6-9); the linked drive registers in the descriptions and the units come from the I/O Map Addendum FECA-TE-124 (https://americas.fujielectric.com/files/Frenic%20Eco%20Bacnet%20I_O%20Map%20Addendum%20FECA-TE-124.pdf).",
+  "The guide's unit column repeats the object name for the parameter select/value AVs and for AV 42-45; the addendum leaves those units blank, which is used here.",
+  "BV 4 is printed with the same name as BV 1 (Reverse_Command); the addendum links it to the reverse-rotation status bit (M14 bit 1), so it is a read-only status.",
+  "BV 16-22 hold the X1-XR terminal states written through the link (S06); BI 0-6 show the terminal states the drive actually uses (M13). Write BV 16-22 to drive a terminal over BACnet MS/TP.",
+  "Parameter access: write the parameter number to a *_Parameter_Select AV (e.g. AV 14 = 5 for S05), then read or write the matching *_Parameter_Value AV. An unsupported parameter returns 0 with reliability set to fault."
+ ],
+ "integration": {
+  "summary": "Fit the card in option port A, set the device instance and baud rate on its DIP switches, set the Y-codes as listed in the guide and set H30 so frequency and run commands come from the link, then restart the drive. Command BV 0 forward run and write the frequency reference to AV 0 (Hz); reset trips with BV 2. Read BV 3, AV 2, AV 30, BV 13 and AV 7.",
+  "minimum_points": [
+   {
+    "ref": "BV 0",
+    "name": "Forward_Command",
+    "why": "Run forward command (1 = run)"
+   },
+   {
+    "ref": "AV 0",
+    "name": "Frequency_Command_Setpt",
+    "why": "Frequency reference in Hz"
+   },
+   {
+    "ref": "BV 2",
+    "name": "Alarm_Reset",
+    "why": "Resets a drive alarm"
+   },
+   {
+    "ref": "BV 3",
+    "name": "Forward_Rotation",
+    "why": "Running forward status"
+   },
+   {
+    "ref": "AV 2",
+    "name": "Frequency_Command",
+    "why": "Frequency command in use, Hz (M05)"
+   },
+   {
+    "ref": "AV 30",
+    "name": "Output_Current_Real",
+    "why": "Output current in amps"
+   },
+   {
+    "ref": "BV 13",
+    "name": "Alarm_Relay",
+    "why": "Alarm relay active (drive alarm)"
+   },
+   {
+    "ref": "AV 7",
+    "name": "Latest_Alarm",
+    "why": "Latest alarm code"
+   }
+  ],
+  "enable": "H30 selects where the frequency and run commands come from; the guide's example ('H30=-8') gives both frequency and run command control over BACnet MS/TP. Restart the drive after setting it. BV 14 Communications_Act shows when the link commands are in effect.",
+  "heartbeat": null,
+  "remote_sensors": "AV 1 PID_cmd (S13) takes a PID command from the BMS when the drive's PID is used.",
+  "setup": [
+   "Device instance: address DIP switches A0-A7 give 37000-37255.",
+   "Baud rate DIP switches B0-B4: 9600, 19200, 38400, 76800 or auto.",
+   "Terminating and bias resistor DIP switches are on the card; turn them on at the end of the line if needed.",
+   "Guide's Y-code settings: Y01 = 1, Y02 = 0, Y03 = 2, Y04 = 4, Y05 = 0, Y06 = 0, Y07 = 1, Y08 = 0, Y09 = 0.01, Y10 = 0; Y11-Y20 the same; Y98 = 0, Y99 = 0.",
+   "The OPC-F1-RS option card may have to be removed to fit the OPC-F1-BAC."
+  ],
+  "gotchas": [
+   "AV 5 Output_Current is in % of rating; use AV 30 Output_Current_Real for amps.",
+   "Writes through the *_Parameter_Value AVs change drive parameters; don't write them cyclically.",
+   "BV 4 shares its object name with BV 1; tell them apart by instance.",
+   "Use either a link command (BV 16-22) or the terminal for each X input, not both."
+  ]
+ },
+ "source": {
+  "title": "Fuji BACnet (OPC-F1-BAC) Start-Up Guide for the Fuji Electric FRENIC-Eco VFD",
+  "doc_number": "FECA-IN-112 (with I/O Map Addendum FECA-TE-124)",
+  "revision_date": "07/2012",
+  "url": "https://americas.fujielectric.com/files/Fuji_BACnet_Start-Up_Guide%20FECA-IN-112.pdf"
+ },
+ "points": [
+  {
+   "type": "BV",
+   "instance": 0,
+   "name": "Forward_Command",
+   "description": "Run forward command (S06 bit 0)",
+   "units": "",
+   "access": "W",
+   "states": "0=Inactive, 1=Forward"
+  },
+  {
+   "type": "BV",
+   "instance": 1,
+   "name": "Reverse_Command",
+   "description": "Run reverse command (S06 bit 1)",
+   "units": "",
+   "access": "W",
+   "states": "0=Inactive, 1=Reverse"
+  },
+  {
+   "type": "BV",
+   "instance": 2,
+   "name": "Alarm_Reset",
+   "description": "Alarm reset command (S06 bit 15)",
+   "units": "",
+   "access": "W",
+   "states": "0=Inactive, 1=Reset"
+  },
+  {
+   "type": "BV",
+   "instance": 3,
+   "name": "Forward_Rotation",
+   "description": "Running forward (M14 bit 0)",
+   "units": "",
+   "access": "R",
+   "states": "0=Inactive, 1=Forward"
+  },
+  {
+   "type": "BV",
+   "instance": 4,
+   "name": "Reverse_Command",
+   "description": "Running in reverse (M14 bit 1)",
+   "units": "",
+   "access": "R",
+   "states": "0=Inactive, 1=Reverse"
+  },
+  {
+   "type": "BV",
+   "instance": 5,
+   "name": "DC_Braking/Pre_exiting",
+   "description": "DC braking or pre-excitation active (M14 bit 2)",
+   "units": "",
+   "access": "R",
+   "states": "0=Inactive, 1=Braking"
+  },
+  {
+   "type": "BV",
+   "instance": 6,
+   "name": "Inverter_Shut_Down",
+   "description": "Inverter output shut down (M14 bit 3)",
+   "units": "",
+   "access": "R",
+   "states": "0=Inactive, 1=Shutdown"
+  },
+  {
+   "type": "BV",
+   "instance": 7,
+   "name": "Braking",
+   "description": "Braking (M14 bit 4)",
+   "units": "",
+   "access": "R",
+   "states": "0=Inactive, 1=Braking"
+  },
+  {
+   "type": "BV",
+   "instance": 8,
+   "name": "DC_Voltage_Est",
+   "description": "DC link voltage established (M14 bit 5)",
+   "units": "",
+   "access": "R",
+   "states": "0=Inactive, 1=Established"
+  },
+  {
+   "type": "BV",
+   "instance": 9,
+   "name": "Voltage_Limiting",
+   "description": "Voltage limiting active (M14 bit 7)",
+   "units": "",
+   "access": "R",
+   "states": "0=Inactive, 1=Limiting"
+  },
+  {
+   "type": "BV",
+   "instance": 10,
+   "name": "Current_Limiting",
+   "description": "Current limiting active (M14 bit 8)",
+   "units": "",
+   "access": "R",
+   "states": "0=Inactive, 1=Limiting"
+  },
+  {
+   "type": "BV",
+   "instance": 11,
+   "name": "Acceleration",
+   "description": "Accelerating (M14 bit 9)",
+   "units": "",
+   "access": "R",
+   "states": "0=Inactive, 1=Accelerating"
+  },
+  {
+   "type": "BV",
+   "instance": 12,
+   "name": "Deceleration",
+   "description": "Decelerating (M14 bit 10)",
+   "units": "",
+   "access": "R",
+   "states": "0=Inactive, 1=Decelerating"
+  },
+  {
+   "type": "BV",
+   "instance": 13,
+   "name": "Alarm_Relay",
+   "description": "Alarm relay active (M14 bit 11)",
+   "units": "",
+   "access": "R",
+   "states": "0=Inactive, 1=Alarm"
+  },
+  {
+   "type": "BV",
+   "instance": 14,
+   "name": "Communications_Act",
+   "description": "Communications commands effective (M14 bit 12)",
+   "units": "",
+   "access": "R",
+   "states": "0=Inactive, 1=Effective"
+  },
+  {
+   "type": "BV",
+   "instance": 15,
+   "name": "Busy",
+   "description": "Drive busy (M14 bit 15)",
+   "units": "",
+   "access": "R",
+   "states": "0=Inactive, 1=Busy"
+  },
+  {
+   "type": "BV",
+   "instance": 16,
+   "name": "X1_Communications",
+   "description": "Terminal X1 command via link (S06 bit 2)",
+   "units": "",
+   "access": "W",
+   "states": "0=Inactive, 1=Active"
+  },
+  {
+   "type": "BV",
+   "instance": 17,
+   "name": "X2_Communications",
+   "description": "Terminal X2 command via link (S06 bit 3)",
+   "units": "",
+   "access": "W",
+   "states": "0=Inactive, 1=Active"
+  },
+  {
+   "type": "BV",
+   "instance": 18,
+   "name": "X3_Communications",
+   "description": "Terminal X3 command via link (S06 bit 4)",
+   "units": "",
+   "access": "W",
+   "states": "0=Inactive, 1=Active"
+  },
+  {
+   "type": "BV",
+   "instance": 19,
+   "name": "X4_Communications",
+   "description": "Terminal X4 command via link (S06 bit 5)",
+   "units": "",
+   "access": "W",
+   "states": "0=Inactive, 1=Active"
+  },
+  {
+   "type": "BV",
+   "instance": 20,
+   "name": "X5_Communications",
+   "description": "Terminal X5 command via link (S06 bit 6)",
+   "units": "",
+   "access": "W",
+   "states": "0=Inactive, 1=Active"
+  },
+  {
+   "type": "BV",
+   "instance": 21,
+   "name": "XF_Communications",
+   "description": "Terminal XF command via link (S06 bit 13)",
+   "units": "",
+   "access": "W",
+   "states": "0=Inactive, 1=Active"
+  },
+  {
+   "type": "BV",
+   "instance": 22,
+   "name": "XR_Communications",
+   "description": "Terminal XR command via link (S06 bit 14)",
+   "units": "",
+   "access": "W",
+   "states": "0=Inactive, 1=Active"
+  },
+  {
+   "type": "BI",
+   "instance": 0,
+   "name": "X1_Final",
+   "description": "Terminal X1 final state (M13 bit 2)",
+   "units": "",
+   "access": "R",
+   "states": "0=Inactive, 1=Active"
+  },
+  {
+   "type": "BI",
+   "instance": 1,
+   "name": "X2_Final",
+   "description": "Terminal X2 final state (M13 bit 3)",
+   "units": "",
+   "access": "R",
+   "states": "0=Inactive, 1=Active"
+  },
+  {
+   "type": "BI",
+   "instance": 2,
+   "name": "X3_Final",
+   "description": "Terminal X3 final state (M13 bit 4)",
+   "units": "",
+   "access": "R",
+   "states": "0=Inactive, 1=Active"
+  },
+  {
+   "type": "BI",
+   "instance": 3,
+   "name": "X4_Final",
+   "description": "Terminal X4 final state (M13 bit 5)",
+   "units": "",
+   "access": "R",
+   "states": "0=Inactive, 1=Active"
+  },
+  {
+   "type": "BI",
+   "instance": 4,
+   "name": "X5_Final",
+   "description": "Terminal X5 final state (M13 bit 6)",
+   "units": "",
+   "access": "R",
+   "states": "0=Inactive, 1=Active"
+  },
+  {
+   "type": "BI",
+   "instance": 5,
+   "name": "XF_Final",
+   "description": "Terminal XF final state (M13 bit 13)",
+   "units": "",
+   "access": "R",
+   "states": "0=Inactive, 1=Active"
+  },
+  {
+   "type": "BI",
+   "instance": 6,
+   "name": "XR_Final",
+   "description": "Terminal XR final state (M13 bit 14)",
+   "units": "",
+   "access": "R",
+   "states": "0=Inactive, 1=Active"
+  },
+  {
+   "type": "BO",
+   "instance": 0,
+   "name": "Y1_Communications",
+   "description": "Output Y1 command via link (S07 bit 0)",
+   "units": "",
+   "access": "W",
+   "states": "0=Inactive, 1=Active"
+  },
+  {
+   "type": "BO",
+   "instance": 1,
+   "name": "Y2_Communications",
+   "description": "Output Y2 command via link (S07 bit 1)",
+   "units": "",
+   "access": "W",
+   "states": "0=Inactive, 1=Active"
+  },
+  {
+   "type": "BO",
+   "instance": 2,
+   "name": "Y3_Communications",
+   "description": "Output Y3 command via link (S07 bit 2)",
+   "units": "",
+   "access": "W",
+   "states": "0=Inactive, 1=Active"
+  },
+  {
+   "type": "BO",
+   "instance": 3,
+   "name": "Y5_Communications",
+   "description": "Output Y5 command via link (S07 bit 4)",
+   "units": "",
+   "access": "W",
+   "states": "0=Inactive, 1=Active"
+  },
+  {
+   "type": "BO",
+   "instance": 4,
+   "name": "30_Communications",
+   "description": "Output 30 command via link (S07 bit 8)",
+   "units": "",
+   "access": "W",
+   "states": "0=Inactive, 1=Active"
+  },
+  {
+   "type": "AV",
+   "instance": 0,
+   "name": "Frequency_Command_Setpt",
+   "description": "Frequency reference from BACnet (S05)",
+   "units": "Hz",
+   "access": "W",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 1,
+   "name": "PID_cmd",
+   "description": "PID command from BACnet (S13)",
+   "units": "%",
+   "access": "W",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 2,
+   "name": "Frequency_Command",
+   "description": "Frequency command in use (M05)",
+   "units": "Hz",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 3,
+   "name": "Output_Torque",
+   "description": "Output torque (M07)",
+   "units": "%",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 4,
+   "name": "Input_Power",
+   "description": "Input power (M10)",
+   "units": "%",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 5,
+   "name": "Output_Current",
+   "description": "Output current, % of rated (M11)",
+   "units": "%",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 6,
+   "name": "Output_Voltage",
+   "description": "Output voltage (M12)",
+   "units": "V",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 7,
+   "name": "Latest_Alarm",
+   "description": "Latest alarm code (M16)",
+   "units": "",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 8,
+   "name": "Operation_Time",
+   "description": "Cumulative operation time (M20)",
+   "units": "h",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 9,
+   "name": "DC_Link_Voltage",
+   "description": "DC link voltage (M21)",
+   "units": "V",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 10,
+   "name": "Inverter_Air_Temp",
+   "description": "Inverter internal air temperature (M61)",
+   "units": "°C",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 11,
+   "name": "Inverter_Heat_Sink_Temp",
+   "description": "Heatsink temperature (M62)",
+   "units": "°C",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 12,
+   "name": "PID_Feedback",
+   "description": "PID feedback value (M72)",
+   "units": "",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 13,
+   "name": "PID_Output",
+   "description": "PID output (M73)",
+   "units": "",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 14,
+   "name": "S_Parameter_Select",
+   "description": "Parameter number to access in group S",
+   "units": "",
+   "access": "W",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 15,
+   "name": "S_Parameter_Value",
+   "description": "Value of the selected group S parameter",
+   "units": "",
+   "access": "W",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 16,
+   "name": "M_Parameter_Select",
+   "description": "Parameter number to access in group M",
+   "units": "",
+   "access": "W",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 17,
+   "name": "M_Parameter_Value",
+   "description": "Value of the selected group M parameter",
+   "units": "",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 18,
+   "name": "F_Parameter_Select",
+   "description": "Parameter number to access in group F",
+   "units": "",
+   "access": "W",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 19,
+   "name": "F_Parameter_Value",
+   "description": "Value of the selected group F parameter",
+   "units": "",
+   "access": "W",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 20,
+   "name": "E_Parameter_Select",
+   "description": "Parameter number to access in group E",
+   "units": "",
+   "access": "W",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 21,
+   "name": "E_Parameter_Value",
+   "description": "Value of the selected group E parameter",
+   "units": "",
+   "access": "W",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 22,
+   "name": "C_Parameter_Select",
+   "description": "Parameter number to access in group C",
+   "units": "",
+   "access": "W",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 23,
+   "name": "C_Parameter_Value",
+   "description": "Value of the selected group C parameter",
+   "units": "",
+   "access": "W",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 24,
+   "name": "P_Parameter_Select",
+   "description": "Parameter number to access in group P",
+   "units": "",
+   "access": "W",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 25,
+   "name": "P_Parameter_Value",
+   "description": "Value of the selected group P parameter",
+   "units": "",
+   "access": "W",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 26,
+   "name": "H_Parameter_Select",
+   "description": "Parameter number to access in group H",
+   "units": "",
+   "access": "W",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 27,
+   "name": "H_Parameter_Value",
+   "description": "Value of the selected group H parameter",
+   "units": "",
+   "access": "W",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 28,
+   "name": "J_Parameter_Select",
+   "description": "Parameter number to access in group J",
+   "units": "",
+   "access": "W",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 29,
+   "name": "J_Parameter_Value",
+   "description": "Value of the selected group J parameter",
+   "units": "",
+   "access": "W",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 30,
+   "name": "Output_Current_Real",
+   "description": "Output current in amps (W05)",
+   "units": "A",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 31,
+   "name": "Y_Parameter_Select",
+   "description": "Parameter number to access in group Y",
+   "units": "",
+   "access": "W",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 32,
+   "name": "Y_Parameter_Value",
+   "description": "Value of the selected group Y parameter",
+   "units": "",
+   "access": "W",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 33,
+   "name": "W_Parameter_Select",
+   "description": "Parameter number to access in group W",
+   "units": "",
+   "access": "W",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 34,
+   "name": "W_Parameter_Value",
+   "description": "Value of the selected group W parameter",
+   "units": "",
+   "access": "W",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 35,
+   "name": "X_Parameter_Select",
+   "description": "Parameter number to access in group X",
+   "units": "",
+   "access": "W",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 36,
+   "name": "X_Parameter_Value",
+   "description": "Value of the selected group X parameter",
+   "units": "",
+   "access": "W",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 37,
+   "name": "Z_Parameter_Select",
+   "description": "Parameter number to access in group Z",
+   "units": "",
+   "access": "W",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 38,
+   "name": "Z_Parameter_Value",
+   "description": "Value of the selected group Z parameter",
+   "units": "",
+   "access": "W",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 39,
+   "name": "Capacitor_Life",
+   "description": "Capacitor life (W75)",
+   "units": "%",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 40,
+   "name": "Cooling_Fan_Time",
+   "description": "Cooling fan run time (W77)",
+   "units": "h",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 41,
+   "name": "Motor_Run_Time",
+   "description": "Motor run time (W79)",
+   "units": "h",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 42,
+   "name": "Energy_Usage",
+   "description": "Energy usage (W81)",
+   "units": "",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 43,
+   "name": "Latest_Fault",
+   "description": "Latest fault code (M17)",
+   "units": "",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 44,
+   "name": "Second_Fault",
+   "description": "Second most recent fault code (M18)",
+   "units": "",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 45,
+   "name": "Third_Fault",
+   "description": "Third most recent fault code (M19)",
+   "units": "",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "AO",
+   "instance": 0,
+   "name": "Universal_AO",
+   "description": "Universal analog output value (S12)",
+   "units": "",
+   "access": "W",
+   "states": ""
+  }
+ ],
+ "page": "https://easybacnet.com/bacnet-points-lists/fuji-electric/frenic-eco-opc-f1-bac",
+ "note": "Re-typed from the manufacturer's public documentation (see source). Point availability varies by firmware and options; verify against the live device.",
+ "disclaimer": "DISCLAIMER: reference only, provided AS IS with no warranty. Re-typed by hand from public documents; may contain errors or be out of date. You must verify every point against the manufacturer's current documentation and the live device before use. easybacnet.com accepts no liability for its use and is not affiliated with the manufacturer. Terms: https://easybacnet.com/terms#content"
+}

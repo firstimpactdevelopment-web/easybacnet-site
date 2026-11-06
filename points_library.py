@@ -44,6 +44,8 @@ UPDATED_HUMAN = "28 October 2026"
 # {site-relative .html path: ISO date} for every page build() writes, so build_site can use
 # accurate per-page sitemap <lastmod> values instead of one global date.
 LASTMOD = {}
+# {"<mfr>/<model>": [(calculator url, label)]}, filled by build_site from calculators.links().
+CALC_LINKS = {}
 
 MONTHS = ("January", "February", "March", "April", "May", "June", "July", "August",
           "September", "October", "November", "December")
@@ -556,7 +558,7 @@ def shell(relpath, title, description, h1_html, body, jsonld, crumbs, og_type="w
 <body>
 <div class="top"><div class="wrap">
   <a class="brand" href="/index.html"><img src="/icon.svg" alt="" width="28" height="28"><b>Easy BACnet</b></a>
-  <nav aria-label="Site"><a href="/bacnet-points-lists/index.html" class="on">Points lists</a><a href="/index.html#guides">Guides</a><a href="/index.html">The app</a><a class="getapp" href="%(play_nav)s" rel="noopener">Get the app</a></nav>
+  <nav aria-label="Site"><a href="/bacnet-points-lists/index.html" class="on">Points lists</a><a href="/bacnet-instance-calculators/index.html">Calculators</a><a href="/index.html#guides">Guides</a><a href="/index.html">The app</a><a class="getapp" href="%(play_nav)s" rel="noopener">Get the app</a></nav>
 </div></div>
 <main class="wrap">
 <ol class="crumbs" aria-label="Breadcrumb">%(crumbs)s</ol>
@@ -1317,6 +1319,17 @@ def integration_faq(m):
     return qa
 
 
+def calc_callout(m):
+    """Link a points list to the instance calculator(s) that use it."""
+    calcs = CALC_LINKS.get(m["manufacturer_slug"] + "/" + m["model_slug"]) or []
+    if not calcs:
+        return ""
+    return ('<div class="callout"><p><strong>Instance calculator.</strong> This list prints one unit; the other '
+            'units follow a formula. %s</p></div>' % " ".join(
+                '<a class="btn primary" href="%s">%s instance calculator &rarr;</a>' % (esc(u), esc(lab))
+                for u, lab in calcs))
+
+
 def model_page(m, siblings):
     relpath = model_path(m)
     url = clean(relpath)
@@ -1387,7 +1400,7 @@ def model_page(m, siblings):
 <p>This page lists <strong>%(n)d BACnet objects</strong> for the %(full)s &mdash; %(w)d of them
 writable &mdash; with each object&rsquo;s type, instance number, name, engineering units and access.
 %(srcsent)s</p></div>
-%(facts)s
+%(facts)s%(calc)s
 <div class="dl">
   <a class="btn primary" href="%(base)s.csv" download>Download CSV <small>%(n)d rows</small></a>
   <a class="btn" href="%(base)s-ede.csv" download>Download EDE <small>B.I.G.-EU</small></a>
@@ -1428,6 +1441,7 @@ Object names, instances and units are reproduced as published; descriptions are 
                     if is_unofficial(m) else
                     "It is re-typed from %s&rsquo;s own free documentation, linked below." % esc(m["manufacturer"])),
         "srcbtn": "Source PDF (unofficial copy)" if is_unofficial(m) else "Manufacturer PDF",
+        "calc": calc_callout(m),
         "base": base, "src": esc(s["url"]), "play_pdf": PLAY_URL % "pdf", "fbar": filter_bar(m), "table": points_table(m),
         "notes": notes_html, "faq": faq_html, "integ": integration_html(m), "ids": id_index(m),
         "inferred": ('<p class="count"><strong>Note:</strong> the source document has no read/write column, so access '
@@ -1654,32 +1668,10 @@ you rely on it. Not affiliated with any manufacturer. <a href="/terms.html#conte
 <div class="tablewrap"><table class="lst mfrs"><thead><tr><th scope="col">Manufacturer</th>
 <th scope="col">Equipment</th><th scope="col" class="num">Models</th><th scope="col" class="num">Objects</th></tr></thead>
 <tbody>%(mrows)s</tbody></table></div>
-<h2 id="models">Every model <span class="hn">%(nm)d</span></h2>
-<div class="tools"><input class="search" id="cmp-q" type="search" placeholder="Model, part number or equipment &mdash; e.g. Symbio, VRV, chiller, drive&hellip;"
- aria-label="Search all models">
-<select class="mini" id="cmp-mf" aria-label="Manufacturer"><option value="">All manufacturers (%(ng)d)</option>%(mopts)s</select>
-<select class="mini sortm" id="cmp-sort" aria-label="Sort by"><option value="mf:ascending">Sort: manufacturer</option>
-<option value="md:ascending">Sort: model</option><option value="o:descending">Sort: most objects</option>
-<option value="w:descending">Sort: most writable</option></select>
-<span class="count" id="cmp-count" aria-live="polite">%(nm)d of %(nm)d shown</span></div>
-<div class="facets"><span class="lbl">Type</span><ul class="chips">%(chips)s</ul></div>
-<div class="tablewrap"><table class="cmp" id="cmp"><thead><tr>
-<th scope="col" data-k="mf" aria-sort="ascending"><button type="button">Manufacturer</button></th>
-<th scope="col" data-k="md" aria-sort="none"><button type="button">Model</button></th>
-<th scope="col">Type</th>
-<th scope="col" class="num" data-k="o" aria-sort="none"><button type="button">Objects</button></th>
-<th scope="col" class="num" data-k="w" aria-sort="none"><button type="button">Writable</button></th>
-<th scope="col">Download</th></tr></thead>
-<tbody>%(rows)s</tbody></table></div>
 """ % {"nm": len(models), "ng": len(groups),
        "total": "{:,}".format(total), "options": options,
        "mrows": mfr_rows(groups, gw_only),
-       "types": "".join(cat_item(c, ms) for c, ms in cats),
-       "mopts": "".join('<option>%s</option>' % esc(x)
-                        for x in sorted({m["manufacturer"] for m in models}, key=str.lower)),
-       "chips": "".join('<li><button class="chip" type="button" data-kind="%s" aria-pressed="false">%s<b>%d</b>'
-                        '</button></li>' % (c[0], esc(c[1]), len(ms)) for c, ms in cats),
-       "rows": "".join(cat_row(m, [], maxo, show_type=True) for m in models_sorted)}
+       "types": "".join(cat_item(c, ms) for c, ms in cats)}
     catalog = {"@type": "DataCatalog", "@id": url + "#catalog", "name": "Easy BACnet points-list library",
                "url": url, "description": desc, "publisher": {"@id": ORG["@id"]},
                "dataset": [{"@id": clean(model_path(m)) + "#dataset"} for m in models]}

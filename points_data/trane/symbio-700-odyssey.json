@@ -21,8 +21,8 @@
   "notes": [
     "Only the points that apply to the unit's factory configuration show up; the doc lists every possible point.",
     "Name suffixes carry meaning: Status/Local/Active/Input are read-only, BAS/Command/Request/Setpoint value objects are the ones a BAS writes, and Arbitrator objects show which source is winning.",
-    "Access 'C' marks objects whose arbitration pattern the doc lists as setpoint with a priority array.",
-    "The Symbio 700 integration guide (BAS-SVP085) covers BACnet IP and BACnet MS/TP; the rotary address (001-127) sets the MS/TP MAC and the default Device ID, and a software Device ID can be set instead.",
+    "Access 'C' marks writable objects whose arbitration pattern the doc lists as setpoint with a priority array, plus AV 10127, AV 10159 and AV 10160, which the integration guide (BAS-SVP085B) calls commandable; other writable objects are 'W'.",
+    "The Symbio 700 integration guide (BAS-SVP085B-EN, Nov 2024) covers BACnet IP and BACnet MS/TP; the rotary address (001-127) sets the MS/TP MAC and the default Device ID, and a software Device ID can be set instead.",
     "The same document also maps every object to a Modbus register; only the BACnet side is listed here.",
     "BV-11100 (Alarm Indicator Status) is printed twice in the source with the same name; it is listed once here."
   ],
@@ -33,7 +33,7 @@
     "url": "https://elibrary.tranetechnologies.com/public/commercial-hvac/Literature/Points%20List/BAS-PTS005B-EN_03042026.pdf"
   },
   "integration": {
-    "summary": "Leave MV 11100 Arbitration Method Request at 'Enable External/BAS Control'. Then schedule the unit with MV 10106 Occupancy Request and send setpoints to the commandable setpoint BAS points at a priority above 14. If the BMS supplies sensor values such as space temperature, rewrite the '... BAS' points at least every 15 minutes, or the controller drops back to its own sensors.",
+    "summary": "Leave MV 11100 Arbitration Method Request at 'Enable External/BAS Control'. Then schedule the unit with MV 10106 Occupancy Request and write space setpoints to the commandable setpoint BAS points (AV 10127, or AV 10159/10160) at a priority above 14. If the BMS supplies sensor values such as space temperature, rewrite the '... BAS' points at least every 15 minutes, or the controller drops back to its own sensors.",
     "minimum_points": [
       {
         "ref": "MV 10106",
@@ -87,7 +87,7 @@
       }
     ],
     "enable": "MV 11100 Arbitration Method Request picks the control type. 'Enable External/BAS Control' is the factory default: the controller weighs BAS, Air-Fi and wired sources and uses the BAS value while it is valid. 'Standalone Control' ignores all BAS input. BV 11113 Unit Stop Command (Auto/Stop) stops the unit from the BMS.",
-    "heartbeat": "The sensor BAS points (space temp, OA temp, humidity, CO2, return air) have a 900 s heartbeat in the points list. Per the integration guide, a BAS sensor or setpoint value that is not rewritten at least every 15 minutes fails. Its priority-12 entry then drops out of the Arbitrator and the controller falls back to the next source (Air-Fi, wired, then default). BV 10113 Occupancy Input BAS has the same 15-minute heartbeat; MV 10106 Occupancy Request has none.",
+    "heartbeat": "The sensor BAS points (space temp, OA temp, humidity, CO2, return air) have a 900 s heartbeat in the points list: per the integration guide, a value that is not rewritten at least every 15 minutes fails, its priority-12 entry drops out of the Arbitrator and the controller falls back to the next source (Air-Fi, wired, then default). BV 10113 Occupancy Input BAS has the same 15-minute heartbeat. The space setpoint BAS points (AV 10127, AV 10159/10160) and MV 10106 Occupancy Request are commandable and have no heartbeat.",
     "remote_sensors": "Write the value to the matching '... BAS' AV (e.g. AV 10114 Space Temperature BAS, AV 10113 Outdoor Air Temperature BAS) and keep refreshing it. It shows on the '... Arbitrator' object at priority 12, above Air-Fi (14) and wired (15). The '... Active' object reports the value in use. Space setpoints go to AV 10127 Space Temperature Setpoint BAS (single setpoint) or AV 10159/10160 Occupied Cooling/Heating Setpoint BAS (dual setpoint).",
     "setup": [
       "The rotary address (001-127) sets the BACnet MS/TP MAC and also the Device ID; changing it takes effect without a power cycle.",
@@ -570,7 +570,7 @@
       "name": "Space Temperature Setpoint BAS",
       "description": "BAS-supplied space temperature setpoint value",
       "units": "°F",
-      "access": "W",
+      "access": "C",
       "states": ""
     },
     {
@@ -678,7 +678,7 @@
       "name": "Occupied Cooling Setpoint BAS",
       "description": "Define the occ cooling setpt",
       "units": "°F",
-      "access": "W",
+      "access": "C",
       "states": ""
     },
     {
@@ -687,7 +687,7 @@
       "name": "Occupied Heating Setpoint BAS",
       "description": "Define the occ heating setpt",
       "units": "°F",
-      "access": "W",
+      "access": "C",
       "states": ""
     },
     {

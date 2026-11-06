@@ -27,6 +27,7 @@ import html as html_module
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 import diagrams
 import points_library
+import calculators
 
 BASE_URL = "https://easybacnet.com"
 
@@ -2146,7 +2147,8 @@ GUIDES.append(dict(
     are often 480 or less) and whether it can split a long reply into segments. A tool uses
     these to decide how to read; Easy BACnet reads one property at a time, so it works with
     devices that support neither.</li>
-    <li><strong>Vendor ID</strong> &mdash; the ASHRAE-assigned number for the manufacturer.</li>
+    <li><strong>Vendor ID</strong> &mdash; the ASHRAE-assigned number for the manufacturer.
+    Look any number up with our <a href="../bacnet-vendor-id-lookup.html">BACnet Vendor ID lookup</a>.</li>
   </ul>
   <p>The source address of the I-Am matters too. A device behind a BACnet router answers
   through the router, so its reply comes from the router's IP with a
@@ -3931,7 +3933,7 @@ TOOL_CSS_EXTRA = """
 """
 
 
-def tool_page(slug, title, question, description, intro_html, tool_html, related):
+def tool_page(slug, title, question, description, intro_html, tool_html, related, updated=None):
     """A standalone interactive tool page, rendered with .replace() so JavaScript in
     tool_html is safe. Carries SoftwareApplication + BreadcrumbList JSON-LD."""
     rel = ""
@@ -3958,7 +3960,7 @@ def tool_page(slug, title, question, description, intro_html, tool_html, related
             .replace("{{CSS}}", CSS + TOOL_CSS_EXTRA)
             .replace("{{JSONLD}}", jsonld)
             .replace("{{H1}}", question)
-            .replace("{{UPDATED}}", UPDATED_HUMAN)
+            .replace("{{UPDATED}}", human_date(updated) if updated else UPDATED_HUMAN)
             .replace("{{INTRO}}", intro_html)
             .replace("{{TOOL}}", tool_html)
             .replace("{{PLAY_NAV}}", play_url("nav", slug))
@@ -4106,6 +4108,138 @@ window.addEventListener('DOMContentLoaded',function(){encId();decId();});
         ("guides/bacnet-scanner-app-android", "Is there a BACnet IP scanner app for Android?"),
     ],
 ))
+
+
+# ---------------------------------------------------------------------------
+# BACnet Vendor ID lookup (data: vendor_ids.json, refreshed by update_vendor_ids.py)
+# ---------------------------------------------------------------------------
+
+def _vendor_tool():
+    data = json.load(open(os.path.join(os.path.dirname(os.path.abspath(__file__)), "vendor_ids.json"), encoding="utf-8"))
+    vs = data["vendors"]
+    retrieved = human_date(data["retrieved"])
+    rows = "\n".join(
+        '<tr><td>%d</td><td>%s</td><td>%s</td></tr>'
+        % (v["id"], html_module.escape(v["name"]), html_module.escape(v["country"]))
+        for v in vs)
+    top = max(v["id"] for v in vs)
+    n = "{:,}".format(len(vs))
+    intro = """<p>Every BACnet device reports a <strong>Vendor ID</strong>: a number
+    assigned by ASHRAE that says who made it. It travels in the device's <em>I-Am</em>
+    reply and sits in the Device object's <code>Vendor_Identifier</code> property
+    (property 120), next to the text <code>Vendor_Name</code> (property 121). Type a
+    number or a company name below to look it up. This list has <strong>%(n)s assigned
+    IDs</strong> (0 to %(top)d), copied from the official
+    <a href="https://bacnet.org/assigned-vendor-ids/" rel="noopener">BACnet International
+    register</a> on %(date)s.</p>""" % {"n": n, "top": top, "date": retrieved}
+    tool = """
+  <style>
+    .vwrap { max-height:70vh; overflow:auto; margin-top:1.1rem; border:1px solid var(--line); border-radius:10px; }
+    .vwrap table { display:table; margin:0; }
+    .vwrap thead th { position:sticky; top:0; background:var(--box); z-index:1; }
+    .vwrap td:first-child, .vwrap th:first-child { font-family:"IBM Plex Mono",ui-monospace,monospace; width:5.5rem; }
+    .vhit { margin-top:1rem; font-size:1.05rem; }
+    .vhit strong { color:var(--accent); }
+  </style>
+  <div class="tool">
+    <label for="vq">Vendor ID or company name</label>
+    <input id="vq" type="search" placeholder="e.g. 5, 260, Trane, Delta&hellip;" autocomplete="off" inputmode="search">
+    <p class="vhit" id="vhit" aria-live="polite"></p>
+    <p class="out-note" id="vcount">%(n)s vendors</p>
+    <div class="vwrap"><table id="vtab"><thead><tr><th scope="col">ID</th><th scope="col">Organization</th><th scope="col">Country</th></tr></thead>
+<tbody>
+%(rows)s
+</tbody></table></div>
+    <p class="out-note">Organization names are as registered with ASHRAE. Many companies have since been bought or
+    renamed, so the name here can be older than the badge on the controller. Source:
+    <a href="https://bacnet.org/assigned-vendor-ids/" rel="noopener">bacnet.org/assigned-vendor-ids</a>, retrieved %(date)s.</p>
+  </div>
+<script>
+(function(){
+  var q=document.getElementById('vq'),hit=document.getElementById('vhit'),cnt=document.getElementById('vcount');
+  var trs=[].slice.call(document.querySelectorAll('#vtab tbody tr'));
+  var data=trs.map(function(tr){var c=tr.children;return {tr:tr,id:c[0].textContent,txt:(c[0].textContent+' '+c[1].textContent+' '+c[2].textContent).toLowerCase(),name:c[1].textContent,country:c[2].textContent};});
+  var total=data.length,maxId=%(top)d;
+  function esc(s){return s.replace(/[&<>"]/g,function(c){return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c];});}
+  function run(){
+    var s=(q.value||'').trim().toLowerCase(),shown=0,exact=null,isNum=/^[0-9]+$/.test(s);
+    for(var i=0;i<data.length;i++){var d=data[i],ok;
+      if(!s){ok=true;}else if(isNum){ok=d.id===String(parseInt(s,10));}else{ok=d.txt.indexOf(s)>=0;}
+      d.tr.style.display=ok?'':'none';if(ok){shown++;if(isNum)exact=d;}}
+    cnt.textContent=s?(shown+' of '+total+' shown'):(total+' vendors');
+    if(isNum){var v=parseInt(s,10);
+      if(exact){hit.innerHTML='Vendor ID <strong>'+v+'</strong> = <strong>'+esc(exact.name)+'</strong>'+(exact.country?' ('+esc(exact.country)+')':'');}
+      else if(v>65535){hit.textContent='Vendor IDs are 16-bit numbers (0 to 65535), so '+v+' is not a valid Vendor ID.';}
+      else if(v>maxId){hit.textContent='Vendor ID '+v+' is higher than any ID on this copy of the list. It may have been assigned since; check bacnet.org.';}
+      else{hit.textContent='Vendor ID '+v+' is not on the published list (it may be withdrawn or unassigned).';}
+    }else{hit.textContent='';}
+    try{history.replaceState(null,'',s?('#'+encodeURIComponent(q.value.trim())):location.pathname);}catch(e){}
+  }
+  q.addEventListener('input',run);
+  if(location.hash.length>1){try{q.value=decodeURIComponent(location.hash.slice(1));}catch(e){}run();}
+})();
+</script>
+
+  <h2>Where you will see a Vendor ID</h2>
+  <ul>
+    <li><strong>In discovery.</strong> Every <a href="guides/who-is-i-am-explained.html">I-Am</a>
+    reply carries the Vendor ID, so a scan can tell you who made each device before reading anything else.</li>
+    <li><strong>In the Device object.</strong> <code>Vendor_Identifier</code> (property 120) holds the number and
+    <code>Vendor_Name</code> (property 121) holds the text the manufacturer chose. Easy BACnet's Browser Mode shows the
+    Vendor_Name each device reports, and its raw read tool can read property 120 directly.</li>
+    <li><strong>In EDE files and points lists.</strong> Engineering Data Exchange (EDE) exports include the vendor
+    name and number so a head-end knows whose device the list describes.</li>
+  </ul>
+
+  <h2>Why the Vendor ID matters</h2>
+  <p>BACnet lets each manufacturer add its own <strong>proprietary</strong> object types (numbers 128 to 1023),
+  properties (512 and up) and enumeration values. Those numbers mean nothing on their own: proprietary
+  property 5000 on a Trane controller and property 5000 on a Siemens controller are unrelated. The Vendor ID is
+  the key that tells a tool whose definitions to use, which is why a head-end driver for one brand cannot make
+  sense of another brand's proprietary objects. If a scan shows an object type such as &ldquo;Type 130&rdquo;, the
+  Vendor ID tells you whose documentation to look in. See <a href="guides/bacnet-object-types-explained.html">BACnet
+  object types explained</a>.</p>
+
+  <h2>Field notes</h2>
+  <ul>
+    <li><strong>A gateway reports its own Vendor ID.</strong> A rooftop unit behind a protocol gateway shows the
+    gateway maker's number, not the rooftop unit maker's. The same goes for a router or a supervisory controller
+    re-serving points from other devices.</li>
+    <li><strong>Some companies hold several IDs.</strong> Siemens Schweiz, for example, holds 7, 9 and 22, often from
+    separate product lines or companies they bought.</li>
+    <li><strong>The name can be out of date.</strong> The register keeps the name used when the ID was assigned.
+    TAC (11) is now part of Schneider Electric, and many smaller names on the list have been bought since.</li>
+    <li><strong>Open-source and test stacks have IDs too.</strong> Software built on an open-source stack often keeps
+    that stack's Vendor ID, so a device reporting a software vendor is not necessarily a fake.</li>
+    <li><strong>A Vendor ID is not a Device ID.</strong> The Vendor ID is the same for every device a company makes;
+    the <a href="guides/bacnet-device-id-explained.html">Device ID (instance)</a> must be unique on your network.</li>
+  </ul>
+
+  <h2>How a manufacturer gets a Vendor ID</h2>
+  <p>Vendor IDs are assigned by ASHRAE and published by BACnet International. A company building a BACnet product
+  requests one through <a href="https://bacnet.org/assigned-vendor-ids/" rel="noopener">bacnet.org</a>;
+  each number is given out once and the list only grows.</p>
+""" % {"n": n, "rows": rows, "date": retrieved, "top": top}
+    return dict(
+        slug="bacnet-vendor-id-lookup",
+        updated=data["retrieved"],
+        title="BACnet Vendor ID lookup: all %s IDs | Easy BACnet" % n,
+        question="BACnet Vendor ID lookup",
+        description=("Look up any BACnet Vendor ID: the full ASHRAE list of %s manufacturer IDs with "
+                     "organization and country. Search by number or name." % n),
+        intro_html=intro,
+        tool_html=tool,
+        related=[
+            ("guides/who-is-i-am-explained", "What are BACnet Who-Is and I-Am?"),
+            ("guides/bacnet-device-id-explained", "What is a BACnet Device ID?"),
+            ("guides/bacnet-object-types-explained", "BACnet object types explained"),
+            ("bacnet-object-id-decoder", "BACnet Object Identifier decoder"),
+        ],
+    )
+
+
+TOOLS.append(_vendor_tool())
+
 
 INDEX = """<!doctype html>
 <html lang="en">
@@ -4483,12 +4617,15 @@ def main(ping=False):
             t["slug"] + ".html",
             tool_page(
                 t["slug"], t["title"], t["question"], t["description"],
-                t["intro_html"], t["tool_html"], t["related"],
+                t["intro_html"], t["tool_html"], t["related"], t.get("updated"),
             ),
         )
 
     # BACnet points-list library (points_library.py, data in points_data/).
+    # Each list links to its instance calculator (calculators.py, /bacnet-instance-calculators/).
+    points_library.CALC_LINKS = calculators.links()
     lib_paths, lib_llms = points_library.build(write)
+    calc_paths, calc_llms = calculators.build(write)
 
     # The homepage lists guides by topic, not in the order they were written.
     by_slug = {g["slug"]: g for g in GUIDES}
@@ -4522,6 +4659,10 @@ def main(ping=False):
         % (t["slug"], t["question"], t["description"].split(".")[0] + ".")
         for t in TOOLS
     )
+    tool_links = ('  <li><a href="%s">BACnet instance calculators (%d brands and gateways)</a><br>'
+                  '<span class="muted">Enter a unit address, get every object instance: Fujitsu, Mitsubishi '
+                  'Electric, Daikin, Samsung, Toshiba, Gree, Intesis and more.</span></li>\n'
+                  % (calculators.hub_path(), len(calculators.CALCS))) + tool_links
     write("index.html", INDEX.replace("{{BASE}}", BASE_URL)
           .replace("{{TOOLS}}", tool_links).replace("{{GUIDES}}", links)
           .replace("{{PLAY_NAV}}", play_url("nav", "home"))
@@ -4535,11 +4676,12 @@ def main(ping=False):
     urls = (["index.html", "privacy.html", "terms.html"]
             + [t["slug"] + ".html" for t in TOOLS]
             + [g["slug"] + ".html" for g in GUIDES]
-            + lib_paths)
+            + lib_paths + calc_paths)
     sm = ['<?xml version="1.0" encoding="UTF-8"?>',
           '<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">']
     lastmod = {g["slug"] + ".html": guide_lastmod(g) for g in GUIDES}
     lastmod.update(points_library.LASTMOD)
+    lastmod.update({t["slug"] + ".html": t["updated"] for t in TOOLS if t.get("updated")})
     lastmod["index.html"] = max(lastmod.values())
     for u in urls:
         sm.append("  <url><loc>%s/%s</loc><lastmod>%s</lastmod></url>"
@@ -4614,6 +4756,7 @@ def main(ping=False):
     for g in GUIDES:
         llms.append("- %s: %s/%s" % (html_module.unescape(g["question"]), BASE_URL, g["slug"]))
     llms.extend(lib_llms)
+    llms.extend(calc_llms)
     llms.append("")
     llms.append("- Easy BACnet home: %s/" % BASE_URL)
     llms.append("- Privacy policy: %s/privacy" % BASE_URL)
