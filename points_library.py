@@ -295,6 +295,11 @@ strong{color:#fff}
 .eyebrow{font-family:"IBM Plex Mono",monospace;font-weight:600;font-size:.72rem;letter-spacing:.2em;text-transform:uppercase;color:var(--accent);margin:1.4rem 0 0}
 .lede{font-size:1.08rem;color:#e7ebee;max-width:70ch}
 .updated{color:var(--mut);font-family:"IBM Plex Mono",monospace;font-size:.74rem;letter-spacing:.06em}
+.unoff{position:relative;display:inline-flex;align-items:center;gap:.35rem;margin-left:.6rem;font-family:"IBM Plex Mono",monospace;font-size:.68rem;letter-spacing:.08em;text-transform:uppercase;font-weight:700;color:#ffb4a8;background:rgba(255,99,71,.12);border:1px solid rgba(255,99,71,.55);border-radius:6px;padding:.15rem .45rem;cursor:help;vertical-align:middle;white-space:nowrap}
+.unoff-i{display:inline-grid;place-items:center;width:1rem;height:1rem;border-radius:50%;border:1px solid currentColor;font-size:.62rem;line-height:1}
+.unoff:hover::after,.unoff:focus::after{content:attr(data-tip);position:absolute;left:0;top:calc(100% + .45rem);z-index:30;width:min(320px,calc(100vw - 3rem));white-space:normal;text-transform:none;letter-spacing:0;font-family:Manrope,system-ui,sans-serif;font-size:.86rem;font-weight:500;line-height:1.45;color:var(--fg);background:var(--panel);border:1px solid rgba(255,99,71,.55);border-radius:9px;padding:.7rem .85rem;box-shadow:0 10px 28px rgba(0,0,0,.45)}
+.unoff:focus{outline:2px solid var(--accent);outline-offset:2px}
+.unofftag{color:#ffb4a8}
 .answer{background:var(--panel);border:1px solid var(--line);border-left:3px solid var(--accent);border-radius:12px;padding:1.1rem 1.3rem;margin:1.4rem 0;max-width:78ch}
 .answer > b{display:block;font-family:"IBM Plex Mono",monospace;font-size:.7rem;letter-spacing:.18em;text-transform:uppercase;color:var(--accent);margin-bottom:.4rem}
 .answer p:last-child{margin:0}
@@ -565,9 +570,12 @@ def shell(relpath, title, description, h1_html, body, jsonld, crumbs, og_type="w
 </aside>
 </main>
 <footer><div class="wrap">
-  <p>Points lists are re-typed from each manufacturer&rsquo;s free public documentation and linked to the original.
-  Point availability varies by firmware, options and configuration &mdash; always confirm against the live device.
-  Brand names identify the equipment only; Easy BACnet is not affiliated with any manufacturer listed.
+  <p><strong>Disclaimer:</strong> points lists are re-typed by hand from each manufacturer&rsquo;s public documentation
+  and linked to the original. They are reference information only, provided as-is with no warranty, and may contain
+  errors or be out of date; point availability varies by model, firmware, options and configuration. You are responsible
+  for confirming every point against the manufacturer&rsquo;s current documentation and the live device before you rely
+  on it, and Easy BACnet accepts no liability for its use &mdash; see our <a href="/terms.html#content">Terms of use</a>.
+  Brand names identify the equipment only; Easy BACnet is not affiliated with or endorsed by any manufacturer listed.
   Spotted an error, or want a list removed? Email <a href="mailto:Firstimpactdevelopment@gmail.com">Firstimpactdevelopment@gmail.com</a>.</p>
   <p><a href="/index.html">Easy BACnet</a> &middot; <a href="%(play_footer)s" rel="noopener">Get it on Google Play</a> &middot;
   <a href="/bacnet-points-lists/index.html">Points lists</a> &middot;
@@ -866,7 +874,8 @@ def cat_row(m, tags, maxo, show_type=False):
         "mfa": "" if m["model"].lower().startswith(m["manufacturer"].lower()) else
                '<span class="sr-only">%s </span>' % esc(m["manufacturer"]),
         "kinds": category_of(m)[0] if show_type else " ".join(t[0] for t in mt), "href": model_path(m), "ap": esc(m.get("applies_to") or ""),
-        "doc": (' <span class="doc">&middot; %s</span>' % esc(doc)) if doc else "",
+        "doc": ((' <span class="doc">&middot; %s</span>' % esc(doc)) if doc else "")
+               + (' <span class="unofftag">&middot; unofficial source</span>' if is_unofficial(m) else ""),
         "al": ('<span class="sr-only"> Also known as: %s</span>' % esc(", ".join(m["aliases"])))
               if m.get("aliases") else "",
         "ty": ('<td class="ty">%s</td>' % "".join('<span class="tag">%s</span>' % esc(t[1]) for t in mt)) if tags else
@@ -1007,6 +1016,28 @@ def source_line(m):
     if s.get("revision_date"):
         bits.append("rev. " + esc(s["revision_date"]))
     return " &middot; ".join(bits)
+
+
+def is_unofficial(m):
+    """source.unofficial = true: the maker doesn't host the doc; we used a third-party copy
+    (distributor, rep or manual site). source.host names that site."""
+    return bool(m["source"].get("unofficial"))
+
+
+def unofficial_host(m):
+    return m["source"].get("host") or "a third-party website"
+
+
+def unofficial_tip(m):
+    return ("%s doesn't publish this document on its own website. This list was re-typed from a "
+            "copy hosted by %s, so it may be an older revision. Check it against the live unit "
+            "before you rely on it." % (m["manufacturer"], unofficial_host(m)))
+
+
+def unofficial_badge(m):
+    tip = esc(unofficial_tip(m))
+    return ('<span class="unoff" tabindex="0" role="note" aria-label="Unofficial source. %s" data-tip="%s">'
+            'Unofficial source<span class="unoff-i" aria-hidden="true">?</span></span>' % (tip, tip))
 
 
 def row_id(pt):
@@ -1243,6 +1274,13 @@ def model_faq(m):
          + (" The source has no read/write column, so this is inferred from object type."
             if m.get("access_inferred") else "")),
         ("Where is the official %s BACnet documentation?" % full_name(m),
+         ("%s does not publish it on its own website. This list comes from %s%s%s, a copy hosted by %s "
+          "at %s. Ask %s or its representative for the current revision." % (
+             m["manufacturer"], s.get("title") or "the manufacturer's BACnet documentation",
+             (" (" + s["doc_number"] + ")") if s.get("doc_number") else "",
+             (", revision " + s["revision_date"]) if s.get("revision_date") else "",
+             unofficial_host(m), s["url"], m["manufacturer"]))
+         if is_unofficial(m) else
          "The source is %s%s%s, published free by %s at %s." % (
              s.get("title") or "the manufacturer's BACnet documentation",
              (" (" + s["doc_number"] + ")") if s.get("doc_number") else "",
@@ -1312,8 +1350,10 @@ def model_page(m, siblings):
             '<a href="/%s">%s</a>' % (mfr_path(brand_slug(b)), esc(b)) for b in m["covers_brands"])))
     cat = category_of(m)
     facts.insert(3, ("Equipment type", '<a href="/%s">%s</a>' % (cat_path(cat[0]), esc(cat[1]))))
-    facts.append(("Source document", '<a href="%s" rel="nofollow noopener" target="_blank">%s</a>'
-                  % (esc(s["url"]), source_line(m))))
+    facts.append(("Source document", '<a href="%s" rel="nofollow noopener" target="_blank">%s</a>%s'
+                  % (esc(s["url"]), source_line(m),
+                     (' <span class="unofftag">(unofficial copy, hosted by %s)</span>'
+                      % esc(unofficial_host(m))) if is_unofficial(m) else "")))
     facts_html = '<dl class="facts">%s</dl>' % "".join(
         "<div><dt>%s</dt><dd>%s</dd></div>" % (k, v) for k, v in facts)
 
@@ -1336,24 +1376,27 @@ def model_page(m, siblings):
 
     h1 = ('<p class="eyebrow">%s &middot; BACnet points list</p>'
           '<h1><span class="mfr">%s</span> %s BACnet points list</h1>'
-          '<p class="updated">Updated %s</p>' % (
+          '<p class="updated">Updated %s%s</p>' % (
               esc(m.get("equipment_type") or "Equipment"), esc(m["manufacturer"]), esc(model_rest(m)),
-              human_date(m.get("_modified") or UPDATED)))
+              human_date(m.get("_modified") or UPDATED),
+              unofficial_badge(m) if is_unofficial(m) else ""))
 
     base = "/" + model_path(m, "")
     body = """
 <div class="answer"><b>Short answer</b><p>%(summary)s</p>
 <p>This page lists <strong>%(n)d BACnet objects</strong> for the %(full)s &mdash; %(w)d of them
 writable &mdash; with each object&rsquo;s type, instance number, name, engineering units and access.
-It is re-typed from %(mfr)s&rsquo;s own free documentation, linked below.</p></div>
+%(srcsent)s</p></div>
 %(facts)s
 <div class="dl">
   <a class="btn primary" href="%(base)s.csv" download>Download CSV <small>%(n)d rows</small></a>
   <a class="btn" href="%(base)s-ede.csv" download>Download EDE <small>B.I.G.-EU</small></a>
   <a class="btn" href="%(base)s.json">JSON</a>
-  <a class="btn" href="%(src)s" rel="nofollow noopener" target="_blank">Manufacturer PDF &#8599;</a>
+  <a class="btn" href="%(src)s" rel="nofollow noopener" target="_blank">%(srcbtn)s &#8599;</a>
   <a class="btn app" href="%(play_pdf)s" rel="noopener" target="_blank">Download Easy BACnet Mobile App <small>Google Play</small></a>
 </div>
+<p class="count">Reference only, provided as-is: verify against %(mfr)s&rsquo;s current documentation and the live
+device before use. Not official %(mfr)s information. <a href="/terms.html#content">Terms of use</a>.</p>
 %(integ)s
 <h2 id="points">%(full)s BACnet objects</h2>
 <p class="count">Type: <abbr title="Analog Input">AI</abbr>, AO, AV, BI, BO, BV, MI/MO/MV (multi-state) &middot;
@@ -1365,7 +1408,9 @@ Access: <span class="acc">Read</span> read-only, <span class="acc W">Write</span
 %(ids)s
 %(notes)s
 <div class="callout"><p><strong>Check it against the live device.</strong> A points list tells you what the
-controller <em>can</em> expose; the unit in front of you may differ by firmware or installed options.
+controller <em>can</em> expose; the unit in front of you may differ by firmware or installed options. This list is
+re-typed by hand, provided as-is for reference only and may contain mistakes &mdash; confirming it before you write,
+map or commission anything is up to you (<a href="/terms.html#content">terms</a>).
 <a href="/index.html">Easy BACnet</a> scans a network for BACnet IP devices from an Android phone, reads every
 object on the %(model)s and exports what it actually has to Excel &mdash; free. New to BACnet?
 Start with <a href="/guides/what-is-a-bacnet-points-list.html">what a BACnet points list is</a> and
@@ -1377,6 +1422,12 @@ Object names, instances and units are reproduced as published; descriptions are 
 """ % {
         "summary": esc(m.get("summary") or ""), "n": n, "w": w,
         "mfr": esc(m["manufacturer"]), "model": esc(m["model"]), "full": esc(full_name(m)), "facts": facts_html,
+        "srcsent": ("It is re-typed from a copy of %s&rsquo;s documentation hosted by %s, not by %s "
+                    "itself, so treat it as unofficial." % (
+                        esc(m["manufacturer"]), esc(unofficial_host(m)), esc(m["manufacturer"]))
+                    if is_unofficial(m) else
+                    "It is re-typed from %s&rsquo;s own free documentation, linked below." % esc(m["manufacturer"])),
+        "srcbtn": "Source PDF (unofficial copy)" if is_unofficial(m) else "Manufacturer PDF",
         "base": base, "src": esc(s["url"]), "play_pdf": PLAY_URL % "pdf", "fbar": filter_bar(m), "table": points_table(m),
         "notes": notes_html, "faq": faq_html, "integ": integration_html(m), "ids": id_index(m),
         "inferred": ('<p class="count"><strong>Note:</strong> the source document has no read/write column, so access '
@@ -1421,10 +1472,11 @@ Object names, instances and units are reproduced as published; descriptions are 
 def card(m):
     pts = m["points"]
     return ('<li><a class="card" href="/%s" data-row><span class="k">%s</span>'
-            '<h3>%s %s</h3><p>%s</p><div class="meta">%d objects &middot; %d writable%s</div>%s</a></li>'
+            '<h3>%s %s</h3><p>%s</p><div class="meta">%d objects &middot; %d writable%s%s</div>%s</a></li>'
             % (model_path(m), esc(m.get("equipment_type") or ""), esc(m["manufacturer"]), esc(model_rest(m)),
                esc(m.get("applies_to") or ""), len(pts), writable_count(pts),
                (" &middot; " + esc(m["source"]["doc_number"])) if m["source"].get("doc_number") else "",
+               ' &middot; <span class="unofftag">unofficial source</span>' if is_unofficial(m) else "",
                ('<span class="sr-only"> Also known as: %s</span>' % esc(", ".join(m["aliases"])))
                if m.get("aliases") else ""))
 
@@ -1587,6 +1639,9 @@ def hub_page(groups, brands=None):
 <p class="lede">Need a BACnet points list before you get to site? This library has <strong>%(nm)d models from
 %(ng)d manufacturers</strong> &mdash; %(total)s BACnet objects &mdash; each with object type, instance number,
 name, engineering units and read/write access, ready to download as CSV or EDE.</p>
+<p class="count">Every list is re-typed by hand and provided as-is for reference only. It may contain errors or be out
+of date &mdash; confirm each point against the manufacturer&rsquo;s current documentation and the live device before
+you rely on it. Not affiliated with any manufacturer. <a href="/terms.html#content">Terms of use</a>.</p>
 <form class="tools" action="#" onsubmit="return false" aria-label="Choose a manufacturer">
   <label class="mono count" for="mfr-pick">Select manufacturer</label>
   <select class="pick" id="mfr-pick"><option value="">Choose a manufacturer&hellip;</option>%(options)s</select>
@@ -1643,11 +1698,19 @@ name, engineering units and read/write access, ready to download as CSV or EDE.<
 # Downloads
 # ---------------------------------------------------------------------------
 
+DISCLAIMER_TXT = ("# DISCLAIMER: reference only, provided AS IS with no warranty. Re-typed by hand from public "
+                  "documents; may contain errors or be out of date. You must verify every point against the "
+                  "manufacturer's current documentation and the live device before use. easybacnet.com accepts no "
+                  "liability for its use and is not affiliated with the manufacturer. Terms: "
+                  "https://easybacnet.com/terms#content")
+
+
 def csv_text(m):
     buf = io.StringIO()
     w = csv.writer(buf, lineterminator="\r\n")
     w.writerow(["# %s BACnet points list - easybacnet.com - source: %s" %
                 (full_name(m), m["source"]["url"])])
+    w.writerow([DISCLAIMER_TXT])
     w.writerow(["Object type", "Type code", "Instance", "Object name", "Description", "Units", "Access", "States"])
     for pt in m["points"]:
         w.writerow([OBJECT_TYPES[pt["type"]][0], pt["type"],
@@ -1691,6 +1754,7 @@ def json_text(m):
     out["page"] = clean(model_path(m))
     out["note"] = ("Re-typed from the manufacturer's public documentation (see source). Point availability varies "
                    "by firmware and options; verify against the live device.")
+    out["disclaimer"] = DISCLAIMER_TXT[2:]
     return json.dumps(out, ensure_ascii=False, indent=1) + "\n"
 
 
