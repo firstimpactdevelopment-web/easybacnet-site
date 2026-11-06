@@ -817,7 +817,7 @@ CALCS.append(dict(
     slug="protonode", brand="ProtoNode", hw="boiler gateways (Laars, Peerless, Raypak, AERCO and more)", kind="device",
     title="ProtoNode BACnet Device Instance Calculator (Boilers)",
     desc="Work out the BACnet device instance of every boiler behind a ProtoNode: Node_Offset + Node-ID. "
-         "Default offset 50000, node 3 = device 50003. Laars, Raypak, AERCO.",
+         "Default offset 50000: node 3 = device 50003. Laars, Raypak...",
     lede="Boiler makers use FieldServer ProtoNode gateways to put Modbus boilers on BACnet. Every boiler becomes "
          "its own BACnet device numbered Node_Offset + Node-ID, and every one carries the same objects.",
     answer="Device instance = <strong>Node_Offset + Node-ID</strong>. Node_Offset is 50000 unless someone changed "
@@ -1392,8 +1392,7 @@ def calc_page(c):
     h1 = ('<p class="eyebrow">BACnet instance calculator &middot; %s</p>'
           '<h1><span class="mfr">%s</span> %s</h1>'
           '<p class="updated">Free browser tool &middot; nothing is uploaded &middot; %s</p>'
-          % (esc(c["hw"]), esc(c["brand"]), esc(c.get("h1") or (
-              c["hw"] + (" BACnet device ID calculator" if c["kind"] == "device" else " BACnet instance calculator"))),
+          % (esc(c["hw"]), esc(c["brand"]), esc(h1_rest(c)),
              PL.human_date(PUBLISHED)))
     body = """
 <p class="lede">%(lede)s</p>
@@ -1440,6 +1439,15 @@ def _strip(s):
     return re.sub(r"<[^>]+>", "", s)
 
 
+def h1_rest(c):
+    """The page title without the brand, which the H1 shows separately in accent colour."""
+    t = c["title"]
+    for pref in (c["brand"], c["brand"].split()[0]):
+        if t.startswith(pref + " "):
+            return t[len(pref) + 1:]
+    return t
+
+
 def nav_on(html_out):
     return (html_out.replace('class="on">Points lists', '>Points lists', 1)
             .replace('>Calculators</a>', ' class="on">Calculators</a>', 1))
@@ -1469,7 +1477,7 @@ SECTIONS = [
 
 HUB_TITLE = "BACnet Instance Number Calculators by Brand | Easy BACnet"
 HUB_DESC = ("Free BACnet instance calculators for Fujitsu, Mitsubishi Electric, Daikin, Samsung, Toshiba, LG "
-            "gateways and more: enter a unit address, get every object number.")
+            "and more: enter a unit address, get every object number.")
 
 
 def hub_page():
