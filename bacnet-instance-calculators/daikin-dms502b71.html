@@ -464,7 +464,7 @@ table.fx{border-collapse:collapse;width:100%;font-size:.92rem;margin:.6rem 0 1.2
 table.fx th,table.fx td{text-align:left;padding:.5rem .7rem;border-bottom:1px solid var(--line);vertical-align:top}
 table.fx th{font-family:"IBM Plex Mono",monospace;font-size:.68rem;letter-spacing:.12em;text-transform:uppercase;color:var(--accent)}
 table.fx td.m{font-family:"IBM Plex Mono",monospace;white-space:nowrap}
-.formula{font-family:"IBM Plex Mono",monospace;background:var(--code);border:1px solid var(--line);border-radius:10px;padding:.8rem 1rem;overflow-x:auto;white-space:nowrap}
+.formula{font-family:"IBM Plex Mono",monospace;background:var(--code);border:1px solid var(--line);border-radius:10px;padding:.8rem 1rem;overflow-wrap:anywhere}
 .calclist{list-style:none;padding:0;margin:.6rem 0 1.4rem;display:grid;grid-template-columns:repeat(auto-fill,minmax(300px,1fr));gap:.8rem}
 .calclist a{display:block;height:100%;background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:.9rem 1rem;color:var(--fg);text-decoration:none}
 .calclist a:hover{border-color:var(--accent)}
@@ -484,7 +484,7 @@ table.fx td.m{font-family:"IBM Plex Mono",monospace;white-space:nowrap}
 <button type="button" class="sec" id="c-rcsv">Download range (CSV)</button></div>
 <p class="count" id="cr-msg" aria-live="polite"></p>
 <div id="c-out" aria-live="polite"><p class="count">The calculator needs JavaScript. The formula and a worked example are below.</p></div>
-<div class="crev"><h3>Which unit does this instance belong to?</h3><div class="row"><div><label for="cr-t">Type</label><select id="cr-t"><option>ACC</option><option>AI</option><option>AV</option><option>BI</option><option selected>BO</option><option>BV</option><option>MI</option><option>MO</option></select></div><div><label for="cr-i">Instance</label><input id="cr-i" inputmode="numeric" placeholder="e.g. 100205"></div><button type="button" id="cr-go">Decode</button></div><ul class="cres" id="cr-res" aria-live="polite"></ul></div>
+<div class="crev"><h3>Which unit does this instance belong to?</h3><div class="row"><div><label for="cr-t">Type</label><select id="cr-t"><option>ACC</option><option>AI</option><option>AV</option><option>BI</option><option selected>BO</option><option>BV</option><option>MI</option><option>MO</option></select></div><div><label for="cr-i">Instance</label><input id="cr-i" inputmode="numeric" placeholder="e.g. 100205 or 0x1A01"></div><button type="button" id="cr-go">Decode</button></div><ul class="cres" id="cr-res" aria-live="polite"></ul></div>
 </section>
 <h2>How the numbers are built</h2>
 <p class="formula">instance = unit number x 256 + member number</p>
@@ -513,9 +513,10 @@ function fmt(k,n){var i=INP[k];return i&&i.hex?n.toString(16).toUpperCase():Stri
 function vi(){var s=$('ci-variant');return s?s.selectedIndex:0;}
 function readV(){var v={},bad=[];C.inputs.forEach(function(i){
   var s=($('ci-'+i.k).value||'').trim(),n;
-  if(i.hex){if(!/^[0-9a-fA-F]{1,5}$/.test(s)){bad.push(i.label);return;}n=parseInt(s,16);}
-  else{if(!/^\d+$/.test(s)){bad.push(i.label);return;}n=parseInt(s,10);}
-  if(n<i.min||n>i.max){bad.push(i.label+' ('+fmt(i.k,i.min)+'-'+fmt(i.k,i.max)+')');return;}
+  var msg=i.label+' ('+fmt(i.k,i.min)+'-'+fmt(i.k,i.max)+(i.hex?', hex':'')+')';
+  if(i.hex){if(!/^[0-9a-fA-F]{1,5}$/.test(s)){bad.push(msg);return;}n=parseInt(s,16);}
+  else{if(!/^\d+$/.test(s)){bad.push(msg);return;}n=parseInt(s,10);}
+  if(n<i.min||n>i.max){bad.push(msg);return;}
   v[i.k]=n;});window.CALCV=v;return{v:v,bad:bad};}
 function uses(g,v){return g.uses.map(function(k){return INP[k].label+' '+fmt(k,v[k]);}).join(', ');}
 function rowsOf(g,v){var f=F[g.id];return g.pts.map(function(p){
@@ -561,13 +562,15 @@ $('c-rcsv').addEventListener('click',function(){var r=readV();if(r.bad.length){r
   $('cr-msg').textContent='';var V=C.variants[vi()],L=[C.kind==='device'?['Unit type','Unit','Device instance']:HEAD_O];
   for(var n=a;n<=b;n++){var v={};for(var k in r.v)v[k]=r.v[k];v[C.primary]=n;window.CALCV=v;L=L.concat(linesFor(V,v,true));}
   save(document.body.getAttribute('data-slug')+'-'+fmt(C.primary,a)+'-'+fmt(C.primary,b)+'.csv',L);});
-function inRange(v){for(var k in v){var i=INP[k];if(i&&(v[k]<i.min||v[k]>i.max))return false;}return true;}
+function inRange(v){for(var k in v){var i=INP[k];if(typeof v[k]!=='number'||!isFinite(v[k]))return false;if(i&&(v[k]<i.min||v[k]>i.max))return false;}return true;}
 function fill(vi2,v){var s=$('ci-variant');if(s)s.selectedIndex=vi2;for(var k in v){if(INP[k])$('ci-'+k).value=fmt(k,v[k]);}render();
   $('c-out').scrollIntoView({behavior:'smooth',block:'start'});}
 var HITS=[];
 function lookup(){var res=$('cr-res'),raw=($('cr-i').value||'').trim();HITS=[];
-  if(!/^\d+$/.test(raw)){res.innerHTML='<li>Enter a whole number.</li>';return;}
-  var i=parseInt(raw,10),t=$('cr-t')?$('cr-t').value:'',h='';readV();
+  var i=/^0x[0-9a-f]{1,6}$/i.test(raw)?parseInt(raw.slice(2),16):(/^\d+$/.test(raw)?parseInt(raw,10):NaN);
+  if(isNaN(i)||i>4194303){res.innerHTML='<li>Enter a whole number (or hex with 0x, e.g. 0x1A01).</li>';return;}
+  var t=$('cr-t')?$('cr-t').value:'',h='',rv=readV();
+  if(rv.bad.length&&C.kind==='device'){res.innerHTML='<li>Fix the boxes above first: '+esc(rv.bad.join(', '))+'.</li>';return;}
   C.variants.forEach(function(V,vx){
     var lab=C.variants.length>1?' ('+esc(V.label)+')':'';
     V.groups.forEach(function(g){var f=F[g.id];
