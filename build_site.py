@@ -28,6 +28,7 @@ sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 import diagrams
 import points_library
 import calculators
+import reftools
 
 BASE_URL = "https://easybacnet.com"
 
@@ -1092,6 +1093,7 @@ GUIDES.append(dict(
     of named states), each in Input, Output and Value form. Roughly, Input is a sensor,
     Output drives something, and Value is a software point inside the controller.</p>""",
     body_html="""
+  <p>Every type number, including the rare ones, is in the <a href="../bacnet-reference/object-types.html">BACnet object types list</a>.</p>
   <h2>The common types</h2>
   <table>
     <tr><th>#</th><th>Type</th><th>What it is</th></tr>
@@ -2522,7 +2524,8 @@ GUIDES.append(dict(
   <p>It is a BACnet Error reply to your WriteProperty with error class <em>property</em> and
   error code <em>write-access-denied</em>. Easy BACnet shows it as <em>Write failed: Write
   access denied</em>. It tells you the network and the device are working, and that the
-  problem is the target of the write, not the value.</p>
+  problem is the target of the write, not the value. Other error codes are explained in the
+  <a href="../bacnet-reference/error-codes.html">BACnet error, reject and abort codes</a> list.</p>
   <p>Other codes point elsewhere. <em>invalid-data-type</em> means the value was the wrong
   kind (a REAL sent to a binary point, for example); <em>value-out-of-range</em> means the
   number is outside what the point accepts, such as state 5 on a three-state Multi-state
@@ -3178,6 +3181,7 @@ GUIDES.append(dict(
     the code and shows a short name next to the value (&deg;F, % RH, CFM).</p>""",
     body_html="""
   <h2>What the Units property is</h2>
+  <p>Every code is listed in our <a href="../bacnet-reference/engineering-units.html">BACnet engineering units list</a>.</p>
   <p>Analog Inputs, Outputs and Values all have a <code>Units</code> property alongside
   <code>Present_Value</code>. It holds an enumerated code from the BACnet standard, for
   example 64 for degrees-Fahrenheit, 62 for degrees-Celsius, 58 for inches-of-water, 84 for
@@ -4626,6 +4630,7 @@ def main(ping=False):
     points_library.CALC_LINKS = calculators.links()
     lib_paths, lib_llms = points_library.build(write)
     calc_paths, calc_llms = calculators.build(write)
+    ref_paths, ref_llms = reftools.build(write)
 
     # The homepage lists guides by topic, not in the order they were written.
     by_slug = {g["slug"]: g for g in GUIDES}
@@ -4659,6 +4664,8 @@ def main(ping=False):
         % (t["slug"], t["question"], t["description"].split(".")[0] + ".")
         for t in TOOLS
     )
+    tool_links = ('  <li><a href="%s">BACnet number lookup</a><br><span class="muted">Type any BACnet number and see what it means: engineering units, property IDs, object types, error codes, reliability.</span></li>\n'
+                  '  <li><a href="%s">Compare a scan with a points list</a><br><span class="muted">Drop in an Easy BACnet export or EDE file and see what matches the manufacturer list, what is missing and what is extra.</span></li>\n' % (reftools.hub_path(), reftools.COMPARE)) + tool_links
     tool_links = ('  <li><a href="%s">BACnet instance calculators (%d brands and gateways)</a><br>'
                   '<span class="muted">Enter a unit address, get every object instance: Fujitsu, Mitsubishi '
                   'Electric, Daikin, Samsung, Toshiba, Gree, Intesis and more.</span></li>\n'
@@ -4676,7 +4683,7 @@ def main(ping=False):
     urls = (["index.html", "privacy.html", "terms.html"]
             + [t["slug"] + ".html" for t in TOOLS]
             + [g["slug"] + ".html" for g in GUIDES]
-            + lib_paths + calc_paths)
+            + lib_paths + calc_paths + ref_paths)
     sm = ['<?xml version="1.0" encoding="UTF-8"?>',
           '<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">']
     lastmod = {g["slug"] + ".html": guide_lastmod(g) for g in GUIDES}
@@ -4757,6 +4764,7 @@ def main(ping=False):
         llms.append("- %s: %s/%s" % (html_module.unescape(g["question"]), BASE_URL, g["slug"]))
     llms.extend(lib_llms)
     llms.extend(calc_llms)
+    llms.extend(ref_llms)
     llms.append("")
     llms.append("- Easy BACnet home: %s/" % BASE_URL)
     llms.append("- Privacy policy: %s/privacy" % BASE_URL)

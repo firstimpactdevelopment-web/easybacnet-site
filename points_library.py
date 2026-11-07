@@ -1406,6 +1406,7 @@ writable &mdash; with each object&rsquo;s type, instance number, name, engineeri
   <a class="btn" href="%(base)s-ede.csv" download>Download EDE <small>B.I.G.-EU</small></a>
   <a class="btn" href="%(base)s.json">JSON</a>
   <a class="btn" href="%(src)s" rel="nofollow noopener" target="_blank">%(srcbtn)s &#8599;</a>
+  <a class="btn" href="/bacnet-points-list-compare.html?list=%(rel)s">Compare with your scan</a>
   <a class="btn app" href="%(play_pdf)s" rel="noopener" target="_blank">Download Easy BACnet Mobile App <small>Google Play</small></a>
 </div>
 <p class="count">Reference only, provided as-is: verify against %(mfr)s&rsquo;s current documentation and the live
@@ -1441,7 +1442,7 @@ Object names, instances and units are reproduced as published; descriptions are 
                     if is_unofficial(m) else
                     "It is re-typed from %s&rsquo;s own free documentation, linked below." % esc(m["manufacturer"])),
         "srcbtn": "Source PDF (unofficial copy)" if is_unofficial(m) else "Manufacturer PDF",
-        "calc": calc_callout(m),
+        "calc": calc_callout(m), "rel": esc(m["manufacturer_slug"] + "/" + m["model_slug"]),
         "base": base, "src": esc(s["url"]), "play_pdf": PLAY_URL % "pdf", "fbar": filter_bar(m), "table": points_table(m),
         "notes": notes_html, "faq": faq_html, "integ": integration_html(m), "ids": id_index(m),
         "inferred": ('<p class="count"><strong>Note:</strong> the source document has no read/write column, so access '
