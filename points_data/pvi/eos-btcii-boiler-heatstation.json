@@ -1,0 +1,436 @@
+{
+  "manufacturer": "PVI",
+  "manufacturer_slug": "pvi",
+  "model": "EOS (BTCII) boiler control - HeatStation",
+  "model_slug": "eos-btcii-boiler-heatstation",
+  "aliases": [
+    "PVI EOS boiler",
+    "BTCII",
+    "EOS Controller",
+    "HeatStation",
+    "PVI HeatStation",
+    "J1239D-570",
+    "PV7214"
+  ],
+  "equipment_type": "Commercial boiler control",
+  "applies_to": "PVI HeatStation boilers with the EOS BTCII touch-screen control, standalone or as the master of a cascade of up to 12 boilers, firmware J1239D-570 or newer.",
+  "summary": "The boiler version of the PVI EOS BTCII control serves BACnet MS/TP (or Modbus RTU) from the master boiler's display. Besides boiler 1's probes, ignition state, modulation, relays, flame current, counters and error code, it gives the system (cascade) status, installed/talking/enabled boiler counts, the modulating and lead boiler, and writable system enable, BAS setpoint, setpoint and boiler enable. In a cascade the BAS connects only to the master.",
+  "bacnet_transport": [
+    "BACnet MS/TP"
+  ],
+  "firmware": "J1239D-570 and newer",
+  "default_device_instance": null,
+  "access_inferred": false,
+  "notes": [
+    "Object names and instances follow the discovery list printed in the manual. Only boiler 1 objects are printed; the manual says member boilers are numbered 2-12 but does not print their object instances.",
+    "Probes 4-6 and EMS VOLTAGE are only valid on boiler 1 (the master); probe 5 is the building supply / system sensor and probe 6 the outdoor sensor.",
+    "The point details list BOILER # DRIVE 2 at 1001 (pump 2, DHW/sanitary) and DRIVE 1 at 1002 (boiler pump), while the discovery list has DRIVE 1 at 1001 and DRIVE 2 at 1002. Check on site.",
+    "Flame current is reported with BACnet units of milliamperes, but the value is in tenths of a microamp (10 = 1 µA).",
+    "Error codes 1-31 (manual list): 1 EEPROM, 2 outdoor sensor, 3 supply sensor, 4 DHW sensor, 5 software, 6 FTBus comm, 7 LWCO, 8 remote proving, 9 air pressure, 10 low gas pressure, 11-14 outlet/inlet/vent/hi-limit sensor, 15 ignition failure, 16 flame loss, 17 vent hi-limit, 18 tank hi-limit, 19 false flame, 20 OEM card, 21 internal failure, 22 hi-delta, 23 low HSI, 24 low voltage, 25 blower speed, 26 high gas pressure, 27-31 linked-system communication."
+  ],
+  "source": {
+    "title": "EOS Boiler Interface Guide and Points List - For EOS BTCII Firmware Version J1239D-570 and Newer",
+    "doc_number": "PV7214 (PN 144593)",
+    "revision_date": "2021-01",
+    "url": "https://www.pvi.com/dfsmedia/0533dbba17714b1ab581ab07a4cbb521/53662-source/eos-interface-boiler-interface-pv7214.pdf"
+  },
+  "integration": {
+    "summary": "Set the master boiler's BTCII network mode to BACnet, give it a device instance and MAC, and wire its 3-pin RS-485 terminal. Enable with SYSTEM ENABLE / BOILER 1 ENABLE, drive the temperature with BAS TARGET (or SETPOINT), and read SYSTEM STATUS, SYSTEM TEMP, the cascade counts, ALERT and ERROR.",
+    "minimum_points": [
+      {
+        "ref": "AV 0",
+        "name": "SYSTEM ENABLE",
+        "why": "System enable (1 = enabled)"
+      },
+      {
+        "ref": "AV 1000",
+        "name": "BOILER 1 ENABLE",
+        "why": "Boiler 1 enable (1 = enable)"
+      },
+      {
+        "ref": "AV 1",
+        "name": "BAS TARGET",
+        "why": "BAS setpoint; overrides SETPOINT when non-zero"
+      },
+      {
+        "ref": "AV 2",
+        "name": "SETPOINT",
+        "why": "System or boiler setpoint"
+      },
+      {
+        "ref": "AI 0",
+        "name": "SYSTEM STATUS",
+        "why": "0 disabled, 1 idle, 2 heating"
+      },
+      {
+        "ref": "AI 4",
+        "name": "SYSTEM TEMP",
+        "why": "System (building supply) temperature"
+      },
+      {
+        "ref": "AI 3",
+        "name": "SYSTEM TARGET",
+        "why": "Target temperature in use"
+      },
+      {
+        "ref": "AI 2",
+        "name": "SYSTEM ALERT",
+        "why": "0 normal, 1 alert, 2 error (heating stopped)"
+      },
+      {
+        "ref": "AI 1018",
+        "name": "BOILER 1 ERROR",
+        "why": "Latest error code (0 = none)"
+      }
+    ],
+    "enable": "SYSTEM ENABLE (AV 0) and BOILER # ENABLE (AV 1000 for boiler 1) enable or disable with 1/0. The TH input (R1-R2, jumpered at the factory) must be closed; open on the master disables the whole system.",
+    "heartbeat": null,
+    "remote_sensors": "BAS TARGET (AV 1) takes over from SETPOINT whenever it is non-zero, until it is written back to 0 or the master loses power (it resets to 0 on power-up).",
+    "setup": [
+      "On the display: Toolbox menu, access level ADV, then NETWORK menu: set MODE (BAS) to BACN.",
+      "Device instance is entered on the display (1-4194303); MAC 1-127 (default 3); baud 2400-115k (default 38k4); Max Master default 127; Max Info Frames default 1.",
+      "RS-485 on a 3-pin terminal on the back of the BTCII display: A(-) to the BAS D+, B(+) to D-, plus ground. No bias or termination resistors are built in.",
+      "The port is shared with Modbus RTU; only one protocol is active.",
+      "With the cascade feature in use, connect the BAS (or any gateway) to the master boiler only."
+    ],
+    "gotchas": [
+      "BAS TARGET resets to 0 on a power cycle, so the boiler returns to SETPOINT; rewrite it after power-up.",
+      "SYSTEM STATUS does not show errors; a lockout reads as Idle."
+    ]
+  },
+  "points": [
+    {
+      "type": "AI",
+      "instance": 0,
+      "name": "SYSTEM STATUS",
+      "description": "System status",
+      "units": "",
+      "access": "R",
+      "states": "0=Disabled, 1=Idle, 2=Heating"
+    },
+    {
+      "type": "AI",
+      "instance": 1,
+      "name": "SYSTEM DEMAND",
+      "description": "External enable input (1 = on)",
+      "units": "",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AI",
+      "instance": 2,
+      "name": "SYSTEM ALERT",
+      "description": "System alert",
+      "units": "",
+      "access": "R",
+      "states": "0=Off, 1=Alert, 2=Error"
+    },
+    {
+      "type": "AI",
+      "instance": 3,
+      "name": "SYSTEM TARGET",
+      "description": "Target temperature in use",
+      "units": "°F",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AI",
+      "instance": 4,
+      "name": "SYSTEM TEMP",
+      "description": "Operating (system) sensor temperature",
+      "units": "°F",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AI",
+      "instance": 5,
+      "name": "CASCADE STATUS",
+      "description": "Cascade communication status",
+      "units": "",
+      "access": "R",
+      "states": "0=Standalone, 1=Working, 2=Not All Talking, 3=No Connection"
+    },
+    {
+      "type": "AI",
+      "instance": 6,
+      "name": "CASCADE INSTALLED",
+      "description": "Boilers configured in the cascade",
+      "units": "",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AI",
+      "instance": 7,
+      "name": "CASCADE TALKING",
+      "description": "Boilers talking on the cascade",
+      "units": "",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AI",
+      "instance": 8,
+      "name": "CASCADE ENABLED",
+      "description": "Enabled boilers in the system",
+      "units": "",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AI",
+      "instance": 9,
+      "name": "CASCADE OPERATING",
+      "description": "Boiler currently modulating",
+      "units": "",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AI",
+      "instance": 10,
+      "name": "CASCADE LEAD",
+      "description": "Current lead boiler number",
+      "units": "",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AI",
+      "instance": 1000,
+      "name": "BOILER 1 STATUS",
+      "description": "Cascade communication status of this unit",
+      "units": "",
+      "access": "R",
+      "states": "0=No Communication, 1=Communicating, 2=Lost Communication"
+    },
+    {
+      "type": "AI",
+      "instance": 1001,
+      "name": "BOILER 1 TH",
+      "description": "TH enable input (R1-R2)",
+      "units": "",
+      "access": "R",
+      "states": "0=Open (disabled), 1=Closed (enabled)"
+    },
+    {
+      "type": "AI",
+      "instance": 1002,
+      "name": "BOILER 1 DHW",
+      "description": "DHW call input",
+      "units": "",
+      "access": "R",
+      "states": "0=Off, 1=On"
+    },
+    {
+      "type": "AI",
+      "instance": 1003,
+      "name": "BOILER 1 ALERT",
+      "description": "Alert status",
+      "units": "",
+      "access": "R",
+      "states": "0=None, 1=Alert, 2=Auto (soft lockout), 3=Manual (hard lockout)"
+    },
+    {
+      "type": "AI",
+      "instance": 1004,
+      "name": "BOILER 1 IGNITION",
+      "description": "Burner sequence",
+      "units": "",
+      "access": "R",
+      "states": "0=Idle, 1=Prepurge, 2=Ignition, 3=Burner On, 4=Postpurge, 5=Fail"
+    },
+    {
+      "type": "AI",
+      "instance": 1005,
+      "name": "BOILER 1 PROBE 1",
+      "description": "Outlet probe (top of tank / boiler outlet)",
+      "units": "°F",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AI",
+      "instance": 1006,
+      "name": "BOILER 1 PROBE 2",
+      "description": "Inlet probe (mid tank / return)",
+      "units": "°F",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AI",
+      "instance": 1007,
+      "name": "BOILER 1 PROBE 3",
+      "description": "Vent (flue) probe",
+      "units": "°F",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AI",
+      "instance": 1008,
+      "name": "BOILER 1 PROBE 4",
+      "description": "Probe 4 (DHW sensor input)",
+      "units": "°F",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AI",
+      "instance": 1009,
+      "name": "BOILER 1 PROBE 5",
+      "description": "Probe 5 (supply sensor input)",
+      "units": "°F",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AI",
+      "instance": 1010,
+      "name": "BOILER 1 PROBE 6",
+      "description": "Probe 6 (outdoor sensor input)",
+      "units": "°F",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AI",
+      "instance": 1011,
+      "name": "BOILER 1 MOD",
+      "description": "Modulation rate, 0-100 %",
+      "units": "%",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AI",
+      "instance": 1012,
+      "name": "BOILER 1 RELAY 1",
+      "description": "Relay J14-1 (pump 2, typically DHW/sanitary) status",
+      "units": "",
+      "access": "R",
+      "states": "0=Off, 1=On"
+    },
+    {
+      "type": "AI",
+      "instance": 1013,
+      "name": "BOILER 1 RELAY 2",
+      "description": "Relay J14-2 (pump 1, boiler pump) status",
+      "units": "",
+      "access": "R",
+      "states": "0=Off, 1=On"
+    },
+    {
+      "type": "AI",
+      "instance": 1014,
+      "name": "BOILER 1 EMS VOLTAGE",
+      "description": "EMS analog input (PIM J1-8/9)",
+      "units": "",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AI",
+      "instance": 1015,
+      "name": "BOILER 1 CURRENT",
+      "description": "Flame current (10 = 1 µA)",
+      "units": "",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AI",
+      "instance": 1016,
+      "name": "BOILER 1 RUNTIME",
+      "description": "Burner run hours, rolls over at 65535",
+      "units": "h",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AI",
+      "instance": 1017,
+      "name": "BOILER 1 CYCLES",
+      "description": "Burner start attempts, rolls over at 65535",
+      "units": "",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AI",
+      "instance": 1018,
+      "name": "BOILER 1 ERROR",
+      "description": "Latest error code (0 = none)",
+      "units": "",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 0,
+      "name": "SYSTEM ENABLE",
+      "description": "System enable",
+      "units": "",
+      "access": "W",
+      "states": "0=Disabled, 1=Enabled"
+    },
+    {
+      "type": "AV",
+      "instance": 1,
+      "name": "BAS TARGET",
+      "description": "BAS setpoint; overrides SETPOINT when non-zero",
+      "units": "°F",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 2,
+      "name": "SETPOINT",
+      "description": "Boiler setpoint",
+      "units": "°F",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 3,
+      "name": "ROTATION",
+      "description": "Rotation (no details in the manual)",
+      "units": "",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 1000,
+      "name": "BOILER 1 ENABLE",
+      "description": "Boiler enable",
+      "units": "",
+      "access": "W",
+      "states": "0=Disable, 1=Enable"
+    },
+    {
+      "type": "AV",
+      "instance": 1001,
+      "name": "BOILER 1 DRIVE 1",
+      "description": "Pump relay force-on (see note on drive numbering)",
+      "units": "",
+      "access": "W",
+      "states": "0=Auto, 1=Force On"
+    },
+    {
+      "type": "AV",
+      "instance": 1002,
+      "name": "BOILER 1 DRIVE 2",
+      "description": "Pump relay force-on (see note on drive numbering)",
+      "units": "",
+      "access": "W",
+      "states": "0=Auto, 1=Force On"
+    }
+  ]
+}

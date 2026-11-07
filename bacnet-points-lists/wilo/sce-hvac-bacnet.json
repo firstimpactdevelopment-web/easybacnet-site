@@ -1,0 +1,865 @@
+{
+ "manufacturer": "Wilo",
+ "manufacturer_slug": "wilo",
+ "model": "SCe HVAC (BACnet MS/TP / IP)",
+ "model_slug": "sce-hvac-bacnet",
+ "aliases": [
+  "Wilo SCe HVAC BACnet",
+  "Smart-Controller SC",
+  "OPTION BACnet SC"
+ ],
+ "equipment_type": "Pump controller (HVAC switch box, electronic pumps)",
+ "applies_to": "Wilo SCe switch boxes on HVAC multi-pump systems with speed-controlled (electronic) pumps.",
+ "summary": "Wilo's SC-family switch boxes control multi-pump systems and act as a BACnet MS/TP slave on their RS-485 port; BACnet IP needs an added gateway in the panel. The SCe HVAC list covers the operating command, setpoints, pump modes, pump state bits, running hours and error bits. Fieldbus write access is governed by a bus command timer that must be refreshed every five minutes.",
+ "bacnet_transport": [
+  "BACnet MS/TP",
+  "BACnet IP"
+ ],
+ "firmware": "Data-point list 31.200",
+ "default_device_instance": null,
+ "access_inferred": false,
+ "notes": [
+  "Taken from the 'SCe HVAC' table in Wilo's SC BACnet supplement (English part, pp79-81). Wilo prints a 'BACnet ID' and an object type with its BACnet type code in brackets, e.g. 'Analog Input (0)'. The ID is used here as the instance and the type follows the code, so rows printed 'Binary Input (4)' are Binary Outputs.",
+  "Where Wilo prints several IDs against one name (pump state, switch box state, error state and other bitmaps), each ID is its own binary object for the element printed beside it; the element is shown in brackets after the name.",
+  "Analog objects that list several units report in the unit of the active control mode.",
+  "Wilo prints Active setpoint value (ID 416) twice in this table; the second row (read-only, unit m) is left out."
+ ],
+ "integration": {
+  "summary": "Map Drives on/off (BO 224) as the start/stop command and Set point 1 (AO 1072) as the setpoint. For fieldbus control, write Set to the Bus command timer (MO 208) and repeat it within five minutes. Read the collective run and fault signals (BI 976/977) and the Error state bits for alarms; acknowledge with BO 1985.",
+  "minimum_points": [
+   {
+    "ref": "BO 224",
+    "name": "Drives on/off",
+    "why": "Automatic operation and all pumps on/off"
+   },
+   {
+    "ref": "AO 1072",
+    "name": "Set point 1",
+    "why": "Setpoint 1; unit follows the control mode"
+   },
+   {
+    "ref": "MO 208",
+    "name": "Bus command timer",
+    "why": "Write Set (3) at least every 5 min to keep control"
+   },
+   {
+    "ref": "BO 1985",
+    "name": "Acknowledge",
+    "why": "Alarm acknowledge"
+   },
+   {
+    "ref": "BI 976",
+    "name": "Switch box state (SBM)",
+    "why": "Collective run signal"
+   },
+   {
+    "ref": "AI 400",
+    "name": "Current value",
+    "why": "Measured value; unit follows the control mode"
+   },
+   {
+    "ref": "BI 977",
+    "name": "Switch box state (SSM)",
+    "why": "Collective fault signal"
+   }
+  ],
+  "enable": "The Bus command timer (MO 208) decides who may change settings. Manual: HMI and fieldbus both write, last value wins. Off: HMI locked, fieldbus only. Set: HMI locked and a 5-minute timer starts (state reads Active).",
+  "heartbeat": "With the Bus command timer in Set mode, Set must be written again at least every five minutes. If it lapses the state changes to Reset, the HMI gets access back and the fieldbus is locked until Set is written again.",
+  "remote_sensors": null,
+  "setup": [
+   "SC menus 5.1.2.1-5.1.2.5 set the BACnet MS/TP baud rate, bus address (MAC), parity, stop bits and device object ID.",
+   "BACnet IP uses an extra gateway (HD67686) wired to the panel's RS-485 port: set the SC to 38400 baud, MAC 5, no parity, 1 stop bit. The gateway defaults to 192.168.0.10, UDP 47808, no DHCP; change it with the free Compositor SW67686 tool.",
+   "Terminate the first and last node of the MS/TP segment (DIP switch or jumper, per panel hardware)."
+  ],
+  "gotchas": [
+   "In Bus command timer Off mode the HMI stays locked; if the fieldbus fails there is no access until it recovers.",
+   "Alarm history: write the index (0-15 on SC) to AO 1990, then read the error code from AI 1995.",
+   "Active setpoint value (AO 416) is read-only on SCe NWB boxes."
+  ]
+ },
+ "source": {
+  "title": "BACnet - supplemental sheet SC manual (SC System): System-specific data-point list BACnet SC",
+  "doc_number": "wilo110041 (OPTION BACnet SC 2539869 Ed. 06)",
+  "revision_date": "2020-07-10 (list 31.200)",
+  "url": "https://cms.media.wilo.com/cdndoc/wilo110041/4721760/wilo110041.pdf"
+ },
+ "points": [
+  {
+   "type": "AI",
+   "instance": 0,
+   "name": "Version communication profile",
+   "description": "",
+   "units": "",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "BO",
+   "instance": 16,
+   "name": "Wink service",
+   "description": "Write >0 to blink the HMI indicator for 30 s",
+   "units": "",
+   "access": "W",
+   "states": ""
+  },
+  {
+   "type": "MI",
+   "instance": 32,
+   "name": "Switch box type",
+   "description": "Switch box type and variant",
+   "units": "",
+   "access": "R",
+   "states": "1=SC, 2=SC...FC, 3=SCe, 7=SCe NWB"
+  },
+  {
+   "type": "AI",
+   "instance": 112,
+   "name": "Switch box ID",
+   "description": "",
+   "units": "",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "MO",
+   "instance": 208,
+   "name": "Bus command timer",
+   "description": "HMI vs fieldbus access; Set must be resent within 5 min",
+   "units": "",
+   "access": "W",
+   "states": "1=-, 2=Off, 3=Set, 4=Active, 5=Reset, 6=Manual"
+  },
+  {
+   "type": "BO",
+   "instance": 224,
+   "name": "Drives on/off",
+   "description": "Automatic operation and all pumps on/off",
+   "units": "",
+   "access": "W",
+   "states": ""
+  },
+  {
+   "type": "AO",
+   "instance": 240,
+   "name": "Pump 1 hand RPM",
+   "description": "",
+   "units": "%",
+   "access": "W",
+   "states": ""
+  },
+  {
+   "type": "AO",
+   "instance": 256,
+   "name": "Pump 2 hand RPM",
+   "description": "",
+   "units": "%",
+   "access": "W",
+   "states": ""
+  },
+  {
+   "type": "AO",
+   "instance": 272,
+   "name": "Pump 3 hand RPM",
+   "description": "",
+   "units": "%",
+   "access": "W",
+   "states": ""
+  },
+  {
+   "type": "AO",
+   "instance": 288,
+   "name": "Pump 4 hand RPM",
+   "description": "",
+   "units": "%",
+   "access": "W",
+   "states": ""
+  },
+  {
+   "type": "MI",
+   "instance": 384,
+   "name": "Control mode",
+   "description": "Active control mode",
+   "units": "",
+   "access": "R",
+   "states": "1=p-c, 2=dp-c, 3=dp-v, 4=dT-c, 6=n(TV), 7=n(TR), 10=n-c"
+  },
+  {
+   "type": "AI",
+   "instance": 400,
+   "name": "Current value",
+   "description": "Measured value; unit follows the control mode",
+   "units": "bar / m / K / °C",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "AO",
+   "instance": 416,
+   "name": "Active setpoint value",
+   "description": "Active setpoint; read-only on SCe NWB",
+   "units": "bar / m / K / °C",
+   "access": "W",
+   "states": ""
+  },
+  {
+   "type": "AI",
+   "instance": 432,
+   "name": "Number of pumps",
+   "description": "",
+   "units": "",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "AI",
+   "instance": 448,
+   "name": "Maximum active pumps",
+   "description": "",
+   "units": "",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "BI",
+   "instance": 512,
+   "name": "Pump 1 state (Auto)",
+   "description": "",
+   "units": "",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "BI",
+   "instance": 513,
+   "name": "Pump 1 state (Manu)",
+   "description": "",
+   "units": "",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "BI",
+   "instance": 514,
+   "name": "Pump 1 state (Disabled)",
+   "description": "",
+   "units": "",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "BI",
+   "instance": 515,
+   "name": "Pump 1 state (Running)",
+   "description": "",
+   "units": "",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "BI",
+   "instance": 517,
+   "name": "Pump 1 state (Error)",
+   "description": "",
+   "units": "",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "BI",
+   "instance": 528,
+   "name": "Pump 2 state (Auto)",
+   "description": "",
+   "units": "",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "BI",
+   "instance": 529,
+   "name": "Pump 2 state (Manu)",
+   "description": "",
+   "units": "",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "BI",
+   "instance": 530,
+   "name": "Pump 2 state (Disabled)",
+   "description": "",
+   "units": "",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "BI",
+   "instance": 531,
+   "name": "Pump 2 state (Running)",
+   "description": "",
+   "units": "",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "BI",
+   "instance": 533,
+   "name": "Pump 2 state (Error)",
+   "description": "",
+   "units": "",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "BI",
+   "instance": 544,
+   "name": "Pump 3 state (Auto)",
+   "description": "",
+   "units": "",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "BI",
+   "instance": 545,
+   "name": "Pump 3 state (Manu)",
+   "description": "",
+   "units": "",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "BI",
+   "instance": 546,
+   "name": "Pump 3 state (Disabled)",
+   "description": "",
+   "units": "",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "BI",
+   "instance": 547,
+   "name": "Pump 3 state (Running)",
+   "description": "",
+   "units": "",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "BI",
+   "instance": 549,
+   "name": "Pump 3 state (Error)",
+   "description": "",
+   "units": "",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "BI",
+   "instance": 560,
+   "name": "Pump 4 state (Auto)",
+   "description": "",
+   "units": "",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "BI",
+   "instance": 561,
+   "name": "Pump 4 state (Manu)",
+   "description": "",
+   "units": "",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "BI",
+   "instance": 562,
+   "name": "Pump 4 state (Disabled)",
+   "description": "",
+   "units": "",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "BI",
+   "instance": 563,
+   "name": "Pump 4 state (Running)",
+   "description": "",
+   "units": "",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "BI",
+   "instance": 565,
+   "name": "Pump 4 state (Error)",
+   "description": "",
+   "units": "",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "MO",
+   "instance": 640,
+   "name": "Pump 1 mode",
+   "description": "",
+   "units": "",
+   "access": "W",
+   "states": "1=Off, 2=Hand, 3=Auto"
+  },
+  {
+   "type": "MO",
+   "instance": 656,
+   "name": "Pump 2 mode",
+   "description": "",
+   "units": "",
+   "access": "W",
+   "states": "1=Off, 2=Hand, 3=Auto"
+  },
+  {
+   "type": "MO",
+   "instance": 672,
+   "name": "Pump 3 mode",
+   "description": "",
+   "units": "",
+   "access": "W",
+   "states": "1=Off, 2=Hand, 3=Auto"
+  },
+  {
+   "type": "MO",
+   "instance": 688,
+   "name": "Pump 4 mode",
+   "description": "",
+   "units": "",
+   "access": "W",
+   "states": "1=Off, 2=Hand, 3=Auto"
+  },
+  {
+   "type": "AI",
+   "instance": 784,
+   "name": "Pump 1 actual speed",
+   "description": "",
+   "units": "%",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "AI",
+   "instance": 800,
+   "name": "Pump 2 actual speed",
+   "description": "",
+   "units": "%",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "AI",
+   "instance": 816,
+   "name": "Pump 3 actual speed",
+   "description": "",
+   "units": "%",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "AI",
+   "instance": 832,
+   "name": "Pump 4 actual speed",
+   "description": "",
+   "units": "%",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "AI",
+   "instance": 912,
+   "name": "Temperature feed",
+   "description": "",
+   "units": "°C",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "AI",
+   "instance": 928,
+   "name": "Temperature return",
+   "description": "",
+   "units": "°C",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "BI",
+   "instance": 976,
+   "name": "Switch box state (SBM)",
+   "description": "Collective run signal",
+   "units": "",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "BI",
+   "instance": 977,
+   "name": "Switch box state (SSM)",
+   "description": "Collective fault signal",
+   "units": "",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "BI",
+   "instance": 978,
+   "name": "Switch box state (External off)",
+   "description": "",
+   "units": "",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "BI",
+   "instance": 979,
+   "name": "Switch box state (Setpoint 2)",
+   "description": "",
+   "units": "",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "BI",
+   "instance": 980,
+   "name": "Switch box state (External setpoint)",
+   "description": "",
+   "units": "",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "BI",
+   "instance": 981,
+   "name": "Switch box state (SBM output (0:Run / 1:Ready))",
+   "description": "",
+   "units": "",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "BI",
+   "instance": 982,
+   "name": "Switch box state (SSM output (0:Fall / 1: Raise))",
+   "description": "",
+   "units": "",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "AO",
+   "instance": 1072,
+   "name": "Set point 1",
+   "description": "First setpoint",
+   "units": "bar / m / K / °C",
+   "access": "W",
+   "states": ""
+  },
+  {
+   "type": "AO",
+   "instance": 1088,
+   "name": "Set point 2",
+   "description": "Second setpoint",
+   "units": "bar / m / K / °C",
+   "access": "W",
+   "states": ""
+  },
+  {
+   "type": "AO",
+   "instance": 1104,
+   "name": "Set point 3",
+   "description": "",
+   "units": "",
+   "access": "W",
+   "states": ""
+  },
+  {
+   "type": "AO",
+   "instance": 1120,
+   "name": "Set point 1 Hmin for dp-v",
+   "description": "",
+   "units": "m",
+   "access": "W",
+   "states": ""
+  },
+  {
+   "type": "AO",
+   "instance": 1136,
+   "name": "Set point 2 Hmin for dp-v",
+   "description": "",
+   "units": "m",
+   "access": "W",
+   "states": ""
+  },
+  {
+   "type": "MI",
+   "instance": 1168,
+   "name": "Application",
+   "description": "Application the switch box runs",
+   "units": "",
+   "access": "R",
+   "states": "1=Booster, 2=HVAC, 3=WP, 4=Lift, 5=FFS-Diesel, 6=FFS-Electro, 7=FLA, 8=Clean, 9=Rain"
+  },
+  {
+   "type": "AI",
+   "instance": 1184,
+   "name": "External set point value",
+   "description": "",
+   "units": "bar / m / K / °C",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "BO",
+   "instance": 1200,
+   "name": "External set point on/off",
+   "description": "Enable or disable the external setpoint",
+   "units": "",
+   "access": "W",
+   "states": ""
+  },
+  {
+   "type": "AI",
+   "instance": 1216,
+   "name": "Switch box cycles",
+   "description": "",
+   "units": "",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "AI",
+   "instance": 1248,
+   "name": "Switch box total running hours",
+   "description": "",
+   "units": "h",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "AI",
+   "instance": 1280,
+   "name": "Pump 1 switch cycles",
+   "description": "",
+   "units": "",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "AI",
+   "instance": 1312,
+   "name": "Pump 2 switch cycles",
+   "description": "",
+   "units": "",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "AI",
+   "instance": 1344,
+   "name": "Pump 3 switch cycles",
+   "description": "",
+   "units": "",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "AI",
+   "instance": 1376,
+   "name": "Pump 4 switch cycles",
+   "description": "",
+   "units": "",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "AI",
+   "instance": 1536,
+   "name": "Pump 1 total running hours",
+   "description": "",
+   "units": "h",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "AI",
+   "instance": 1568,
+   "name": "Pump 2 total running hours",
+   "description": "",
+   "units": "h",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "AI",
+   "instance": 1600,
+   "name": "Pump 3 total running hours",
+   "description": "",
+   "units": "h",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "AI",
+   "instance": 1632,
+   "name": "Pump 4 total running hours",
+   "description": "",
+   "units": "h",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "BI",
+   "instance": 1965,
+   "name": "Error state (Sensor error)",
+   "description": "",
+   "units": "",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "BI",
+   "instance": 1966,
+   "name": "Error state (Pressure maximum)",
+   "description": "",
+   "units": "",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "BI",
+   "instance": 1967,
+   "name": "Error state (Pressure minimum)",
+   "description": "",
+   "units": "",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "BI",
+   "instance": 1969,
+   "name": "Error state (TLS)",
+   "description": "",
+   "units": "",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "BI",
+   "instance": 1970,
+   "name": "Error state (Pump 1 Alarm)",
+   "description": "",
+   "units": "",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "BI",
+   "instance": 1971,
+   "name": "Error state (Pump 2 Alarm)",
+   "description": "",
+   "units": "",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "BI",
+   "instance": 1972,
+   "name": "Error state (Pump 3 Alarm)",
+   "description": "",
+   "units": "",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "BI",
+   "instance": 1973,
+   "name": "Error state (Pump 4 Alarm)",
+   "description": "",
+   "units": "",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "BI",
+   "instance": 1978,
+   "name": "Error state (Frost)",
+   "description": "",
+   "units": "",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "BI",
+   "instance": 1991,
+   "name": "Error state (E43.0 External signal)",
+   "description": "",
+   "units": "",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "BO",
+   "instance": 1985,
+   "name": "Acknowledge",
+   "description": "Write to acknowledge an alarm",
+   "units": "",
+   "access": "W",
+   "states": ""
+  },
+  {
+   "type": "AO",
+   "instance": 1990,
+   "name": "Alarm history index",
+   "description": "Select an alarm history entry (SC: 0-15)",
+   "units": "",
+   "access": "W",
+   "states": ""
+  },
+  {
+   "type": "AI",
+   "instance": 1995,
+   "name": "Alarm history error code",
+   "description": "Error code of the selected history entry",
+   "units": "",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "AO",
+   "instance": 2011,
+   "name": "Alarm histogram index",
+   "description": "",
+   "units": "",
+   "access": "W",
+   "states": ""
+  },
+  {
+   "type": "AI",
+   "instance": 2012,
+   "name": "Alarm histogram error code",
+   "description": "",
+   "units": "",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "AI",
+   "instance": 2013,
+   "name": "Alarm histogram error count",
+   "description": "",
+   "units": "",
+   "access": "R",
+   "states": ""
+  }
+ ],
+ "page": "https://easybacnet.com/bacnet-points-lists/wilo/sce-hvac-bacnet",
+ "note": "Re-typed from the manufacturer's public documentation (see source). Point availability varies by firmware and options; verify against the live device.",
+ "disclaimer": "DISCLAIMER: reference only, provided AS IS with no warranty. Re-typed by hand from public documents; may contain errors or be out of date. You must verify every point against the manufacturer's current documentation and the live device before use. easybacnet.com accepts no liability for its use and is not affiliated with the manufacturer. Terms: https://easybacnet.com/terms#content"
+}

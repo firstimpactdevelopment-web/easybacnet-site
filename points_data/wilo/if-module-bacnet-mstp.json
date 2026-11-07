@@ -1,0 +1,615 @@
+{
+  "manufacturer": "Wilo",
+  "manufacturer_slug": "wilo",
+  "model": "IF-Module BACnet / IF-Module BACnet Stratos (BACnet MS/TP)",
+  "model_slug": "if-module-bacnet-mstp",
+  "aliases": [
+    "IF-Modul BACnet",
+    "IF-Modul BACnet Stratos",
+    "2097811",
+    "2097810",
+    "Wilo IF-Module BACnet"
+  ],
+  "equipment_type": "Pump (circulator BACnet MS/TP interface module)",
+  "applies_to": "Wilo IF-Module BACnet (2097811, glanded pumps such as IL-E/IP-E/DL-E/BL-E and MVIE/MHIE) and IF-Module BACnet Stratos (2097810, Stratos/Stratos-D/-Z), the plug-in modules that put older Wilo electronic pumps on BACnet MS/TP.",
+  "summary": "The IF-Module BACnet plugs into older Wilo electronic pumps and makes the pump a BACnet MS/TP device (master from module software 2.00, slave if the MAC address is 128 or higher). Wilo's functional description gives one fixed object list of 57 objects: pump measurements, the bus setpoint and control-mode command, on/off and override commands, status bits, and the error and bus-command-timer objects. Each object is marked with the pump families that support it.",
+  "bacnet_transport": [
+    "BACnet MS/TP"
+  ],
+  "firmware": "IF-Module BACnet 1.11 or later (some objects 2.00 or later)",
+  "default_device_instance": null,
+  "access_inferred": false,
+  "notes": [
+    "Taken from the BACnet object descriptions (section 6.2) in Wilo's IF-Module functional description; object type comes from the section heading (Analog Inputs, Analog Outputs, Binary Inputs, Binary Outputs, Multistate Inputs, Multistate Outputs).",
+    "Wilo marks each object with the pump families that support it (Stratos, IL-E family, MVIE family). Where an object is not supported by all three, the description names the families; 'Provided by the module' means the IF-Module itself supplies it.",
+    "Access: inputs (AI, BI, MI) are read-only; outputs (AO, BO, MO) are commandable, each printed with a relinquish default.",
+    "Multistate state texts list only the first word of each state; several states are marked reserved or valid only for some pump families."
+  ],
+  "integration": {
+    "summary": "Write BO 0 Bus Command Pump on and AO 0 Bus Setpoint, choose the control mode with MO 0, and keep the Bus Command Timer (MO 1) active so the pump stays under bus control. Read BI 10 Pump is operating, speed, power and the warning/error status bits, with MI 1 for the current error code.",
+    "minimum_points": [
+      {
+        "ref": "BO 0",
+        "name": "Bus Command Pump on",
+        "why": "Pump on/off command"
+      },
+      {
+        "ref": "MO 0",
+        "name": "Bus Control Mode",
+        "why": "Control mode command"
+      },
+      {
+        "ref": "AO 0",
+        "name": "Bus Setpoint",
+        "why": "Setpoint / duty point, %"
+      },
+      {
+        "ref": "MO 1",
+        "name": "Bus Command Timer",
+        "why": "Write SET (2) before each timeout to keep bus control"
+      },
+      {
+        "ref": "BI 10",
+        "name": "Status Pump is operating",
+        "why": "Pump running"
+      },
+      {
+        "ref": "AI 1",
+        "name": "Speed",
+        "why": "Pump speed, 1/min"
+      },
+      {
+        "ref": "AI 4",
+        "name": "Power Rating",
+        "why": "Power, W"
+      },
+      {
+        "ref": "BI 12",
+        "name": "Status Warning Present",
+        "why": "Warning present"
+      },
+      {
+        "ref": "BI 13",
+        "name": "Status Error Present",
+        "why": "Error present"
+      },
+      {
+        "ref": "MI 1",
+        "name": "Current Warning/Error Message",
+        "why": "Current warning/error code"
+      }
+    ],
+    "enable": "MO 1 Bus Command Timer decides who controls the pump: MANUAL (the relinquish default) lets the pump menu and the bus both write, last write wins; SET locks the local menu for the timeout; OFF blocks local operation permanently. Commands then follow a fixed priority: Ext. off input at the pump, Override off, Override max, Override min, Override on.",
+    "heartbeat": "With MO 1 = SET the BMS must write SET again before the Bus Command Timer timeout (AO 8, default 300 s, module SW 2.00+). When it lapses the state goes to RESET: local operation is possible again and bus writes are blocked. Use SET_PRESET instead to load the preset values (AO 100, BO 100, MO 100, MO 101) on bus failure. MI 2 shows the timer state.",
+    "remote_sensors": null,
+    "setup": [
+      "The module is MS/TP master from module software 2.00; a MAC address of 128 or higher makes it an MS/TP slave. Baud rates 9600-115200.",
+      "The device instance is set with the pump menu parameters C, E and F (instance split as hex digits, per the IF-Module manual)."
+    ],
+    "gotchas": [
+      "Some commandable outputs use a floating default: the module writes it virtually at priority 16, so relinquishing all priorities does not always return the static relinquish default.",
+      "At double pumps fit the IF-Module in the master pump and use the integrated double-pump management."
+    ]
+  },
+  "source": {
+    "title": "WILO BACnet - IF-Module functional description (BACnet objects, section 6.2)",
+    "doc_number": "wilo173472",
+    "revision_date": null,
+    "url": "https://cms.media.wilo.com/cdndoc/wilo173472/3657298/wilo173472.html"
+  },
+  "points": [
+    {
+      "type": "AI",
+      "instance": 0,
+      "name": "System Effective Capacity",
+      "description": "Relative duty point of the device",
+      "units": "%",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AI",
+      "instance": 1,
+      "name": "Speed",
+      "description": "Rotational speed of the pump",
+      "units": "1/min",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AI",
+      "instance": 2,
+      "name": "Estimated Flow",
+      "description": "(calculated) flow; Pumps: Stratos, IL-E family",
+      "units": "m³/h",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AI",
+      "instance": 3,
+      "name": "(Estimated) Pressure",
+      "description": "Current pressure at the pump system",
+      "units": "bar",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AI",
+      "instance": 4,
+      "name": "Power Rating",
+      "description": "Current electrical input power",
+      "units": "W",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AI",
+      "instance": 5,
+      "name": "Medium Temperature",
+      "description": "Measurement value of the fluid temperature sensor; Pumps: Stratos",
+      "units": "°C",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AI",
+      "instance": 6,
+      "name": "Operation Time",
+      "description": "Total time where the device was running (motor turning)",
+      "units": "min",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AI",
+      "instance": 7,
+      "name": "Consumption (System)",
+      "description": "Total consumed electrical energy",
+      "units": "kWh",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AI",
+      "instance": 8,
+      "name": "Speed min-pres-value",
+      "description": "Rotational speed of the pump",
+      "units": "1/min",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AI",
+      "instance": 9,
+      "name": "Speed max-pres-value",
+      "description": "Rotational speed of the pump",
+      "units": "1/min",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AI",
+      "instance": 10,
+      "name": "Min Pressure dp-v",
+      "description": "Minimum possible pressure setpoint in the operation mode Δ p-v; Pumps: Stratos, IL-E family",
+      "units": "bar",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AI",
+      "instance": 11,
+      "name": "Max Pressure dp-v",
+      "description": "Maximum possible pressure setpoint for the operation mode Δ p-v; Pumps: Stratos, IL-E family",
+      "units": "bar",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AI",
+      "instance": 12,
+      "name": "Flow (estimated) max-pres-value",
+      "description": "(calculated) flow; Pumps: Stratos, IL-E family",
+      "units": "m³/h",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AI",
+      "instance": 13,
+      "name": "Min Pressure dp-c",
+      "description": "Minimum possible pressure setpoint in the operation mode Δ p-c",
+      "units": "bar",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AI",
+      "instance": 14,
+      "name": "Max Pressure dp-c",
+      "description": "Maximum possible pressure setpointfor the operation mode Δ p-c",
+      "units": "bar",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AI",
+      "instance": 15,
+      "name": "power input max-pres-value",
+      "description": "Current electrical input power",
+      "units": "W",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AO",
+      "instance": 0,
+      "name": "Bus Setpoint",
+      "description": "Relative duty point of the device",
+      "units": "%",
+      "access": "C",
+      "states": ""
+    },
+    {
+      "type": "AO",
+      "instance": 1,
+      "name": "TEMP_VARIABLE Tmin",
+      "description": "Lower temperature limit for temperature dependent pressure control; Pumps: Stratos",
+      "units": "°C",
+      "access": "C",
+      "states": ""
+    },
+    {
+      "type": "AO",
+      "instance": 2,
+      "name": "TEMP_VARIABLE Tmax",
+      "description": "Upper limit for temperature dependent pressure head control; Pumps: Stratos",
+      "units": "°C",
+      "access": "C",
+      "states": ""
+    },
+    {
+      "type": "AO",
+      "instance": 3,
+      "name": "TEMP_VARIABLE Pmin",
+      "description": "Belongs to the operation mode Δp-c = f(T); Pumps: Stratos",
+      "units": "bar",
+      "access": "C",
+      "states": ""
+    },
+    {
+      "type": "AO",
+      "instance": 4,
+      "name": "TEMP_VARIABLE Pmax",
+      "description": "Belongs to the operation mode Δp-c = f(T); Pumps: Stratos",
+      "units": "bar",
+      "access": "C",
+      "states": ""
+    },
+    {
+      "type": "AO",
+      "instance": 5,
+      "name": "CONST_CONTROL Kp",
+      "description": "Kp controls the gain of the PID closed loop controller; Pumps: IL-E family, MVIE family",
+      "units": "",
+      "access": "C",
+      "states": ""
+    },
+    {
+      "type": "AO",
+      "instance": 6,
+      "name": "CONST_CONTROL Ti",
+      "description": "Ti represent the integral time for the PID closed loop controller; Pumps: IL-E family, MVIE family",
+      "units": "s",
+      "access": "C",
+      "states": ""
+    },
+    {
+      "type": "AO",
+      "instance": 7,
+      "name": "CONST_CONTROL Td",
+      "description": "Derivative time for the PID closed loop controller; Pumps: IL-E family, MVIE family",
+      "units": "s",
+      "access": "C",
+      "states": ""
+    },
+    {
+      "type": "AO",
+      "instance": 8,
+      "name": "Bus Command Timer Timeout",
+      "description": "Timeout for the Bus Command Timer; Provided by the module; module SW 2.00+",
+      "units": "s",
+      "access": "C",
+      "states": ""
+    },
+    {
+      "type": "AO",
+      "instance": 100,
+      "name": "duty point (rel.) preset",
+      "description": "Preset (fallback) value; module SW 2.00+",
+      "units": "%",
+      "access": "C",
+      "states": ""
+    },
+    {
+      "type": "BI",
+      "instance": 0,
+      "name": "System Command Pump on",
+      "description": "Active on command (system)",
+      "units": "",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "BI",
+      "instance": 1,
+      "name": "System Command off override",
+      "description": "Overrides the pump (system) command with \"OFF\" command",
+      "units": "",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "BI",
+      "instance": 2,
+      "name": "System Command max override",
+      "description": "Overrides the pump (system) command with \"MAX\" command",
+      "units": "",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "BI",
+      "instance": 3,
+      "name": "System Command min override",
+      "description": "Overrides the pump (system) command with \"MIN\" command",
+      "units": "",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "BI",
+      "instance": 4,
+      "name": "Status Lower Regulation Limit",
+      "description": "Shows the control output for the pump speed is at it´s low limit",
+      "units": "",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "BI",
+      "instance": 5,
+      "name": "Status Upper Regulation Limit",
+      "description": "Shows the control output for the pump speed is as it´s high limit",
+      "units": "",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "BI",
+      "instance": 6,
+      "name": "Status Setpoint out of Range",
+      "description": "Shows the setpoint is out of the possible range",
+      "units": "",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "BI",
+      "instance": 7,
+      "name": "Status Setpoint Diff. > 10 %",
+      "description": "Shows the setpoint is not reached",
+      "units": "",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "BI",
+      "instance": 8,
+      "name": "Auto Night Mode",
+      "description": "Automatic setback mode; Pumps: Stratos",
+      "units": "",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "BI",
+      "instance": 9,
+      "name": "Status Ready for Operation",
+      "description": "Motor ready to run on a valid start command",
+      "units": "",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "BI",
+      "instance": 10,
+      "name": "Status Pump is operating",
+      "description": "Pump is running",
+      "units": "",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "BI",
+      "instance": 11,
+      "name": "Status Service required",
+      "description": "Service required",
+      "units": "",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "BI",
+      "instance": 12,
+      "name": "Status Warning Present",
+      "description": "Warning present",
+      "units": "",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "BI",
+      "instance": 13,
+      "name": "Status Error Present",
+      "description": "Error present",
+      "units": "",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "BI",
+      "instance": 14,
+      "name": "Status Final Error Present",
+      "description": "Final (latched) error present",
+      "units": "",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "BI",
+      "instance": 15,
+      "name": "Status Local Operation Active",
+      "description": "Local operation overrides bus control",
+      "units": "",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "BI",
+      "instance": 16,
+      "name": "Status External Setpoint Active",
+      "description": "Setpoint comes from another source",
+      "units": "",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "BO",
+      "instance": 0,
+      "name": "Bus Command Pump on",
+      "description": "Normal on command",
+      "units": "",
+      "access": "C",
+      "states": ""
+    },
+    {
+      "type": "BO",
+      "instance": 1,
+      "name": "Bus Command off override",
+      "description": "Overrides the pump (system) command with \"OFF\" command",
+      "units": "",
+      "access": "C",
+      "states": ""
+    },
+    {
+      "type": "BO",
+      "instance": 2,
+      "name": "Bus Command max override",
+      "description": "Overrides the pump (system) command with \"MAX\" command",
+      "units": "",
+      "access": "C",
+      "states": ""
+    },
+    {
+      "type": "BO",
+      "instance": 3,
+      "name": "Bus Command min override",
+      "description": "Overrides the pump (system) command with \"MIN\" command",
+      "units": "",
+      "access": "C",
+      "states": ""
+    },
+    {
+      "type": "BO",
+      "instance": 100,
+      "name": "Preset Command Pump on preset",
+      "description": "Preset (fallback) value; module SW 2.00+",
+      "units": "",
+      "access": "C",
+      "states": ""
+    },
+    {
+      "type": "MI",
+      "instance": 0,
+      "name": "System Control Mode",
+      "description": "Control mode for the device",
+      "units": "",
+      "access": "R",
+      "states": "1=Gen_Spd, 2=CONST_FREQ, 3=CONST_POWER, 4=CONST_HEAD, 5=CONST_PRESSURE, 6=Gen_PHdConst, 7=Gen_PHdVar, 8=CONST_FLOW, 9=Gen_T, 10=Gen_TDiff, 11=CONST_LEV, 12=TEMP_VARIABLE, 13=Gen_UsrDfd, 14=VAR_PRESSURE, 15=INVALID, 16=HeatRadiator_PHd, 17=HeatRadiator_DA, 18=HeatRadiator_T, 19=HeatFloor_PHd, 20=HeatFloor_DA, 21=HeatFloor_T, 22=HeatCeiling_PHd, 23=HeatCeiling_DA, 24=HeatCeiling_T, 25=HeatFan_PHd, 26=HeatFan_DA, 27=HeatFan_T, 28=HeatB._T, 29=HeatB._TDiff, 30=HeatB._Acc.Flow, 31=HeatE._T, 32=HeatE._TDiff, 33=HeatE._Acc.Flow, 34=Heat_PHdConst, 35=Heat_PHdVar, 36=Heat_PHdExt, 37=Heat_DA, 38=Heat_VolFlow, 39=Heat_Acc.Flow, 40=Heat_T, 41=Heat_TDiff, 42=Heat_Spd, 43=CoolCeiling_PHd, 44=CoolCeiling_DA, 45=CoolCeiling_T, 46=CoolFloor_PHd, 47=CoolFloor_DA, 48=CoolFloor_T, 49=CoolFan_PHd, 50=CoolFan_DA, 51=CoolFan_T, 52=CoolB._T, 53=CoolB._TDiff, 54=CoolB._Acc.Flow, 55=CoolE._T, 56=CoolE._TDiff, 57=CoolE._Acc.Flow, 58=Cool_PHdConst, 59=Cool_PHdVar, 60=Cool_PHdExt, 61=Cool_DA, 62=Cool_VolFlow, 63=Cool_Acc.Flow, 64=Cool_T, 65=Cool_TDiff, 66=Cool_Spd, 67=San_Circ._T, 68=SanW.Heat._TDiff, 69=SanL.S._T, 70=SanL.S._Acc.Flow, 71=San_PHdConst, 72=San_PHdVar, 73=San_PHdExternal, 74=San_VolFlow, 75=San_Acc.Flow, 76=San_T, 77=San_TDiff, 78=San_Spd, 79=Gen_PHdExt, 80=Gen_DA, 81=Gen_VolFlow, 82=Gen_Acc.Flow, 83=ScndPHdConst, 84=ScndPHdVar, 85=ScndFlow, 86=ScndSpd"
+    },
+    {
+      "type": "MI",
+      "instance": 1,
+      "name": "Current Warning/Error Message",
+      "description": "Current warning or error code",
+      "units": "",
+      "access": "R",
+      "states": "1=NO_ERROR, 2=FLUID_FLOW_HI, 3=FLUID_TEMP_LO, 4=FLUID_TEMP_HI, 5=MAINS_VOLT_LO, 6=MAINS_VOLT_HI, 7=MAINS_PHASE, 8=PUMP_GENERATOR, 9=PUMP_CAVITATION, 10=PUMP_TURBINE, 11=PUMP_BLOCKED, 12=PUMP_DRY_RUN, 13=PUMP_ROUGH_IMP, 14=PUMP_CLOGGED, 15=PUMP_LEAK_INT, 16=PUMP_VIBRATION, 17=PUMP_ROT_DIR, 18=PUMP_LEAK_EXT, 19=PUMP_SEAL, 20=FLUID_FLOW_LOW, 21=MOT_TEMP_HI, 22=MOT_TORQUE_HI, 23=MOT_INSULATION, 24=MOT_SHORT_CIRC, 25=MOT_CURR_LO, 26=MOT_OPEN_CIRC, 27=MOT_TEMP_SENS, 28=MOT_SPEED_SENS, 29=MOT_BEARING, 30=MOT_TEMP_WARN, 31=MOD_TEMP_HI, 32=MOD_TEMP_COMP_HI, 33=MOD_VOLT_DC_LO, 34=MOD_VOLT_DC_HI, 35=E034, 36=E035, 37=MOD_RELAY, 38=MOD_DC_LINK, 39=MOD_SENS_FLUID, 40=E039, 41=SENS_PRESS, 42=SENS_ACC, 43=SENS_IN1, 44=SENS_IN2, 45=SENS_SPEED, 46=SENS_TEMP_1, 47=SENS_TEMP_2, 48=SENS_TEMP_3, 49=E048, 50=E049, 51=COM_BMS, 52=COM_DP, 53=COM_DP_TIMEOUT, 54=COM_CAN_ADR, 55=COM_CAN_BIND, 56=COM_VFD, 57=E056, 58=E057, 59=E058, 60=E059, 61=SYS_PRESS_HI, 62=SYS_PRESS_LO, 63=SYS_FLUID_LO, 64=SYS_FLUID_LEAK, 65=SYS_FLUID_FROST, 66=SYS_FLUID_DRAIN, 67=SYS_FLUID_FLOOD, 68=SYS_OVD_FLUID_D, 69=SYS_OVD_OFF, 70=E069, 71=E070, 72=E071, 73=E072, 74=E073, 75=E074, 76=E075, 77=E076, 78=E077, 79=E078, 80=E079, 81=PUMP_FAULT, 82=E081, 83=E082, 84=E083, 85=E084, 86=E085, 87=E086, 88=E087, 89=E088, 90=MOT_MOD_FAULT, 91=E090, 92=E091, 93=E092, 94=E093, 95=E094, 96=E095, 97=E096, 98=E097, 99=E098, 100=E099, 101=CTRL_BATT, 102=PAN_TEMP_HI, 103=PAN_TEMP_LO, 104=PAN_FAN_INT, 105=MOT_FAN_EXT, 106=CTRL_SHORT_CIRC, 107=CTRL_OPEN_LOOP, 108=CTRL_ELEC_FAULT, 109=E108, 110=CTRL_EXT_FAULT, 111=E110, 112=E111, 113=E112, 114=E113, 115=E114, 116=E115, 117=E116, 118=E117, 119=E118, 120=MOT_TURBINE, 121=E120, 122=E121, 123=E122, 124=E123, 125=E124, 126=E125, 127=E126, 128=E127, 129=E128, 130=E129, 131=ENG_FUEL, 132=ENG_PREHEAT, 133=ENG_PRESS_OIL_LO, 134=ENG_TEMP_HI, 135=E134, 136=E135, 137=E136, 138=ENG_DRIVE_BELT, 139=ENG_FLUID_LO, 140=E139, 141=E140, 142=E141, 143=E142, 144=E143, 145=E144, 146=E145, 147=E146, 148=E147, 149=E148, 150=E149, 151=E150, 152=E151, 153=E152, 154=E153, 155=E154, 156=E155, 157=E156, 158=E157, 159=E158, 160=E159, 161=E160, 162=E161, 163=E162, 164=E163, 165=E164, 166=E165, 167=E166, 168=E167, 169=E168, 170=E169, 171=E170, 172=E171, 173=E172, 174=E173, 175=E174, 176=E175, 177=E176, 178=E177, 179=E178, 180=E179, 181=E180, 182=E181, 183=E182, 184=E183, 185=E184, 186=E185, 187=E186, 188=E187, 189=E188, 190=E189, 191=E190, 192=E191, 193=E192, 194=E193, 195=E194, 196=E195, 197=E196, 198=E197, 199=E198, 200=E199, 201=SIM_A, 202=SIM_B, 203=SIM_C, 204=SIM_D, 205=SIM_E, 206=SIM_F, 207=E206, 208=E207, 209=E208, 210=E209, 211=E210, 212=E211, 213=E212, 214=E213, 215=E214, 216=E215, 217=E216, 218=E217, 219=E218, 220=E219, 221=E220, 222=E221, 223=E222, 224=E223, 225=E224, 226=E225, 227=E226, 228=E227, 229=E228, 230=E229, 231=E230, 232=E231, 233=E232, 234=E233, 235=E234, 236=E235, 237=E236, 238=E237, 239=E238, 240=E239, 241=E240, 242=E241, 243=E242, 244=E243, 245=E244, 246=E245, 247=E246, 248=E247, 249=E248, 250=E249, 251=E250, 252=E251, 253=E252, 254=EXTENDED, 255=UNDEFINED, 256=INVALID"
+    },
+    {
+      "type": "MI",
+      "instance": 2,
+      "name": "System Command Timer",
+      "description": "Bus command timer state; Provided by the module",
+      "units": "",
+      "access": "R",
+      "states": "1=OFF, 2=SET, 3=ACTIVE, 4=RESET, 5=MANUAL, 6=SET_PRESET, 7=ACTIVE_PRESET, 8=RESET_PRESET, 9=MANUAL_PRESET, 10=INVALID"
+    },
+    {
+      "type": "MO",
+      "instance": 0,
+      "name": "Bus Control Mode",
+      "description": "Control mode for the device",
+      "units": "",
+      "access": "C",
+      "states": "1=Gen_Spd, 2=CONST_FREQ, 3=CONST_POWER, 4=CONST_HEAD, 5=CONST_PRESSURE, 6=Gen_PHdConst, 7=Gen_PHdVar, 8=CONST_FLOW, 9=Gen_T, 10=Gen_TDiff, 11=CONST_LEV, 12=TEMP_VARIABLE, 13=Gen_UsrDfd, 14=VAR_PRESSURE, 15=INVALID, 16=HeatRadiator_PHd, 17=HeatRadiator_DA, 18=HeatRadiator_T, 19=HeatFloor_PHd, 20=HeatFloor_DA, 21=HeatFloor_T, 22=HeatCeiling_PHd, 23=HeatCeiling_DA, 24=HeatCeiling_T, 25=HeatFan_PHd, 26=HeatFan_DA, 27=HeatFan_T, 28=HeatB._T, 29=HeatB._TDiff, 30=HeatB._Acc.Flow, 31=HeatE._T, 32=HeatE._TDiff, 33=HeatE._Acc.Flow, 34=Heat_PHdConst, 35=Heat_PHdVar, 36=Heat_PHdExt, 37=Heat_DA, 38=Heat_VolFlow, 39=Heat_Acc.Flow, 40=Heat_T, 41=Heat_TDiff, 42=Heat_Spd, 43=CoolCeiling_PHd, 44=CoolCeiling_DA, 45=CoolCeiling_T, 46=CoolFloor_PHd, 47=CoolFloor_DA, 48=CoolFloor_T, 49=CoolFan_PHd, 50=CoolFan_DA, 51=CoolFan_T, 52=CoolB._T, 53=CoolB._TDiff, 54=CoolB._Acc.Flow, 55=CoolE._T, 56=CoolE._TDiff, 57=CoolE._Acc.Flow, 58=Cool_PHdConst, 59=Cool_PHdVar, 60=Cool_PHdExt, 61=Cool_DA, 62=Cool_VolFlow, 63=Cool_Acc.Flow, 64=Cool_T, 65=Cool_TDiff, 66=Cool_Spd, 67=San_Circ._T, 68=SanW.Heat._TDiff, 69=SanL.S._T, 70=SanL.S._Acc.Flow, 71=San_PHdConst, 72=San_PHdVar, 73=San_PHdExternal, 74=San_VolFlow, 75=San_Acc.Flow, 76=San_T, 77=San_TDiff, 78=San_Spd, 79=Gen_PHdExt, 80=Gen_DA, 81=Gen_VolFlow, 82=Gen_Acc.Flow, 83=ScndPHdConst, 84=ScndPHdVar, 85=ScndFlow, 86=ScndSpd"
+    },
+    {
+      "type": "MO",
+      "instance": 1,
+      "name": "Bus Command Timer",
+      "description": "Bus command timer (HMI vs bus control); Provided by the module",
+      "units": "",
+      "access": "C",
+      "states": "1=OFF, 2=SET, 3=ACTIVE, 4=RESET, 5=MANUAL, 6=SET_PRESET, 7=ACTIVE_PRESET, 8=RESET_PRESET, 9=MANUAL_PRESET, 10=INVALID"
+    },
+    {
+      "type": "MO",
+      "instance": 2,
+      "name": "Current W/E Msg. Ackn.",
+      "description": "Acknowledgement of the current warning or error; Provided by the module",
+      "units": "",
+      "access": "C",
+      "states": "1=OFF, 2=ACK, 3=ACKed"
+    },
+    {
+      "type": "MO",
+      "instance": 3,
+      "name": "Setpoint Signal Source",
+      "description": "Source for the setpoint for the current control function; module SW 2.00+",
+      "units": "",
+      "access": "C",
+      "states": "1=IF-Module, 2=0…10 V, 3=2…10 V, 4=0…20 mA, 5=4…20 mA, 6=Internal, 7=EXT 1, 8=EXT 2, 9=INVALID"
+    },
+    {
+      "type": "MO",
+      "instance": 100,
+      "name": "Control Function preset",
+      "description": "Preset (fallback) value; module SW 2.00+",
+      "units": "",
+      "access": "C",
+      "states": "1=Gen_Spd, 2=CONST_FREQ, 3=CONST_POWER, 4=CONST_HEAD, 5=CONST_PRESSURE, 6=Gen_PHdConst, 7=Gen_PHdVar, 8=CONST_FLOW, 9=Gen_T, 10=Gen_TDiff, 11=CONST_LEV, 12=TEMP_VARIABLE, 13=Gen_UsrDfd, 14=VAR_PRESSURE, 15=INVALID, 16=HeatRadiator_PHd, 17=HeatRadiator_DA, 18=HeatRadiator_T, 19=HeatFloor_PHd, 20=HeatFloor_DA, 21=HeatFloor_T, 22=HeatCeiling_PHd, 23=HeatCeiling_DA, 24=HeatCeiling_T, 25=HeatFan_PHd, 26=HeatFan_DA, 27=HeatFan_T, 28=HeatB._T, 29=HeatB._TDiff, 30=HeatB._Acc.Flow, 31=HeatE._T, 32=HeatE._TDiff, 33=HeatE._Acc.Flow, 34=Heat_PHdConst, 35=Heat_PHdVar, 36=Heat_PHdExt, 37=Heat_DA, 38=Heat_VolFlow, 39=Heat_Acc.Flow, 40=Heat_T, 41=Heat_TDiff, 42=Heat_Spd, 43=CoolCeiling_PHd, 44=CoolCeiling_DA, 45=CoolCeiling_T, 46=CoolFloor_PHd, 47=CoolFloor_DA, 48=CoolFloor_T, 49=CoolFan_PHd, 50=CoolFan_DA, 51=CoolFan_T, 52=CoolB._T, 53=CoolB._TDiff, 54=CoolB._Acc.Flow, 55=CoolE._T, 56=CoolE._TDiff, 57=CoolE._Acc.Flow, 58=Cool_PHdConst, 59=Cool_PHdVar, 60=Cool_PHdExt, 61=Cool_DA, 62=Cool_VolFlow, 63=Cool_Acc.Flow, 64=Cool_T, 65=Cool_TDiff, 66=Cool_Spd, 67=San_Circ._T, 68=SanW.Heat._TDiff, 69=SanL.S._T, 70=SanL.S._Acc.Flow, 71=San_PHdConst, 72=San_PHdVar, 73=San_PHdExternal, 74=San_VolFlow, 75=San_Acc.Flow, 76=San_T, 77=San_TDiff, 78=San_Spd, 79=Gen_PHdExt, 80=Gen_DA, 81=Gen_VolFlow, 82=Gen_Acc.Flow, 83=ScndPHdConst, 84=ScndPHdVar, 85=ScndFlow, 86=ScndSpd"
+    },
+    {
+      "type": "MO",
+      "instance": 101,
+      "name": "Setpoint Signal Source preset",
+      "description": "Preset (fallback) value; module SW 2.00+",
+      "units": "",
+      "access": "C",
+      "states": "1=IF-Module, 2=0…10 V, 3=2…10 V, 4=0…20 mA, 5=4…20 mA, 6=Internal, 7=EXT 1, 8=EXT 2, 9=INVALID"
+    }
+  ]
+}

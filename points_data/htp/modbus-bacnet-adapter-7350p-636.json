@@ -1,0 +1,1107 @@
+{
+  "manufacturer": "HTP",
+  "manufacturer_slug": "htp",
+  "model": "MODBUS/BACnet Adapter 7350P-636 (BIC-926/928 boilers and water heaters)",
+  "model_slug": "modbus-bacnet-adapter-7350p-636",
+  "aliases": [
+    "7350P-636",
+    "64980290",
+    "HTP MODBUS/BACnet adapter",
+    "LP-548",
+    "BIC-928",
+    "BIC-926",
+    "EnduroTI",
+    "Elite Premier",
+    "Modcon",
+    "Modcon VWH",
+    "Pioneer",
+    "Versa Flame",
+    "Elite VWH",
+    "Phoenix"
+  ],
+  "equipment_type": "Boiler and water heater BACnet adapter",
+  "applies_to": "HTP boilers and water heaters with BIC-926 or BIC-928 controls (BIC-928: EnduroTI and Elite Premier boilers; BIC-926: Modcon, Modcon VWH, Pioneer and Versa Flame built from July 2011, and Elite, Elite VWH and Phoenix water heaters built from August 2011) fitted with the 7350P-636 MODBUS/BACnet adapter.",
+  "summary": "The HTP 7350P-636 adapter plugs into the appliance's BIC-926/928 control and serves it on BACnet MS/TP (or Modbus RTU). It reports thermostat and safety inputs, pump, gas valve and alarm outputs, outlet, inlet and flue temperatures, firing rates and status/blocking/lockout codes for up to 8 cascaded boilers, and BIC-928 run-hour and fault counters. The BMS writes a configuration word that decides which values it supplies (enable, setpoint or rate, DHW setpoint, outdoor and system temperatures) and then writes those values.",
+  "bacnet_transport": [
+    "BACnet MS/TP"
+  ],
+  "firmware": null,
+  "default_device_instance": null,
+  "access_inferred": true,
+  "notes": [
+    "The manual table gives no object names; names here are the 'Heating Appliance' descriptions. Where the water heater meaning differs it is in the description.",
+    "The manual header gives part # 64980290; HTP sells the adapter as 7350P-636. The source PDF is scanned (image only); this list was keyed from the page images and checked row by row.",
+    "Objects marked BIC-928 only (bold italics in the manual) do not exist on BIC-926 appliances.",
+    "Access is not printed per object: AV and BV (holding registers / coils) are taken as writable, AI and BI as read-only.",
+    "Temperatures are °F with 0.1 resolution; setpoint objects marked * are only valid during a heating cycle. AI 92-96 counts are in units of 5 hours (x5 resolution).",
+    "AV 12 (Pump 5 speed) is referenced in the configuration bits but not printed in the object table."
+  ],
+  "source": {
+    "title": "MODBUS / BACnet Adapter Installation Instructions (Part # 7350P-636)",
+    "doc_number": "LP-548 Rev. 000 Rel. 006",
+    "revision_date": "2023-10-30",
+    "url": "https://htproducts.com/literature/lp-548.pdf"
+  },
+  "integration": {
+    "summary": "Set the adapter for BACnet with its DIP switch, set the address and baud rate in the appliance installer menu, and discover it. Write AV 0 Configuration to say which values the BMS supplies, then write the coils (AV 1) for CH/DHW demand and the setpoint or rate (AV 2) and DHW setpoint (AV 3). Rewrite them at least once a minute, and read outlet temperature, firing rate and the status and lockout codes.",
+    "minimum_points": [
+      {
+        "ref": "AV 0",
+        "name": "Configuration",
+        "why": "Bits: which values the BMS supplies (1 = from BMS)"
+      },
+      {
+        "ref": "AV 1",
+        "name": "Coils",
+        "why": "Demand bits: b0 room thermostat (CH), b4 tank (DHW)"
+      },
+      {
+        "ref": "AV 2",
+        "name": "0-10 volt / rate / setp",
+        "why": "Setpoint or firing-rate command (0-10 V scale)"
+      },
+      {
+        "ref": "AV 3",
+        "name": "DHW setpoint",
+        "why": "DHW setpoint from the BMS"
+      },
+      {
+        "ref": "AI 8",
+        "name": "Outlet Temp. 1",
+        "why": "Outlet temperature"
+      },
+      {
+        "ref": "AI 11",
+        "name": "Firing Rate 1",
+        "why": "Firing rate"
+      },
+      {
+        "ref": "AI 13",
+        "name": "Boil. 1 Status Code",
+        "why": "Status code"
+      },
+      {
+        "ref": "BI 33",
+        "name": "Alarm cont. 1 (EXCEPT Versa Hydro)",
+        "why": "Alarm output"
+      },
+      {
+        "ref": "AI 15",
+        "name": "Boil. 1 Lockout Code",
+        "why": "Lockout code"
+      }
+    ],
+    "enable": "Set configuration bit B0 (boiler enable) or B1 (tank enable) in AV 0, then write the AV 1 Coils bits: b0 room thermostat (CH demand), b4 tank thermostat (DHW demand).",
+    "heartbeat": "A 4-minute communication timer returns the appliance to its own controls if no write arrives; each write resets it. Update temperature values at least once a minute but not more than once a second.",
+    "remote_sensors": "Setting configuration bits B4-B7 makes the appliance use the BMS-written DHW temperature (AV 4), outdoor temperature (AV 5), system supply (AV 6) and system return (AV 7) instead of its own sensors.",
+    "setup": [
+      "DIP switch 10 ON selects BACnet (OFF = Modbus); installer menu parameter 37 MODBUS MODE must be ON or AUTO (factory default OFF).",
+      "The appliance can also run on its own controls with the BMS only reading values (monitoring only)."
+    ],
+    "gotchas": [
+      "While the BMS writes tank temperature and tank enable, the appliance ignores its internal DHW limit.",
+      "A bit set in AV 0 tells the appliance to ignore its own value and wait for the BMS one; leave bits clear for values it should measure itself."
+    ]
+  },
+  "points": [
+    {
+      "type": "BV",
+      "instance": 0,
+      "name": "En / Room Th1 / Stg 1",
+      "description": "",
+      "units": "",
+      "access": "W",
+      "states": "0=Off, 1=On"
+    },
+    {
+      "type": "BV",
+      "instance": 4,
+      "name": "Tank thermostat",
+      "description": "",
+      "units": "",
+      "access": "W",
+      "states": "0=Off, 1=On"
+    },
+    {
+      "type": "BI",
+      "instance": 0,
+      "name": "MHRL",
+      "description": "water heater: High temp safety switch / High flue temp switch",
+      "units": "",
+      "access": "R",
+      "states": "0=Off, 1=On"
+    },
+    {
+      "type": "BI",
+      "instance": 1,
+      "name": "Flow switch",
+      "description": "",
+      "units": "",
+      "access": "R",
+      "states": "0=Off, 1=On"
+    },
+    {
+      "type": "BI",
+      "instance": 2,
+      "name": "Gas Press. Switch",
+      "description": "BIC-928 only",
+      "units": "",
+      "access": "R",
+      "states": "0=Off, 1=On"
+    },
+    {
+      "type": "BI",
+      "instance": 4,
+      "name": "Air Press Switch",
+      "description": "",
+      "units": "",
+      "access": "R",
+      "states": "0=Off, 1=On"
+    },
+    {
+      "type": "BI",
+      "instance": 5,
+      "name": "Blocked drain",
+      "description": "water heater: Blocked vent pressure switch",
+      "units": "",
+      "access": "R",
+      "states": "0=Off, 1=On"
+    },
+    {
+      "type": "BI",
+      "instance": 6,
+      "name": "ARHL",
+      "description": "water heater: High temp safety switch / High flue temp switch",
+      "units": "",
+      "access": "R",
+      "states": "0=Off, 1=On"
+    },
+    {
+      "type": "BI",
+      "instance": 7,
+      "name": "Flame 1",
+      "description": "water heater: Flame rectification probe",
+      "units": "",
+      "access": "R",
+      "states": "0=Off, 1=On"
+    },
+    {
+      "type": "BI",
+      "instance": 8,
+      "name": "Enable / STG1",
+      "description": "",
+      "units": "",
+      "access": "R",
+      "states": "0=Off, 1=On"
+    },
+    {
+      "type": "BI",
+      "instance": 9,
+      "name": "Tank th",
+      "description": "",
+      "units": "",
+      "access": "R",
+      "states": "0=Off, 1=On"
+    },
+    {
+      "type": "BI",
+      "instance": 10,
+      "name": "STG2 / APS",
+      "description": "",
+      "units": "",
+      "access": "R",
+      "states": "0=Off, 1=On"
+    },
+    {
+      "type": "BI",
+      "instance": 32,
+      "name": "Run-time cont. 1",
+      "description": "",
+      "units": "",
+      "access": "R",
+      "states": "0=Off, 1=On"
+    },
+    {
+      "type": "BI",
+      "instance": 33,
+      "name": "Alarm cont. 1 (EXCEPT Versa Hydro)",
+      "description": "water heater: Alarm output",
+      "units": "",
+      "access": "R",
+      "states": "0=Off, 1=On"
+    },
+    {
+      "type": "BI",
+      "instance": 34,
+      "name": "CH pump 1",
+      "description": "",
+      "units": "",
+      "access": "R",
+      "states": "0=Off, 1=On"
+    },
+    {
+      "type": "BI",
+      "instance": 35,
+      "name": "DHW pump 1",
+      "description": "",
+      "units": "",
+      "access": "R",
+      "states": "0=Off, 1=On"
+    },
+    {
+      "type": "BI",
+      "instance": 37,
+      "name": "Gas valve 1",
+      "description": "water heater: Gas valve",
+      "units": "",
+      "access": "R",
+      "states": "0=Off, 1=On"
+    },
+    {
+      "type": "BI",
+      "instance": 38,
+      "name": "Sys pump",
+      "description": "",
+      "units": "",
+      "access": "R",
+      "states": "0=Off, 1=On"
+    },
+    {
+      "type": "BI",
+      "instance": 48,
+      "name": "Boiler 1 Run (same as 11118)",
+      "description": "water heater: Run status",
+      "units": "",
+      "access": "R",
+      "states": "0=Off, 1=On"
+    },
+    {
+      "type": "BI",
+      "instance": 49,
+      "name": "Boiler 2 Run (same as 10023)",
+      "description": "",
+      "units": "",
+      "access": "R",
+      "states": "0=Off, 1=On"
+    },
+    {
+      "type": "BI",
+      "instance": 50,
+      "name": "Boiler 3 Run",
+      "description": "",
+      "units": "",
+      "access": "R",
+      "states": "0=Off, 1=On"
+    },
+    {
+      "type": "BI",
+      "instance": 51,
+      "name": "Boiler 4 Run",
+      "description": "",
+      "units": "",
+      "access": "R",
+      "states": "0=Off, 1=On"
+    },
+    {
+      "type": "BI",
+      "instance": 52,
+      "name": "Boiler 5 Run",
+      "description": "",
+      "units": "",
+      "access": "R",
+      "states": "0=Off, 1=On"
+    },
+    {
+      "type": "BI",
+      "instance": 53,
+      "name": "Boiler 6 Run",
+      "description": "",
+      "units": "",
+      "access": "R",
+      "states": "0=Off, 1=On"
+    },
+    {
+      "type": "BI",
+      "instance": 54,
+      "name": "Boiler 7 Run",
+      "description": "",
+      "units": "",
+      "access": "R",
+      "states": "0=Off, 1=On"
+    },
+    {
+      "type": "BI",
+      "instance": 55,
+      "name": "Boiler 8 Run",
+      "description": "",
+      "units": "",
+      "access": "R",
+      "states": "0=Off, 1=On"
+    },
+    {
+      "type": "BI",
+      "instance": 56,
+      "name": "Lockout 1 (same as 10034)",
+      "description": "water heater: Lockout Status",
+      "units": "",
+      "access": "R",
+      "states": "0=Off, 1=On"
+    },
+    {
+      "type": "BI",
+      "instance": 57,
+      "name": "Lockout 2 (same as 10042)",
+      "description": "",
+      "units": "",
+      "access": "R",
+      "states": "0=Off, 1=On"
+    },
+    {
+      "type": "BI",
+      "instance": 58,
+      "name": "Lockout 3",
+      "description": "",
+      "units": "",
+      "access": "R",
+      "states": "0=Off, 1=On"
+    },
+    {
+      "type": "BI",
+      "instance": 59,
+      "name": "Lockout 4",
+      "description": "",
+      "units": "",
+      "access": "R",
+      "states": "0=Off, 1=On"
+    },
+    {
+      "type": "BI",
+      "instance": 60,
+      "name": "Lockout 5",
+      "description": "",
+      "units": "",
+      "access": "R",
+      "states": "0=Off, 1=On"
+    },
+    {
+      "type": "BI",
+      "instance": 61,
+      "name": "Lockout 6",
+      "description": "",
+      "units": "",
+      "access": "R",
+      "states": "0=Off, 1=On"
+    },
+    {
+      "type": "BI",
+      "instance": 62,
+      "name": "Lockout 7",
+      "description": "",
+      "units": "",
+      "access": "R",
+      "states": "0=Off, 1=On"
+    },
+    {
+      "type": "BI",
+      "instance": 63,
+      "name": "Lockout 8",
+      "description": "",
+      "units": "",
+      "access": "R",
+      "states": "0=Off, 1=On"
+    },
+    {
+      "type": "BI",
+      "instance": 64,
+      "name": "Alarm relais ecs (Versa Hydro ONLY)",
+      "description": "",
+      "units": "",
+      "access": "R",
+      "states": "0=Off, 1=On"
+    },
+    {
+      "type": "AI",
+      "instance": 0,
+      "name": "Discrete Inputs 1-16",
+      "description": "Packed discrete inputs 1-16",
+      "units": "",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AI",
+      "instance": 1,
+      "name": "Discrete Inputs 17-32",
+      "description": "Packed discrete inputs 17-32",
+      "units": "",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AI",
+      "instance": 2,
+      "name": "Discrete Inputs 33-48",
+      "description": "Packed discrete inputs 33-48",
+      "units": "",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AI",
+      "instance": 3,
+      "name": "*System / Cascade Setp.",
+      "description": "System / cascade setpoint (valid while heating)",
+      "units": "°F",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AI",
+      "instance": 4,
+      "name": "System Pump 4 speed",
+      "description": "",
+      "units": "%",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AI",
+      "instance": 5,
+      "name": "Cascade Total Power",
+      "description": "",
+      "units": "%",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AI",
+      "instance": 6,
+      "name": "Cascade Current Power",
+      "description": "",
+      "units": "%",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AI",
+      "instance": 7,
+      "name": "*Outlet Setp. 1",
+      "description": "Boiler 1 outlet setpoint (valid while heating)",
+      "units": "°F",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AI",
+      "instance": 8,
+      "name": "Outlet Temp. 1",
+      "description": "water heater: Upper Temp Sensor",
+      "units": "°F",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AI",
+      "instance": 9,
+      "name": "Inlet Temp. 1",
+      "description": "water heater: Lower Temp Sensor",
+      "units": "°F",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AI",
+      "instance": 10,
+      "name": "Flue Temp. 1",
+      "description": "",
+      "units": "°F",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AI",
+      "instance": 11,
+      "name": "Firing Rate 1",
+      "description": "",
+      "units": "%",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AI",
+      "instance": 12,
+      "name": "Boil. 1 Pump speed 5",
+      "description": "",
+      "units": "%",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AI",
+      "instance": 13,
+      "name": "Boil. 1 Status Code",
+      "description": "water heater: Status Code 1",
+      "units": "",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AI",
+      "instance": 14,
+      "name": "Boil. 1 Blocking Code",
+      "description": "water heater: Blocking Code 1",
+      "units": "",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AI",
+      "instance": 15,
+      "name": "Boil. 1 Lockout Code",
+      "description": "water heater: Lockout Code 1",
+      "units": "",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AI",
+      "instance": 17,
+      "name": "Outlet Temp 2",
+      "description": "",
+      "units": "°F",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AI",
+      "instance": 20,
+      "name": "Firing Rate 2",
+      "description": "",
+      "units": "%",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AI",
+      "instance": 21,
+      "name": "Boil. 2 Pump 4 speed",
+      "description": "",
+      "units": "%",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AI",
+      "instance": 22,
+      "name": "Boil. 2 Status Code",
+      "description": "",
+      "units": "",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AI",
+      "instance": 23,
+      "name": "Boil. 2 Blocking Code",
+      "description": "",
+      "units": "",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AI",
+      "instance": 24,
+      "name": "Boil. 2 Lockout Code",
+      "description": "",
+      "units": "",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AI",
+      "instance": 25,
+      "name": "Boiler Outlet 3",
+      "description": "",
+      "units": "°F",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AI",
+      "instance": 26,
+      "name": "Boiler 3 Firing Rate",
+      "description": "",
+      "units": "%",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AI",
+      "instance": 27,
+      "name": "Boiler 3 Status",
+      "description": "",
+      "units": "",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AI",
+      "instance": 28,
+      "name": "Boiler 3 Lockout",
+      "description": "",
+      "units": "",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AI",
+      "instance": 29,
+      "name": "Boiler Outlet 4",
+      "description": "",
+      "units": "°F",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AI",
+      "instance": 30,
+      "name": "Boiler 4 Firing Rate",
+      "description": "",
+      "units": "%",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AI",
+      "instance": 31,
+      "name": "Boiler 4 Status",
+      "description": "",
+      "units": "",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AI",
+      "instance": 32,
+      "name": "Boiler 4 Lockout",
+      "description": "",
+      "units": "",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AI",
+      "instance": 33,
+      "name": "Boiler Outlet 5",
+      "description": "",
+      "units": "°F",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AI",
+      "instance": 34,
+      "name": "Boiler 5 Firing Rate",
+      "description": "",
+      "units": "%",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AI",
+      "instance": 35,
+      "name": "Boiler 5 Status",
+      "description": "",
+      "units": "",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AI",
+      "instance": 36,
+      "name": "Boiler 5 Lockout",
+      "description": "",
+      "units": "",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AI",
+      "instance": 37,
+      "name": "Boiler Outlet 6",
+      "description": "",
+      "units": "°F",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AI",
+      "instance": 38,
+      "name": "Boiler 6 Firing Rate",
+      "description": "",
+      "units": "%",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AI",
+      "instance": 39,
+      "name": "Boiler 6 Status",
+      "description": "",
+      "units": "",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AI",
+      "instance": 40,
+      "name": "Boiler 6 Lockout",
+      "description": "",
+      "units": "",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AI",
+      "instance": 41,
+      "name": "Boiler Outlet 7",
+      "description": "",
+      "units": "°F",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AI",
+      "instance": 42,
+      "name": "Boiler 7 Firing Rate",
+      "description": "",
+      "units": "%",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AI",
+      "instance": 43,
+      "name": "Boiler 7 Status",
+      "description": "",
+      "units": "",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AI",
+      "instance": 44,
+      "name": "Boiler 7 Lockout",
+      "description": "",
+      "units": "",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AI",
+      "instance": 45,
+      "name": "Boiler Outlet 8",
+      "description": "",
+      "units": "°F",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AI",
+      "instance": 46,
+      "name": "Boiler 8 Firing Rate",
+      "description": "",
+      "units": "%",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AI",
+      "instance": 47,
+      "name": "Boiler 8 Status",
+      "description": "",
+      "units": "",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AI",
+      "instance": 48,
+      "name": "Boiler 8 Lockout",
+      "description": "",
+      "units": "",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AI",
+      "instance": 49,
+      "name": "Discrete Inputs 49 - 64",
+      "description": "Packed discrete inputs 49-64",
+      "units": "",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AI",
+      "instance": 50,
+      "name": "NTC 6 temperature",
+      "description": "",
+      "units": "°F",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AI",
+      "instance": 51,
+      "name": "NTC 7 temperature",
+      "description": "",
+      "units": "°F",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AI",
+      "instance": 52,
+      "name": "NTC 9 temperature",
+      "description": "",
+      "units": "°F",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AI",
+      "instance": 53,
+      "name": "Vortex 1 flow",
+      "description": "",
+      "units": "L/min",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AI",
+      "instance": 54,
+      "name": "Vortex 1 temp",
+      "description": "",
+      "units": "°F",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AI",
+      "instance": 55,
+      "name": "Vortex 2 flow",
+      "description": "",
+      "units": "L/min",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AI",
+      "instance": 56,
+      "name": "Vortex 2 temp",
+      "description": "",
+      "units": "°F",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AI",
+      "instance": 90,
+      "name": "Total Faults",
+      "description": "BIC-928 only",
+      "units": "",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AI",
+      "instance": 91,
+      "name": "Total Last Faults",
+      "description": "BIC-928 only",
+      "units": "",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AI",
+      "instance": 92,
+      "name": "Run Hours CH",
+      "description": "BIC-928 only",
+      "units": "h",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AI",
+      "instance": 93,
+      "name": "Run Hours DHW",
+      "description": "BIC-928 only",
+      "units": "h",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AI",
+      "instance": 94,
+      "name": "Run Hours Cas CH",
+      "description": "BIC-928 only",
+      "units": "h",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AI",
+      "instance": 95,
+      "name": "Run Hours Cas DHW",
+      "description": "BIC-928 only",
+      "units": "h",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AI",
+      "instance": 96,
+      "name": "Power Hours",
+      "description": "BIC-928 only",
+      "units": "h",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AI",
+      "instance": 98,
+      "name": "Start Counter",
+      "description": "BIC-928 only",
+      "units": "",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AI",
+      "instance": 99,
+      "name": "Start Counter",
+      "description": "BIC-928 only",
+      "units": "",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 0,
+      "name": "Configuration",
+      "description": "Configuration bits: which inputs come from the BMS",
+      "units": "",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 1,
+      "name": "Coils",
+      "description": "Coil bits: boiler enable (b0), tank enable (b4)",
+      "units": "",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 2,
+      "name": "0-10 volt / rate / setp",
+      "description": "Rate / setpoint command via 0-10 V scale; water heater: 0-10 volt / rate / set",
+      "units": "V",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 3,
+      "name": "DHW setpoint",
+      "description": "DHW setpoint from the BMS; water heater: DHW set",
+      "units": "°F",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 4,
+      "name": "DHW temperatur",
+      "description": "DHW tank temperature from the BMS; water heater: DHW temp",
+      "units": "°F",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 5,
+      "name": "Outdoor temp.",
+      "description": "Outdoor temperature from the BMS; water heater: Outdoor Sensor",
+      "units": "°F",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 6,
+      "name": "Sys supply temp.",
+      "description": "System supply temperature from the BMS",
+      "units": "°F",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 7,
+      "name": "Sys rtn temp.",
+      "description": "System return temperature from the BMS",
+      "units": "°F",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 8,
+      "name": "I4 for direct",
+      "description": "I4 offset",
+      "units": "°F",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 9,
+      "name": "CH post purge",
+      "description": "CH post-purge time",
+      "units": "s",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 10,
+      "name": "DHW post purge",
+      "description": "DHW post-purge time",
+      "units": "s",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 11,
+      "name": "Pump 4 Speed",
+      "description": "Pump 4 speed",
+      "units": "%",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 13,
+      "name": "Extra out ECS",
+      "description": "Extra 0-10 V output",
+      "units": "%",
+      "access": "W",
+      "states": ""
+    }
+  ]
+}

@@ -1,0 +1,835 @@
+{
+  "manufacturer": "Wilo",
+  "manufacturer_slug": "wilo",
+  "model": "SC Fire D APSAD (BACnet MS/TP / IP)",
+  "model_slug": "sc-fire-d-apsad-bacnet",
+  "aliases": [
+    "Wilo SC Fire D APSAD BACnet",
+    "Smart-Controller SC",
+    "OPTION BACnet SC"
+  ],
+  "equipment_type": "Pump controller (diesel fire pump switch box)",
+  "applies_to": "Wilo SC-Fire switch boxes for diesel-driven sprinkler pumps built to the APSAD rules.",
+  "summary": "Wilo's SC-family switch boxes control multi-pump systems and act as a BACnet MS/TP slave on their RS-485 port; BACnet IP needs an added gateway in the panel. The SC Fire D APSAD list covers the operating command, fire-pump switch states, battery/engine or mains values and fire error bits. Fieldbus write access is governed by a bus command timer that must be refreshed every five minutes.",
+  "bacnet_transport": [
+    "BACnet MS/TP",
+    "BACnet IP"
+  ],
+  "firmware": "Data-point list 31.200",
+  "default_device_instance": null,
+  "access_inferred": false,
+  "notes": [
+    "Taken from the 'SC Fire D APSAD' table in Wilo's SC BACnet supplement (English part, pp94-95). Wilo prints a 'BACnet ID' and an object type with its BACnet type code in brackets, e.g. 'Analog Input (0)'. The ID is used here as the instance and the type follows the code, so rows printed 'Binary Input (4)' are Binary Outputs.",
+    "Where Wilo prints several IDs against one name (pump state, switch box state, error state and other bitmaps), each ID is its own binary object for the element printed beside it; the element is shown in brackets after the name.",
+    "Analog objects that list several units report in the unit of the active control mode.",
+    "Wilo prints 'Error state' and 'FC state' rows with no BACnet IDs or elements in this table; they are left out.",
+    "The E, D and ED suffixes in the switch-state and fire-error names mark electric, diesel or both variants, as printed."
+  ],
+  "integration": {
+    "summary": "Read the switch states (pump running, sprinkler request, standby) and the fire error bits for monitoring. Drives on/off (BO 224) switches automatic operation; for any fieldbus write, first write Set to the Bus command timer (MO 208) and repeat it within five minutes. Acknowledge alarms with BO 1985.",
+    "minimum_points": [
+      {
+        "ref": "BO 224",
+        "name": "Drives on/off",
+        "why": "Automatic operation and all pumps on/off"
+      },
+      {
+        "ref": "MO 208",
+        "name": "Bus command timer",
+        "why": "Write Set (3) at least every 5 min to keep control"
+      },
+      {
+        "ref": "BO 1985",
+        "name": "Acknowledge",
+        "why": "Alarm acknowledge"
+      },
+      {
+        "ref": "BI 1649",
+        "name": "Switch states (Pump running ED)",
+        "why": "Pump running"
+      },
+      {
+        "ref": "BI 1651",
+        "name": "Switch states (Sprinkler request ED)",
+        "why": "Sprinkler start request"
+      }
+    ],
+    "enable": "The Bus command timer (MO 208) decides who may change settings. Manual: HMI and fieldbus both write, last value wins. Off: HMI locked, fieldbus only. Set: HMI locked and a 5-minute timer starts (state reads Active).",
+    "heartbeat": "With the Bus command timer in Set mode, Set must be written again at least every five minutes. If it lapses the state changes to Reset, the HMI gets access back and the fieldbus is locked until Set is written again.",
+    "remote_sensors": null,
+    "setup": [
+      "SC menus 5.1.2.1-5.1.2.5 set the BACnet MS/TP baud rate, bus address (MAC), parity, stop bits and device object ID.",
+      "BACnet IP uses an extra gateway (HD67686) wired to the panel's RS-485 port: set the SC to 38400 baud, MAC 5, no parity, 1 stop bit. The gateway defaults to 192.168.0.10, UDP 47808, no DHCP; change it with the free Compositor SW67686 tool.",
+      "Terminate the first and last node of the MS/TP segment (DIP switch or jumper, per panel hardware).",
+      "SC-Fire needs the extra communication PCB (art. no. 2543170) on the SC board; RS-485 is on terminal X8 (pins 73/74)."
+    ],
+    "gotchas": [
+      "In Bus command timer Off mode the HMI stays locked; if the fieldbus fails there is no access until it recovers.",
+      "Alarm history: write the index (0-15 on SC) to AO 1990, then read the error code from AI 1995."
+    ]
+  },
+  "source": {
+    "title": "BACnet - supplemental sheet SC manual (SC System): System-specific data-point list BACnet SC",
+    "doc_number": "wilo110041 (OPTION BACnet SC 2539869 Ed. 06)",
+    "revision_date": "2020-07-10 (list 31.200)",
+    "url": "https://cms.media.wilo.com/cdndoc/wilo110041/4721760/wilo110041.pdf"
+  },
+  "points": [
+    {
+      "type": "AI",
+      "instance": 0,
+      "name": "Version communication profile",
+      "description": "",
+      "units": "",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "BO",
+      "instance": 16,
+      "name": "Wink service",
+      "description": "Write >0 to blink the HMI indicator for 30 s",
+      "units": "",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "MO",
+      "instance": 208,
+      "name": "Bus command timer",
+      "description": "HMI vs fieldbus access; Set must be resent within 5 min",
+      "units": "",
+      "access": "W",
+      "states": "1=-, 2=Off, 3=Set, 4=Active, 5=Reset, 6=Manual"
+    },
+    {
+      "type": "BO",
+      "instance": 224,
+      "name": "Drives on/off",
+      "description": "Automatic operation and all pumps on/off",
+      "units": "",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "MI",
+      "instance": 1168,
+      "name": "Application",
+      "description": "Application the switch box runs",
+      "units": "",
+      "access": "R",
+      "states": "1=Booster, 2=HVAC, 3=WP, 4=Lift, 5=FFS-Diesel, 6=FFS-Electro, 7=FLA, 8=Clean, 9=Rain"
+    },
+    {
+      "type": "AI",
+      "instance": 1216,
+      "name": "Switch box cycles",
+      "description": "",
+      "units": "",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AI",
+      "instance": 1248,
+      "name": "Switch box total running hours",
+      "description": "",
+      "units": "h",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AI",
+      "instance": 1280,
+      "name": "Pump 1 switch cycles",
+      "description": "",
+      "units": "",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "BO",
+      "instance": 1985,
+      "name": "Acknowledge",
+      "description": "Write to acknowledge an alarm",
+      "units": "",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "AO",
+      "instance": 1990,
+      "name": "Alarm history index",
+      "description": "Select an alarm history entry (SC: 0-15)",
+      "units": "",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "AI",
+      "instance": 1995,
+      "name": "Alarm history error code",
+      "description": "Error code of the selected history entry",
+      "units": "",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AO",
+      "instance": 2011,
+      "name": "Alarm histogram index",
+      "description": "",
+      "units": "",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "AI",
+      "instance": 2012,
+      "name": "Alarm histogram error code",
+      "description": "",
+      "units": "",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AI",
+      "instance": 2013,
+      "name": "Alarm histogram error count",
+      "description": "",
+      "units": "",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AI",
+      "instance": 1538,
+      "name": "Voltage battery A",
+      "description": "",
+      "units": "V",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AI",
+      "instance": 1539,
+      "name": "Voltage battery B",
+      "description": "",
+      "units": "V",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AI",
+      "instance": 1540,
+      "name": "Current battery A",
+      "description": "",
+      "units": "A",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AI",
+      "instance": 1541,
+      "name": "Current battery B",
+      "description": "",
+      "units": "A",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AI",
+      "instance": 1542,
+      "name": "Start attempts battery A",
+      "description": "",
+      "units": "",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AI",
+      "instance": 1543,
+      "name": "Start attempts battery B",
+      "description": "",
+      "units": "",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "BI",
+      "instance": 1648,
+      "name": "Switch states (Standby ED)",
+      "description": "",
+      "units": "",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "BI",
+      "instance": 1649,
+      "name": "Switch states (Pump running ED)",
+      "description": "",
+      "units": "",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "BI",
+      "instance": 1650,
+      "name": "Switch states (Automatik OFF D)",
+      "description": "",
+      "units": "",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "BI",
+      "instance": 1651,
+      "name": "Switch states (Sprinkler request ED)",
+      "description": "",
+      "units": "",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "BI",
+      "instance": 1652,
+      "name": "Switch states (Float switch request ED)",
+      "description": "",
+      "units": "",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "BI",
+      "instance": 1653,
+      "name": "Switch states (Check manual start D)",
+      "description": "",
+      "units": "",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AI",
+      "instance": 1545,
+      "name": "Oil pressure",
+      "description": "",
+      "units": "bar",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AI",
+      "instance": 1546,
+      "name": "Oil temperature",
+      "description": "",
+      "units": "°C",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AI",
+      "instance": 1547,
+      "name": "Water temperature",
+      "description": "",
+      "units": "°C",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AI",
+      "instance": 1548,
+      "name": "Water temperature external",
+      "description": "",
+      "units": "°C",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AI",
+      "instance": 1549,
+      "name": "Engine speed",
+      "description": "",
+      "units": "RPM",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AI",
+      "instance": 1551,
+      "name": "Pump total run minutes",
+      "description": "",
+      "units": "min",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AI",
+      "instance": 1552,
+      "name": "Pump last run minutes",
+      "description": "",
+      "units": "min",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AI",
+      "instance": 1554,
+      "name": "Remaining days to maintenance",
+      "description": "",
+      "units": "d",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "BI",
+      "instance": 1572,
+      "name": "Error state Fire (No supply charger A D)",
+      "description": "",
+      "units": "",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "BI",
+      "instance": 1573,
+      "name": "Error state Fire (No supply charger B D)",
+      "description": "",
+      "units": "",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "BI",
+      "instance": 1576,
+      "name": "Error state Fire (Undervoltage battery A D)",
+      "description": "",
+      "units": "",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "BI",
+      "instance": 1577,
+      "name": "Error state Fire (Undervoltage battery B D)",
+      "description": "",
+      "units": "",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "BI",
+      "instance": 1578,
+      "name": "Error state Fire (No connection to aux HMI ED)",
+      "description": "",
+      "units": "",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "BI",
+      "instance": 1579,
+      "name": "Error state Fire (Timeout charger A D)",
+      "description": "",
+      "units": "",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "BI",
+      "instance": 1580,
+      "name": "Error state Fire (Timeout charger B D)",
+      "description": "",
+      "units": "",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "BI",
+      "instance": 1581,
+      "name": "Error state Fire (Communication error A D)",
+      "description": "",
+      "units": "",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "BI",
+      "instance": 1582,
+      "name": "Error state Fire (Communication error B D)",
+      "description": "",
+      "units": "",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "BI",
+      "instance": 1583,
+      "name": "Error state Fire (Battery error A D)",
+      "description": "",
+      "units": "",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "BI",
+      "instance": 1584,
+      "name": "Error state Fire (Battery error B D)",
+      "description": "",
+      "units": "",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "BI",
+      "instance": 1585,
+      "name": "Error state Fire (Shortcut Battery A D)",
+      "description": "",
+      "units": "",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "BI",
+      "instance": 1586,
+      "name": "Error state Fire (Shortcut Battery B D)",
+      "description": "",
+      "units": "",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "BI",
+      "instance": 1587,
+      "name": "Error state Fire (Cable break Battery A D)",
+      "description": "",
+      "units": "",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "BI",
+      "instance": 1588,
+      "name": "Error state Fire (Cable break Battery B D)",
+      "description": "",
+      "units": "",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "BI",
+      "instance": 1589,
+      "name": "Error state Fire (Free error message ED)",
+      "description": "",
+      "units": "",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "BI",
+      "instance": 1590,
+      "name": "Error state Fire (Minimum fuel D)",
+      "description": "",
+      "units": "",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "BI",
+      "instance": 1591,
+      "name": "Error state Fire (No engine preheating D)",
+      "description": "",
+      "units": "",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "BI",
+      "instance": 1592,
+      "name": "Error state Fire (Low oil pressure D)",
+      "description": "",
+      "units": "",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "BI",
+      "instance": 1593,
+      "name": "Error state Fire (Overtemperature engine D)",
+      "description": "",
+      "units": "",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "BI",
+      "instance": 1594,
+      "name": "Error state Fire (Start sprocket not engaged D)",
+      "description": "",
+      "units": "",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "BI",
+      "instance": 1595,
+      "name": "Error state Fire (Sprocket wiring brocken D)",
+      "description": "",
+      "units": "",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "BI",
+      "instance": 1596,
+      "name": "Error state Fire (Startup failed ED)",
+      "description": "",
+      "units": "",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "BI",
+      "instance": 1597,
+      "name": "Error state Fire (Belt split D)",
+      "description": "",
+      "units": "",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "BI",
+      "instance": 1697,
+      "name": "Error state Fire APSAD (Ausgang_LEDAuto2)",
+      "description": "",
+      "units": "",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "BI",
+      "instance": 1698,
+      "name": "Error state Fire APSAD (Ausgang_LED_DRS2)",
+      "description": "",
+      "units": "",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "BI",
+      "instance": 1699,
+      "name": "Error state Fire APSAD (Ausgang_LEDNonAuto)",
+      "description": "",
+      "units": "",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "BI",
+      "instance": 1700,
+      "name": "Error state Fire APSAD (Ausgang_LEDNonAuto2)",
+      "description": "",
+      "units": "",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "BI",
+      "instance": 1701,
+      "name": "Error state Fire APSAD (LED_Anlassen_fehlgeschlagen)",
+      "description": "",
+      "units": "",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "BI",
+      "instance": 1702,
+      "name": "Error state Fire APSAD (LED_VersorgungsspanngBat)",
+      "description": "",
+      "units": "",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "BI",
+      "instance": 1703,
+      "name": "Error state Fire APSAD (LED_Softwarefehler)",
+      "description": "",
+      "units": "",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "BI",
+      "instance": 1704,
+      "name": "Error state Fire APSAD (LED_Filter_verstopft)",
+      "description": "",
+      "units": "",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "BI",
+      "instance": 1705,
+      "name": "Error state Fire APSAD (LED_SchaltgeraetStarter)",
+      "description": "",
+      "units": "",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "BI",
+      "instance": 1706,
+      "name": "Error state Fire APSAD (LED_Heizung_gestoert)",
+      "description": "",
+      "units": "",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "BI",
+      "instance": 1707,
+      "name": "Error state Fire APSAD (LED_Oeldruck_unterschritten)",
+      "description": "",
+      "units": "",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "BI",
+      "instance": 1708,
+      "name": "Error state Fire APSAD (LED_WassermangelVorbehaelter)",
+      "description": "",
+      "units": "",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "BI",
+      "instance": 1709,
+      "name": "Error state Fire APSAD (LED_Kuehlwassermangel)",
+      "description": "",
+      "units": "",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "BI",
+      "instance": 1710,
+      "name": "Error state Fire APSAD (LED_Uebertemperatur_Motor)",
+      "description": "",
+      "units": "",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "BI",
+      "instance": 1711,
+      "name": "Error state Fire APSAD (LED_FehlerLuefter)",
+      "description": "",
+      "units": "",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "BI",
+      "instance": 1712,
+      "name": "Error state Fire APSAD (LED_Treibstoff_aufgebraucht)",
+      "description": "",
+      "units": "",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "BI",
+      "instance": 1713,
+      "name": "Error state Fire APSAD (LED_Raumtemperatur)",
+      "description": "",
+      "units": "",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "BI",
+      "instance": 1714,
+      "name": "Error state Fire APSAD (LED_BatA_laedt)",
+      "description": "",
+      "units": "",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "BI",
+      "instance": 1715,
+      "name": "Error state Fire APSAD (LED_BatB_laedt)",
+      "description": "",
+      "units": "",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "BI",
+      "instance": 1716,
+      "name": "Error state Fire APSAD (LED_Fehler_BatA)",
+      "description": "",
+      "units": "",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "BI",
+      "instance": 1717,
+      "name": "Error state Fire APSAD (LED_Fehler_BatB)",
+      "description": "",
+      "units": "",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "BI",
+      "instance": 1718,
+      "name": "Error state Fire APSAD (LED_StoerungLadegeraet1)",
+      "description": "",
+      "units": "",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "BI",
+      "instance": 1719,
+      "name": "Error state Fire APSAD (LED_StoerungLadegeraet2)",
+      "description": "",
+      "units": "",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "BI",
+      "instance": 1720,
+      "name": "Error state Fire APSAD (LED_KabelbrKS_DRS1)",
+      "description": "",
+      "units": "",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "BI",
+      "instance": 1721,
+      "name": "Error state Fire APSAD (LED_KabelbrKS_DRS2)",
+      "description": "",
+      "units": "",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "BI",
+      "instance": 1722,
+      "name": "Error state Fire APSAD (Ventilueberwachung)",
+      "description": "",
+      "units": "",
+      "access": "R",
+      "states": ""
+    }
+  ]
+}
