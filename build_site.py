@@ -121,7 +121,8 @@ CSS = """
   :root { color-scheme: dark; --fg:#f3f5f6; --bg:#14171a; --muted:#9aa4ad;
           --accent:#ff9a1f; --box:#1d2227; --line:#2f363d; --code:#101418; --ink:#0d0f11; }
   * { box-sizing: border-box; }
-  body { max-width: 48rem; margin: 0 auto; padding: 2rem 1.25rem 5rem;
+  img { max-width:100%; height:auto; }
+  body{overflow-wrap:break-word; max-width: 48rem; margin: 0 auto; padding: 2rem 1.25rem 5rem;
          font-family:"Manrope",system-ui,-apple-system,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
          font-size:17px; line-height:1.7; color:var(--fg); background:var(--bg);
          -webkit-font-smoothing:antialiased; }
@@ -4279,7 +4280,7 @@ INDEX = """<!doctype html>
 }
 *{box-sizing:border-box}
 html{-webkit-text-size-adjust:100%}
-body{
+body{overflow-wrap:break-word;
   margin:0; background:var(--bg); color:var(--fg);
   font-family:"Manrope",system-ui,-apple-system,Segoe UI,Roboto,sans-serif;
   font-size:17px; line-height:1.65; -webkit-font-smoothing:antialiased;
@@ -4735,7 +4736,7 @@ def main(ping=False):
 <link href="https://fonts.googleapis.com/css2?family=Archivo:wght@800;900&family=Manrope:wght@400;600&display=swap" rel="stylesheet">
 <style>
   :root { color-scheme: dark; }
-  body { max-width: 40rem; margin: 0 auto; padding: 6rem 1.25rem; text-align: center;
+  body{overflow-wrap:break-word; max-width: 40rem; margin: 0 auto; padding: 6rem 1.25rem; text-align: center;
          font-family:"Manrope",system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;
          font-size:17px; line-height:1.7; color:#f3f5f6; background:#14171a; }
   h1 { font-family:"Archivo",sans-serif; font-weight:900; text-transform:uppercase;
