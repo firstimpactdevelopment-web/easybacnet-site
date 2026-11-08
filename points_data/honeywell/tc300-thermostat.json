@@ -1,0 +1,4889 @@
+{
+  "manufacturer": "Honeywell",
+  "manufacturer_slug": "honeywell",
+  "model": "TC300 Commercial Thermostats (TC300B-G / TC300C-G / TC320B-G / TC320C-G)",
+  "model_slug": "tc300-thermostat",
+  "aliases": [
+    "TC300",
+    "TC320",
+    "TC300B-G",
+    "TC300C-G",
+    "TC320B-G",
+    "TC320C-G",
+    "T300 Series"
+  ],
+  "equipment_type": "Thermostat (fan coil, conventional and heat pump)",
+  "applies_to": "Honeywell TC300 and Wi-Fi TC320 commercial touchscreen thermostats for fan coils, conventional units and heat pumps.",
+  "summary": "The TC300 family are commercial touchscreen thermostats that run fan coil, conventional or heat pump equipment. All models talk BACnet MS/TP; the TC320 models add Wi-Fi with BACnet IP. The guide lists the objects chapter by chapter: I/O configuration, sensor and output status, alarms, operating state, setpoints, network inputs, service mode and schedule.",
+  "bacnet_transport": [
+    "BACnet MS/TP",
+    "BACnet IP"
+  ],
+  "firmware": null,
+  "default_device_instance": null,
+  "access_inferred": true,
+  "notes": [
+    "The guide has no read/write column. Access here is inferred: phy_ inputs, no_ network outputs and Alarm objects are read-only; Cfg_ and ni_ objects are writable.",
+    "Instances marked with an asterisk in the guide exist only on the TC3xxB models; they are flagged '(TC3xxB models only)' in the description.",
+    "The guide prints Cfg_CustomizeSensor1Name/2Name/3Name as Binary Value 2/3/4, which clashes with ni_ADREn (BV 2) and ni_ShutdownState (BV 4); these three name objects are left out. Cfg_SylkCalOffset_SylkBus2CO2 has no instance printed and is also left out.",
+    "Objects that appear in more than one chapter are listed once.",
+    "Which outputs and inputs are active depends on the equipment type (MV 7) and the I/O assignment objects."
+  ],
+  "source": {
+    "title": "TC300 Thermostats BACnet Integration Guide",
+    "doc_number": "31-00646-05",
+    "revision_date": "Rev. 11-25",
+    "url": "https://s3.amazonaws.com/s3.supplyhouse.com/product_files/Honeywell_T300_Series_Technical_Guide_2025.pdf",
+    "unofficial": true,
+    "host": "SupplyHouse.com"
+  },
+  "integration": {
+    "summary": "Write the system mode to MV 3 ni_ApplicationMode and occupancy to MV 6 ni_OccupancySensorState (or schedule state MV 1), and adjust the occupied setpoints AV 7 / AV 4. Read space temperature AV 2001, effective setpoints AV 2003 / AV 2004, effective occupancy MV 2014 and the alarm objects. The BMS can feed space temperature, humidity, CO2 and outdoor air through the ni_ inputs.",
+    "minimum_points": [
+      {
+        "ref": "MV 3",
+        "why": "System mode: auto, cool, heat, fan only, off",
+        "name": "ni_ApplicationMode"
+      },
+      {
+        "ref": "MV 6",
+        "why": "Network occupancy: occupied, unoccupied, bypass, standby",
+        "name": "ni_OccupancySensorState"
+      },
+      {
+        "ref": "AV 7",
+        "why": "Occupied heating setpoint",
+        "name": "Cfg_Setpoints_OccHeatSp"
+      },
+      {
+        "ref": "AV 4",
+        "why": "Occupied cooling setpoint",
+        "name": "Cfg_Setpoints_OccCoolSp"
+      },
+      {
+        "ref": "MV 583",
+        "why": "Fan speed: auto, low, medium, high",
+        "name": "Cfg_FanCoilManualSpeedSel"
+      },
+      {
+        "ref": "MV 2014",
+        "why": "Effective occupancy state",
+        "name": "no_EffOccState"
+      },
+      {
+        "ref": "AV 2001",
+        "why": "Space temperature in use",
+        "name": "no_SpaceTemp"
+      },
+      {
+        "ref": "AV 2003",
+        "why": "Effective heating setpoint",
+        "name": "no_EffHeatSp"
+      },
+      {
+        "ref": "AV 2004",
+        "why": "Effective cooling setpoint",
+        "name": "no_EffCoolSp"
+      },
+      {
+        "ref": "BV 2035",
+        "why": "Any alarm active",
+        "name": "no_GenericAlarm"
+      }
+    ],
+    "enable": "The thermostat runs on its own; the BMS steers it through the ni_ network inputs (application mode, occupancy, schedule state, shutdown BV 4). ni_ApplicationMode is not kept over a power cycle.",
+    "heartbeat": "Network fail detect: when a bound network input is not updated within its fail-detect delay (0-3600 s), it falls back to Invalid, the last good value or a fixed value. Per-input enable, fallback and delay objects exist for occupancy (BV 159, AV 262, MV 2021, AV 263), shutdown (BV 164, AV 273, BV 165, AV 274) and network sensors (BV 2087, AV 2507, AV 2508).",
+    "remote_sensors": "Network inputs: ni_SpaceTemp AV 104, ni_SpaceRH AV 80, ni_SpaceCO2 AV 2511, ni_OutdoorTemp AV 89, ni_OutdoorHum AV 194, ni_DATemp AV 2024 and ni_PipeTempMode MV 2012. Network sensor configuration decides whether these are used.",
+    "setup": [
+      "MS/TP: the thermostat auto-detects the baud rate in the first four minutes after start-up, otherwise 76,800. Auto MAC addressing is on by default; MAC and Device ID can be set on the screen.",
+      "BACnet IP (TC320 models only) runs over Wi-Fi; Device ID, network number and UDP port are set on the BACnet IP settings page."
+    ],
+    "gotchas": [
+      "Schedule and calendar objects have limits: the calendar object is not supported by the schedule object.",
+      "Service mode (BV 6 ni_ServiceModeEn) lets the network drive outputs directly; set it back to NoOverride after commissioning.",
+      "The guide says COV works for up to 20 points, but its known-issues table says COV is not supported; plan to poll.",
+      "The guide says COV works for up to 20 points, but its known-issues table says COV is not supported; plan to poll."
+    ]
+  },
+  "points": [
+    {
+      "type": "MV",
+      "instance": 7,
+      "name": "Cfg_Equip_EquipType",
+      "description": "Equipment type.",
+      "units": "",
+      "access": "W",
+      "states": "1=FanCoil, 2=Conventional, 3=HeatPump"
+    },
+    {
+      "type": "BV",
+      "instance": 13,
+      "name": "Cfg_HeatPmp_CngOvrRelayType",
+      "description": "Heat pump reversing valve type. (TC3xxB models only)",
+      "units": "",
+      "access": "W",
+      "states": "0=EnergizeOnHeat, 1=EnergizeOnCool"
+    },
+    {
+      "type": "MV",
+      "instance": 2038,
+      "name": "Cfg_WaterFlowValveConfig",
+      "description": "Water flow valve type. (TC3xxB models only)",
+      "units": "",
+      "access": "W",
+      "states": "1=None, 2=NormallyClosed, 3=NormallyOpen"
+    },
+    {
+      "type": "MV",
+      "instance": 2039,
+      "name": "Cfg_HeatPumpType",
+      "description": "Heat pump source type. (TC3xxB models only)",
+      "units": "",
+      "access": "W",
+      "states": "1=AirSource, 2=WaterSource"
+    },
+    {
+      "type": "MV",
+      "instance": 2040,
+      "name": "Cfg_ConventionalMode",
+      "description": "Conventional mode. (TC3xxB models only)",
+      "units": "",
+      "access": "W",
+      "states": "1=1StageHeat&1StageCool, 2=1StageHeatOnly, 3=1StageCoolOnly, 4=2StageHeatOnly, 5=2StageCoolOnly"
+    },
+    {
+      "type": "BV",
+      "instance": 35,
+      "name": "Cfg_Mod_StgHt1En",
+      "description": "Modulating heat stage mode.",
+      "units": "",
+      "access": "W",
+      "states": "0=Disable, 1=Enable"
+    },
+    {
+      "type": "AV",
+      "instance": 96,
+      "name": "Cfg_Heat_ModHtEnMinOut",
+      "description": "Modulating heat minimum output when enabled.",
+      "units": "%",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "MV",
+      "instance": 87,
+      "name": "Cfg_FanCoilFourPipeSingleCoilType",
+      "description": "Four pipe single coil valve type.",
+      "units": "",
+      "access": "W",
+      "states": "1=Regulating&ChangeOver, 2=6-WayValve"
+    },
+    {
+      "type": "MV",
+      "instance": 2033,
+      "name": "Cfg_ChangeoverSwitchPolarityType",
+      "description": "Changeover switch polarity type.",
+      "units": "",
+      "access": "W",
+      "states": "1=Closedwithheat, 2=Closedwithcool"
+    },
+    {
+      "type": "MV",
+      "instance": 2034,
+      "name": "Cfg_2PipeSingleCoilHeat&CoolSysModChangeoverType",
+      "description": "2 pipe single coil heat & cool system mode changeover method.",
+      "units": "",
+      "access": "W",
+      "states": "1=PipeSensor, 2=NetworkInput, 3=ChangeoverSwitch, 4=ManualChangeover"
+    },
+    {
+      "type": "BV",
+      "instance": 377,
+      "name": "Cfg_Mod_StgCl1En",
+      "description": "Modulating cool use stage 1 as enabled.",
+      "units": "",
+      "access": "W",
+      "states": "0=Disable, 1=Enable"
+    },
+    {
+      "type": "AV",
+      "instance": 1461,
+      "name": "Cfg_Cool_ModClEnMinOut",
+      "description": "Modulating cool minimum output when enabled.",
+      "units": "%",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "MV",
+      "instance": 575,
+      "name": "Cfg_FanCoilType",
+      "description": "Fan coil type",
+      "units": "",
+      "access": "W",
+      "states": "1=4PipeDualCoil, 2=4PipesingleCoil, 3=2PipeSingleCoil"
+    },
+    {
+      "type": "MV",
+      "instance": 576,
+      "name": "Cfg_FanCoilHtgType",
+      "description": "Heating valve type (or single valve type on single-coil units)",
+      "units": "",
+      "access": "W",
+      "states": "1=None, 2=OnOff, 3=Floating, 4=Modulating"
+    },
+    {
+      "type": "MV",
+      "instance": 577,
+      "name": "Cfg_FanCoilClgType",
+      "description": "The 4-pipe dual coil cooling valve models.",
+      "units": "",
+      "access": "W",
+      "states": "1=None, 2=OnOff, 3=Floating, 4=Modulating"
+    },
+    {
+      "type": "AV",
+      "instance": 1721,
+      "name": "Cfg_FanCoilHtgDriveTime",
+      "description": "Floating heating valve drive time",
+      "units": "s",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 1722,
+      "name": "Cfg_FanCoilClgDriveTime",
+      "description": "4 pipe dual coil floating cooling drive time. (TC3xxB models only)",
+      "units": "s",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "MV",
+      "instance": 580,
+      "name": "Cfg_FanCoilTwoPipeSingleCoilType",
+      "description": "2 pipe single coil type.",
+      "units": "",
+      "access": "W",
+      "states": "1=Heat&Cool, 2=HeatingOnly, 3=CoolingOnly"
+    },
+    {
+      "type": "MV",
+      "instance": 578,
+      "name": "Cfg_FanCoilHtgDriveType",
+      "description": "Floating heating valve drive direction",
+      "units": "",
+      "access": "W",
+      "states": "1=Direct, 2=Reverse"
+    },
+    {
+      "type": "MV",
+      "instance": 579,
+      "name": "Cfg_FanCoilClgDriveType",
+      "description": "4 pipe dual coil floating cooling drive time. (TC3xxB models only)",
+      "units": "",
+      "access": "W",
+      "states": "1=Direct, 2=Reverse"
+    },
+    {
+      "type": "BV",
+      "instance": 453,
+      "name": "Cfg_FanCoilHtgFloatingSyncEn",
+      "description": "Floating heating valve resync enable",
+      "units": "",
+      "access": "W",
+      "states": "0=Disable, 1=Enable"
+    },
+    {
+      "type": "BV",
+      "instance": 462,
+      "name": "Cfg_FanCoilClgFloatingSyncEn",
+      "description": "4 pipe dual coil floating cooling sync enable. (TC3xxB models only)",
+      "units": "",
+      "access": "W",
+      "states": "0=Disable, 1=Enable"
+    },
+    {
+      "type": "BV",
+      "instance": 459,
+      "name": "Cfg_FanCoilOnOffClgVlvChar",
+      "description": "4 pipe dual coil on/off cooling valve characteristic",
+      "units": "",
+      "access": "W",
+      "states": "0=NormallyClosed, 1=NormallyOpen"
+    },
+    {
+      "type": "BV",
+      "instance": 458,
+      "name": "Cfg_FanCoilonOffHtgVlvChar",
+      "description": "On/off heating valve action",
+      "units": "",
+      "access": "W",
+      "states": "0=NormallyClosed, 1=NormallyOpen"
+    },
+    {
+      "type": "AV",
+      "instance": 2007,
+      "name": "Cfg_Cool_valvefloatEnMinOut",
+      "description": "4 pipe dual coil floating Cooling valve minimum output when enabled. (TC3xxB models only)",
+      "units": "%",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 2008,
+      "name": "Cfg_Heat_valvefloatEnMinOut",
+      "description": "Floating heating valve minimum output when enabled",
+      "units": "%",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "BV",
+      "instance": 2036,
+      "name": "Cfg_ChangeOverValveType",
+      "description": "4 pipe single coil changeover valve type",
+      "units": "",
+      "access": "W",
+      "states": "0=EnergizeOnHeat, 1=EnergizeOnCool"
+    },
+    {
+      "type": "BV",
+      "instance": 2037,
+      "name": "Cfg_SixwayValveOutput",
+      "description": "6-way valve type",
+      "units": "",
+      "access": "W",
+      "states": "0=0-10V, 1=2-10V"
+    },
+    {
+      "type": "BV",
+      "instance": 2038,
+      "name": "Cfg_SixwayValveDriveType",
+      "description": "Six way valve direct/reverse enable flag",
+      "units": "",
+      "access": "W",
+      "states": "0=Direct, 1=Reverse"
+    },
+    {
+      "type": "AV",
+      "instance": 2066,
+      "name": "Cfg_SixwayValveHeatingMinOutput",
+      "description": "6-way valve heat min output",
+      "units": "",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 2067,
+      "name": "Cfg_SixwayValveHeatingMaxOutput",
+      "description": "6-way valve heat max output",
+      "units": "",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 2068,
+      "name": "Cfg_SixwayValveCoolingMinOutput",
+      "description": "6-way valve cool min output",
+      "units": "",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 2069,
+      "name": "Cfg_SixwayValveCoolingMaxOutput",
+      "description": "6-way valve cool max output",
+      "units": "",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "BV",
+      "instance": 2079,
+      "name": "Cfg_ADR_Enable",
+      "description": "User can configure to enable ADR function",
+      "units": "",
+      "access": "W",
+      "states": "0=Off, 1=On"
+    },
+    {
+      "type": "AV",
+      "instance": 2496,
+      "name": "Cfg_ADR_Offset",
+      "description": "User can set the offset value of the ADR.",
+      "units": "Δ°F",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "AO",
+      "instance": 2006,
+      "name": "no_UIO3",
+      "description": "Universal Output shared to network.",
+      "units": "",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AO",
+      "instance": 64,
+      "name": "no_UIO1",
+      "description": "Universal Output shared to network.",
+      "units": "",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AO",
+      "instance": 63,
+      "name": "no_UIO2",
+      "description": "Universal Output shared to network.",
+      "units": "",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "BO",
+      "instance": 74,
+      "name": "no_DO1",
+      "description": "Digital Output shared to network.",
+      "units": "",
+      "access": "R",
+      "states": "0=Off, 1=On"
+    },
+    {
+      "type": "BO",
+      "instance": 75,
+      "name": "no_DO2",
+      "description": "Digital Output shared to network.",
+      "units": "",
+      "access": "R",
+      "states": "0=Off, 1=On"
+    },
+    {
+      "type": "BO",
+      "instance": 76,
+      "name": "no_DO3",
+      "description": "Digital Output shared to network.",
+      "units": "",
+      "access": "R",
+      "states": "0=Off, 1=On"
+    },
+    {
+      "type": "BO",
+      "instance": 77,
+      "name": "no_DIO1",
+      "description": "Digital Output shared to network.TC300B-G/ TC320B-G is DIO1, and TC300C-G/TC320C-G is DO4.",
+      "units": "",
+      "access": "R",
+      "states": "0=Off, 1=On"
+    },
+    {
+      "type": "BO",
+      "instance": 78,
+      "name": "no_DIO2",
+      "description": "Digital output DIO2 (B models) or DO5 (C models) shared to network",
+      "units": "",
+      "access": "R",
+      "states": "0=Off, 1=On"
+    },
+    {
+      "type": "MV",
+      "instance": 26,
+      "name": "Cfg_UIO1",
+      "description": "Function assigned to universal input/output UIO1",
+      "units": "",
+      "access": "W",
+      "states": "1=None, 2=6-WayValve, 3=ModulatingCool, 4=ModulatingHeat, 5=ModulatingValve, 6=VariableSpeedFan, 7=DischargeAirSensor, 8=DrainPanSensor, 9=OccupancySensor, 10=ProofOfAirflow, 11=PipeSensor, 12=SpaceTempSensor, 13=ChangeoverSwitch, 14=ProofOfWaterFlow, 15=OutDoorAirSensor, 16=ShutdownSensor, 17=Customized1, 18=Customized2, 19=Customized3, 20=FreezeSwitch, 21=EntryDoorSwitch, 22=Balcony/Window, 31=CO2Output"
+    },
+    {
+      "type": "MV",
+      "instance": 27,
+      "name": "Cfg_UIO2",
+      "description": "Function assigned to universal input/output UIO2",
+      "units": "",
+      "access": "W",
+      "states": "1=None, 2=6-WayValve, 3=ModulatingCool, 4=ModulatingHeat, 5=ModulatingValve, 6=VariableSpeedFan, 7=DischargeAirSensor, 8=DrainPanSensor, 9=OccupancySensor, 10=ProofOfAirflow, 11=PipeSensor, 12=SpaceTempSensor, 13=ChangeoverSwitch, 14=ProofOfWaterFlow, 15=OutDoorAirSensor, 16=ShutdownSensor, 17=Customized1, 18=Customized2, 19=Customized3, 20=FreezeSwitch, 21=EntryDoorSwitch, 22=Balcony/Window, 31=CO2Output"
+    },
+    {
+      "type": "MV",
+      "instance": 2004,
+      "name": "Cfg_UIO3",
+      "description": "Function assigned to universal input/output UIO3",
+      "units": "",
+      "access": "W",
+      "states": "1=None, 2=6-WayValve, 3=ModulatingCool, 4=ModulatingHeat, 5=ModulatingValve, 6=VariableSpeedFan, 7=DischargeAirSensor, 8=DrainPanSensor, 9=OccupancySensor, 10=ProofOfAirflow, 11=PipeSensor, 12=SpaceTempSensor, 13=ChangeoverSwitch, 14=ProofOfWaterFlow, 15=OutDoorAirSensor, 16=ShutdownSensor, 17=Customized1, 18=Customized2, 19=Customized3, 20=FreezeSwitch, 21=EntryDoorSwitch, 22=Balcony/Window, 31=CO2Output"
+    },
+    {
+      "type": "MV",
+      "instance": 28,
+      "name": "Cfg_DO1",
+      "description": "Function assigned to digital output DO1",
+      "units": "",
+      "access": "W",
+      "states": "1=None, 2=HeatingOn/Off, 3=HeatingFloatingOpen, 4=CoolingFloatingOpen, 5=ValveOn/Off, 6=ValveFloatingOpen, 11=ChangeoverValve, 12=FanCommand, 13=HighSpeedFan, 14=MediumSpeedFan, 15=LowSpeedFan, 16=AuxiliaryHeat, 30=HeatStage1, 31=CoolStage1, 32=ValveStage1, 35=Dehumidifier, 36=Humidifier, 52=CO2Output, 53=LightingControlOutput, 54=OccupancyOutput"
+    },
+    {
+      "type": "MV",
+      "instance": 29,
+      "name": "Cfg_DO2",
+      "description": "Function assigned to digital output DO2",
+      "units": "",
+      "access": "W",
+      "states": "1=None, 7=HeatingFloatingClose, 8=CoolingFloatingClose, 9=CoolingOn/Off, 10=ValveFloatingClose, 11=ChangeoverValve, 12=FanCommand, 13=HighSpeedFan, 14=MediumSpeedFan, 15=LowSpeedFan, 16=AuxiliaryHeat, 31=CoolStage1, 34=ReversingValve, 35=Dehumidifier, 36=Humidifier, 50=HeatStage2, 51=CoolStage2, 52=CO2Output, 53=LightingControlOutput, 54=OccupancyOutput"
+    },
+    {
+      "type": "MV",
+      "instance": 30,
+      "name": "Cfg_DO3",
+      "description": "Function assigned to digital output DO3",
+      "units": "",
+      "access": "W",
+      "states": "1=None, 4=CoolingFloatingOpen, 9=CoolingOn/Off, 11=ChangeoverValve, 12=FanCommand, 13=HighSpeedFan, 14=MediumSpeedFan, 15=LowSpeedFan, 16=AuxiliaryHeat, 30=HeatStage1, 31=CoolStage1, 33=WaterFlowValve, 35=Dehumidifier, 36=Humidifier, 52=CO2Output, 53=LightingControlOutput, 54=OccupancyOutput"
+    },
+    {
+      "type": "MV",
+      "instance": 31,
+      "name": "Cfg_DIO1_DO4",
+      "description": "Function assigned to DIO1 / DO4",
+      "units": "",
+      "access": "W",
+      "states": "1=None, 8=CoolingFloatingClose, 11=ChangeoverValve, 12=FanCommand, 13=HighSpeedFan, 14=MediumSpeedFan, 15=LowSpeedFan, 16=AuxiliaryHeat, 18=DischargeAirSensor, 19=DrainPanSensor, 20=OccupancySensor, 21=ProofOfAirflow, 22=PipeSensor, 23=SpaceTempSensor, 24=ChangeoverSwitch, 25=ProofOfWaterFlow, 26=OutdoorAirSensor, 27=ShutdownSensor, 35=Dehumidifier, 36=Humidifier, 37=Customized1, 38=Customized2, 39=Customized3, 40=FreezeSwitch, 41=EntryDoorSwitch, 42=Balcony/Window, 52=CO2Output, 53=LightingControlOutput, 54=OccupancyOutput"
+    },
+    {
+      "type": "MV",
+      "instance": 32,
+      "name": "Cfg_DIO2_DO5",
+      "description": "Function assigned to DIO2 / DO5",
+      "units": "",
+      "access": "W",
+      "states": "1=None, 11=ChangeoverValve, 12=FanCommand, 13=HighSpeedFan, 14=MediumSpeedFan, 15=LowSpeedFan, 16=AuxiliaryHeat, 18=DischargeAirSensor, 19=DrainPanSensor, 20=OccupancySensor, 21=ProofOfAirflow, 22=PipeSensor, 23=SpaceTempSensor, 24=ChangeoverSwitch, 25=ProofOfWaterFlow, 26=OutdoorAirSensor, 27=ShutdownSensor, 35=Dehumidifier, 36=Humidifier, 37=Customized1, 38=Customized2, 39=Customized3, 40=FreezeSwitch, 41=EntryDoorSwitch, 42=Balcony/Window, 52=CO2Output, 53=LightingControlOutput, 54=OccupancyOutput"
+    },
+    {
+      "type": "BI",
+      "instance": 1,
+      "name": "phy_ChangeOverSwitch",
+      "description": "Changeover switch status",
+      "units": "",
+      "access": "R",
+      "states": "0=Close, 1=Open"
+    },
+    {
+      "type": "AI",
+      "instance": 1,
+      "name": "phy_DatSensor",
+      "description": "Discharge air sensor output value",
+      "units": "°F",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "BI",
+      "instance": 2,
+      "name": "phy_DrainpanSensor",
+      "description": "Drain pan sensor status",
+      "units": "",
+      "access": "R",
+      "states": "0=Off, 1=On"
+    },
+    {
+      "type": "BI",
+      "instance": 3,
+      "name": "phy_OccupancySensor",
+      "description": "Occupancy sensor status",
+      "units": "",
+      "access": "R",
+      "states": "0=Standby, 1=Unoccupied"
+    },
+    {
+      "type": "BI",
+      "instance": 4,
+      "name": "phy_ProofOfAirFlowSensor",
+      "description": "Proof of air flow sensor status",
+      "units": "",
+      "access": "R",
+      "states": "0=Off, 1=On"
+    },
+    {
+      "type": "AI",
+      "instance": 2,
+      "name": "phy_PipeSensor",
+      "description": "Pipe sensor output value",
+      "units": "°F",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "BI",
+      "instance": 6,
+      "name": "phy_ShutdownSensor",
+      "description": "Shutdown sensor status",
+      "units": "",
+      "access": "R",
+      "states": "0=Off, 1=On"
+    },
+    {
+      "type": "AI",
+      "instance": 3,
+      "name": "phy_SpaceTempSensor",
+      "description": "Space temperature sensor output value",
+      "units": "°F",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "BI",
+      "instance": 5,
+      "name": "phy_ProofofWaterflow",
+      "description": "Proof of waterflow status. (TC3xxB models only)",
+      "units": "",
+      "access": "R",
+      "states": "0=Off, 1=On"
+    },
+    {
+      "type": "AI",
+      "instance": 4,
+      "name": "phy_OutdoorAirSensor",
+      "description": "Outdoor air sensor value",
+      "units": "°F",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "BI",
+      "instance": 7,
+      "name": "phy_FreezeSwitch",
+      "description": "Freeze switch status.",
+      "units": "",
+      "access": "R",
+      "states": "0=Close, 1=Open"
+    },
+    {
+      "type": "BI",
+      "instance": 8,
+      "name": "phy_EntryDoorSwitch",
+      "description": "Entry door switch status.",
+      "units": "",
+      "access": "R",
+      "states": "0=Close, 1=Open"
+    },
+    {
+      "type": "BI",
+      "instance": 9,
+      "name": "phy_BalconcyWindowSwitch",
+      "description": "Balconcy/window switch status.",
+      "units": "",
+      "access": "R",
+      "states": "0=Close, 1=Open"
+    },
+    {
+      "type": "AO",
+      "instance": 2001,
+      "name": "no_SixWay_Valve_Cooling",
+      "description": "Six-way valve cooling control output",
+      "units": "%",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AO",
+      "instance": 2002,
+      "name": "no_SixWay_Valve_Heating",
+      "description": "Six-way valve Heating control output",
+      "units": "%",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AO",
+      "instance": 2003,
+      "name": "no_Modulating_Cool",
+      "description": "Modulating cool control output",
+      "units": "%",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AO",
+      "instance": 2004,
+      "name": "no_Modulating_Heat",
+      "description": "Modulating heat control output",
+      "units": "%",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AO",
+      "instance": 2005,
+      "name": "no_VariableFan",
+      "description": "Variable Fan control output",
+      "units": "%",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "BO",
+      "instance": 2001,
+      "name": "no_Auxiliary_Heat",
+      "description": "Auxiliary heat control output",
+      "units": "",
+      "access": "R",
+      "states": "0=Off, 1=On"
+    },
+    {
+      "type": "BO",
+      "instance": 2002,
+      "name": "no_ChangeOverValve",
+      "description": "Changeover valve control output",
+      "units": "",
+      "access": "R",
+      "states": "0=Off, 1=On"
+    },
+    {
+      "type": "BO",
+      "instance": 2004,
+      "name": "no_Cooling_Valve(On/Off)",
+      "description": "Cooling on/off valve output status",
+      "units": "",
+      "access": "R",
+      "states": "0=Off, 1=On"
+    },
+    {
+      "type": "BO",
+      "instance": 2005,
+      "name": "no_Heating_Valve(On/Off)",
+      "description": "Heating on/off valve output status",
+      "units": "",
+      "access": "R",
+      "states": "0=Off, 1=On"
+    },
+    {
+      "type": "BO",
+      "instance": 2006,
+      "name": "no_Cooling_Floating_Open",
+      "description": "Cooling floating valve open control output. (TC3xxB models only)",
+      "units": "",
+      "access": "R",
+      "states": "0=Off, 1=On"
+    },
+    {
+      "type": "BO",
+      "instance": 2007,
+      "name": "no_Cooling_Floating_Close",
+      "description": "Cooling floating valve close control output. (TC3xxB models only)",
+      "units": "",
+      "access": "R",
+      "states": "0=Off, 1=On"
+    },
+    {
+      "type": "BO",
+      "instance": 2008,
+      "name": "no_Heating_Floating_Open",
+      "description": "Heating floating valve open control output. (TC3xxB models only)",
+      "units": "",
+      "access": "R",
+      "states": "0=Off, 1=On"
+    },
+    {
+      "type": "BO",
+      "instance": 2009,
+      "name": "no_Heating_Floating_Close",
+      "description": "Heating floating valve close control output. (TC3xxB models only)",
+      "units": "",
+      "access": "R",
+      "states": "0=Off, 1=On"
+    },
+    {
+      "type": "BO",
+      "instance": 2010,
+      "name": "no_High_Single_Speed_Fan",
+      "description": "High speed fan on/off status",
+      "units": "",
+      "access": "R",
+      "states": "0=Off, 1=On"
+    },
+    {
+      "type": "BO",
+      "instance": 2011,
+      "name": "no_Low_Speed_Fan",
+      "description": "Low speed fan on/off status",
+      "units": "",
+      "access": "R",
+      "states": "0=Off, 1=On"
+    },
+    {
+      "type": "BO",
+      "instance": 2012,
+      "name": "no_Medium_Speed_Fan",
+      "description": "Medium speed fan on/off status",
+      "units": "",
+      "access": "R",
+      "states": "0=Off, 1=On"
+    },
+    {
+      "type": "BO",
+      "instance": 2014,
+      "name": "no_Modulating_Cooling_stage_1",
+      "description": "Modulating cool stage1 on/off status",
+      "units": "",
+      "access": "R",
+      "states": "0=Off, 1=On"
+    },
+    {
+      "type": "BO",
+      "instance": 2015,
+      "name": "no_Modulating_Heating_stage_1",
+      "description": "Modulating heat stage1 on/off status",
+      "units": "",
+      "access": "R",
+      "states": "0=Off, 1=On"
+    },
+    {
+      "type": "BO",
+      "instance": 2016,
+      "name": "no_WaterFlowValve",
+      "description": "Water flow valve control output. (TC3xxB models only)",
+      "units": "",
+      "access": "R",
+      "states": "0=Off, 1=On"
+    },
+    {
+      "type": "BO",
+      "instance": 2017,
+      "name": "no_ReversingValve",
+      "description": "Revering valve control output. (TC3xxB models only)",
+      "units": "",
+      "access": "R",
+      "states": "0=Off, 1=On"
+    },
+    {
+      "type": "BO",
+      "instance": 9,
+      "name": "no_HumActive",
+      "description": "Humidifier control output. (TC3xxB models only)",
+      "units": "",
+      "access": "R",
+      "states": "0=Off, 1=On"
+    },
+    {
+      "type": "BO",
+      "instance": 2070,
+      "name": "no_Conventional_Cooling_stage_2",
+      "description": "Conventional cool stage2 on/off status. (TC3xxB models only)",
+      "units": "",
+      "access": "R",
+      "states": "0=Off, 1=On"
+    },
+    {
+      "type": "BO",
+      "instance": 2071,
+      "name": "no_Conventional_Heating_stage_2",
+      "description": "Convention heat stage2 on/off status. (TC3xxB models only)",
+      "units": "",
+      "access": "R",
+      "states": "0=Off, 1=On"
+    },
+    {
+      "type": "BO",
+      "instance": 2075,
+      "name": "no_CO2_Binary_Value",
+      "description": "CO2 Output Binary Logical Value",
+      "units": "",
+      "access": "R",
+      "states": "0=Off, 1=On"
+    },
+    {
+      "type": "AO",
+      "instance": 2007,
+      "name": "no_CO2_Analog_Value",
+      "description": "CO2 Output Analog Logical Value",
+      "units": "",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "BO",
+      "instance": 2076,
+      "name": "no_Light_Control_Output",
+      "description": "Lighting Control Output",
+      "units": "",
+      "access": "R",
+      "states": "0=Off, 1=On"
+    },
+    {
+      "type": "BO",
+      "instance": 2077,
+      "name": "no_Occupancy_Output",
+      "description": "Occupancy Output",
+      "units": "",
+      "access": "R",
+      "states": "0=Off, 1=On"
+    },
+    {
+      "type": "BV",
+      "instance": 31,
+      "name": "Cfg_OccSensChar",
+      "description": "Occupancy sensor input characteristics selection",
+      "units": "",
+      "access": "W",
+      "states": "0=NormallyOpen, 1=NormallyClosed"
+    },
+    {
+      "type": "BV",
+      "instance": 33,
+      "name": "Cfg_AirFlwStsChar",
+      "description": "Airflow status input characteristics selection",
+      "units": "",
+      "access": "W",
+      "states": "0=NormallyOpen, 1=NormallyClosed"
+    },
+    {
+      "type": "AV",
+      "instance": 185,
+      "name": "Cfg_UISensCalOffset_DATemp",
+      "description": "Universal input discharge air temperature calibration offset",
+      "units": "Δ°F",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 186,
+      "name": "Cfg_UISensCalOffset_OATemp",
+      "description": "Outdoor air temperature calibration offset",
+      "units": "Δ°F",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "BV",
+      "instance": 383,
+      "name": "Cfg_WaterFlwStsChar",
+      "description": "Waterflow sensor input characteristics selection. (TC3xxB models only)",
+      "units": "",
+      "access": "W",
+      "states": "0=NormallyOpen, 1=NormallyClosed"
+    },
+    {
+      "type": "MV",
+      "instance": 372,
+      "name": "Cfg_SpcSensChar",
+      "description": "Space temperature Sensor characteristic selection",
+      "units": "",
+      "access": "W",
+      "states": "1=NTC10KTypeII, 2=NTC10KTypeIII, 3=NTC20K"
+    },
+    {
+      "type": "AV",
+      "instance": 1464,
+      "name": "Cfg_UISensCalOffset_SpcTemp",
+      "description": "Space temperature calibration offset",
+      "units": "Δ°F",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "BV",
+      "instance": 2092,
+      "name": "Cfg_Control_OnboardOccupancySensorEn",
+      "description": "Users can enable or disable the control of the onboard occupancy sensor",
+      "units": "",
+      "access": "W",
+      "states": "0=Off, 1=On"
+    },
+    {
+      "type": "AV",
+      "instance": 1475,
+      "name": "Cfg_ModHeatMin_Output",
+      "description": "Minimum output voltage when modulating heating is enabled",
+      "units": "",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "BV",
+      "instance": 380,
+      "name": "Cfg_ModHeatAction",
+      "description": "Modulating heat polarity selection",
+      "units": "",
+      "access": "W",
+      "states": "0=Direct, 1=Reverse"
+    },
+    {
+      "type": "AV",
+      "instance": 1476,
+      "name": "Cfg_ModCoolMin_Output",
+      "description": "Minimum output voltage when modulating cooling is enabled",
+      "units": "",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "BV",
+      "instance": 381,
+      "name": "Cfg_ModCoolAction",
+      "description": "Modulating cool polarity selection",
+      "units": "",
+      "access": "W",
+      "states": "0=Direct, 1=Reverse"
+    },
+    {
+      "type": "MV",
+      "instance": 373,
+      "name": "Cfg_VarSpeedFanType",
+      "description": "Variable fan speed type characteristic selection",
+      "units": "",
+      "access": "W",
+      "states": "1=0-10V, 2=2-10V"
+    },
+    {
+      "type": "AV",
+      "instance": 1477,
+      "name": "Cfg_ModHeatMax_Output",
+      "description": "Maximum voltage on heating output",
+      "units": "",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 1478,
+      "name": "Cfg_ModCoolMax_Output",
+      "description": "Maximum voltage on cooling output",
+      "units": "",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "MV",
+      "instance": 2005,
+      "name": "Cfg_PipeSensChar",
+      "description": "Pipe sensor type",
+      "units": "",
+      "access": "W",
+      "states": "1=NTC10KTypeII, 2=NTC10KTypeIII, 3=NTC20K"
+    },
+    {
+      "type": "MV",
+      "instance": 502,
+      "name": "Cfg_OASensChar1",
+      "description": "Outdoor air sensor type.",
+      "units": "",
+      "access": "W",
+      "states": "1=NTC10K Type II, 2=NTC10K Type III, 3=NTC20K"
+    },
+    {
+      "type": "MV",
+      "instance": 503,
+      "name": "Cfg_DASensChar1",
+      "description": "Discharge air sensor type",
+      "units": "",
+      "access": "W",
+      "states": "1=NTC10KTypeII, 2=NTC10KTypeIII, 3=NTC20K"
+    },
+    {
+      "type": "BV",
+      "instance": 455,
+      "name": "Cfg_LeakDetectorSensorChar",
+      "description": "Leak detector/ Drain pan sensor characteristics",
+      "units": "",
+      "access": "W",
+      "states": "0=NormallyOpen, 1=NormallyClosed"
+    },
+    {
+      "type": "BV",
+      "instance": 34,
+      "name": "Cfg_ShutdownChar",
+      "description": "Shutdown sensor type",
+      "units": "",
+      "access": "W",
+      "states": "0=NormallyOpen, 1=NormallyClosed"
+    },
+    {
+      "type": "MV",
+      "instance": 2046,
+      "name": "Cfg_Customized1SensorType",
+      "description": "Customized1 input type of the sensor",
+      "units": "",
+      "access": "W",
+      "states": "1=DigitalInput, 2=VoltageInput, 3=TemperatureSensor"
+    },
+    {
+      "type": "BV",
+      "instance": 2061,
+      "name": "Cfg_Customized1DigitalInputType",
+      "description": "Customized1 digital input type of the sensor",
+      "units": "",
+      "access": "W",
+      "states": "0=NormallyOpen, 1=NormallyClosed"
+    },
+    {
+      "type": "BV",
+      "instance": 2062,
+      "name": "Cfg_Customized1VoltageInputControlAction",
+      "description": "Customized1 sensor the polarity of the voltage input",
+      "units": "",
+      "access": "W",
+      "states": "0=Direct, 1=Reverse"
+    },
+    {
+      "type": "AV",
+      "instance": 2443,
+      "name": "Cfg_Customized1VoltageMinInput",
+      "description": "Customized1 minimum voltage input for the sensor",
+      "units": "",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 2444,
+      "name": "Cfg_Customized1VoltageMaxInput",
+      "description": "Customized1 maximum voltage input for the sensor",
+      "units": "",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "MV",
+      "instance": 2047,
+      "name": "Cfg_Customized1TempSensorType",
+      "description": "Customized1 temperature sensor input type",
+      "units": "",
+      "access": "W",
+      "states": "1=NTC10K Type II, 2=NTC10K Type III, 3=NTC20K"
+    },
+    {
+      "type": "MV",
+      "instance": 2048,
+      "name": "Cfg_Customized2SensorType",
+      "description": "Customized2 input type of the sensor",
+      "units": "",
+      "access": "W",
+      "states": "1=DigitalInput, 2=VoltageInput, 3=TemperatureSensor"
+    },
+    {
+      "type": "BV",
+      "instance": 2063,
+      "name": "Cfg_Customized2DigitalInputType",
+      "description": "Customized2 digital input type of the sensor",
+      "units": "",
+      "access": "W",
+      "states": "0=NormallyOpen, 1=NormallyClosed"
+    },
+    {
+      "type": "BV",
+      "instance": 2064,
+      "name": "Cfg_Customized2VoltageInputControlAction",
+      "description": "Customized2 sensor the polarity of the voltage input",
+      "units": "",
+      "access": "W",
+      "states": "0=Direct, 1=Reverse"
+    },
+    {
+      "type": "AV",
+      "instance": 2445,
+      "name": "Cfg_Customized2VoltageMinInput",
+      "description": "Customized2 minimum voltage input for the sensor",
+      "units": "",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 2446,
+      "name": "Cfg_Customized2VoltageMaxInput",
+      "description": "Customized2 maximum voltage input for the sensor",
+      "units": "",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "MV",
+      "instance": 2049,
+      "name": "Cfg_Customized2TempSensorType",
+      "description": "Customized2 temperature sensor input type",
+      "units": "",
+      "access": "W",
+      "states": "1=NTC10K Type II, 2=NTC10K Type III, 3=NTC20K"
+    },
+    {
+      "type": "MV",
+      "instance": 2050,
+      "name": "Cfg_Customized3SensorType",
+      "description": "Customized3 input type of the sensor",
+      "units": "",
+      "access": "W",
+      "states": "1=DigitalInput, 2=VoltageInput, 3=TemperatureSensor"
+    },
+    {
+      "type": "BV",
+      "instance": 2065,
+      "name": "Cfg_Customized3DigitalInputType",
+      "description": "Customized3 digital input type of the sensor",
+      "units": "",
+      "access": "W",
+      "states": "0=NormallyOpen, 1=NormallyClosed"
+    },
+    {
+      "type": "BV",
+      "instance": 2066,
+      "name": "Cfg_Customized3VoltageInputControlAction",
+      "description": "Customized3 sensor the polarity of the voltage input",
+      "units": "",
+      "access": "W",
+      "states": "0=Direct, 1=Reverse"
+    },
+    {
+      "type": "AV",
+      "instance": 2447,
+      "name": "Cfg_Customized3VoltageMinInput",
+      "description": "Customized3 minimum voltage input for the sensor",
+      "units": "",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 2448,
+      "name": "Cfg_Customized3VoltageMaxInput",
+      "description": "Customized3 maximum voltage input for the sensor",
+      "units": "",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "MV",
+      "instance": 2051,
+      "name": "Cfg_Customized3TempSensorType",
+      "description": "Customized3 temperature sensor input type",
+      "units": "",
+      "access": "W",
+      "states": "1=NTC10K Type II, 2=NTC10K Type III, 3=NTC20K"
+    },
+    {
+      "type": "BV",
+      "instance": 2075,
+      "name": "Cfg_CO2_OutputEnable",
+      "description": "Enable CO2 output.",
+      "units": "",
+      "access": "W",
+      "states": "0=Off, 1=On"
+    },
+    {
+      "type": "MV",
+      "instance": 2065,
+      "name": "Cfg_CO2_DeviceType",
+      "description": "The user selects the CO2 device type.",
+      "units": "",
+      "access": "W",
+      "states": "1=Analog, 2=Binary"
+    },
+    {
+      "type": "MV",
+      "instance": 2066,
+      "name": "Cfg_CO2_AnalogType",
+      "description": "The user selects the CO2 analog type.",
+      "units": "",
+      "access": "W",
+      "states": "1=0-10V, 2=2-10V"
+    },
+    {
+      "type": "BV",
+      "instance": 2076,
+      "name": "Cfg_CO2_BinaryType",
+      "description": "The user selects the CO2 binary type.",
+      "units": "",
+      "access": "W",
+      "states": "0=NormallyOpen, 1=NormallyClosed"
+    },
+    {
+      "type": "AV",
+      "instance": 2485,
+      "name": "Cfg_CO2_ThresholdLimit",
+      "description": "The user set the trigger threshold for the CO2 binary type.",
+      "units": "",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 2486,
+      "name": "Cfg_CO2_ThresholdDeadband",
+      "description": "The user can set the CO2 threshold deadband.",
+      "units": "",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 2487,
+      "name": "Cfg_EntryDoor_ActionDelayTime",
+      "description": "Delay before the entry door switch triggers its action",
+      "units": "",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "MV",
+      "instance": 2067,
+      "name": "Cfg_EntryDoor_OpenAction",
+      "description": "The user can set the action to open the Entry door switch sensor.",
+      "units": "",
+      "access": "W",
+      "states": "1=NoAction, 2=DisableHVACSystem, 3=SwitchToUnoccupied Mode, 4=AlarmOnly"
+    },
+    {
+      "type": "AV",
+      "instance": 2488,
+      "name": "Cfg_Balcony_Window_ActionDelayTime",
+      "description": "Delay before the balcony/window switch triggers its action",
+      "units": "",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "MV",
+      "instance": 2068,
+      "name": "Cfg_Balcony_Window_OpenAction",
+      "description": "The user can set the action to open the balcony/ window sensor.",
+      "units": "",
+      "access": "W",
+      "states": "1=DisableHVACSystem, 2=SwitchToUnoccupied Mode, 3=AlarmOnly"
+    },
+    {
+      "type": "BV",
+      "instance": 2077,
+      "name": "Cfg_Light_OutputType",
+      "description": "The user can set the type of lighting control output.",
+      "units": "",
+      "access": "W",
+      "states": "0=NormallyOpen, 1=NormallyClosed"
+    },
+    {
+      "type": "AV",
+      "instance": 2489,
+      "name": "Cfg_Light_OFFDelayTime",
+      "description": "The user set the time delay for turning off the lighting.",
+      "units": "",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "BV",
+      "instance": 2085,
+      "name": "Cfg_Light_OutputEnable",
+      "description": "Enable Lingting Control Output.",
+      "units": "",
+      "access": "W",
+      "states": "0=Off, 1=On"
+    },
+    {
+      "type": "AV",
+      "instance": 2490,
+      "name": "Cfg_Occupancy_SensorDelayTime",
+      "description": "The user set the time delay for occupancy sensor.",
+      "units": "",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "BV",
+      "instance": 2078,
+      "name": "Cfg_Occupancy_OutputType",
+      "description": "The user set the occupancy type.",
+      "units": "",
+      "access": "W",
+      "states": "0=NormallyOpen, 1=NormallyClosed"
+    },
+    {
+      "type": "BV",
+      "instance": 2086,
+      "name": "Cfg_Occupancy_OutputEnable",
+      "description": "Enable Occupancy Output.",
+      "units": "",
+      "access": "W",
+      "states": "0=Off, 1=On"
+    },
+    {
+      "type": "BV",
+      "instance": 2071,
+      "name": "Cfg_FreezeSwitchChar",
+      "description": "Freeze switch sensor input characteristics selection.",
+      "units": "",
+      "access": "W",
+      "states": "0=NormallyOpen, 1=NormallyClosed"
+    },
+    {
+      "type": "BV",
+      "instance": 2080,
+      "name": "Cfg_EntryDoorSensorType",
+      "description": "Entry door sensor input characteristics selection.",
+      "units": "",
+      "access": "W",
+      "states": "0=NormallyOpen, 1=NormallyClosed"
+    },
+    {
+      "type": "BV",
+      "instance": 2081,
+      "name": "Cfg_BalconcyWindowSensorType",
+      "description": "Balcony/Window sensor input characteristics selection.",
+      "units": "",
+      "access": "W",
+      "states": "0=NormallyOpen, 1=NormallyClosed"
+    },
+    {
+      "type": "BV",
+      "instance": 2002,
+      "name": "AlarmPriority_ProofofAirFlow",
+      "description": "Supply fan status mismatch alarm & priority.",
+      "units": "",
+      "access": "R",
+      "states": "0=Inactive, 1=Active"
+    },
+    {
+      "type": "BV",
+      "instance": 2049,
+      "name": "AlarmPriority_SpaceFreezeProtect",
+      "description": "Space temperature below the freeze limit for 120 s",
+      "units": "",
+      "access": "R",
+      "states": "0=Inactive, 1=Active"
+    },
+    {
+      "type": "BV",
+      "instance": 2057,
+      "name": "AlarmPriority_WaterFlwPrf",
+      "description": "Proof of water flow alarm & priority. (TC3xxB models only)",
+      "units": "",
+      "access": "R",
+      "states": "0=Inactive, 1=Active"
+    },
+    {
+      "type": "BV",
+      "instance": 2050,
+      "name": "AlarmPriority_UnknownTime",
+      "description": "Time lost alarm",
+      "units": "",
+      "access": "R",
+      "states": "0=Inactive, 1=Active"
+    },
+    {
+      "type": "AV",
+      "instance": 2081,
+      "name": "AlarmPriority_TempSens",
+      "description": "Temperature sensor alarm priority",
+      "units": "",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 2082,
+      "name": "AlarmPriority_HumSens",
+      "description": "Humidity sensor alarm priority",
+      "units": "",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "MV",
+      "instance": 2036,
+      "name": "Alarm_SylkCommFailure",
+      "description": "Sylk communication failure; shows which sensor or many failed",
+      "units": "",
+      "access": "R",
+      "states": "1=Normal, 2=SylkAddr2Fail, 3=SylkAddr3Fail, 4=SylkAddr4Fail, 5=SylkAddr5Fail, 8=SylkAddr8Fail, 10=SylkAddr10Fail, 16=ManySylkFail"
+    },
+    {
+      "type": "AV",
+      "instance": 2084,
+      "name": "AlarmPriority_SpcTempHI_Lolimit",
+      "description": "Space temperature out of range alarm priority",
+      "units": "",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "MV",
+      "instance": 2029,
+      "name": "AlarmPriority_DATempAlarm_Fault",
+      "description": "Discharge air sensor alarm: failed (high) or out of range (medium)",
+      "units": "",
+      "access": "R",
+      "states": "1=Inactive, 2=Medium, 3=High"
+    },
+    {
+      "type": "MV",
+      "instance": 2042,
+      "name": "AlarmPriority_OATempAlarm_Fault",
+      "description": "Outdoor air sensor alarm: failed (high) or out of range (medium)",
+      "units": "",
+      "access": "R",
+      "states": "1=Inactive, 2=Medium, 3=High"
+    },
+    {
+      "type": "BV",
+      "instance": 2011,
+      "name": "AlarmPriority_ShutdownFault",
+      "description": "Shutdown signal received from network or terminal",
+      "units": "",
+      "access": "R",
+      "states": "0=Inactive, 1=Active"
+    },
+    {
+      "type": "MV",
+      "instance": 2030,
+      "name": "Alarm_PipeSensorFailure",
+      "description": "Pipe sensor failure occurs.",
+      "units": "",
+      "access": "R",
+      "states": "1=Inactive, 3=Active"
+    },
+    {
+      "type": "AV",
+      "instance": 2085,
+      "name": "Alarm_PipeSensorTempHeatOrCoolThreshold",
+      "description": "Pipe water temperature not suitable for heating or cooling",
+      "units": "",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "BV",
+      "instance": 2051,
+      "name": "Alarm_RoomTempTrendFailure",
+      "description": "Room temperature changing trend is reversed with system operating mode.",
+      "units": "",
+      "access": "R",
+      "states": "0=Inactive, 1=Active"
+    },
+    {
+      "type": "BV",
+      "instance": 2052,
+      "name": "Alarm_CHWDrainPanSensor",
+      "description": "Drain pan sensor alarm",
+      "units": "",
+      "access": "R",
+      "states": "0=Inactive, 1=Active"
+    },
+    {
+      "type": "MV",
+      "instance": 2031,
+      "name": "Alarm_PipeSensorOutofRange",
+      "description": "Pipe sensor temperature out of range.",
+      "units": "",
+      "access": "R",
+      "states": "1=Inactive, 3=Active"
+    },
+    {
+      "type": "MV",
+      "instance": 2052,
+      "name": "Alarm_WSHPSystemEnableState",
+      "description": "Water source heat pump disabled from the network; compressor off",
+      "units": "",
+      "access": "R",
+      "states": "1=Inactive, 3=Active"
+    },
+    {
+      "type": "MV",
+      "instance": 2074,
+      "name": "AlarmPriority_OccuSen_Fault",
+      "description": "Occupancy sensor alarm & priority.",
+      "units": "",
+      "access": "R",
+      "states": "1=Inactive, 3=Active"
+    },
+    {
+      "type": "MV",
+      "instance": 2075,
+      "name": "AlarmPriority_LightSen_Fault",
+      "description": "Light sensor alarm & priority.",
+      "units": "",
+      "access": "R",
+      "states": "1=Inactive, 3=Active"
+    },
+    {
+      "type": "MV",
+      "instance": 2076,
+      "name": "AlarmPriority_BalWinSen_Fault",
+      "description": "Balcony/Window sensor alarm & priority.",
+      "units": "",
+      "access": "R",
+      "states": "1=Inactive, 3=Active"
+    },
+    {
+      "type": "MV",
+      "instance": 2077,
+      "name": "AlarmPriority_EnDoorOpSen_Fault",
+      "description": "Entry door open sensor alarm & priority.",
+      "units": "",
+      "access": "R",
+      "states": "1=Inactive, 3=Active"
+    },
+    {
+      "type": "MV",
+      "instance": 2078,
+      "name": "AlarmPriority_CO2LvlAlarm_Fault",
+      "description": "when the CO2 sensor has hardware fault, high alarm is reported",
+      "units": "",
+      "access": "R",
+      "states": "1=Inactive, 2=Medium, 3=High"
+    },
+    {
+      "type": "BV",
+      "instance": 2008,
+      "name": "AlarmPriority_Co2lvlHighlimit",
+      "description": "When the value of CO2 sensor exceeds the threshold, alarm is reported.",
+      "units": "",
+      "access": "R",
+      "states": "0=Inactive, 1=Active"
+    },
+    {
+      "type": "BV",
+      "instance": 2010,
+      "name": "AlarmPriority_CoilFreezeProtAlm",
+      "description": "Coil freeze switch active (fan coil units)",
+      "units": "",
+      "access": "R",
+      "states": "0=Inactive, 1=Active"
+    },
+    {
+      "type": "AV",
+      "instance": 2088,
+      "name": "Cfg_ProofofAirFlowAlarm",
+      "description": "Bit flags for outputs to shut off on an airflow proof alarm",
+      "units": "",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 193,
+      "name": "Cfg_Alarm_WaterFlowAlarmConfig",
+      "description": "Bit flags for outputs to shut off on a water flow alarm (TC3xxB models only)",
+      "units": "",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 2441,
+      "name": "Cfg_SpaceTempFaultyAlarm",
+      "description": "Bit flags for action when the remote space sensor is invalid",
+      "units": "",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 2098,
+      "name": "Cfg_RoomTempTrendFailure",
+      "description": "Shut down all digital outputs on a room temperature trend failure",
+      "units": "",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 2100,
+      "name": "Cfg_DrainPanSensorAlarm",
+      "description": "Bit flags for outputs to shut off on a drain pan alarm",
+      "units": "",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 2475,
+      "name": "Cfg_CoilFreezeProtectionAlarm",
+      "description": "Bit flags for outputs to turn on during a coil freeze alarm",
+      "units": "",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 291,
+      "name": "Cfg_CO2Alarm_LvlHighLim",
+      "description": "CO2 level above which the CO2 alarm is raised",
+      "units": "",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "BV",
+      "instance": 2067,
+      "name": "no_Customized1DigitalOutput",
+      "description": "Customized1 sensor digital output",
+      "units": "",
+      "access": "R",
+      "states": "0=Off, 1=On"
+    },
+    {
+      "type": "AV",
+      "instance": 2449,
+      "name": "no_Customized1VoltageOutput",
+      "description": "Customized1 sensor voltage output percentage",
+      "units": "%",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 2450,
+      "name": "no_Customized1TempOutput",
+      "description": "Customized1 sensor temperature output",
+      "units": "°F",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "BV",
+      "instance": 2068,
+      "name": "no_Customized2DigitalOutput",
+      "description": "Customized2 sensor digital output",
+      "units": "",
+      "access": "R",
+      "states": "0=Off, 1=On"
+    },
+    {
+      "type": "AV",
+      "instance": 2451,
+      "name": "no_Customized2VoltageOutput",
+      "description": "Customized2 sensor voltage output percentage",
+      "units": "%",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 2452,
+      "name": "no_Customized2TempOutput",
+      "description": "Customized2 sensor temperature output",
+      "units": "°F",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "BV",
+      "instance": 2069,
+      "name": "no_Customized3DigitalOutput",
+      "description": "Customized3 sensor digital output",
+      "units": "",
+      "access": "R",
+      "states": "0=Off, 1=On"
+    },
+    {
+      "type": "AV",
+      "instance": 2453,
+      "name": "no_Customized3VoltageOutput",
+      "description": "Customized3 sensor voltage output percentage",
+      "units": "%",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 2454,
+      "name": "no_Customized3TempOutput",
+      "description": "Customized3 sensor temperature output",
+      "units": "°F",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "MV",
+      "instance": 2044,
+      "name": "no_HeatOATLockOut",
+      "description": "Outdoor air temperature heat lockout flag. (TC3xxB models only)",
+      "units": "",
+      "access": "R",
+      "states": "1=None, 2=HeatLockout, 3=CompressorLockout, 4=AuxiliaryHeatLockout"
+    },
+    {
+      "type": "BV",
+      "instance": 2059,
+      "name": "no_CoolOATLockOut",
+      "description": "Outdoor air temperature Cool lockout flag. (TC3xxB models only)",
+      "units": "",
+      "access": "R",
+      "states": "0=Off, 1=On"
+    },
+    {
+      "type": "AV",
+      "instance": 2026,
+      "name": "no_CoolCtrl_RunTimeAccumulate",
+      "description": "Outputs the actual run time of cooling control",
+      "units": "h",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "MV",
+      "instance": 2013,
+      "name": "no_LocalOccSensState",
+      "description": "Local occupancy sensor state.",
+      "units": "",
+      "access": "R",
+      "states": "1=Occupied, 2=Unoccupied, 3=Unused"
+    },
+    {
+      "type": "AV",
+      "instance": 2027,
+      "name": "no_AuxHeatTermLdOut",
+      "description": "Terminal load for auxiliary heat",
+      "units": "%",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "MV",
+      "instance": 2014,
+      "name": "no_EffOccState",
+      "description": "Effective occupancy state",
+      "units": "",
+      "access": "R",
+      "states": "1=Commercial Occupied, 2=Unoccupied, 3=Bypass, 4=Standby, 5=NoOverride"
+    },
+    {
+      "type": "AV",
+      "instance": 2028,
+      "name": "no_CoolStg1_RunTimeAccumulate",
+      "description": "Outputs the actual run time of cooling stage 1",
+      "units": "h",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 2029,
+      "name": "no_HeatCtrl_RunTimeAccumulate",
+      "description": "Outputs the actual run time of heating control",
+      "units": "h",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 2030,
+      "name": "no_HeatStg1_RunTimeAccumulate",
+      "description": "Outputs the actual run time of heating stage 1",
+      "units": "h",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 2031,
+      "name": "no_Fan_RunTimeAccumulate",
+      "description": "Outputs the actual run time of Fan.",
+      "units": "h",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "BV",
+      "instance": 2015,
+      "name": "no_OccupancyState",
+      "description": "System is in occupied/ unoccupied state.",
+      "units": "",
+      "access": "R",
+      "states": "0=Unoccupied, 1=Occupied"
+    },
+    {
+      "type": "BV",
+      "instance": 2016,
+      "name": "no_HeatDatLockout",
+      "description": "Discharge Air High Limit output: DAT heating lockout flag",
+      "units": "",
+      "access": "R",
+      "states": "0=Off, 1=On"
+    },
+    {
+      "type": "BV",
+      "instance": 2017,
+      "name": "no_IsAuxHeatDisable",
+      "description": "Auxiliary heating enabled/ disabled.",
+      "units": "",
+      "access": "R",
+      "states": "0=Off, 1=On"
+    },
+    {
+      "type": "BV",
+      "instance": 2018,
+      "name": "no_IsHeatDisable",
+      "description": "Heating enabled/ disabled.",
+      "units": "",
+      "access": "R",
+      "states": "0=Off, 1=On"
+    },
+    {
+      "type": "BV",
+      "instance": 2019,
+      "name": "no_IsFanOnly",
+      "description": "Fan only mode enabled/ disabled.",
+      "units": "",
+      "access": "R",
+      "states": "0=Off, 1=On"
+    },
+    {
+      "type": "AV",
+      "instance": 2032,
+      "name": "no_EffSp",
+      "description": "Effective setpoint",
+      "units": "°F",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "MV",
+      "instance": 2015,
+      "name": "no_EffTempMode",
+      "description": "Effective temperature mode",
+      "units": "",
+      "access": "R",
+      "states": "1=CoolMode, 2=ReheatMode, 3=HeatMode, 4=EmergencyHeat, 5=Off, 6=Ventilation"
+    },
+    {
+      "type": "AV",
+      "instance": 2033,
+      "name": "no_EffAuxHeatSetpoint",
+      "description": "Effective auxiliary heat setpoint.",
+      "units": "°F",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "BV",
+      "instance": 2020,
+      "name": "no_SystemDisable",
+      "description": "System disable.",
+      "units": "",
+      "access": "R",
+      "states": "0=Off, 1=On"
+    },
+    {
+      "type": "BV",
+      "instance": 2021,
+      "name": "no_DehumActive",
+      "description": "Dehumidification active/ inactive.",
+      "units": "",
+      "access": "R",
+      "states": "0=Inactive, 1=Active"
+    },
+    {
+      "type": "BV",
+      "instance": 2022,
+      "name": "no_BypassState",
+      "description": "Bypass state output",
+      "units": "",
+      "access": "R",
+      "states": "0=NoBypass, 1=Bypass"
+    },
+    {
+      "type": "MV",
+      "instance": 2016,
+      "name": "no_ManualOverride",
+      "description": "Manual override",
+      "units": "",
+      "access": "R",
+      "states": "1=Occupied, 2=Unoccupied, 3=Bypass, 4=Standby, 5=Null"
+    },
+    {
+      "type": "MV",
+      "instance": 2017,
+      "name": "no_EffOccSensState",
+      "description": "Effective occupancy sensor state",
+      "units": "",
+      "access": "R",
+      "states": "1=Occupied, 2=UnOccupied, 3=Unused"
+    },
+    {
+      "type": "BV",
+      "instance": 2023,
+      "name": "no_CoolDatLockout",
+      "description": "Discharge air high limit output: DAT cooling lockout flag",
+      "units": "",
+      "access": "R",
+      "states": "0=Off, 1=On"
+    },
+    {
+      "type": "AV",
+      "instance": 2036,
+      "name": "no_CoolTermLdOut",
+      "description": "Terminal load for cooling",
+      "units": "%",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "BV",
+      "instance": 2025,
+      "name": "no_IsCoolDisable",
+      "description": "Cooling enabled/ disabled.",
+      "units": "",
+      "access": "R",
+      "states": "0=Enable, 1=Disable"
+    },
+    {
+      "type": "AV",
+      "instance": 2038,
+      "name": "no_HeatTermLdOut",
+      "description": "Terminal load for heating",
+      "units": "%",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "BV",
+      "instance": 2026,
+      "name": "no_FanStart",
+      "description": "Fan start command",
+      "units": "",
+      "access": "R",
+      "states": "0=Off, 1=On"
+    },
+    {
+      "type": "AV",
+      "instance": 2040,
+      "name": "no_DaTemp",
+      "description": "Discharge air temperature",
+      "units": "°F",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 2041,
+      "name": "no_PipeTemp",
+      "description": "Pipe sensor temperature",
+      "units": "°F",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "MV",
+      "instance": 2018,
+      "name": "no_EffSchCurrentState",
+      "description": "Current schedule state to network.",
+      "units": "",
+      "access": "R",
+      "states": "1=Occupied_Wake, 2=Unoccupied_Away, 3=Bypass_Return, 4=Standby_Sleep, 5=NoOverride, 6=None_Custom, 7=None_Vacation, 8=None_Unrented"
+    },
+    {
+      "type": "MV",
+      "instance": 2019,
+      "name": "no_EffSchNextState",
+      "description": "Next schedule state to network.",
+      "units": "",
+      "access": "R",
+      "states": "1=Occupied_Wake, 2=Unoccupied_Away, 3=Bypass_Return, 4=Standby_Sleep, 5=NoOverride, 6=None_Custom, 7=None_Vacation, 8=None_Unrented"
+    },
+    {
+      "type": "AV",
+      "instance": 2042,
+      "name": "no_EffTUNCOS",
+      "description": "Minutes until the next schedule change",
+      "units": "min",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 2043,
+      "name": "no_OverrideRemTime",
+      "description": "Time left before the override ends",
+      "units": "min",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 2044,
+      "name": "no_CtrlSpaceTemp",
+      "description": "Control space temperature output (Only for testing purpose)",
+      "units": "°F",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "BV",
+      "instance": 2030,
+      "name": "no_RecoveryStatus",
+      "description": "This point gives out when the system is in recovery mode.",
+      "units": "",
+      "access": "R",
+      "states": "0=Normal, 1=Recovery"
+    },
+    {
+      "type": "AV",
+      "instance": 2045,
+      "name": "no_TermLdOut",
+      "description": "Terminal load, -200 to +200 % (negative = heating)",
+      "units": "%",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 2046,
+      "name": "no_EffDATSp",
+      "description": "Effective discharge air control setpoint",
+      "units": "°F",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 2001,
+      "name": "no_SpaceTemp",
+      "description": "Space Temperature",
+      "units": "°F",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 2002,
+      "name": "no_SpaceHumidity",
+      "description": "Space Humidity",
+      "units": "%RH",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 2003,
+      "name": "no_EffHeatSp",
+      "description": "Effective Heating Setpoint",
+      "units": "°F",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 2004,
+      "name": "no_EffCoolSp",
+      "description": "Effective Cooling Setpoint",
+      "units": "°F",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "MV",
+      "instance": 2001,
+      "name": "no_SetpointSts",
+      "description": "Setpoint status; Temporary after a user adjustment",
+      "units": "",
+      "access": "R",
+      "states": "1=Occupied_Wake, 2=Unoccupied_Away, 3=Temporary, 4=Standby_Return, 5=Permanent, 6=Fixedsetpoint, 7=Sleep, 8=Custom, 9=Vacation, 10=Unrented"
+    },
+    {
+      "type": "AV",
+      "instance": 2439,
+      "name": "no_OaTemp",
+      "description": "Outdoor air temperature.",
+      "units": "°F",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 2440,
+      "name": "no_OaHumidity",
+      "description": "Outdoor air Humidity.",
+      "units": "%RH",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 2442,
+      "name": "no_SpaceCO2",
+      "description": "Space CO2",
+      "units": "",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "BV",
+      "instance": 2035,
+      "name": "no_GenericAlarm",
+      "description": "General alarm flag",
+      "units": "",
+      "access": "R",
+      "states": "0=Inactive, 1=Active"
+    },
+    {
+      "type": "AV",
+      "instance": 2470,
+      "name": "no_CoolStg2_RunTimeAccumulate",
+      "description": "Outputs the actual run time of cooling stage 2. (TC3xxB models only)",
+      "units": "h",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 2471,
+      "name": "no_HeatStg2_RunTimeAccumulate",
+      "description": "Outputs the actual run time of heating stage 2. (TC3xxB models only)",
+      "units": "h",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 2506,
+      "name": "no_LightSensorOutput",
+      "description": "Light sensor output.",
+      "units": "",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "CSV",
+      "instance": 1,
+      "name": "no_DateAndTime",
+      "description": "Users can check the time of the device through the network",
+      "units": "",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 2021,
+      "name": "no_ScheduleTimeToNext",
+      "description": "Time to next schedule state",
+      "units": "min",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 2513,
+      "name": "no_ScheduleHospitalityPointsValue",
+      "description": "Hospitality status points value",
+      "units": "",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "MV",
+      "instance": 2079,
+      "name": "no_ScheduleActive",
+      "description": "Schedule activation status.",
+      "units": "",
+      "access": "R",
+      "states": "1=None, 2=Weekly, 3=Holiday, 4=SpecialEvent, 5=Vacation"
+    },
+    {
+      "type": "MV",
+      "instance": 2054,
+      "name": "Cfg_ScheduleType",
+      "description": "Users can choose commercial, residential, fixed setpoint schedule or hospitality schedule.",
+      "units": "",
+      "access": "W",
+      "states": "1=Commercial, 2=Residential, 3=FixedSetpoint, 4=Hospitality"
+    },
+    {
+      "type": "MV",
+      "instance": 2027,
+      "name": "no_ScheduleCurrentState",
+      "description": "Current schedule state.",
+      "units": "",
+      "access": "R",
+      "states": "1=Occupied_Wake, 2=Unoccupied_Away, 3=Temporary_Return, 4=Standby_Sleep, 5=None_Custom, 6=None_Vacation, 7=None_Unrented"
+    },
+    {
+      "type": "MV",
+      "instance": 2028,
+      "name": "no_ScheduleNextState",
+      "description": "Next schedule state.",
+      "units": "",
+      "access": "R",
+      "states": "1=Occupied_Wake, 2=Unoccupied_Away, 3=Temporary_Return, 4=Standby_Sleep, 5=None_Custom, 6=None_Vacation, 7=None_Unrented"
+    },
+    {
+      "type": "AV",
+      "instance": 223,
+      "name": "no_SylkAddr2Temp",
+      "description": "TR40-H-CO2: Temperature (May also use models TR40, TR40-H, TR40-CO2, TR40-H-CO2)",
+      "units": "°F",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 224,
+      "name": "no_SylkAddr2Hum",
+      "description": "TR40-H-CO2: Humidity (May also use models TR40, TR40-H, TR40-CO2, TR40-H-CO2)",
+      "units": "%RH",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 225,
+      "name": "no_SylkAddr2CO2",
+      "description": "TR40-H-CO2: CO2. (May also use models TR40-CO2, TR40-H-CO2)",
+      "units": "ppm",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 226,
+      "name": "no_SylkAddr3Temp",
+      "description": "Address 3 TR40: Temperature",
+      "units": "°F",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 227,
+      "name": "no_SylkAddr4Temp",
+      "description": "Address 4 TR40: Temperature",
+      "units": "°F",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 228,
+      "name": "no_SylkAddr5Temp",
+      "description": "Address 5 TR40: Temperature",
+      "units": "°F",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 231,
+      "name": "no_SylkAddr8Temp",
+      "description": "Address 8 C7400S: Temperature.",
+      "units": "°F",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 232,
+      "name": "no_SylkAddr8Hum",
+      "description": "Address 8 C7400S: Humidity.",
+      "units": "%RH",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 235,
+      "name": "no_SylkAddr10Temp",
+      "description": "Address 10 C7400S: Temperature",
+      "units": "°F",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 236,
+      "name": "no_SylkAddr10Hum",
+      "description": "Address 10 C7400S: Humidity",
+      "units": "%RH",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 2505,
+      "name": "no_SylkAddr6Temp",
+      "description": "TR100 Em TR75: Temperature.",
+      "units": "°F",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 230,
+      "name": "no_SylkAddr6Hum",
+      "description": "TR100 Em TR75: Humidity.",
+      "units": "%RH",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "BV",
+      "instance": 2039,
+      "name": "Cfg_AuxiliaryHeatEnable",
+      "description": "Auxiliary heat enable",
+      "units": "",
+      "access": "W",
+      "states": "0=Off, 1=On"
+    },
+    {
+      "type": "MV",
+      "instance": 2003,
+      "name": "Cfg_HeatPmp_AuxMode",
+      "description": "Auxiliary heat type",
+      "units": "",
+      "access": "W",
+      "states": "1=Peripheral, 2=Supplemental"
+    },
+    {
+      "type": "AV",
+      "instance": 2018,
+      "name": "Cfg_AuxiliaryHeatPeriperalDroop",
+      "description": "Peripheral aux heat droop",
+      "units": "Δ°F",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 2019,
+      "name": "Cfg_AuxiliaryHeatSupplementalDroop",
+      "description": "Supplemental aux heat droop",
+      "units": "Δ°F",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "BV",
+      "instance": 2001,
+      "name": "Cfg_AuxHeat_FanOnOff",
+      "description": "Fan run on/Off when aux heat on",
+      "units": "",
+      "access": "W",
+      "states": "0=Off, 1=On"
+    },
+    {
+      "type": "AV",
+      "instance": 50,
+      "name": "Cfg_HeatPmp_AuxHeatLockoutSp",
+      "description": "Outdoor air temperature auxiliary heat lockout.",
+      "units": "°F",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 215,
+      "name": "Cfg_HeatPmp_UpStgTmr",
+      "description": "Up stage timer value",
+      "units": "min",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "BV",
+      "instance": 2055,
+      "name": "Cfg_HeatPmp_UpStgTmrEn",
+      "description": "Up stage timer enable",
+      "units": "",
+      "access": "W",
+      "states": "0=Off, 1=On"
+    },
+    {
+      "type": "AV",
+      "instance": 53,
+      "name": "Cfg_HeatPmp_AuxHeatRampFactor",
+      "description": "Auxiliary heat recovery ramp factor",
+      "units": "",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "BV",
+      "instance": 466,
+      "name": "Cfg_AuxiliaryHeat_EnableOATLockout",
+      "description": "Enable auxiliary heat outdoor air temperature lockout. (TC3xxB models only)",
+      "units": "",
+      "access": "W",
+      "states": "0=Disable, 1=Enable"
+    },
+    {
+      "type": "AV",
+      "instance": 2110,
+      "name": "Cfg_CompressorDelay",
+      "description": "Compressor delay time setting. (TC3xxB models only)",
+      "units": "s",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 51,
+      "name": "Cfg_HeatPmp_CompLockoutSp",
+      "description": "Outdoor air temperature compressor lockout. (TC3xxB models only)",
+      "units": "°F",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "BV",
+      "instance": 465,
+      "name": "Cfg_Compressor_EnableOATLockout",
+      "description": "Enable compressor outdoor air temperature lockout. (TC3xxB models only)",
+      "units": "",
+      "access": "W",
+      "states": "0=Disable, 1=Enable"
+    },
+    {
+      "type": "AV",
+      "instance": 41,
+      "name": "Cfg_Cool_Tr",
+      "description": "Cooling throttling range",
+      "units": "Δ°F",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 42,
+      "name": "Cfg_Cool_It",
+      "description": "Cooling integral time 0 = disable (i.e., proportional only)",
+      "units": "s",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 44,
+      "name": "Cfg_Cool_CPH",
+      "description": "Cooling system response. (TC3xxB models only)",
+      "units": "",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 45,
+      "name": "Cfg_Cool_MinOnTime",
+      "description": "Cooling stage minimum on time. (TC3xxB models only)",
+      "units": "s",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 82,
+      "name": "Cfg_Cool_MinOffTime",
+      "description": "Cooling stage minimum off time. (TC3xxB models only)",
+      "units": "s",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 46,
+      "name": "Cfg_Cool_CoolLockoutSp",
+      "description": "Outdoor air temperature cool lockout. (TC3xxB models only)",
+      "units": "°F",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 47,
+      "name": "Cfg_Cool_DischLoLimSp",
+      "description": "Discharge air temperature low limit setpoint",
+      "units": "°F",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "BV",
+      "instance": 467,
+      "name": "Cfg_Cool_EnableOATLockout",
+      "description": "Enable cool outdoor air temperature lockout. (TC3xxB models only)",
+      "units": "",
+      "access": "W",
+      "states": "0=Disable, 1=Enable"
+    },
+    {
+      "type": "AV",
+      "instance": 101,
+      "name": "Cfg_Thermostat_Deadband",
+      "description": "Temperature differential between heat and cool setpoint",
+      "units": "Δ°F",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "BV",
+      "instance": 2040,
+      "name": "Cfg_DehumEnable",
+      "description": "Enable/disable dehumidification",
+      "units": "",
+      "access": "W",
+      "states": "0=Off, 1=On"
+    },
+    {
+      "type": "AV",
+      "instance": 48,
+      "name": "Cfg_Dehum_SpaceRHHighLimit",
+      "description": "Space relative humidity (RH) high limit setpoint",
+      "units": "%RH",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 2022,
+      "name": "Cfg_Dehum_OverCool_Offset",
+      "description": "Dehumidification over cool offset",
+      "units": "Δ°F",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "BV",
+      "instance": 133,
+      "name": "Cfg_Dehum_StageReHeatOpEn",
+      "description": "Staged reheat operation enable",
+      "units": "",
+      "access": "W",
+      "states": "0=Disable, 1=Enable"
+    },
+    {
+      "type": "BV",
+      "instance": 2041,
+      "name": "Cfg_DehumAuxHeatForReheat",
+      "description": "Aux heat reheat enable",
+      "units": "",
+      "access": "W",
+      "states": "0=Disable, 1=Enable"
+    },
+    {
+      "type": "MV",
+      "instance": 12,
+      "name": "Cfg_FanType",
+      "description": "Fan can be configured as single speed, two speed or as a variable speed fan.",
+      "units": "",
+      "access": "W",
+      "states": "1=SingleSpeed, 2=TwoSpeed, 3=ThreeSpeed, 4=VariableSpeed"
+    },
+    {
+      "type": "MV",
+      "instance": 89,
+      "name": "Cfg_FanDefaultMode",
+      "description": "Fan Mode of operation config by user & supervisor.",
+      "units": "",
+      "access": "W",
+      "states": "1=Auto, 2=Circulate, 3=Continuous"
+    },
+    {
+      "type": "AV",
+      "instance": 39,
+      "name": "Cfg_FanRunOffDelayCool",
+      "description": "Fan run on time after all cooling terminal turns off.",
+      "units": "s",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 40,
+      "name": "Cfg_FanRunOnDelayHeat",
+      "description": "Fan run on delay time after heating terminal turns on.",
+      "units": "s",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 2017,
+      "name": "Cfg_FanRunOffDelayHeat",
+      "description": "Fan run on time after all heating terminal turns off.",
+      "units": "s",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 2087,
+      "name": "Cfg_FanConfig",
+      "description": "Bit flags for allowed fan modes (auto bit must be 1)",
+      "units": "",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 2472,
+      "name": "Cfg_FanManualVariableSpeed",
+      "description": "The user can manually set the speed of the variable fan.",
+      "units": "%",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "MV",
+      "instance": 2063,
+      "name": "Cfg_FanVariableSwitchType",
+      "description": "Users can select variable fan speed switch type.",
+      "units": "",
+      "access": "W",
+      "states": "1=ThreeSpeed, 2=VariableSpeed"
+    },
+    {
+      "type": "MV",
+      "instance": 2062,
+      "name": "Cfg_FanResSpeedSetting",
+      "description": "Users can select the fan speed setting to the residential schedule.",
+      "units": "",
+      "access": "W",
+      "states": "1=Fixed, 2=AutoControl"
+    },
+    {
+      "type": "MV",
+      "instance": 583,
+      "name": "Cfg_FanCoilManualSpeedSel",
+      "description": "Fan speed",
+      "units": "",
+      "access": "W",
+      "states": "1=Auto, 2=Low, 3=Medium, 4=High, 5=Off, 6=Circulate, 7=Variable"
+    },
+    {
+      "type": "MV",
+      "instance": 2055,
+      "name": "Cfg_FanResWakeMode",
+      "description": "Users can set the fan mode to the residential schedule wake status.",
+      "units": "",
+      "access": "W",
+      "states": "1=Auto, 2=Circulate, 3=Continuous"
+    },
+    {
+      "type": "MV",
+      "instance": 2056,
+      "name": "Cfg_FanResAwayMode",
+      "description": "Users can set the fan mode to the residential schedule away status.",
+      "units": "",
+      "access": "W",
+      "states": "1=Auto, 2=Circulate, 3=Continuous"
+    },
+    {
+      "type": "MV",
+      "instance": 2057,
+      "name": "Cfg_FanResReturnMode",
+      "description": "Users can set the fan mode to the residential schedule return status.",
+      "units": "",
+      "access": "W",
+      "states": "1=Auto, 2=Circulate, 3=Continuous"
+    },
+    {
+      "type": "MV",
+      "instance": 2058,
+      "name": "Cfg_FanResSleepMode",
+      "description": "Users can set the fan mode to the residential schedule sleep status.",
+      "units": "",
+      "access": "W",
+      "states": "1=Auto, 2=Circulate, 3=Continuous"
+    },
+    {
+      "type": "MV",
+      "instance": 2059,
+      "name": "Cfg_FanResCustomMode",
+      "description": "Users can set the fan mode to the residential schedule custom status.",
+      "units": "",
+      "access": "W",
+      "states": "1=Auto, 2=Circulate, 3=Continuous"
+    },
+    {
+      "type": "MV",
+      "instance": 2060,
+      "name": "Cfg_FanResVacationMode",
+      "description": "Users can set the fan mode to the residential schedule vacation status.",
+      "units": "",
+      "access": "W",
+      "states": "1=Auto, 2=Circulate"
+    },
+    {
+      "type": "BV",
+      "instance": 10,
+      "name": "Cfg_FanOnHeat",
+      "description": "Fan in heat mode: external duct thermostat or thermostat output",
+      "units": "",
+      "access": "W",
+      "states": "0=Off, 1=On"
+    },
+    {
+      "type": "BV",
+      "instance": 2074,
+      "name": "Cfg_AuxiliaryHeat_DisableCompressor",
+      "description": "Heat pump: auxiliary heat on disables the compressor stage",
+      "units": "",
+      "access": "W",
+      "states": "0=Off, 1=On"
+    },
+    {
+      "type": "MV",
+      "instance": 585,
+      "name": "Cfg_TwoSpeedVentMode",
+      "description": "Fan speed for ventilation mode",
+      "units": "",
+      "access": "W",
+      "states": "1=Low, 2=High"
+    },
+    {
+      "type": "MV",
+      "instance": 586,
+      "name": "Cfg_FanCoilThreeSpeedVentMode",
+      "description": "Fan speed for ventilation mode",
+      "units": "",
+      "access": "W",
+      "states": "1=Low, 2=Medium, 3=High"
+    },
+    {
+      "type": "MV",
+      "instance": 581,
+      "name": "Cfg_FanCoilTwoSpeedType",
+      "description": "Two speed fan output type. (TC3xxB models only)",
+      "units": "",
+      "access": "W",
+      "states": "1=MultipleOutputsAtATime, 2=OneOutputAtATime"
+    },
+    {
+      "type": "MV",
+      "instance": 582,
+      "name": "Cfg_FanCoilThreeSpeedType",
+      "description": "Three speed fan output type. (TC3xxB models only)",
+      "units": "",
+      "access": "W",
+      "states": "1=MultipleOutputsAtATime, 2=OneOutputAtATime"
+    },
+    {
+      "type": "AV",
+      "instance": 1470,
+      "name": "Cfg_VarSpeedFan_VentSpeed",
+      "description": "Variable speed fan speed for ventilation mode",
+      "units": "%",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "MV",
+      "instance": 15,
+      "name": "Cfg_FanSpeed_CmprCoolSingle",
+      "description": "Heat pump two speed compressor single mode. (TC3xxB models only)",
+      "units": "",
+      "access": "W",
+      "states": "1=Low, 2=High, 3=Auto"
+    },
+    {
+      "type": "MV",
+      "instance": 2041,
+      "name": "Cfg_FanSpeed_CoolSingleMode",
+      "description": "Conventional two speed cool single mode. (TC3xxB models only)",
+      "units": "",
+      "access": "W",
+      "states": "1=Low, 2=High, 3=Auto"
+    },
+    {
+      "type": "MV",
+      "instance": 17,
+      "name": "Cfg_FanSpeed_HeatSingle",
+      "description": "Conventional two speed heat single mode. (TC3xxB models only)",
+      "units": "",
+      "access": "W",
+      "states": "1=Low, 2=High, 3=Auto"
+    },
+    {
+      "type": "MV",
+      "instance": 2043,
+      "name": "Cfg_FanSpeed_AuxHeatMode",
+      "description": "Heat pump two speed auxiliary heat single mode. (TC3xxB models only)",
+      "units": "",
+      "access": "W",
+      "states": "1=Low, 2=High, 3=Auto"
+    },
+    {
+      "type": "AV",
+      "instance": 1468,
+      "name": "Cfg_VarSpeedFan_CoolMinSpeed",
+      "description": "Variable speed fan min speed for cool",
+      "units": "%",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 1469,
+      "name": "Cfg_VarSpeedFan_CoolMaxSpeed",
+      "description": "Variable speed fan max speed for cool",
+      "units": "%",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 1473,
+      "name": "Cfg_VarSpeedFan_HeatMinSpeed",
+      "description": "Variable speed fan min speed for heat",
+      "units": "%",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 1474,
+      "name": "Cfg_VarSpeedFan_HeatMaxSpeed",
+      "description": "Variable speed fan max speed for heat",
+      "units": "%",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "MV",
+      "instance": 18,
+      "name": "Cfg_FanSpeed_HeatMulti",
+      "description": "Conventional two speed heat multi mode. (TC3xxB models only)",
+      "units": "",
+      "access": "W",
+      "states": "1=Low, 2=High, 3=Auto"
+    },
+    {
+      "type": "MV",
+      "instance": 2061,
+      "name": "Cfg_FanSpeed_CoolMulti",
+      "description": "Conventional two speed cool multi mode. (TC3xxB models only)",
+      "units": "",
+      "access": "W",
+      "states": "1=Low, 2=High, 3=Auto"
+    },
+    {
+      "type": "AV",
+      "instance": 2473,
+      "name": "Cfg_VarSpeedFan_AdjustLowSpeed",
+      "description": "Variable speed fan low speed for adjustable mode.",
+      "units": "%",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 2474,
+      "name": "Cfg_VarSpeedFan_AdjustHighSpeed",
+      "description": "Variable speed fan high speed for adjustable mode.",
+      "units": "%",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 54,
+      "name": "Cfg_Heat_Tr",
+      "description": "Heating throttling range",
+      "units": "Δ°F",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 55,
+      "name": "Cfg_Heat_It",
+      "description": "Heating integral time 0 = disable (i.e., proportional only)",
+      "units": "s",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 57,
+      "name": "Cfg_Heat_CPH",
+      "description": "Heating system response",
+      "units": "",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 58,
+      "name": "Cfg_Heat_MinOnTime",
+      "description": "Heating stage minimum on time. (TC3xxB models only)",
+      "units": "s",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 59,
+      "name": "Cfg_Heat_MinOffTime",
+      "description": "Heating stage minimum off time. (TC3xxB models only)",
+      "units": "s",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 60,
+      "name": "Cfg_Heat_HeatLockoutSp",
+      "description": "Outdoor air temperature heat lockout. (TC3xxB models only)",
+      "units": "°F",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 61,
+      "name": "Cfg_Heat_DischHiLimSp",
+      "description": "Discharge air temperature high limit setpoint",
+      "units": "°F",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "MV",
+      "instance": 2045,
+      "name": "Cfg_Heat_FuelType",
+      "description": "Heating fuel type; sets the default cycles per hour",
+      "units": "",
+      "access": "W",
+      "states": "1=Gas/Oil, 2=Electric"
+    },
+    {
+      "type": "BV",
+      "instance": 464,
+      "name": "Cfg_Heat_EnableOATLockout",
+      "description": "Enable heat outdoor air temperature lockout. (TC3xxB models only)",
+      "units": "",
+      "access": "W",
+      "states": "0=Disable, 1=Enable"
+    },
+    {
+      "type": "MV",
+      "instance": 9,
+      "name": "Cfg_Control_MainSensor",
+      "description": "Temperature sensor selection",
+      "units": "",
+      "access": "W",
+      "states": "1=LocalSensor, 2=RemoteSensor, 3=Multi-Sensor"
+    },
+    {
+      "type": "AV",
+      "instance": 14,
+      "name": "Cfg_Control_PowerupDelay",
+      "description": "Initial delay to start control after power cycle.",
+      "units": "s",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "MV",
+      "instance": 2069,
+      "name": "Cfg_Control_CO2Sensor",
+      "description": "CO2 sensor selection",
+      "units": "",
+      "access": "W",
+      "states": "1=LocalSensor, 2=RemoteSensor, 3=MultiSensors"
+    },
+    {
+      "type": "MV",
+      "instance": 2070,
+      "name": "Cfg_Control_HumiditySensor",
+      "description": "Humidity sensor selection",
+      "units": "",
+      "access": "W",
+      "states": "1=LocalSensor, 2=RemoteSensor, 3=MultiSensors"
+    },
+    {
+      "type": "MV",
+      "instance": 2071,
+      "name": "Cfg_ZoneReSens_HumSenAction",
+      "description": "Action on invalid remote humidity: use local sensor or stop equipment",
+      "units": "",
+      "access": "W",
+      "states": "1=SuspendHumidit yOutput, 2=RevertToOnboard"
+    },
+    {
+      "type": "MV",
+      "instance": 2072,
+      "name": "Cfg_ZoneReSens_CO2SenAction",
+      "description": "Action on invalid remote CO2: use local sensor or stop equipment",
+      "units": "",
+      "access": "W",
+      "states": "1=SuspendCO2Ou tput, 2=RevertToOnboard"
+    },
+    {
+      "type": "BV",
+      "instance": 136,
+      "name": "Cfg_Thermostat_TstUnitSel",
+      "description": "Thermostat unit definition (Imperial/ Metric)",
+      "units": "",
+      "access": "W",
+      "states": "0=Fahrenheit, 1=Celsius"
+    },
+    {
+      "type": "BV",
+      "instance": 2060,
+      "name": "Cfg_Thermostat_CommUnitSel",
+      "description": "Thermostat communication unit definition (Imperial/ Metric)",
+      "units": "",
+      "access": "W",
+      "states": "0=Fahrenheit, 1=Celsius"
+    },
+    {
+      "type": "MV",
+      "instance": 505,
+      "name": "Cfg_BrandType",
+      "description": "Vendor ID and Vendor name will be changed when modify brand type.",
+      "units": "",
+      "access": "W",
+      "states": "1=Honeywell, 2=Alerton, 3=None, 4=Custom"
+    },
+    {
+      "type": "MV",
+      "instance": 2053,
+      "name": "Cfg_Thermostat_LanguageType",
+      "description": "Users can change the HMI language.",
+      "units": "",
+      "access": "W",
+      "states": "1=English, 2=Spanish, 3=French, 4=Italian, 5=German"
+    },
+    {
+      "type": "BV",
+      "instance": 2034,
+      "name": "Cfg_StdbyConfig",
+      "description": "Standby action",
+      "units": "",
+      "access": "W",
+      "states": "0=StandbyAsUnoccupied, 1=StandbyAsOccupied"
+    },
+    {
+      "type": "AV",
+      "instance": 256,
+      "name": "Cfg_Thermostat_ClAdjStPt",
+      "description": "Temporary cool setpoint adjustment from User or from the supervisor.",
+      "units": "°F",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 257,
+      "name": "Cfg_Thermostat_HtAdjStPt",
+      "description": "Temporary heat setpoint adjustment from user or from the supervisor.",
+      "units": "°F",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "BV",
+      "instance": 2088,
+      "name": "no_ADR_Status",
+      "description": "The user check the status of ADR.",
+      "units": "",
+      "access": "R",
+      "states": "0=Disable, 1=Enable"
+    },
+    {
+      "type": "BV",
+      "instance": 2056,
+      "name": "Cfg_HumidificationEnable",
+      "description": "Humidification enable. (TC3xxB models only)",
+      "units": "",
+      "access": "W",
+      "states": "0=Off, 1=On"
+    },
+    {
+      "type": "AV",
+      "instance": 62,
+      "name": "Cfg_Hum_SpaceRHLowLimit",
+      "description": "Space relative humidity (RH) low limit setpoint. (TC3xxB models only)",
+      "units": "%",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 254,
+      "name": "Cfg_SpcAlarm_TempHighLim",
+      "description": "Space temperature alarm high limit",
+      "units": "°F",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 255,
+      "name": "Cfg_SpcAlarm_TempLowLim",
+      "description": "Space temperature alarm low limit",
+      "units": "°F",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 332,
+      "name": "Cfg_DaTAlarm_TempHighLim",
+      "description": "Discharge air temperature alarm high limit",
+      "units": "°F",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 333,
+      "name": "Cfg_DATAlarmTempLowLim",
+      "description": "Discharge air temperature alarm low limit",
+      "units": "°F",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 2070,
+      "name": "Cfg_PipeTempHeatThreshold",
+      "description": "Pipe sensor threshold for heating",
+      "units": "°F",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 2071,
+      "name": "Cfg_PipeTempCoolThreshold",
+      "description": "Pipe sensor threshold for cooling",
+      "units": "°F",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 2072,
+      "name": "Cfg_PipeTempHighLimit",
+      "description": "Pipe temperature alarm high limit",
+      "units": "°F",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 2073,
+      "name": "Cfg_PipeTempLowLimit",
+      "description": "Pipe temperature alarm low limit",
+      "units": "°F",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 2074,
+      "name": "Cfg_PipeSpaceHeatTempOffset",
+      "description": "2 pipe single coil hybrid control space temperature offset for heating",
+      "units": "Δ°F",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 2075,
+      "name": "Cfg_PipeSpaceCoolTempOffset",
+      "description": "2 pipe single coil hybrid control space temperature offset for cooling",
+      "units": "Δ°F",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 2437,
+      "name": "Cfg_OutdoorAirTempHighLimit",
+      "description": "Outdoor air temperature alarm high limit",
+      "units": "°F",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 2438,
+      "name": "Cfg_OutdoorAirTempLowLimit",
+      "description": "Outdoor air temperature alarm low limit",
+      "units": "°F",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "MV",
+      "instance": 130,
+      "name": "Cfg_ZoneMultiSens_Control",
+      "description": "Main control sensor configuration",
+      "units": "",
+      "access": "W",
+      "states": "1=Average, 2=Min, 3=Max, 4=Smart"
+    },
+    {
+      "type": "AV",
+      "instance": 33,
+      "name": "Cfg_ZoneMultiSens_Sens1_Wt",
+      "description": "Averaging weight of the on-board temperature sensor",
+      "units": "",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 34,
+      "name": "Cfg_ZoneMultiSens_Sens2_Wt",
+      "description": "Averaging weight of Sylk temperature sensor at address 2",
+      "units": "",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 35,
+      "name": "Cfg_ZoneMultiSens_Sens3_Wt",
+      "description": "Averaging weight of Sylk temperature sensor at address 3",
+      "units": "",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 36,
+      "name": "Cfg_ZoneMultiSens_Sens4_Wt",
+      "description": "Averaging weight of Sylk temperature sensor at address 4",
+      "units": "",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 37,
+      "name": "Cfg_ZoneMultiSens_Sens5_Wt",
+      "description": "Averaging weight of Sylk temperature sensor at address 5",
+      "units": "",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "MV",
+      "instance": 77,
+      "name": "Cfg_ZoneMultiHumSens_Control",
+      "description": "Humidity sensor configuration",
+      "units": "",
+      "access": "W",
+      "states": "1=Average, 2=Min, 3=Max, 4=Smart"
+    },
+    {
+      "type": "AV",
+      "instance": 181,
+      "name": "Cfg_ZoneMultiSens_HumSens1_Wt",
+      "description": "Averaging weight of the on-board humidity sensor",
+      "units": "",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 180,
+      "name": "Cfg_ZoneMultiSens_HumSens2_Wt",
+      "description": "Averaging weight of Sylk humidity sensor at address 2",
+      "units": "",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 2519,
+      "name": "Cfg_ZoneMultiSens_Sens7_Wt",
+      "description": "Averaging weight of the analog space temperature input",
+      "units": "",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 2491,
+      "name": "Cfg_ZoneMultiSens_CO2Sens2_Wt",
+      "description": "Averaging weight of the Sylk CO2 sensor at address 2",
+      "units": "",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 2492,
+      "name": "Cfg_ZoneMultiSens_CO2Sens1_Wt",
+      "description": "Averaging weight of the local CO2 sensor",
+      "units": "",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "MV",
+      "instance": 2073,
+      "name": "Cfg_ZoneMultiCO2Sens_Control",
+      "description": "CO2 sensor configuration.",
+      "units": "",
+      "access": "W",
+      "states": "1=Average, 2=Min, 3=Max"
+    },
+    {
+      "type": "AV",
+      "instance": 2493,
+      "name": "Cfg_ZoneMultiSens_TempSel",
+      "description": "The user is able to choose which temperature sensors to participate in the calculation",
+      "units": "",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 2494,
+      "name": "Cfg_ZoneMultiSens_HumSel",
+      "description": "The user is able to choose which humidity sensors to participate in the calculation",
+      "units": "",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 2495,
+      "name": "Cfg_ZoneMultiSens_CO2Sel",
+      "description": "The user is able to choose which CO2 sensors to participate in the calculation",
+      "units": "",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 218,
+      "name": "Cfg_ZoneMultiSens_HumSens6_Wt",
+      "description": "Averaging weight of Sylk humidity sensor at address 6",
+      "units": "",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 219,
+      "name": "Cfg_ZoneMultiSens_Sens6_Wt",
+      "description": "Averaging weight of Sylk temperature sensor at address 6",
+      "units": "",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 7,
+      "name": "Cfg_Setpoints_OccHeatSp",
+      "description": "Occupied Heat Setpoint",
+      "units": "°F",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 4,
+      "name": "Cfg_Setpoints_OccCoolSp",
+      "description": "Occupied Cool Setpoint",
+      "units": "°F",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 8,
+      "name": "Cfg_Setpoints_StbyHeatSp",
+      "description": "Standby Heat Setpoint",
+      "units": "°F",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 5,
+      "name": "Cfg_Setpoints_StbyCoolSp",
+      "description": "Standby Cool Setpoint",
+      "units": "°F",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 9,
+      "name": "Cfg_Setpoints_UnOccHeatSp",
+      "description": "Unoccupied Heat Setpoint",
+      "units": "°F",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 6,
+      "name": "Cfg_Setpoints_UnOccCoolSp",
+      "description": "Unoccupied Cool Setpoint",
+      "units": "°F",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 2457,
+      "name": "Cfg_Setpoints_FixedSpCoolSp",
+      "description": "FixedSetpoint cooling setpoint.",
+      "units": "°F",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 2456,
+      "name": "Cfg_Setpoints_FixedSpHeatSp",
+      "description": "FixedSetpoint heating setpoint",
+      "units": "°F",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 2458,
+      "name": "Cfg_Setpoints_ResWakeHeatSp",
+      "description": "Users can set the residential heat setpoint in wake state.",
+      "units": "°F",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 2459,
+      "name": "Cfg_Setpoints_ResWakeCoolSp",
+      "description": "Users can set the residential cool setpoint in wake state.",
+      "units": "°F",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 2460,
+      "name": "Cfg_Setpoints_ResAwayHeatSp",
+      "description": "Users can set the residential heat setpoint in wake state.",
+      "units": "°F",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 2461,
+      "name": "Cfg_Setpoints_ResAwayCoolSp",
+      "description": "Users can set the residential cool setpoint in wake state.",
+      "units": "°F",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 2462,
+      "name": "Cfg_Setpoints_ResReturnHeatSp",
+      "description": "Users can set the residential heat setpoint in wake state.",
+      "units": "°F",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 2463,
+      "name": "Cfg_Setpoints_ResReturnCoolSp",
+      "description": "Users can set the residential cool setpoint in wake state.",
+      "units": "°F",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 2464,
+      "name": "Cfg_Setpoints_ResSleepHeatSp",
+      "description": "Users can set the residential heat setpoint in wake state.",
+      "units": "°F",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 2465,
+      "name": "Cfg_Setpoints_ResSleepCoolSp",
+      "description": "Users can set the residential cool setpoint in wake state.",
+      "units": "°F",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 2466,
+      "name": "Cfg_Setpoints_ResCustomHeatSp",
+      "description": "Users can set the residential heat setpoint in wake state.",
+      "units": "°F",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 2467,
+      "name": "Cfg_Setpoints_ResCustomCoolSp",
+      "description": "Users can set the residential cool setpoint in wake state.",
+      "units": "°F",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 2468,
+      "name": "Cfg_Setpoints_ResVacationHeatSp",
+      "description": "Users can set the residential heat setpoint in wake state.",
+      "units": "°F",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 2469,
+      "name": "Cfg_Setpoints_ResVacationCoolSp",
+      "description": "Users can set the residential cool setpoint in wake state.",
+      "units": "°F",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 2509,
+      "name": "Cfg_Setpoints_HospTargetSP",
+      "description": "Users can set the target setpoint in hospitality",
+      "units": "°F",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 2510,
+      "name": "Cfg_Setpoints_HospOccuDiffAbsVal",
+      "description": "Users can set the differential value of the target setpoint in the occupied state.",
+      "units": "°F",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 2478,
+      "name": "Cfg_Setpoints_HospRenUnoccDiffAbsVal",
+      "description": "Setpoint differential for the rented-unoccupied hotel state",
+      "units": "°F",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 2479,
+      "name": "Cfg_Setpoints_HospUnrentedHeatSP",
+      "description": "Users can set the unrented heat setpoint in hospitality",
+      "units": "°F",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 2480,
+      "name": "Cfg_Setpoints_HospUnrentedCoolSP",
+      "description": "Users can set the unrented cool setpoint in hospitality",
+      "units": "°F",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 2516,
+      "name": "Cfg_Setpoints_HospTargetLowLim",
+      "description": "The minimum limit of the target setpoint",
+      "units": "°F",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 2517,
+      "name": "Cfg_Setpoints_HospTargetHighLim",
+      "description": "The maximum limit of the target setpoint",
+      "units": "°F",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 2518,
+      "name": "Cfg_Setpoints_HospAdjustSP",
+      "description": "The user adjusts the relative value of the setpoint.",
+      "units": "°F",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 2481,
+      "name": "Cfg_Hospitality_DelayTimeBeforePt",
+      "description": "User can set delay time before occupancy status change logic.",
+      "units": "",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 2482,
+      "name": "Cfg_Hospitality_AwakePTPerMin",
+      "description": "User can set awake time until unoccupied state",
+      "units": "",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 2483,
+      "name": "Cfg_Hospitality_SleepPTPerMin",
+      "description": "User can set sleep time until unoccupied state.",
+      "units": "",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 2484,
+      "name": "Cfg_Hospitality_AwakeLightLevTh",
+      "description": "User can set awake light level threshold.",
+      "units": "",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 2532,
+      "name": "Cfg_Setpoints_HospUnrentedToOccDelTime",
+      "description": "Delay from unrented to occupied in hotel mode",
+      "units": "",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 2025,
+      "name": "Cfg_PipePurgeTime",
+      "description": "Pipe purge duration",
+      "units": "min",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 2079,
+      "name": "Cfg_PipePurgeInterval",
+      "description": "Pipe purge interval",
+      "units": "h",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "MV",
+      "instance": 2025,
+      "name": "Cfg_ValveCycle",
+      "description": "Valve cycle type",
+      "units": "",
+      "access": "W",
+      "states": "1=1min/24hours, 2=2min/24hours, 3=Disable"
+    },
+    {
+      "type": "AV",
+      "instance": 2080,
+      "name": "Cfg_TimeOut",
+      "description": "Heating run time before the pipe temperature check",
+      "units": "h",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "BV",
+      "instance": 2053,
+      "name": "Cfg_HybridControlEnableHeat",
+      "description": "2 pipe single coil heat hybrid control enable flag",
+      "units": "",
+      "access": "W",
+      "states": "0=Off, 1=On"
+    },
+    {
+      "type": "BV",
+      "instance": 2054,
+      "name": "Cfg_HybridControLEnableCool",
+      "description": "2 pipe single coil cool hybrid control enable flag",
+      "units": "",
+      "access": "W",
+      "states": "0=Off, 1=On"
+    },
+    {
+      "type": "AV",
+      "instance": 2101,
+      "name": "Cfg_CoolTimeOut",
+      "description": "Heating/cooling run time before the pipe temperature check",
+      "units": "h",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 18,
+      "name": "Cfg_Recovery_MaxCoolRampRate",
+      "description": "Maximum cooling setpoint ramp",
+      "units": "Δ°F",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 16,
+      "name": "Cfg_Recovery_MinCoolRampRate",
+      "description": "Minimum cooling setpoint ramp",
+      "units": "Δ°F",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 17,
+      "name": "Cfg_Recovery_MaxCoolRampTemp",
+      "description": "Outdoor air temperature at the maximum cool setpoint ramp",
+      "units": "°F",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 15,
+      "name": "Cfg_Recovery_MinCoolRampTemp",
+      "description": "Outdoor air temperature at the minimum cool setpoint ramp",
+      "units": "°F",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 22,
+      "name": "Cfg_Recovery_MaxHeatRampRate",
+      "description": "Maximum heating setpoint ramp",
+      "units": "Δ°F",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 20,
+      "name": "Cfg_Recovery_MinHeatRampRate",
+      "description": "Maximum heating setpoint ramp",
+      "units": "Δ°F",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 21,
+      "name": "Cfg_Recovery_MaxHeatRampTemp",
+      "description": "Outdoor air temperature at the maximum heat setpoint ramp",
+      "units": "°F",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 19,
+      "name": "Cfg_Recovery_MinHeatRampTemp",
+      "description": "Outdoor air temperature at the minimum heat setpoint ramp",
+      "units": "°F",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 1723,
+      "name": "Cfg_FanCoilSupTempHtgSp",
+      "description": "Discharge air control maximum heating setpoint.",
+      "units": "°F",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 1724,
+      "name": "Cfg_FanCoilSupTempClgSp",
+      "description": "Discharge air control minimum cooling setpoint.",
+      "units": "°F",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "BV",
+      "instance": 454,
+      "name": "Cfg_FanCoilDATSpEnSwitch",
+      "description": "Discharge air control enable flag",
+      "units": "",
+      "access": "W",
+      "states": "0=Off, 1=On"
+    },
+    {
+      "type": "AV",
+      "instance": 2009,
+      "name": "Cfg_FanCoilDATHeatOffset",
+      "description": "Discharge air control heating initial offset",
+      "units": "Δ°F",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 2010,
+      "name": "Cfg_FanCoilDATCoolOffset",
+      "description": "Discharge air control cooling initial offset",
+      "units": "Δ°F",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 2011,
+      "name": "Cfg_DaT_Ctrl_Cool_Tr",
+      "description": "Discharge air control cooling throttling range",
+      "units": "Δ°F",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 2012,
+      "name": "Cfg_DaT_Ctrl_Cool_It",
+      "description": "Discharge air control cooling integral time",
+      "units": "s",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 2014,
+      "name": "Cfg_DaT_Ctrl_Heat_Tr",
+      "description": "Discharge air control heating throttling range",
+      "units": "Δ°F",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 2015,
+      "name": "Cfg_DaT_Ctrl_Heat_It",
+      "description": "Discharge air control heating integral time",
+      "units": "s",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 23,
+      "name": "Cfg_LocalSensCalOffset_Temp",
+      "description": "Local onboard temperature sensor calibration offset",
+      "units": "Δ°F",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 103,
+      "name": "Cfg_LocalSensCalOffset_Hum",
+      "description": "Local onboard humidity sensor calibration offset",
+      "units": "%RH",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 24,
+      "name": "Cfg_SylkCalOffset_SylkBus2Temp",
+      "description": "TR40_2/ TR-21 temperature calibration offset",
+      "units": "Δ°F",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 25,
+      "name": "Cfg_SylkCalOffset_SylkBus2RH",
+      "description": "TR40_2 humidity calibration offset",
+      "units": "%RH",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 26,
+      "name": "Cfg_SylkCalOffset_SylkBus3Temp",
+      "description": "TR40_3 temperature calibration offset",
+      "units": "Δ°F",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 27,
+      "name": "Cfg_SylkCalOffset_SylkBus4Temp",
+      "description": "TR40_4 temperature calibration offset",
+      "units": "Δ°F",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 28,
+      "name": "Cfg_SylkCalOffset_SylkBus5Temp",
+      "description": "TR40_5 Temperature calibration offset",
+      "units": "Δ°F",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 29,
+      "name": "Cfg_SylkCalOffset_SylkBus8Temp",
+      "description": "C7400S outdoor air temperature calibration offset.",
+      "units": "Δ°F",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 30,
+      "name": "Cfg_SylkCalOffset_SylkBus8RH",
+      "description": "C7400S outdoor air humidity calibration offset.",
+      "units": "%RH",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 31,
+      "name": "Cfg_SylkCalOffset_SylkBus10Temp",
+      "description": "C7400S Discharge Air Temperature calibration offset",
+      "units": "Δ°F",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 32,
+      "name": "Cfg_SylkCalOffset_SylkBus10RH",
+      "description": "C7400S Discharge Air Humidity calibration offset",
+      "units": "%RH",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 2512,
+      "name": "Cfg_LocalSensCalOffset_CO2",
+      "description": "Local onboard CO2 sensor calibration offset.",
+      "units": "",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 2502,
+      "name": "Cfg_SylkCalOffset_SylkBus6Temp",
+      "description": "TR100 Em TR75 temperature calibration offset.",
+      "units": "Δ°F",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 2503,
+      "name": "Cfg_SylkCalOffset_SylkBus6RH",
+      "description": "TR100 Em TR75 humidity calibration offset.",
+      "units": "",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "MV",
+      "instance": 2032,
+      "name": "Cfg_Sylk_SylkBus2Type",
+      "description": "Sylk bus addr-2 device type",
+      "units": "",
+      "access": "W",
+      "states": "1=TR40, 2=TR50"
+    },
+    {
+      "type": "MV",
+      "instance": 85,
+      "name": "Cfg_Sylk_SylkBus2En",
+      "description": "Sylk bus addr-2 device enable/ disable",
+      "units": "",
+      "access": "W",
+      "states": "1=NotConfigured, 2=TempOnly, 3=TempHum, 4=TempHumCO2, 5=TempCO2"
+    },
+    {
+      "type": "BV",
+      "instance": 147,
+      "name": "Cfg_Sylk_SylkBus3En",
+      "description": "Sylk bus addr-3 device enable/ disable",
+      "units": "",
+      "access": "W",
+      "states": "0=Disable, 1=Enable"
+    },
+    {
+      "type": "BV",
+      "instance": 148,
+      "name": "Cfg_Sylk_SylkBus4En",
+      "description": "Sylk bus addr-4 device enable/ disable",
+      "units": "",
+      "access": "W",
+      "states": "0=Disable, 1=Enable"
+    },
+    {
+      "type": "BV",
+      "instance": 149,
+      "name": "Cfg_Sylk_SylkBus5En",
+      "description": "Sylk bus addr-5 device enable/ disable",
+      "units": "",
+      "access": "W",
+      "states": "0=Disable, 1=Enable"
+    },
+    {
+      "type": "BV",
+      "instance": 151,
+      "name": "Cfg_Sylk_SylkBus8En",
+      "description": "Sylk bus addr-8 device enable/ disable.",
+      "units": "",
+      "access": "W",
+      "states": "0=Disable, 1=Enable"
+    },
+    {
+      "type": "BV",
+      "instance": 153,
+      "name": "Cfg_Sylk_SylkBus10En",
+      "description": "Sylk bus addr-10 device enable/ disable",
+      "units": "",
+      "access": "W",
+      "states": "0=Disable, 1=Enable"
+    },
+    {
+      "type": "MV",
+      "instance": 86,
+      "name": "Cfg_Sylk_SylkBus6En",
+      "description": "Sylk bus addr-6 device enable/ disable.",
+      "units": "",
+      "access": "W",
+      "states": "1=NotConfigured, 2=TempOnly, 3=TempHum"
+    },
+    {
+      "type": "MV",
+      "instance": 8,
+      "name": "Cfg_Thermostat_SysSwitch",
+      "description": "System switch: changes the unit operating mode",
+      "units": "",
+      "access": "W",
+      "states": "1=Auto, 2=Cool, 3=Heat, 4=Ventilation, 5=Off, 6=Emergency heat"
+    },
+    {
+      "type": "AV",
+      "instance": 10,
+      "name": "Cfg_Thermostat_BypOverrideTime",
+      "description": "Unoccupied override time",
+      "units": "min",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 102,
+      "name": "Cfg_Thermostat_TempOffSpLimit",
+      "description": "This point is used to limit the range of user adjustable setpoint.",
+      "units": "Δ°F",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 2023,
+      "name": "Cfg_Thermostat_SystemConfig",
+      "description": "To limit available user configurable options. BIT 3 Off must be set as 1.",
+      "units": "",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "BV",
+      "instance": 135,
+      "name": "Cfg_Thermostat_Override",
+      "description": "Thermostat bypass override",
+      "units": "",
+      "access": "W",
+      "states": "0=OverrideOff, 1=OverrideOn"
+    },
+    {
+      "type": "MV",
+      "instance": 2035,
+      "name": "Cfg_TstatOverrideType",
+      "description": "Thermostat override type",
+      "units": "",
+      "access": "W",
+      "states": "1=Permanent, 2=Temporary"
+    },
+    {
+      "type": "AV",
+      "instance": 12,
+      "name": "Cfg_Thermostat_MinCoolSp",
+      "description": "Minimum cool setpoint of thermostat.",
+      "units": "°F",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 13,
+      "name": "Cfg_Thermostat_MaxHeatSp",
+      "description": "Maximum heat setpoint of thermostat.",
+      "units": "°F",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 2005,
+      "name": "no_mstpHeaderCrcError",
+      "description": "The number of header CRC errors in received frames",
+      "units": "",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 2006,
+      "name": "no_mstpDataCrcErr",
+      "description": "The number of data CRC errors in received frames",
+      "units": "",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "BV",
+      "instance": 174,
+      "name": "ni_mstpClearErr",
+      "description": "Write to 1 and then 0 will clear header CRC and data CRC count.",
+      "units": "",
+      "access": "W",
+      "states": "0=Unclear, 1=Clear"
+    },
+    {
+      "type": "AV",
+      "instance": 2455,
+      "name": "no_WifiRssi(ApplicableonlytoTC320B-G/TC320C-Gthermostats.)",
+      "description": "WiFi RSSI (Received Signal Strength Indicator) value.",
+      "units": "",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 1,
+      "name": "ni_NetTUNCOS",
+      "description": "TUNCOS is the difference between the future change in event & current event in minutes.",
+      "units": "min",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "MV",
+      "instance": 3,
+      "name": "ni_ApplicationMode",
+      "description": "Application mode from the network; not kept over a power cycle",
+      "units": "",
+      "access": "W",
+      "states": "1=Auto, 2=Cool, 3=Heat, 4=FanOnly, 5=Off, 6=EmergencyHeat"
+    },
+    {
+      "type": "BV",
+      "instance": 1,
+      "name": "ni_BypassState",
+      "description": "Net bypass input to enable bypass timer",
+      "units": "",
+      "access": "W",
+      "states": "0=Disable, 1=Enable"
+    },
+    {
+      "type": "MV",
+      "instance": 6,
+      "name": "ni_OccupancySensorState",
+      "description": "Network occupancy sensor state",
+      "units": "",
+      "access": "W",
+      "states": "1=Occupied, 2=Unoccupied, 3=Bypass, 4=Standby, 5=NoOverride"
+    },
+    {
+      "type": "AV",
+      "instance": 89,
+      "name": "ni_OutdoorTemp",
+      "description": "Outdoor air temperatue from network input.",
+      "units": "°F",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 194,
+      "name": "ni_OutdoorHum",
+      "description": "Outdoor air humidity from network input.",
+      "units": "%RH",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "BV",
+      "instance": 4,
+      "name": "ni_ShutdownState",
+      "description": "System shutdown input from network.",
+      "units": "",
+      "access": "W",
+      "states": "0=Normal, 1=Shutdown"
+    },
+    {
+      "type": "AV",
+      "instance": 80,
+      "name": "ni_SpaceRH",
+      "description": "Space humidity network input",
+      "units": "%RH",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 104,
+      "name": "ni_SpaceTemp",
+      "description": "Space temperature network input",
+      "units": "°F",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "BV",
+      "instance": 25,
+      "name": "ni_WSHPEnableState",
+      "description": "Water source heat pump enable shared from the network",
+      "units": "",
+      "access": "W",
+      "states": "0=WSHPSystemEnable, 1=WSHPSystemDisable"
+    },
+    {
+      "type": "MV",
+      "instance": 38,
+      "name": "ni_RunTimeReset",
+      "description": "Runtime accumulate reset network input.",
+      "units": "",
+      "access": "W",
+      "states": "1=Normal, 2=FanReset, 3=CoolReset, 4=HeatingReset"
+    },
+    {
+      "type": "AV",
+      "instance": 2024,
+      "name": "ni_DATemp",
+      "description": "Discharge air temperature network input",
+      "units": "°F",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "MV",
+      "instance": 2012,
+      "name": "ni_PipeTempMode",
+      "description": "Pipe temperature mode network input",
+      "units": "",
+      "access": "W",
+      "states": "1=None, 2=Cool, 3=Heat"
+    },
+    {
+      "type": "MV",
+      "instance": 1,
+      "name": "ni_NetSchCurrentState",
+      "description": "Schedule state from the network (occupied, unoccupied, standby, rented)",
+      "units": "",
+      "access": "W",
+      "states": "1=Occupied_Wake, 2=Unoccupied_Away, 3=Bypass_Return, 4=Standby_Sleep, 5=NoOverride, 6=None_Custom, 7=None_Vacation, 8=None_Unrented"
+    },
+    {
+      "type": "MV",
+      "instance": 2,
+      "name": "ni_NetSchNextState",
+      "description": "Next schedule state from network.",
+      "units": "",
+      "access": "W",
+      "states": "1=Occupied_Wake, 2=Unoccupied_Away, 3=Bypass_Return, 4=Standby_Sleep, 5=NoOverride, 6=None_Custom, 7=None_Vacation, 8=None_Unrented"
+    },
+    {
+      "type": "BV",
+      "instance": 2,
+      "name": "ni_ADREn",
+      "description": "Users can set ADR functions remotely.",
+      "units": "",
+      "access": "W",
+      "states": "0=Disable, 1=Enable"
+    },
+    {
+      "type": "AV",
+      "instance": 2511,
+      "name": "ni_SpaceCO2",
+      "description": "Space CO2 network input.",
+      "units": "",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "BV",
+      "instance": 159,
+      "name": "Cfg_NetOccSenFailDetEn",
+      "description": "Occupancy sensor fail detect enable",
+      "units": "",
+      "access": "W",
+      "states": "0=Disable, 1=Enable"
+    },
+    {
+      "type": "AV",
+      "instance": 262,
+      "name": "Cfg_NetOccSenFailFalbck",
+      "description": "Occupancy sensor fail detect fallback",
+      "units": "",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "MV",
+      "instance": 2021,
+      "name": "Cfg_NetOccSenFailFxdVal",
+      "description": "Occupancy sensor fail detect fallback value",
+      "units": "",
+      "access": "W",
+      "states": "1=Occupied, 2=Unoccupied, 3=Bypass, 4=Standby, 5=NoOverride"
+    },
+    {
+      "type": "AV",
+      "instance": 263,
+      "name": "Cfg_NetOccSenFailDetDly",
+      "description": "Occupancy sensor fail detect delay",
+      "units": "s",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "BV",
+      "instance": 164,
+      "name": "Cfg_NetShtdwnFailDetEn",
+      "description": "Shut down fail detect enable",
+      "units": "",
+      "access": "W",
+      "states": "0=Disable, 1=Enable"
+    },
+    {
+      "type": "AV",
+      "instance": 273,
+      "name": "Cfg_NetShtdwnFailFalbck",
+      "description": "Shut down fail detect fallback",
+      "units": "",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "BV",
+      "instance": 165,
+      "name": "Cfg_NetShtdwnFailFxdVal",
+      "description": "Shut down fail detect fallback value",
+      "units": "",
+      "access": "W",
+      "states": "0=Normal, 1=Shutdown"
+    },
+    {
+      "type": "AV",
+      "instance": 274,
+      "name": "Cfg_NetShtdwnFailDetDly",
+      "description": "Shut down fail detect delay",
+      "units": "s",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "BV",
+      "instance": 169,
+      "name": "Cfg_NetWSHPEnStFailDetEn",
+      "description": "Network failure detection for the shared heat pump enable",
+      "units": "",
+      "access": "W",
+      "states": "0=Disable, 1=Enable"
+    },
+    {
+      "type": "AV",
+      "instance": 284,
+      "name": "Cfg_NetWSHPEnStFailFalbck",
+      "description": "Network Fail Detection Fall back value. (TC3xxB models only)",
+      "units": "",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "BV",
+      "instance": 170,
+      "name": "Cfg_NetWSHPEnStFailFxdVal",
+      "description": "Fallback value used when that network input fails",
+      "units": "",
+      "access": "W",
+      "states": "0=WSHPSystemEnable, 1=WSHPSystemDisable"
+    },
+    {
+      "type": "AV",
+      "instance": 285,
+      "name": "Cfg_NetWSHPEnStFailDetDly",
+      "description": "Network Fail Detection delay in seconds. (TC3xxB models only)",
+      "units": "s",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "BV",
+      "instance": 2073,
+      "name": "Cfg_NetPipeTempModFailDetEn",
+      "description": "Pipe temp mode fail detect enable.",
+      "units": "",
+      "access": "W",
+      "states": "0=Disable, 1=Enable"
+    },
+    {
+      "type": "AV",
+      "instance": 2476,
+      "name": "Cfg_NetPipeTempModFailFalbck",
+      "description": "Pipe Temp Mode Fail Detect Fallback",
+      "units": "",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "MV",
+      "instance": 2064,
+      "name": "Cfg_NetPipeTempModFailFxdVal",
+      "description": "Pipe Temp Mode Fail Detect Fallback Value",
+      "units": "",
+      "access": "W",
+      "states": "1=None, 2=Cool, 3=Heat"
+    },
+    {
+      "type": "AV",
+      "instance": 2477,
+      "name": "Cfg_NetPipeTempModFailDetDly",
+      "description": "Pipe Temp Mode Fail Detect Delay",
+      "units": "",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "BV",
+      "instance": 2087,
+      "name": "Cfg_NetFailDetEn",
+      "description": "Network sensor fail detect enable.",
+      "units": "",
+      "access": "W",
+      "states": "0=Disable, 1=Enable"
+    },
+    {
+      "type": "AV",
+      "instance": 2507,
+      "name": "Cfg_NetFailFalbck",
+      "description": "Network sensor fail detect fallback.",
+      "units": "",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 2508,
+      "name": "Cfg_NetFailDetDly",
+      "description": "Network sensor fail detect delay.",
+      "units": "",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "BV",
+      "instance": 6,
+      "name": "ni_ServiceModeEn",
+      "description": "Service mode for commissioning; shuts down all equipment",
+      "units": "",
+      "access": "W",
+      "states": "0=NoOverride, 1=Service"
+    },
+    {
+      "type": "MV",
+      "instance": 2026,
+      "name": "ni_ServiceFan",
+      "description": "Fan speed command while in service mode",
+      "units": "",
+      "access": "W",
+      "states": "1=0ff, 2=On, 3=Low, 4=Medium, 5=High"
+    },
+    {
+      "type": "AV",
+      "instance": 85,
+      "name": "ni_ServiceFanSpeed",
+      "description": "Fan speed configuration network input for variable speed fan when service mode is enabled.",
+      "units": "%",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "BV",
+      "instance": 2042,
+      "name": "ni_ServiceHeatOnOff",
+      "description": "On/Off heat valve status network input when service mode is enabled.",
+      "units": "",
+      "access": "W",
+      "states": "0=Off, 1=On"
+    },
+    {
+      "type": "BV",
+      "instance": 2043,
+      "name": "ni_ServiceCoolOnOff",
+      "description": "On/Off cool valve status network input when service mode is enabled.",
+      "units": "",
+      "access": "W",
+      "states": "0=Off, 1=On"
+    },
+    {
+      "type": "MV",
+      "instance": 2022,
+      "name": "ni_ServiceHeatFloating",
+      "description": "Floating heat valve status network input when service mode is enabled. (TC3xxB models only)",
+      "units": "",
+      "access": "W",
+      "states": "1=Off, 2=Open, 3=Close"
+    },
+    {
+      "type": "MV",
+      "instance": 2023,
+      "name": "ni_ServiceCoolFloating",
+      "description": "Floating cool valve status network input when service mode is enabled. (TC3xxB models only)",
+      "units": "",
+      "access": "W",
+      "states": "1=Off, 2=Open, 3=Close"
+    },
+    {
+      "type": "AV",
+      "instance": 2076,
+      "name": "ni_ServiceModulatingHeat",
+      "description": "Modulating heat valve status network input when service mode is enabled.",
+      "units": "%",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 2077,
+      "name": "ni_ServiceModulatingCool",
+      "description": "Modulating cool valve status network input when service mode is enabled.",
+      "units": "%",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 2078,
+      "name": "ni_ServiceSixWayValve",
+      "description": "Six way valve status network input when service mode is enabled.",
+      "units": "",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "BV",
+      "instance": 2044,
+      "name": "ni_ServiceAuxHeat",
+      "description": "Auxiliary heat status network input when service mode is enabled.",
+      "units": "",
+      "access": "W",
+      "states": "0=Off, 1=On"
+    },
+    {
+      "type": "BV",
+      "instance": 2045,
+      "name": "ni_ServiceChangeOver",
+      "description": "Changeover valve status when service mode is enabled",
+      "units": "",
+      "access": "W",
+      "states": "0=Off, 1=On"
+    },
+    {
+      "type": "BV",
+      "instance": 19,
+      "name": "ni_ServiceHeatStage1",
+      "description": "Heat stage 1 command while in service mode",
+      "units": "",
+      "access": "W",
+      "states": "0=Off, 1=On"
+    },
+    {
+      "type": "BV",
+      "instance": 2046,
+      "name": "ni_ServiceCoolStage1",
+      "description": "Cool stage 1 status network input when service mode is enabled.",
+      "units": "",
+      "access": "W",
+      "states": "0=Off, 1=On"
+    },
+    {
+      "type": "BV",
+      "instance": 2047,
+      "name": "ni_ServiceValveStage1",
+      "description": "Modulating valve stage 1 status network input when service mode is enabled.",
+      "units": "",
+      "access": "W",
+      "states": "0=Off, 1=On"
+    },
+    {
+      "type": "BV",
+      "instance": 2048,
+      "name": "ni_ServiceValveOnOff",
+      "description": "Modulating valve status network input when service mode is enabled.",
+      "units": "",
+      "access": "W",
+      "states": "0=Off, 1=On"
+    },
+    {
+      "type": "MV",
+      "instance": 2024,
+      "name": "ni_ServiceValveFloating",
+      "description": "Floating valve status network input when service mode is enabled. (TC3xxB models only)",
+      "units": "",
+      "access": "W",
+      "states": "1=Off, 2=Open, 3=Close"
+    },
+    {
+      "type": "AV",
+      "instance": 2086,
+      "name": "ni_ServiceValveModulating",
+      "description": "Modulating valve status network input when service mode is enabled.",
+      "units": "",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "BV",
+      "instance": 22,
+      "name": "ni_ServiceRevVlvCmd",
+      "description": "Reversing valve status when service mode is enable. (TC3xxB models only)",
+      "units": "",
+      "access": "W",
+      "states": "0=Off, 1=On"
+    },
+    {
+      "type": "BV",
+      "instance": 2058,
+      "name": "ni_ServiceWaterFlowValveCmd",
+      "description": "WaterFlow valve status when service mode is enable. (TC3xxB models only)",
+      "units": "",
+      "access": "W",
+      "states": "0=Off, 1=On"
+    },
+    {
+      "type": "BV",
+      "instance": 23,
+      "name": "ni_ServiceSimpleDehCmd",
+      "description": "Dehumidifier status when service mode is enable. (TC3xxB models only)",
+      "units": "",
+      "access": "W",
+      "states": "0=Off, 1=On"
+    },
+    {
+      "type": "BV",
+      "instance": 24,
+      "name": "ni_ServiceSimpleHumCmd",
+      "description": "Humidifier status when service mode is enable. (TC3xxB models only)",
+      "units": "",
+      "access": "W",
+      "states": "0=Off, 1=On"
+    },
+    {
+      "type": "BV",
+      "instance": 20,
+      "name": "ni_ServiceHeatStage2",
+      "description": "Conventional heat stage 2 status network input when service mode is enabled (TC3xxB models only)",
+      "units": "",
+      "access": "W",
+      "states": "0=Off, 1=On"
+    },
+    {
+      "type": "BV",
+      "instance": 2070,
+      "name": "ni_ServiceCoolStage2",
+      "description": "Conventional Cool stage2 status network input when service mode is enabled. (TC3xxB models only)",
+      "units": "",
+      "access": "W",
+      "states": "0=Off, 1=On"
+    },
+    {
+      "type": "BV",
+      "instance": 2082,
+      "name": "ni_ServiceCO2BinaryOutput",
+      "description": "CO2 binary output status when service mode is enable.",
+      "units": "",
+      "access": "W",
+      "states": "0=Off, 1=On"
+    },
+    {
+      "type": "AV",
+      "instance": 2497,
+      "name": "ni_ServiceCO2AnalogOutput",
+      "description": "CO2 analog output status when service mode is enable.",
+      "units": "",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "BV",
+      "instance": 2083,
+      "name": "ni_ServiceLightingControl",
+      "description": "Lighting control output status when service mode is enable.",
+      "units": "",
+      "access": "W",
+      "states": "0=Off, 1=On"
+    },
+    {
+      "type": "BV",
+      "instance": 2084,
+      "name": "ni_ServiceOccupancyOutput",
+      "description": "Occupancy output status when service mode is enable.",
+      "units": "",
+      "access": "W",
+      "states": "0=Off, 1=On"
+    },
+    {
+      "type": "CAL",
+      "instance": 1,
+      "name": "Calendar",
+      "description": "",
+      "units": "",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "SCH",
+      "instance": 2,
+      "name": "OccSchedule",
+      "description": "Occupancy schedule",
+      "units": "",
+      "access": "W",
+      "states": ""
+    }
+  ]
+}
