@@ -567,7 +567,7 @@ def shell(relpath, title, description, h1_html, body, jsonld, crumbs, og_type="w
 <aside class="share">
   <p><b>Have a list to share?</b> Got a BACnet points list, PICS or integration notes for
   equipment that isn&rsquo;t here, or a newer version of one that is? Send it to us at
-  <a href="mailto:Firstimpactdevelopment@gmail.com?subject=Points%%20list%%20to%%20share">Firstimpactdevelopment@gmail.com</a>
+  <a href="mailto:webmaster@easybacnet.com?subject=Points%%20list%%20to%%20share">webmaster@easybacnet.com</a>
   and we&rsquo;ll add it to the library.</p>
 </aside>
 </main>
@@ -578,7 +578,7 @@ def shell(relpath, title, description, h1_html, body, jsonld, crumbs, og_type="w
   for confirming every point against the manufacturer&rsquo;s current documentation and the live device before you rely
   on it, and Easy BACnet accepts no liability for its use &mdash; see our <a href="/terms.html#content">Terms of use</a>.
   Brand names identify the equipment only; Easy BACnet is not affiliated with or endorsed by any manufacturer listed.
-  Spotted an error, or want a list removed? Email <a href="mailto:Firstimpactdevelopment@gmail.com">Firstimpactdevelopment@gmail.com</a>.</p>
+  Spotted an error, or want a list removed? Email <a href="mailto:webmaster@easybacnet.com">webmaster@easybacnet.com</a>.</p>
   <p><a href="/index.html">Easy BACnet</a> &middot; <a href="%(play_footer)s" rel="noopener">Get it on Google Play</a> &middot;
   <a href="/bacnet-points-lists/index.html">Points lists</a> &middot;
   <a href="/index.html#guides">Guides</a> &middot; <a href="/terms.html">Terms of use</a> &middot; <a href="/privacy.html">Privacy policy</a></p>

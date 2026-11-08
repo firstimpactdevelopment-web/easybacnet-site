@@ -4547,7 +4547,7 @@ footer a{color:var(--mut); text-decoration:underline}
   <div class="wrap">
     <p><a href="{{PLAY_FOOTER}}" rel="noopener">Easy BACnet on Google Play</a> &middot;
     <a href="terms.html">Terms of use</a> &middot; <a href="privacy.html">Privacy policy</a> &middot;
-    Contact: <a href="mailto:Firstimpactdevelopment@gmail.com">Firstimpactdevelopment@gmail.com</a></p>
+    Contact: <a href="mailto:webmaster@easybacnet.com">webmaster@easybacnet.com</a></p>
   </div>
 </footer>
 
