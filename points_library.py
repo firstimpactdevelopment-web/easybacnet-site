@@ -565,16 +565,16 @@ def shell(relpath, title, description, h1_html, body, jsonld, crumbs, og_type="w
 %(h1)s
 %(body)s
 <aside class="share">
-  <p><b>Have a list to share?</b> Got a BACnet points list, PICS or integration notes for
-  equipment that isn&rsquo;t here, or a newer version of one that is? Send it to us at
+  <p><b>Have a list to share?</b> Got a BACnet points list or integration notes for
+  equipment that isn&rsquo;t here, or a newer version of one that is? Spotted an error or a problem?
+  Send it to us at
   <a href="mailto:webmaster@easybacnet.com?subject=Points%%20list%%20to%%20share">webmaster@easybacnet.com</a>
-  and we&rsquo;ll add it to the library.</p>
+  and we&rsquo;ll take a look.</p>
 </aside>
 </main>
 <footer><div class="wrap">
-  <p><strong>Disclaimer:</strong> points lists are re-typed by hand from each manufacturer&rsquo;s public documentation
-  and linked to the original. They are reference information only, provided as-is with no warranty, and may contain
-  errors or be out of date; point availability varies by model, firmware, options and configuration. You are responsible
+  <p><strong>Disclaimer:</strong> everything on this site is provided as-is for reference only, with no warranty, and may
+  contain errors or be out of date; point availability varies by model, firmware, options and configuration. You are responsible
   for confirming every point against the manufacturer&rsquo;s current documentation and the live device before you rely
   on it, and Easy BACnet accepts no liability for its use &mdash; see our <a href="/terms.html#content">Terms of use</a>.
   Brand names identify the equipment only; Easy BACnet is not affiliated with or endorsed by any manufacturer listed.
@@ -1423,7 +1423,7 @@ Access: <span class="acc">Read</span> read-only, <span class="acc W">Write</span
 %(notes)s
 <div class="callout"><p><strong>Check it against the live device.</strong> A points list tells you what the
 controller <em>can</em> expose; the unit in front of you may differ by firmware or installed options. This list is
-re-typed by hand, provided as-is for reference only and may contain mistakes &mdash; confirming it before you write,
+provided as-is for reference only and may contain mistakes &mdash; confirming it before you write,
 map or commission anything is up to you (<a href="/terms.html#content">terms</a>).
 <a href="/index.html">Easy BACnet</a> scans a network for BACnet IP devices from an Android phone, reads every
 object on the %(model)s and exports what it actually has to Excel &mdash; free. New to BACnet?
@@ -1654,7 +1654,7 @@ def hub_page(groups, brands=None):
 <p class="lede">Need a BACnet points list before you get to site? This library has <strong>%(nm)d models from
 %(ng)d manufacturers</strong> &mdash; %(total)s BACnet objects &mdash; each with object type, instance number,
 name, engineering units and read/write access, ready to download as CSV or EDE.</p>
-<p class="count">Every list is re-typed by hand and provided as-is for reference only. It may contain errors or be out
+<p class="count">Every list is provided as-is for reference only. It may contain errors or be out
 of date &mdash; confirm each point against the manufacturer&rsquo;s current documentation and the live device before
 you rely on it. Not affiliated with any manufacturer. <a href="/terms.html#content">Terms of use</a>.</p>
 <form class="tools" action="#" onsubmit="return false" aria-label="Choose a manufacturer">
@@ -1691,8 +1691,7 @@ you rely on it. Not affiliated with any manufacturer. <a href="/terms.html#conte
 # Downloads
 # ---------------------------------------------------------------------------
 
-DISCLAIMER_TXT = ("# DISCLAIMER: reference only, provided AS IS with no warranty. Re-typed by hand from public "
-                  "documents; may contain errors or be out of date. You must verify every point against the "
+DISCLAIMER_TXT = ("# DISCLAIMER: reference only, provided AS IS with no warranty. May contain errors or be out of date. You must verify every point against the "
                   "manufacturer's current documentation and the live device before use. easybacnet.com accepts no "
                   "liability for its use and is not affiliated with the manufacturer. Terms: "
                   "https://easybacnet.com/terms#content")
@@ -1745,8 +1744,8 @@ def json_text(m):
     out = {k: v for k, v in m.items() if not k.startswith("_")}
     out["points"] = [{k: v for k, v in pt.items() if not k.startswith("_")} for pt in m["points"]]
     out["page"] = clean(model_path(m))
-    out["note"] = ("Re-typed from the manufacturer's public documentation (see source). Point availability varies "
-                   "by firmware and options; verify against the live device.")
+    out["note"] = ("Provided as-is. Point availability varies by firmware and options; verify against the live "
+                   "device.")
     out["disclaimer"] = DISCLAIMER_TXT[2:]
     return json.dumps(out, ensure_ascii=False, indent=1) + "\n"
 
