@@ -581,7 +581,7 @@ def shell(relpath, title, description, h1_html, body, jsonld, crumbs, og_type="w
   Spotted an error, or want a list removed? Email <a href="mailto:webmaster@easybacnet.com">webmaster@easybacnet.com</a>.</p>
   <p><a href="/index.html">Easy BACnet</a> &middot; <a href="%(play_footer)s" rel="noopener">Get it on Google Play</a> &middot;
   <a href="/bacnet-points-lists/index.html">Points lists</a> &middot;
-  <a href="/index.html#guides">Guides</a> &middot; <a href="/terms.html">Terms of use</a> &middot; <a href="/privacy.html">Privacy policy</a></p>
+  <a href="/index.html#guides">Guides</a> &middot; <a href="/about.html">About</a> &middot; <a href="/terms.html">Terms of use</a> &middot; <a href="/privacy.html">Privacy policy</a></p>
 </div></footer>
 %(script)s
 </body>
@@ -804,7 +804,9 @@ def short_model(m):
 
 
 def page_title(m, n):
-    mm = "%s %s" % (m["manufacturer"], short_model(m))
+    # short_manufacturer (optional) is used in <title> only, for long names such as
+    # "Rockwell Automation (Allen-Bradley)"; everywhere else shows the full name.
+    mm = "%s %s" % (m.get("short_manufacturer") or m["manufacturer"], short_model(m))
     for t in ("%s BACnet Points List (%d Objects) | Easy BACnet" % (mm, n),
               "%s BACnet Points List | Easy BACnet" % mm,
               "%s BACnet Points List" % mm):
@@ -1402,9 +1404,9 @@ writable &mdash; with each object&rsquo;s type, instance number, name, engineeri
 %(srcsent)s</p></div>
 %(facts)s%(calc)s
 <div class="dl">
-  <a class="btn primary" href="%(base)s.csv" download>Download CSV <small>%(n)d rows</small></a>
-  <a class="btn" href="%(base)s-ede.csv" download>Download EDE <small>B.I.G.-EU</small></a>
-  <a class="btn" href="%(base)s.json">JSON</a>
+  <a class="btn primary" href="%(base)s.csv" rel="nofollow" download>Download CSV <small>%(n)d rows</small></a>
+  <a class="btn" href="%(base)s-ede.csv" rel="nofollow" download>Download EDE <small>B.I.G.-EU</small></a>
+  <a class="btn" href="%(base)s.json" rel="nofollow">JSON</a>
   <a class="btn" href="%(src)s" rel="nofollow noopener" target="_blank">%(srcbtn)s &#8599;</a>
   <a class="btn" href="/bacnet-points-list-compare.html?list=%(rel)s">Compare with your scan</a>
   <a class="btn app" href="%(play_pdf)s" rel="noopener" target="_blank">Download Easy BACnet Mobile App <small>Google Play</small></a>
@@ -1510,6 +1512,8 @@ def mfr_page(mslug, models, all_groups, gws=()):
     title = "%s BACnet Points Lists (%d Model%s) | Easy BACnet" % (name, len(models), "" if len(models) == 1 else "s")
     if len(title) > 62:
         title = "%s BACnet Points Lists | Easy BACnet" % name
+    if len(title) > 62:
+        title = "%s BACnet Points Lists" % name
     desc = ("Free %s BACnet points lists for %d models%s: object types, instances, names, units and "
             "access, with CSV and EDE downloads." % (
                 name, len(models), (" including " + ", ".join(m["model"] for m in models[:3])) if models else ""))
@@ -1643,9 +1647,9 @@ def hub_page(groups, brands=None):
     if len(desc) > 160:
         desc = ("Free BACnet points lists for %d models from %d manufacturers: object types, instances, "
                 "units and access, with CSV and EDE downloads." % (len(models), len(groups)))
-    opts = [(g[0]["manufacturer"], '<option value="/%s">%s (%d)</option>' % (
-        mfr_path(s), esc(g[0]["manufacturer"]), len(g))) for s, g in groups.items()]
-    opts += [(b, '<option value="/%s">%s (via gateways)</option>' % (mfr_path(s), esc(b)))
+    opts = [(g[0]["manufacturer"], '<option value="%s">%s (%d)</option>' % (
+        clean(mfr_path(s))[len(BASE_URL):], esc(g[0]["manufacturer"]), len(g))) for s, g in groups.items()]
+    opts += [(b, '<option value="%s">%s (via gateways)</option>' % (clean(mfr_path(s))[len(BASE_URL):], esc(b)))
              for s, (b, gws) in gw_only.items()]
     options = "".join(o for _, o in sorted(opts, key=lambda x: x[0].lower()))
     h1 = ('<p class="eyebrow">Free library</p><h1>BACnet points lists <span class="mfr">by manufacturer</span></h1>'

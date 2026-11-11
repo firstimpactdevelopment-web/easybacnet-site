@@ -174,7 +174,7 @@
   .tool hr { border:none; border-top:1px solid var(--line); margin:1.8rem 0; }
 </style>
 <script type="application/ld+json">
-{"@context":"https://schema.org","@graph":[{"@type":"SoftwareApplication","name":"BACnet Object Identifier decoder","applicationCategory":"UtilitiesApplication","operatingSystem":"Any (web browser)","offers":{"@type":"Offer","price":"0","priceCurrency":"USD"},"description":"Encode or decode a BACnet Object Identifier: object type and instance to the 32-bit number and back. Free browser tool."},{"@type":"BreadcrumbList","itemListElement":[{"@type":"ListItem","position":1,"name":"Home","item":"https://easybacnet.com/"},{"@type":"ListItem","position":2,"name":"BACnet Object Identifier decoder","item":"https://easybacnet.com/bacnet-object-id-decoder"}]}]}
+{"@context":"https://schema.org","@graph":[{"@type":"Organization","@id":"https://easybacnet.com/#org","name":"Easy BACnet","url":"https://easybacnet.com/","logo":"https://easybacnet.com/logo-512.png"},{"@type":"SoftwareApplication","name":"BACnet Object Identifier decoder","publisher":{"@id":"https://easybacnet.com/#org"},"applicationCategory":"UtilitiesApplication","operatingSystem":"Any (web browser)","offers":{"@type":"Offer","price":"0","priceCurrency":"USD"},"description":"Encode or decode a BACnet Object Identifier: object type and instance to the 32-bit number and back. Free browser tool."},{"@type":"BreadcrumbList","itemListElement":[{"@type":"ListItem","position":1,"name":"Home","item":"https://easybacnet.com/"},{"@type":"ListItem","position":2,"name":"BACnet Object Identifier decoder","item":"https://easybacnet.com/bacnet-object-id-decoder"}]}]}
 </script>
 </head>
 <body>
@@ -187,7 +187,7 @@
 
 <article>
   <h1>BACnet Object Identifier decoder</h1>
-  <p class="updated">Free browser tool &middot; nothing is uploaded &middot; updated 11 October 2026</p>
+  <p class="updated">Free browser tool &middot; nothing is uploaded &middot; updated 10 November 2026</p>
   <p>A BACnet Object Identifier packs an <strong>object type</strong> and
     an <strong>instance number</strong> into a single 32-bit value &mdash; the top 10
     bits are the type, the bottom 22 bits are the instance. This tool goes both ways:
@@ -259,6 +259,56 @@ function decId(){
 window.addEventListener('DOMContentLoaded',function(){encId();decId();});
 </script>
 
+  <h2>How the number is built</h2>
+  <p>An Object Identifier is 4 bytes, 32 bits. The first 10 bits hold the object type
+  (0&ndash;1023) and the last 22 bits hold the instance (0&ndash;4,194,303). Shifting the
+  type left by 22 bits is the same as multiplying it by 4,194,304, so the whole thing is
+  one line of math:</p>
+  <p><code>Object Identifier = object type &times; 4,194,304 + instance</code></p>
+  <p>To go the other way, divide by 4,194,304. The whole-number part is the type and the
+  remainder is the instance.</p>
+  <table>
+    <thead><tr><th>Object</th><th>Math</th><th>Decimal</th><th>Hex</th></tr></thead>
+    <tbody>
+      <tr><td>Analog Input 1</td><td>0 &times; 4,194,304 + 1</td><td>1</td><td>0x00000001</td></tr>
+      <tr><td>Analog Value 7</td><td>2 &times; 4,194,304 + 7</td><td>8,388,615</td><td>0x00800007</td></tr>
+      <tr><td>Binary Output 3</td><td>4 &times; 4,194,304 + 3</td><td>16,777,219</td><td>0x01000003</td></tr>
+      <tr><td>Device 1234</td><td>8 &times; 4,194,304 + 1,234</td><td>33,555,666</td><td>0x020004D2</td></tr>
+    </tbody>
+  </table>
+  <p>In hex the split is easy to read by eye: the type sits in the top bits, so every
+  Analog Value starts 0x008&hellip;, every Binary Output 0x010&hellip; and every Device
+  0x020&hellip;.</p>
+
+  <h2>Where you run into the raw number</h2>
+  <ul>
+    <li><strong>Wireshark and packet captures.</strong> ReadProperty requests carry the
+    Object Identifier as those 4 bytes, so the hex in the packet bytes pane decodes here.</li>
+    <li><strong>Gateway and driver configs.</strong> Some gateways, OPC servers and
+    integration tools store a point as one 32-bit number instead of a type and an
+    instance.</li>
+    <li><strong>Logs and error messages.</strong> A controller or BMS log that says
+    &ldquo;object 33555666 unknown&rdquo; is talking about Device 1234.</li>
+  </ul>
+
+  <h2>Limits worth knowing</h2>
+  <ul>
+    <li>Types 0&ndash;127 are reserved for the standard. Types 128&ndash;1023 are left
+    for vendors, which is why a decoded type can come back as a number this tool has no
+    name for.</li>
+    <li>The highest instance, 4,194,303, is the &ldquo;wildcard&rdquo; or uninitialized
+    value. That is why a real Device ID tops out at 4,194,302. See
+    <a href="guides/bacnet-device-id-explained">what a BACnet Device ID is</a>.</li>
+    <li>Instance numbers only have to be unique per object type inside one device. AI 1
+    and AV 1 on the same controller are different objects with different Object
+    Identifiers.</li>
+  </ul>
+  <p>For the instance numbers a specific unit uses, look it up in the
+  <a href="bacnet-points-lists/">BACnet points list library</a> or run a
+  <a href="bacnet-instance-calculators/">brand instance calculator</a>. To look up
+  any other BACnet enum value, such as a property ID or engineering unit, use the
+  <a href="bacnet-reference/">BACnet number lookup</a>.</p>
+
 </article>
   <nav class="more">
     <h2>Related</h2>
@@ -275,7 +325,7 @@ window.addEventListener('DOMContentLoaded',function(){encId();decId();});
   <a href="https://play.google.com/store/apps/details?id=com.easybacnet.app&amp;utm_source=easybacnet.com&amp;utm_medium=footer&amp;utm_campaign=bacnet-object-id-decoder" rel="noopener">free Android app</a> that
   scans a building network for BACnet IP devices, reads and commands their points, and
   exports an Excel (.xlsx) report. This tool runs entirely in your browser.</p>
-  <p><a href="terms">Terms of use</a> &middot; <a href="privacy">Privacy policy</a></p>
+  <p><a href="about">About</a> &middot; <a href="terms">Terms of use</a> &middot; <a href="privacy">Privacy policy</a></p>
 </footer>
 
 </body>

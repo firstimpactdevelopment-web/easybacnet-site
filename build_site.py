@@ -369,7 +369,9 @@ def page(slug, title, question, answer_html, body_html, related, description,
   <a href="%(play_footer)s" rel="noopener">free Android app</a> that scans a building network for BACnet IP devices, reads and
   commands their points, and exports the results as an Excel (.xlsx) spreadsheet.</p>
   <p><a href="%(prefix)sindex.html#guides">All guides</a> &middot;
+  <a href="%(prefix)sguides/bacnet-glossary.html">BACnet glossary</a> &middot;
   <a href="%(prefix)sbacnet-points-lists/index.html">BACnet points lists by manufacturer</a> &middot;
+  <a href="%(prefix)sabout.html">About</a> &middot;
   <a href="%(prefix)sterms.html">Terms of use</a> &middot;
   <a href="%(prefix)sprivacy.html">Privacy policy</a></p>
 </footer>
@@ -542,6 +544,7 @@ GUIDES.append(dict(
         ("guides/how-to-find-your-bacnet-points-list", "How do I find my BACnet IP points list?"),
         ("guides/vendor-asking-for-bacnet-information", "A vendor asked for my BACnet information &mdash; what do I send?"),
         ("guides/bacnet-object-types-explained", "BACnet object types explained"),
+        ("guides/bacnet-engineering-units-explained", "What do the units on a BACnet point mean?"),
     ],
 ))
 
@@ -817,6 +820,8 @@ Technical contact: [name, email].</code></pre>
         ("guides/what-is-a-bacnet-points-list", "What is a BACnet IP points list?"),
         ("guides/how-to-find-your-bacnet-points-list", "How do I find my BACnet IP points list?"),
         ("guides/bacnet-device-id-explained", "What is a BACnet Device ID?"),
+        ("guides/bacnet-vs-modbus", "BACnet vs Modbus — what is the difference?"),
+        ("guides/bacnet-glossary", "BACnet glossary: what do all the terms mean?"),
     ],
 ))
 
@@ -921,6 +926,7 @@ GUIDES.append(dict(
         ("guides/subnets", "What is a subnet, and why doesn&rsquo;t the switch give me the right one?"),
         ("guides/how-to-find-your-bacnet-points-list", "How do I find my BACnet IP points list?"),
         ("guides/bacnet-device-id-explained", "What is a BACnet Device ID?"),
+        ("guides/test-bacnet-device-without-bms", "How do I test a BACnet IP device without a BMS?"),
     ],
 ))
 
@@ -1079,6 +1085,9 @@ GUIDES.append(dict(
         ("guides/what-is-a-bacnet-points-list", "What is a BACnet IP points list?"),
         ("guides/bacnet-object-types-explained", "BACnet object types explained"),
         ("guides/vendor-asking-for-bacnet-information", "A vendor asked for my BACnet information &mdash; what do I send?"),
+        ("guides/bacnet-write-access-denied", "What does BACnet 'Write Access Denied' mean, and how do I fix it?"),
+        ("guides/bacnet-value-does-not-change-when-written", "Why doesn't my BACnet value change when I write to it?"),
+        ("guides/bacnet-glossary", "BACnet glossary: what do all the terms mean?"),
     ],
 ))
 
@@ -1148,6 +1157,8 @@ GUIDES.append(dict(
     related=[
         ("guides/what-is-a-bacnet-points-list", "What is a BACnet IP points list?"),
         ("guides/bacnet-priority-and-stuck-overrides", "Why is my BACnet point stuck?"),
+        ("guides/bacnet-engineering-units-explained", "What do the units on a BACnet point mean?"),
+        ("guides/bacnet-glossary", "BACnet glossary: what do all the terms mean?"),
     ],
 ))
 
@@ -1206,6 +1217,7 @@ GUIDES.append(dict(
     related=[
         ("guides/vendor-asking-for-bacnet-information", "A vendor asked for my BACnet information &mdash; what do I send?"),
         ("guides/why-cant-i-find-my-bacnet-devices", "Why can't I find my BACnet IP devices?"),
+        ("guides/bacnet-glossary", "BACnet glossary: what do all the terms mean?"),
     ],
 ))
 
@@ -1444,7 +1456,10 @@ GUIDES.append(dict(
   point, the device, the old value, the new value and the priority. Tap <strong>Write
   it</strong>. The app sends the write, waits for the acknowledgement, then re-reads
   the point so you see what the device actually did. If the controller refuses, you
-  get its error in plain words.</p>
+  get its error in plain words; <a href="bacnet-write-access-denied.html">what to do
+  when a write is denied</a> covers the common ones. If the write is accepted but the
+  value doesn't move, see <a href="bacnet-value-does-not-change-when-written.html">why
+  a BACnet value doesn't change after a write</a>.</p>
 {{fig:writeflow}}
 
   <h2>Step 4 &mdash; Release it before you leave</h2>
@@ -1473,7 +1488,8 @@ GUIDES.append(dict(
   <h2>Points that will not accept a write</h2>
   <ul>
     <li><strong>Input points</strong> (Analog Input, Binary Input, Multi-State
-    Input) normally reject a Present_Value write, often with Write Access Denied,
+    Input) normally reject a Present_Value write, often with
+    <a href="bacnet-write-access-denied.html">Write Access Denied</a>,
     unless the point is <em>Out Of Service</em>, because their value comes from the
     physical sensor. The app warns you about this in the write dialog.</li>
     <li><strong>Points with no priority array</strong> (many plain Analog and Binary
@@ -1487,6 +1503,8 @@ GUIDES.append(dict(
         ("guides/how-to-use-easy-bacnet", "How do I scan for my BACnet points list?"),
         ("guides/how-to-build-a-custom-remote", "How do I build a custom remote in Easy BACnet?"),
         ("guides/bacnet-object-types-explained", "BACnet object types explained"),
+        ("guides/bacnet-write-access-denied", "What does BACnet 'Write Access Denied' mean, and how do I fix it?"),
+        ("guides/bacnet-value-does-not-change-when-written", "Why doesn't my BACnet value change when I write to it?"),
     ],
 ))
 
@@ -1665,6 +1683,7 @@ GUIDES.append(dict(
         ("guides/how-to-write-to-a-bacnet-point", "How do I write to a BACnet point with Easy BACnet, and release it?"),
         ("guides/how-to-use-easy-bacnet", "How do I scan for my BACnet points list?"),
         ("guides/bacnet-priority-and-stuck-overrides", "BACnet priority and stuck overrides"),
+        ("guides/bacnet-write-access-denied", "What does BACnet 'Write Access Denied' mean, and how do I fix it?"),
     ],
 ))
 
@@ -1836,6 +1855,7 @@ GUIDES.append(dict(
         ("guides/how-to-build-a-custom-remote", "How do I build a custom remote in Easy BACnet?"),
         ("guides/how-to-write-to-a-bacnet-point", "How do I write to a BACnet point with Easy BACnet, and release it?"),
         ("guides/duplicate-bacnet-device-id", "Two devices have the same BACnet Device ID"),
+        ("guides/bacnet-write-access-denied", "What does BACnet 'Write Access Denied' mean, and how do I fix it?"),
     ],
 ))
 
@@ -2054,6 +2074,7 @@ GUIDES.append(dict(
         ("guides/why-cant-i-find-my-bacnet-devices", "Why can't I find my BACnet IP devices?"),
         ("guides/bacnet-device-shows-offline", "Why does my BACnet IP device show offline?"),
         ("guides/who-to-call-it-hvac-or-controls", "Who do I call &mdash; IT, HVAC, or controls/BMS?"),
+        ("guides/test-bacnet-device-without-bms", "How do I test a BACnet IP device without a BMS?"),
     ],
 ))
 
@@ -2171,6 +2192,7 @@ GUIDES.append(dict(
     related=[
         ("guides/why-cant-i-find-my-bacnet-devices", "Why can't I find my BACnet IP devices?"),
         ("guides/bacnet-device-id-explained", "BACnet Device IDs explained"),
+        ("guides/bacnet-glossary", "BACnet glossary: what do all the terms mean?"),
     ],
 ))
 
@@ -2228,6 +2250,7 @@ GUIDES.append(dict(
         ("guides/bacnet-network-numbers-and-routers", "BACnet network numbers and routers"),
         ("guides/what-port-does-bacnet-use", "What port does BACnet IP use?"),
         ("guides/why-cant-i-find-my-bacnet-devices", "Why can't I find my BACnet IP devices?"),
+        ("guides/bacnet-vs-modbus", "BACnet vs Modbus — what is the difference?"),
     ],
 ))
 
@@ -2273,6 +2296,7 @@ GUIDES.append(dict(
         ("guides/bacnet-mstp-vs-bacnet-ip", "BACnet MS/TP vs BACnet/IP"),
         ("guides/what-is-bacnet-sc", "What is BACnet/SC, and is BACnet IP secure?"),
         ("guides/why-cant-i-find-my-bacnet-devices", "Why can't I find my BACnet IP devices?"),
+        ("guides/bacnet-vs-modbus", "BACnet vs Modbus — what is the difference?"),
     ],
 ))
 
@@ -2338,6 +2362,8 @@ GUIDES.append(dict(
         ("guides/subnets", "What is a subnet, and why doesn't the switch give me the right one?"),
         ("guides/how-to-write-to-a-bacnet-point", "How do I write to a BACnet point?"),
         ("guides/what-is-bacnet", "What is BACnet?"),
+        ("guides/test-bacnet-device-without-bms", "How do I test a BACnet IP device without a BMS?"),
+        ("guides/bacnet-vs-modbus", "BACnet vs Modbus — what is the difference?"),
     ],
 ))
 
@@ -2433,6 +2459,8 @@ GUIDES.append(dict(
         ("guides/bacnet-scanner-app-android", "Is there a BACnet IP scanner app for Android?"),
         ("guides/bacnet-object-types-explained", "BACnet object types explained"),
         ("guides/how-to-write-to-a-bacnet-point", "How do I write to a BACnet point?"),
+        ("guides/bacnet-engineering-units-explained", "What do the units on a BACnet point mean?"),
+        ("guides/test-bacnet-device-without-bms", "How do I test a BACnet IP device without a BMS?"),
     ],
 ))
 
@@ -2506,6 +2534,7 @@ GUIDES.append(dict(
         ("guides/why-cant-i-find-my-bacnet-devices", "Why can't I find my BACnet IP devices?"),
         ("guides/subnets", "What is a subnet, and why doesn't the switch give me the right one?"),
         ("guides/bacnet-device-id-explained", "What is a BACnet Device ID?"),
+        ("guides/test-bacnet-device-without-bms", "How do I test a BACnet IP device without a BMS?"),
     ],
 ))
 
@@ -3166,6 +3195,7 @@ GUIDES.append(dict(
         ("guides/what-is-a-bacnet-points-list", "What is a BACnet IP points list?"),
         ("guides/bacnet-object-types-explained", "BACnet object types explained"),
         ("guides/bacnet-priority-and-stuck-overrides", "BACnet priority and stuck overrides"),
+        ("guides/bacnet-engineering-units-explained", "What do the units on a BACnet point mean?"),
     ],
 ))
 
@@ -3393,6 +3423,8 @@ GUIDES.append(dict(
         ("guides/how-to-write-to-a-bacnet-point", "How to write to a BACnet point"),
         ("guides/bacnet-priority-and-stuck-overrides", "BACnet priority and stuck overrides"),
         ("guides/who-to-call-it-hvac-or-controls", "Who do I call &mdash; IT, HVAC, or controls/BMS?"),
+        ("guides/bacnet-write-access-denied", "What does BACnet 'Write Access Denied' mean, and how do I fix it?"),
+        ("guides/bacnet-value-does-not-change-when-written", "Why doesn't my BACnet value change when I write to it?"),
     ],
 ))
 
@@ -3949,7 +3981,10 @@ def tool_page(slug, title, question, description, intro_html, tool_html, related
         rel = ('\n  <nav class="more">\n    <h2>Related</h2>\n    <ul>\n' + items +
                '\n    </ul>\n  </nav>')
     jsonld = ('{"@context":"https://schema.org","@graph":['
+              '{"@type":"Organization","@id":"' + BASE_URL + '/#org","name":"Easy BACnet",'
+              '"url":"' + BASE_URL + '/","logo":"' + BASE_URL + '/logo-512.png"},'
               '{"@type":"SoftwareApplication","name":' + jstr(question) +
+              ',"publisher":{"@id":"' + BASE_URL + '/#org"}' +
               ',"applicationCategory":"UtilitiesApplication","operatingSystem":"Any (web browser)"'
               ',"offers":{"@type":"Offer","price":"0","priceCurrency":"USD"}'
               ',"description":' + jstr(description) + '},'
@@ -4023,7 +4058,7 @@ TOOL_TEMPLATE = """<!doctype html>
   <a href="{{PLAY_FOOTER}}" rel="noopener">free Android app</a> that
   scans a building network for BACnet IP devices, reads and commands their points, and
   exports an Excel (.xlsx) report. This tool runs entirely in your browser.</p>
-  <p><a href="terms.html">Terms of use</a> &middot; <a href="privacy.html">Privacy policy</a></p>
+  <p><a href="about.html">About</a> &middot; <a href="terms.html">Terms of use</a> &middot; <a href="privacy.html">Privacy policy</a></p>
 </footer>
 
 </body>
@@ -4105,7 +4140,58 @@ function decId(){
 }
 window.addEventListener('DOMContentLoaded',function(){encId();decId();});
 </script>
+
+  <h2>How the number is built</h2>
+  <p>An Object Identifier is 4 bytes, 32 bits. The first 10 bits hold the object type
+  (0&ndash;1023) and the last 22 bits hold the instance (0&ndash;4,194,303). Shifting the
+  type left by 22 bits is the same as multiplying it by 4,194,304, so the whole thing is
+  one line of math:</p>
+  <p><code>Object Identifier = object type &times; 4,194,304 + instance</code></p>
+  <p>To go the other way, divide by 4,194,304. The whole-number part is the type and the
+  remainder is the instance.</p>
+  <table>
+    <thead><tr><th>Object</th><th>Math</th><th>Decimal</th><th>Hex</th></tr></thead>
+    <tbody>
+      <tr><td>Analog Input 1</td><td>0 &times; 4,194,304 + 1</td><td>1</td><td>0x00000001</td></tr>
+      <tr><td>Analog Value 7</td><td>2 &times; 4,194,304 + 7</td><td>8,388,615</td><td>0x00800007</td></tr>
+      <tr><td>Binary Output 3</td><td>4 &times; 4,194,304 + 3</td><td>16,777,219</td><td>0x01000003</td></tr>
+      <tr><td>Device 1234</td><td>8 &times; 4,194,304 + 1,234</td><td>33,555,666</td><td>0x020004D2</td></tr>
+    </tbody>
+  </table>
+  <p>In hex the split is easy to read by eye: the type sits in the top bits, so every
+  Analog Value starts 0x008&hellip;, every Binary Output 0x010&hellip; and every Device
+  0x020&hellip;.</p>
+
+  <h2>Where you run into the raw number</h2>
+  <ul>
+    <li><strong>Wireshark and packet captures.</strong> ReadProperty requests carry the
+    Object Identifier as those 4 bytes, so the hex in the packet bytes pane decodes here.</li>
+    <li><strong>Gateway and driver configs.</strong> Some gateways, OPC servers and
+    integration tools store a point as one 32-bit number instead of a type and an
+    instance.</li>
+    <li><strong>Logs and error messages.</strong> A controller or BMS log that says
+    &ldquo;object 33555666 unknown&rdquo; is talking about Device 1234.</li>
+  </ul>
+
+  <h2>Limits worth knowing</h2>
+  <ul>
+    <li>Types 0&ndash;127 are reserved for the standard. Types 128&ndash;1023 are left
+    for vendors, which is why a decoded type can come back as a number this tool has no
+    name for.</li>
+    <li>The highest instance, 4,194,303, is the &ldquo;wildcard&rdquo; or uninitialized
+    value. That is why a real Device ID tops out at 4,194,302. See
+    <a href="guides/bacnet-device-id-explained.html">what a BACnet Device ID is</a>.</li>
+    <li>Instance numbers only have to be unique per object type inside one device. AI 1
+    and AV 1 on the same controller are different objects with different Object
+    Identifiers.</li>
+  </ul>
+  <p>For the instance numbers a specific unit uses, look it up in the
+  <a href="bacnet-points-lists/index.html">BACnet points list library</a> or run a
+  <a href="bacnet-instance-calculators/index.html">brand instance calculator</a>. To look up
+  any other BACnet enum value, such as a property ID or engineering unit, use the
+  <a href="bacnet-reference/index.html">BACnet number lookup</a>.</p>
 """,
+    updated="2026-11-10",
     related=[
         ("guides/bacnet-object-types-explained", "BACnet object types explained"),
         ("guides/what-is-a-bacnet-points-list", "What is a BACnet IP points list?"),
@@ -4379,7 +4465,12 @@ footer a{color:var(--mut); text-decoration:underline}
       "@id": "{{BASE}}/#org",
       "name": "Easy BACnet",
       "url": "{{BASE}}/",
-      "logo": "{{BASE}}/logo-512.png"
+      "logo": "{{BASE}}/logo-512.png",
+      "email": "webmaster@easybacnet.com",
+      "sameAs": [
+        "https://play.google.com/store/apps/details?id=com.easybacnet.app",
+        "https://easymodbus.com/"
+      ]
     },
     {
       "@type": "WebSite",
@@ -4393,6 +4484,8 @@ footer a{color:var(--mut); text-decoration:underline}
       "name": "Easy BACnet",
       "applicationCategory": "UtilitiesApplication",
       "operatingSystem": "Android 8.0 or later",
+      "installUrl": "https://play.google.com/store/apps/details?id=com.easybacnet.app",
+      "downloadUrl": "https://play.google.com/store/apps/details?id=com.easybacnet.app",
       "offers": { "@type": "Offer", "price": "0", "priceCurrency": "USD" },
       "publisher": { "@id": "{{BASE}}/#org" },
       "description": "Scans a local network for BACnet IP devices, reads their points, commands and releases them by priority, builds custom remotes for its devices, and exports the results as an Excel (.xlsx) spreadsheet."
@@ -4546,6 +4639,7 @@ footer a{color:var(--mut); text-decoration:underline}
 <footer>
   <div class="wrap">
     <p><a href="{{PLAY_FOOTER}}" rel="noopener">Easy BACnet on Google Play</a> &middot;
+    <a href="about.html">About</a> &middot;
     <a href="terms.html">Terms of use</a> &middot; <a href="privacy.html">Privacy policy</a> &middot;
     Contact: <a href="mailto:webmaster@easybacnet.com">webmaster@easybacnet.com</a></p>
   </div>
@@ -4585,6 +4679,93 @@ def ping_indexnow(urls):
 # GUIDES entry instead when touching a guide in future.
 GUIDES_NEW_20261104 = ['bacnet-cov-vs-polling', 'bacnet-mstp-troubleshooting', 'bacnet-network-numbers-and-routers', 'bacnet-pics-explained', 'find-bacnet-points-list-for-your-equipment', 'what-is-bacnet-sc']
 GUIDES_EDITED_20261104 = ['bacnet-device-shows-offline', 'bacnet-glossary', 'bacnet-mstp-vs-bacnet-ip', 'does-easy-bacnet-support-mstp-rs485', 'export-bacnet-points-to-csv', 'how-to-find-your-bacnet-points-list', 'is-it-safe-to-write-to-bacnet', 'what-is-a-bacnet-points-list', 'what-port-does-bacnet-use', 'who-is-i-am-explained']
+
+
+ABOUT_UPDATED = "2026-11-10"
+
+
+def about_page(n_models, n_calcs):
+    """/about: who runs the site, where the data comes from, how it is paid for.
+    Built with the guide template, then given AboutPage JSON-LD instead of FAQPage."""
+    answer = """<p>Easy BACnet is an independent site for people who work on building controls.
+    It has a free BACnet points list library, browser tools for BACnet numbers and
+    instances, plain-English guides, and the Easy BACnet app for Android. It is not
+    run by a manufacturer, a BMS vendor or a standards body.</p>"""
+    body = """
+  <h2>What is on the site</h2>
+  <ul>
+    <li><a href="bacnet-points-lists/index.html">BACnet points list library</a>:
+    %(nm)s equipment models, each with its object types, instance numbers, names,
+    units and access, plus CSV, EDE and JSON downloads.</li>
+    <li><a href="bacnet-instance-calculators/index.html">Instance calculators</a> for
+    %(nc)d brands and gateways, where the instance number is worked out from a unit
+    address.</li>
+    <li>Reference tools: the <a href="bacnet-reference/index.html">BACnet number
+    lookup</a>, the <a href="bacnet-object-id-decoder.html">Object Identifier
+    decoder</a>, the <a href="bacnet-vendor-id-lookup.html">Vendor ID lookup</a> and
+    a <a href="bacnet-points-list-compare.html">scan-to-points-list compare</a>. They
+    run in your browser and nothing you type is uploaded.</li>
+    <li><a href="index.html#guides">Guides</a> on the problems that come up in the
+    field: devices that don't show up, writes that are denied, overrides that won't
+    release, MS/TP wiring, network numbers and more.</li>
+  </ul>
+
+  <h2>Where the points lists come from</h2>
+  <p>Each list is typed up from the manufacturer's own public documentation, such as
+  an integration manual, a PICS or a protocol guide, and every model page links to the
+  document it came from. Where a list came from somewhere other than the manufacturer,
+  such as a gateway vendor's profile, the page says so with a badge.</p>
+  <p>Before a list is published, its object types, instances and access are checked
+  against that source. The BACnet number lookup is cross-checked against three
+  independent BACnet stacks. Mistakes still get through, so treat every list as a
+  starting point and confirm it against the live device. The
+  <a href="terms.html">terms of use</a> cover this in full.</p>
+
+  <h2>The app</h2>
+  <p><a href="index.html">Easy BACnet</a> is an Android app that scans a network for
+  BACnet IP devices, reads their points, writes and releases values by priority, and
+  exports a report to Excel. Before each release it is tested against 19 independent
+  BACnet stacks. Scanning, reading, writing and exporting are free. An optional Pro
+  subscription removes the ads in the free version and unlocks unlimited custom
+  remotes. The app, its optional subscription and ads on this site pay for the site.</p>
+
+  <h2>Independence</h2>
+  <p>Easy BACnet is not affiliated with, endorsed by or paid by any manufacturer named
+  on this site, or by ASHRAE or BACnet International. Manufacturer and product names
+  are used only to say which equipment a list is for. BACnet is a registered trademark
+  of ASHRAE.</p>
+
+  <h2>Corrections and contact</h2>
+  <p>If a list is wrong, a document has moved, or there is a model you want added,
+  email <a href="mailto:webmaster@easybacnet.com">webmaster@easybacnet.com</a>. Point
+  to the page and, if you can, the manufacturer document that shows the right
+  value. Corrections are made in the library and the page's updated date
+  changes.</p>
+""" % {"nm": "{:,}".format(n_models), "nc": n_calcs}
+    html = page("about", "About Easy BACnet | Easy BACnet", "About Easy BACnet", answer, body,
+                [("guides/bacnet-glossary", "BACnet glossary"),
+                 ("guides/what-is-bacnet", "What is BACnet?"),
+                 ("guides/how-to-use-easy-bacnet", "How to use Easy BACnet")],
+                "Who runs easybacnet.com, where its BACnet points lists come from, how the site "
+                "is paid for, and how to send a correction.",
+                published=ABOUT_UPDATED, updated=ABOUT_UPDATED)
+    ld = ('{"@context":"https://schema.org","@graph":['
+          '{"@type":"AboutPage","name":"About Easy BACnet","url":"' + BASE_URL + '/about.html",'
+          '"dateModified":"' + ABOUT_UPDATED + '","about":{"@id":"' + BASE_URL + '/#org"},'
+          '"isPartOf":{"@id":"' + BASE_URL + '/#site"}},'
+          '{"@type":"Organization","@id":"' + BASE_URL + '/#org","name":"Easy BACnet",'
+          '"url":"' + BASE_URL + '/","logo":"' + BASE_URL + '/logo-512.png",'
+          '"email":"webmaster@easybacnet.com",'
+          '"sameAs":["https://play.google.com/store/apps/details?id=com.easybacnet.app","https://easymodbus.com/"]},'
+          '{"@type":"BreadcrumbList","itemListElement":['
+          '{"@type":"ListItem","position":1,"name":"Home","item":"' + BASE_URL + '/index.html"},'
+          '{"@type":"ListItem","position":2,"name":"About","item":"' + BASE_URL + '/about.html"}]}]}')
+    html = re.sub(r'(<script type="application/ld\+json">\n).*?(\n</script>)',
+                  lambda m: m.group(1) + ld + m.group(2), html, count=1, flags=re.S)
+    html = html.replace("<strong>Short answer</strong>", "<strong>In short</strong>", 1)
+    html = html.replace('<meta property="og:type" content="article">',
+                        '<meta property="og:type" content="website">', 1)
+    return html
 
 
 def check_lengths():
@@ -4632,6 +4813,10 @@ def main(ping=False):
     lib_paths, lib_llms = points_library.build(write)
     calc_paths, calc_llms = calculators.build(write)
     ref_paths, ref_llms = reftools.build(write)
+
+    write("about.html", about_page(
+        n_models=len([p for p in lib_paths if p.count("/") == 2 and not p.endswith("index.html")]),
+        n_calcs=len(calculators.CALCS)))
 
     # The homepage lists guides by topic, not in the order they were written.
     by_slug = {g["slug"]: g for g in GUIDES}
@@ -4681,7 +4866,7 @@ def main(ping=False):
     # <loc> values are normalised to extensionless clean URLs in write().
     # privacy-desktop.html is live (the PC app links to it) but kept out of the
     # sitemap and noindexed until the PC version is announced on the site.
-    urls = (["index.html", "privacy.html", "terms.html"]
+    urls = (["index.html", "about.html", "privacy.html", "terms.html"]
             + [t["slug"] + ".html" for t in TOOLS]
             + [g["slug"] + ".html" for g in GUIDES]
             + lib_paths + calc_paths + ref_paths)
@@ -4691,13 +4876,22 @@ def main(ping=False):
     lastmod.update(points_library.LASTMOD)
     lastmod.update({t["slug"] + ".html": t["updated"] for t in TOOLS if t.get("updated")})
     lastmod["index.html"] = max(lastmod.values())
+    lastmod["about.html"] = ABOUT_UPDATED
     for u in urls:
         sm.append("  <url><loc>%s/%s</loc><lastmod>%s</lastmod></url>"
                   % (BASE_URL, u, lastmod.get(u, UPDATED)))
     sm.append("</urlset>")
     write("sitemap.xml", "\n".join(sm) + "\n")
 
-    write("robots.txt", "User-agent: *\nAllow: /\nSitemap: %s/sitemap.xml\n" % BASE_URL)
+    # Search bots skip the points-list data files (CSV/EDE/JSON); the HTML page is the
+    # one to index. A bot with its own group ignores "*", so each repeats Allow: /.
+    # AI crawlers stay on "*" and can still read the JSON.
+    data_rules = ("Allow: /\n"
+                  "Disallow: /bacnet-points-lists/*.csv$\n"
+                  "Disallow: /bacnet-points-lists/*.json$\n")
+    write("robots.txt", "User-agent: Googlebot\n" + data_rules + "\n"
+          "User-agent: Bingbot\n" + data_rules + "\n"
+          "User-agent: *\nAllow: /\n\nSitemap: %s/sitemap.xml\n" % BASE_URL)
 
     # AdMob app-ads.txt (app publisher pub-6721099502169382). Must sit at the
     # root of the developer-website domain entered on the Play store listing.
@@ -4768,6 +4962,7 @@ def main(ping=False):
     llms.extend(ref_llms)
     llms.append("")
     llms.append("- Easy BACnet home: %s/" % BASE_URL)
+    llms.append("- About: %s/about" % BASE_URL)
     llms.append("- Privacy policy: %s/privacy" % BASE_URL)
     write("llms.txt", "\n".join(llms) + "\n")
 
