@@ -1,0 +1,1243 @@
+{
+  "manufacturer": "Carrier",
+  "manufacturer_slug": "carrier",
+  "model": "AquaSnap 30MPA/30MPW 016-071 (ComfortLink, UPC Open BACnet option)",
+  "model_slug": "aquasnap-30mp-comfortlink-upc-open",
+  "aliases": [
+    "30MP",
+    "30MPA",
+    "30MPW",
+    "30MPA016-071",
+    "30MPW016-071",
+    "AquaSnap 30MP",
+    "30MP-6T",
+    "UPC Open",
+    "ComfortLink",
+    "scroll chiller"
+  ],
+  "equipment_type": "Scroll chiller controller (BACnet option)",
+  "applies_to": "Carrier AquaSnap 30MPA (condenserless) and 30MPW (water-cooled) 016-071 scroll chillers with ComfortLink controls and the factory BACnet communication option.",
+  "summary": "This is the older ComfortLink generation of the 30MP, before the PIC6 Carrier Controller. BACnet MS/TP comes from a UPC Open controller in the main control box, which reads the ComfortLink chiller over CCN. The network points list has 126 objects: AVs, BVs and a few multistate values for start/stop, emergency stop, control point, setpoints, demand limit, water temperatures, refrigerant pressures, compressor status, run hours, strainer service and five user-defined points.",
+  "bacnet_transport": [
+    "BACnet MS/TP"
+  ],
+  "firmware": null,
+  "default_device_instance": "Network number 16101 followed by the MAC address (MAC 20 gives 1610120)",
+  "access_inferred": false,
+  "notes": [
+    "Covers the ComfortLink 30MP (form 30MP-6T). Units with PIC6 controls (30MPW017-080, 30MPA/30MPQ021-080) use a different, larger object list.",
+    "Object names end in _1; descriptions here are the printed point descriptions, with the CCN name added where two rows share a description (circuit A/B).",
+    "Multistate values are printed as MSV (mapped as MV here). The Control Method states print '2 = Occupancy' and '3 = Occupancy' as shown; per the control text the methods are Switch, Occupancy and CCN.",
+    "AV 8 Control Mode codes from the run status table: 0 Service Test, 1 Off Local, 2 Off CCN, 3 Off Time, 4 Off Emergency, 5 On Local, 6 On CCN, 7 On Time, 9 Pump Delay.",
+    "AV 57 is printed as mr_mach_1 (CCN HR_MACH); kept as printed.",
+    "AV 2901-2905 and BV 2911-2915 are user-defined points with no fixed meaning."
+  ],
+  "source": {
+    "title": "AquaSnap 30MPA,MPW016-071 Liquid Chillers with Scroll Compressors and ComfortLink Controls - Controls, Start-Up, Operation, Service, and Troubleshooting (Appendix C, BACnet Communication Option, Table G Network Points List)",
+    "doc_number": "30MP-6T",
+    "revision_date": "10-23",
+    "url": "https://www.shareddocs.com/hvac/docs/1005/Public/0B/30MP-6T.pdf"
+  },
+  "integration": {
+    "summary": "Address the UPC Open with its rotary switches, set the BAS port DIP switches for MS/TP and the baud rate, and set the chiller control method to CCN (Configuration > OPT2 > CTRL = 3). The BMS then starts and stops the chiller with BV 4 (CHIL_S_S), can write the control point and demand limit, and reads control mode, fluid temperatures, capacity and alarm state.",
+    "minimum_points": [
+      {
+        "ref": "BV 4",
+        "name": "chil_s_s_1",
+        "why": "Network start/stop"
+      },
+      {
+        "ref": "BV 6",
+        "name": "emstop_1",
+        "why": "Emergency stop command"
+      },
+      {
+        "ref": "AV 5",
+        "name": "ctrl_pnt_1",
+        "why": "Control point (leaving fluid setpoint)"
+      },
+      {
+        "ref": "AV 2",
+        "name": "dem_lim_1",
+        "why": "Demand limit, 0-100 %"
+      },
+      {
+        "ref": "AV 8",
+        "name": "stat_1",
+        "why": "Control mode code"
+      },
+      {
+        "ref": "AV 31",
+        "name": "cool_lwt_1",
+        "why": "Cooler leaving fluid temperature"
+      },
+      {
+        "ref": "AV 30",
+        "name": "cool_ewt_1",
+        "why": "Cooler entering fluid temperature"
+      },
+      {
+        "ref": "AV 3",
+        "name": "cap_t_1",
+        "why": "Percent total capacity"
+      },
+      {
+        "ref": "BV 59",
+        "name": "alm_1",
+        "why": "Alarm state (normal/alarm)"
+      }
+    ],
+    "enable": "Set the control method to CCN (Configuration > OPT2 > CTRL = 3) with the Enable/Off/Remote switch in Enable (or Remote with the contacts closed). The BMS then forces CHIL_S_S (BV 4) between Start and Stop; control mode reads 2 (Off CCN) or 6 (On CCN). Monitoring only does not need CTRL = 3.",
+    "heartbeat": null,
+    "remote_sensors": null,
+    "setup": [
+      "The UPC Open speaks BACnet MS/TP at 9600, 19.2k, 38.4k or 76.8k (Carrier default 76.8k), set on BAS port DIP switches DS1-DS2; 8 data bits, no parity, 1 stop bit.",
+      "For MS/TP set DS3 to enable, DS4 to E1-485 and DS5-DS8 to MSTP; the EIA-485 jumpers must be set to EIA-485 and 2W.",
+      "MAC address from the tens and ones rotary switches; switches and DIP settings are read only at power-up.",
+      "Device instance defaults to network number 16101 followed by the MAC address (MAC 20 gives 1610120); change it with i-Vu Tools or a BACview.",
+      "The UPC Open and the ComfortLink board must share the same CCN element and bus numbers (defaults 1 and 0).",
+      "Fit a BT485 terminator on the first and last controller of the MS/TP segment."
+    ],
+    "gotchas": [
+      "For the chiller to run, emstop_1 (BV 6) must be at Enable; writing EMSTOP stops all cooling at once.",
+      "In Lead/Lag/Standby setups each chiller and UPC Open needs a unique CCN element number, with at most 3 UPC Opens per CCN bus.",
+      "Pump, condenser and dual-setpoint points depend on unit options."
+    ]
+  },
+  "points": [
+    {
+      "type": "AV",
+      "instance": 2,
+      "name": "dem_lim_1",
+      "description": "Active Demand Limit",
+      "units": "%",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 3,
+      "name": "cap_t_1",
+      "description": "Percent Total Capacity (CAP_T)",
+      "units": "%",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 4,
+      "name": "sp_1",
+      "description": "Active Setpoint",
+      "units": "°F",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 5,
+      "name": "ctrl_pnt_1",
+      "description": "Control Point",
+      "units": "°F",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 6,
+      "name": "ewt_1",
+      "description": "Entering Fluid Temp",
+      "units": "°F",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 7,
+      "name": "lwt_1",
+      "description": "Leaving Fluid Temp",
+      "units": "°F",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 8,
+      "name": "stat_1",
+      "description": "Control Mode",
+      "units": "",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 9,
+      "name": "stage_1",
+      "description": "Requested Stage",
+      "units": "",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 10,
+      "name": "cond_ewt_1",
+      "description": "Condenser Entering Fluid",
+      "units": "°F",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 11,
+      "name": "capa_t_1",
+      "description": "Percent Total Capacity (CAPA_T)",
+      "units": "%",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 12,
+      "name": "capa_a_1",
+      "description": "Percent Available Cap. (CAPA_A)",
+      "units": "%",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 13,
+      "name": "dp_a_1",
+      "description": "Discharge Pressure (DP_A)",
+      "units": "psig",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 14,
+      "name": "sp_a_1",
+      "description": "Suction Pressure (SP_A)",
+      "units": "psig",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 15,
+      "name": "disgas_1",
+      "description": "Discharge Gas Temp",
+      "units": "°F",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 16,
+      "name": "tmp_scta_1",
+      "description": "Saturated Condensing Tmp (TMP_SCTA)",
+      "units": "°F",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 17,
+      "name": "tmp_ssta_1",
+      "description": "Saturated Suction Temp (TMP_SSTA)",
+      "units": "°F",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 18,
+      "name": "cond_lwt_1",
+      "description": "Condenser Leaving Fluid",
+      "units": "°F",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 20,
+      "name": "tmp_rgta_1",
+      "description": "Compr Return Gas Temp (TMP_RGTA)",
+      "units": "°F",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 29,
+      "name": "hr_b1_1",
+      "description": "Compressor B1 Run Hours",
+      "units": "hr",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 30,
+      "name": "cool_ewt_1",
+      "description": "Cooler Entering Fluid",
+      "units": "°F",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 31,
+      "name": "cool_lwt_1",
+      "description": "Cooler Leaving Fluid",
+      "units": "°F",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 32,
+      "name": "dual_lwt_1",
+      "description": "Lead/Lag Leaving Fluid",
+      "units": "°F",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 33,
+      "name": "rst_ma_1",
+      "description": "4-20 ma Reset Signal",
+      "units": "mA",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 34,
+      "name": "cy_b1_1",
+      "description": "Compressor B1 Starts",
+      "units": "",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 35,
+      "name": "tmp_rgtb_1",
+      "description": "Compr Return Gas Temp (TMP_RGTB)",
+      "units": "°F",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 36,
+      "name": "lmt_ma_1",
+      "description": "4-20 ma Demand Signal",
+      "units": "mA",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 37,
+      "name": "dl_stat_1",
+      "description": "CCN Loadshed Signal",
+      "units": "",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 38,
+      "name": "lwt_sp_1",
+      "description": "Cooler LWT Setpoint",
+      "units": "°F",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 39,
+      "name": "min_left_1",
+      "description": "Minutes Left for Start",
+      "units": "min",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 40,
+      "name": "dp_b_1",
+      "description": "Discharge Pressure (DP_B)",
+      "units": "psig",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 41,
+      "name": "pump_dly_1",
+      "description": "Cooler Pump Shutdown Dly",
+      "units": "min",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 42,
+      "name": "delay_1",
+      "description": "Minutes Off Time",
+      "units": "min",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 43,
+      "name": "lead_typ_1",
+      "description": "Lead/Lag Circuit Select",
+      "units": "",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 44,
+      "name": "sh_a_1",
+      "description": "Suction Superheat Temp (SH_A)",
+      "units": "°F",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 45,
+      "name": "capb_a_1",
+      "description": "Percent Available Cap. (CAPB_A)",
+      "units": "%",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 46,
+      "name": "capb_t_1",
+      "description": "Percent Total Capacity (CAPB_T)",
+      "units": "%",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 47,
+      "name": "tmp_sctb_1",
+      "description": "Saturated Condensing Tmp (TMP_SCTB)",
+      "units": "°F",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 48,
+      "name": "tmp_sstb_1",
+      "description": "Saturated Suction Temp (TMP_SSTB)",
+      "units": "°F",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 49,
+      "name": "sp_b_1",
+      "description": "Suction Pressure (SP_B)",
+      "units": "psig",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 50,
+      "name": "sh_b_1",
+      "description": "Suction Superheat Temp (SH_B)",
+      "units": "°F",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 51,
+      "name": "si_strnr_1",
+      "description": "Strainer Srvc Interval",
+      "units": "hr",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 52,
+      "name": "st_cdown_1",
+      "description": "Strainer Srvc Countdown",
+      "units": "hr",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 53,
+      "name": "csp1_1",
+      "description": "Cooling Setpoint 1",
+      "units": "°F",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 54,
+      "name": "csp2_1",
+      "description": "Cooling Setpoint 2",
+      "units": "°F",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 55,
+      "name": "csp3_1",
+      "description": "ICE Setpoint",
+      "units": "°F",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 56,
+      "name": "cramp_1",
+      "description": "Cooling Ramp Loading",
+      "units": "°F",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 57,
+      "name": "mr_mach_1",
+      "description": "Machine Operating Hours",
+      "units": "hr",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 58,
+      "name": "cy_mach_1",
+      "description": "Machine Starts",
+      "units": "",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 60,
+      "name": "hr_a1_1",
+      "description": "Compressor A1 Run Hours",
+      "units": "hr",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 61,
+      "name": "hr_a2_1",
+      "description": "Compressor A2 Run Hours",
+      "units": "hr",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 62,
+      "name": "hr_a3_1",
+      "description": "Compressor A3 Run Hours",
+      "units": "hr",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 68,
+      "name": "cy_a1_1",
+      "description": "Compressor A1 Starts",
+      "units": "",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 69,
+      "name": "cy_a2_1",
+      "description": "Compressor A2 Starts",
+      "units": "",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 70,
+      "name": "cy_a3_1",
+      "description": "Compressor A3 Starts",
+      "units": "",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 71,
+      "name": "hr_cpump_1",
+      "description": "Cooler Pump Run Hours",
+      "units": "hr",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 72,
+      "name": "hr_dpump_1",
+      "description": "Condenser Pump Run Hours",
+      "units": "hr",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 77,
+      "name": "seq_type_1",
+      "description": "Loading Sequence Select",
+      "units": "",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 78,
+      "name": "a1unltme_1",
+      "description": "Comp A1 Unload Time",
+      "units": "sec",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 80,
+      "name": "dmv_lvl_1_perct_1",
+      "description": "Demand Level 1",
+      "units": "",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 81,
+      "name": "dmv_lvl_2_perct_1",
+      "description": "Demand Level 2",
+      "units": "",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 82,
+      "name": "dmv_lvl_3_perct_1",
+      "description": "Demand Level 3",
+      "units": "",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 85,
+      "name": "hsp_1",
+      "description": "Head Setpoint",
+      "units": "°F",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 86,
+      "name": "cndv_1",
+      "description": "Cond Water Valve % Open",
+      "units": "%",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 1003,
+      "name": "oa_temp_1",
+      "description": "Outdoor Air Temperature",
+      "units": "°F",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 2007,
+      "name": "space_temp_1",
+      "description": "Space Temperature",
+      "units": "°F",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 2901,
+      "name": "user_analog_1_1",
+      "description": "User Defined Analog 1",
+      "units": "",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 2902,
+      "name": "user_analog_2_1",
+      "description": "User Defined Analog 2",
+      "units": "",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 2903,
+      "name": "user_analog_3_1",
+      "description": "User Defined Analog 3",
+      "units": "",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 2904,
+      "name": "user_analog_4_1",
+      "description": "User Defined Analog 4",
+      "units": "",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 2905,
+      "name": "user_analog_5_1",
+      "description": "User Defined Analog 5",
+      "units": "",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 9006,
+      "name": "cool_demand_level_1",
+      "description": "System Cooling Demand Level",
+      "units": "",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "BV",
+      "instance": 2,
+      "name": "condpump_1",
+      "description": "Condenser Pump Relay",
+      "units": "",
+      "access": "R",
+      "states": "On/Off"
+    },
+    {
+      "type": "BV",
+      "instance": 4,
+      "name": "chil_s_s_1",
+      "description": "CCN Chiller",
+      "units": "",
+      "access": "W",
+      "states": "Start/Stop"
+    },
+    {
+      "type": "BV",
+      "instance": 5,
+      "name": "mode_1",
+      "description": "Override Modes in Effect",
+      "units": "",
+      "access": "R",
+      "states": "Yes/No"
+    },
+    {
+      "type": "BV",
+      "instance": 6,
+      "name": "emstop_1",
+      "description": "Emergency Stop",
+      "units": "",
+      "access": "W",
+      "states": "Enable/Emstop"
+    },
+    {
+      "type": "BV",
+      "instance": 7,
+      "name": "coolpump_1",
+      "description": "Cooler Pump Relay",
+      "units": "",
+      "access": "R",
+      "states": "On/Off"
+    },
+    {
+      "type": "BV",
+      "instance": 11,
+      "name": "coolflow_1",
+      "description": "Cooler Flow Switch",
+      "units": "",
+      "access": "R",
+      "states": "Open/Close"
+    },
+    {
+      "type": "BV",
+      "instance": 13,
+      "name": "k_a1_rly_1",
+      "description": "Compressor A1 Relay",
+      "units": "",
+      "access": "R",
+      "states": "On/Off"
+    },
+    {
+      "type": "BV",
+      "instance": 14,
+      "name": "k_a2_rly_1",
+      "description": "Compressor A2 Relay",
+      "units": "",
+      "access": "R",
+      "states": "On/Off"
+    },
+    {
+      "type": "BV",
+      "instance": 15,
+      "name": "k_a3_rly_1",
+      "description": "Compressor A3 Relay",
+      "units": "",
+      "access": "R",
+      "states": "On/Off"
+    },
+    {
+      "type": "BV",
+      "instance": 16,
+      "name": "k_a1_fbk_1",
+      "description": "Compressor A1 Feedback",
+      "units": "",
+      "access": "R",
+      "states": "On/Off"
+    },
+    {
+      "type": "BV",
+      "instance": 17,
+      "name": "k_a2_fbk_1",
+      "description": "Compressor A2 Feedback",
+      "units": "",
+      "access": "R",
+      "states": "On/Off"
+    },
+    {
+      "type": "BV",
+      "instance": 18,
+      "name": "k_a3_fbk_1",
+      "description": "Compressor A3 Feedback",
+      "units": "",
+      "access": "R",
+      "states": "On/Off"
+    },
+    {
+      "type": "BV",
+      "instance": 25,
+      "name": "dmd_sw1_1",
+      "description": "Demand Limit Switch 1",
+      "units": "",
+      "access": "R",
+      "states": "On/Off"
+    },
+    {
+      "type": "BV",
+      "instance": 26,
+      "name": "dmd_sw2_1",
+      "description": "Demand Limit Switch 2",
+      "units": "",
+      "access": "R",
+      "states": "On/Off"
+    },
+    {
+      "type": "BV",
+      "instance": 27,
+      "name": "ice_done_1",
+      "description": "Ice Done",
+      "units": "",
+      "access": "R",
+      "states": "On/Off"
+    },
+    {
+      "type": "BV",
+      "instance": 29,
+      "name": "dual_in_1",
+      "description": "Dual Setpoint Switch",
+      "units": "",
+      "access": "R",
+      "states": "On/Off"
+    },
+    {
+      "type": "BV",
+      "instance": 30,
+      "name": "mode_1_1",
+      "description": "CSM Controlling Chiller",
+      "units": "",
+      "access": "R",
+      "states": "On/Off"
+    },
+    {
+      "type": "BV",
+      "instance": 31,
+      "name": "mode_2_1",
+      "description": "WSM Controlling Chiller",
+      "units": "",
+      "access": "R",
+      "states": "On/Off"
+    },
+    {
+      "type": "BV",
+      "instance": 32,
+      "name": "mode_3_1",
+      "description": "Master/Slave Control",
+      "units": "",
+      "access": "R",
+      "states": "On/Off"
+    },
+    {
+      "type": "BV",
+      "instance": 33,
+      "name": "mode_5_1",
+      "description": "Ramp Load Limited",
+      "units": "",
+      "access": "R",
+      "states": "On/Off"
+    },
+    {
+      "type": "BV",
+      "instance": 34,
+      "name": "mode_6_1",
+      "description": "Timed Override in Effect",
+      "units": "",
+      "access": "R",
+      "states": "On/Off"
+    },
+    {
+      "type": "BV",
+      "instance": 35,
+      "name": "mode_7_1",
+      "description": "Low Cooler Suction Temp A",
+      "units": "",
+      "access": "R",
+      "states": "On/Off"
+    },
+    {
+      "type": "BV",
+      "instance": 37,
+      "name": "mode_9_1",
+      "description": "Slow Change Override",
+      "units": "",
+      "access": "R",
+      "states": "On/Off"
+    },
+    {
+      "type": "BV",
+      "instance": 38,
+      "name": "mode_10_1",
+      "description": "Minimum OFF Time Active",
+      "units": "",
+      "access": "R",
+      "states": "On/Off"
+    },
+    {
+      "type": "BV",
+      "instance": 39,
+      "name": "mode_13_1",
+      "description": "Dual Setpoint",
+      "units": "",
+      "access": "R",
+      "states": "On/Off"
+    },
+    {
+      "type": "BV",
+      "instance": 40,
+      "name": "mode_14_1",
+      "description": "Temperature Reset",
+      "units": "",
+      "access": "R",
+      "states": "On/Off"
+    },
+    {
+      "type": "BV",
+      "instance": 41,
+      "name": "mode_15_1",
+      "description": "Demand/Sound Limited",
+      "units": "",
+      "access": "R",
+      "states": "On/Off"
+    },
+    {
+      "type": "BV",
+      "instance": 42,
+      "name": "mode_16_1",
+      "description": "Cooler Freeze Protection",
+      "units": "",
+      "access": "R",
+      "states": "On/Off"
+    },
+    {
+      "type": "BV",
+      "instance": 43,
+      "name": "mode_17_1",
+      "description": "Low Temperature Cooling",
+      "units": "",
+      "access": "R",
+      "states": "On/Off"
+    },
+    {
+      "type": "BV",
+      "instance": 44,
+      "name": "mode_18_1",
+      "description": "High Temperature Cooling",
+      "units": "",
+      "access": "R",
+      "states": "On/Off"
+    },
+    {
+      "type": "BV",
+      "instance": 45,
+      "name": "mode_19_1",
+      "description": "Making ICE",
+      "units": "",
+      "access": "R",
+      "states": "On/Off"
+    },
+    {
+      "type": "BV",
+      "instance": 46,
+      "name": "mode_20_1",
+      "description": "Storing ICE",
+      "units": "",
+      "access": "R",
+      "states": "On/Off"
+    },
+    {
+      "type": "BV",
+      "instance": 47,
+      "name": "mode_21_1",
+      "description": "High SCT Circuit A",
+      "units": "",
+      "access": "R",
+      "states": "On/Off"
+    },
+    {
+      "type": "BV",
+      "instance": 49,
+      "name": "mode_23_1",
+      "description": "Minimum Comp. On Time",
+      "units": "",
+      "access": "R",
+      "states": "On/Off"
+    },
+    {
+      "type": "BV",
+      "instance": 50,
+      "name": "mode_24_1",
+      "description": "Pump Off Delay Time",
+      "units": "",
+      "access": "R",
+      "states": "On/Off"
+    },
+    {
+      "type": "BV",
+      "instance": 51,
+      "name": "md_a_oil_1",
+      "description": "Circuit A Trio Oil Mgmt",
+      "units": "",
+      "access": "R",
+      "states": "On/Off"
+    },
+    {
+      "type": "BV",
+      "instance": 55,
+      "name": "st_maint_1",
+      "description": "Strainer Maint. Done",
+      "units": "",
+      "access": "W",
+      "states": "Yes/No"
+    },
+    {
+      "type": "BV",
+      "instance": 59,
+      "name": "alm_1",
+      "description": "Alarm State",
+      "units": "",
+      "access": "R",
+      "states": "Normal/Alarm"
+    },
+    {
+      "type": "BV",
+      "instance": 66,
+      "name": "k_b1_fbk_1",
+      "description": "Compressor B1 Feedback",
+      "units": "",
+      "access": "R",
+      "states": "On/Off"
+    },
+    {
+      "type": "BV",
+      "instance": 67,
+      "name": "k_b1_rly_1",
+      "description": "Compressor B1 Relay",
+      "units": "",
+      "access": "R",
+      "states": "On/Off"
+    },
+    {
+      "type": "BV",
+      "instance": 68,
+      "name": "mode_22_1",
+      "description": "High SCT Circuit B",
+      "units": "",
+      "access": "R",
+      "states": "On/Off"
+    },
+    {
+      "type": "BV",
+      "instance": 69,
+      "name": "mode_8_1",
+      "description": "Low Cooler Suction Temp B",
+      "units": "",
+      "access": "R",
+      "states": "On/Off"
+    },
+    {
+      "type": "BV",
+      "instance": 79,
+      "name": "mlv_rly_1",
+      "description": "Minimum Load Valve Relay",
+      "units": "",
+      "access": "R",
+      "states": "On/Off"
+    },
+    {
+      "type": "BV",
+      "instance": 83,
+      "name": "dem_lmt_act_1",
+      "description": "System Demand Limiting",
+      "units": "",
+      "access": "R",
+      "states": "Active/Inactive"
+    },
+    {
+      "type": "BV",
+      "instance": 2008,
+      "name": "occ_status_1",
+      "description": "Occupancy Status",
+      "units": "",
+      "access": "R",
+      "states": "Yes/No"
+    },
+    {
+      "type": "BV",
+      "instance": 2911,
+      "name": "user_binary_1_1",
+      "description": "User Defined Binary 1",
+      "units": "",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "BV",
+      "instance": 2912,
+      "name": "user_binary_2_1",
+      "description": "User Defined Binary 2",
+      "units": "",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "BV",
+      "instance": 2913,
+      "name": "user_binary_3_1",
+      "description": "User Defined Binary 3",
+      "units": "",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "BV",
+      "instance": 2914,
+      "name": "user_binary_4_1",
+      "description": "User Defined Binary 4",
+      "units": "",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "BV",
+      "instance": 2915,
+      "name": "user_binary_5_1",
+      "description": "User Defined Binary 5",
+      "units": "",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "BV",
+      "instance": 2999,
+      "name": "element_stat_1",
+      "description": "Element Comm Status",
+      "units": "",
+      "access": "R",
+      "states": "No Comm/Normal"
+    },
+    {
+      "type": "MV",
+      "instance": 4,
+      "name": "fluidtyp_msv_1",
+      "description": "Cooler Fluid",
+      "units": "",
+      "access": "R",
+      "states": "1=Water, 2=Medium Brine"
+    },
+    {
+      "type": "MV",
+      "instance": 5,
+      "name": "control_msv_1",
+      "description": "Control Method",
+      "units": "",
+      "access": "R",
+      "states": "1=Switch, 2=Occupancy, 3=Occupancy, 4=CCN"
+    },
+    {
+      "type": "MV",
+      "instance": 7,
+      "name": "crst_typ1_msv_1",
+      "description": "Cooling Reset Type",
+      "units": "",
+      "access": "R",
+      "states": "1=No Reset, 2=4-20mA Input, 3=External Temp - Oat, 4=Return Fluid, 5=External Temp - Spt"
+    },
+    {
+      "type": "MV",
+      "instance": 8,
+      "name": "dmd_ctrl_msv_1",
+      "description": "Demand Limit Select",
+      "units": "",
+      "access": "R",
+      "states": "1=None, 2=External Sw. Input, 3=4-20mA Input, 4=Loadshed"
+    }
+  ]
+}

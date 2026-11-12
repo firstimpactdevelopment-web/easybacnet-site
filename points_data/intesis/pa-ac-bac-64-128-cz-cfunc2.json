@@ -1,0 +1,424 @@
+{
+  "manufacturer": "Intesis",
+  "manufacturer_slug": "intesis",
+  "model": "IntesisBox PA-AC-BAC-64 / PA-AC-BAC-128 (Panasonic CZ-CFUNC2 adaptor)",
+  "model_slug": "pa-ac-bac-64-128-cz-cfunc2",
+  "aliases": [
+    "IntesisBox BACnet/IP Panasonic AC",
+    "CZ-CFUNC2 BACnet",
+    "Panasonic CZ-CFUNC2 BACnet gateway"
+  ],
+  "equipment_type": "VRF BACnet IP gateway (up to 64 or 128 indoor units)",
+  "applies_to": "Panasonic commercial air conditioning indoor units reached through a Panasonic CZ-CFUNC2 communication adaptor (two links, up to 64 indoor units each).",
+  "summary": "An older IntesisBox BACnet IP server that connects to one Panasonic CZ-CFUNC2 adaptor and publishes gateway-wide commands plus a fixed block of objects for each indoor unit, up to 64 or 128 units depending on model. Indoor unit instances are (unit number x 256) + offset, so unit 1 uses 256-289. Setup is done with the LinkBoxBACnet tool.",
+  "bacnet_transport": [
+    "BACnet IP"
+  ],
+  "firmware": null,
+  "default_device_instance": 246,
+  "access_inferred": false,
+  "notes": [
+    "Indoor unit objects are shown for unit 1 only. Instance = (xxx x 256) + offset, xxx = indoor unit number 1-128. Object names start with IUxxx; the description text carries the link, outdoor and indoor address (K-OA-IA).",
+    "This older product talks to the CZ-CFUNC2 adaptor. The newer Intesis INBACPAN016O000/064O000/128O000 (P-Link) uses a different object set. The PA-AC-BAC-64/128 names are also used for that newer product, so check the gateway model before mapping.",
+    "Occupancy_All instance 23 and Consumption_Reset 34 come from the object-detail pages; the member-objects table prints the instance column one row off.",
+    "The setpoint command AOs' property tables mark Present_Value R; they are listed as writable here because they are the setpoint commands. IUxxx_RemoteControl_Lock and IUxxx_Occupancy are printed R; check on site.",
+    "Temperature units follow the gateway setting (°C or °F). Consumption units are printed as kilowatts.",
+    "Error code states are a long Panasonic code table (A01, C12, E23 ...) in the manual and are not reproduced here."
+  ],
+  "source": {
+    "title": "IntesisBox BACnet/IP - Panasonic AC User Manual r2.1 (PA-AC-BAC-64/128)",
+    "doc_number": null,
+    "revision_date": "r2.1",
+    "url": "https://cdn.chipkin.com/assets/uploads/2018/feb/08-02-04-48_intesisbox_pa-ac-bac-64-128_user_manual_en.pdf",
+    "unofficial": true,
+    "host": "Chipkin Automation Systems"
+  },
+  "integration": {
+    "summary": "Connect the IntesisBox to the CZ-CFUNC2 adaptor and the BACnet IP LAN, configure the indoor units in LinkBoxBACnet, then map each unit's _command and _status objects from its (unit x 256) block. Instances 18-29 act on all units at once.",
+    "minimum_points": [
+      {
+        "ref": "BO 258",
+        "name": "IUxxx_OnOff_command",
+        "why": "Start/stop indoor unit"
+      },
+      {
+        "ref": "MO 260",
+        "name": "IUxxx_Mode_command",
+        "why": "Mode command"
+      },
+      {
+        "ref": "AO 262",
+        "name": "IUxxx_SetPoint_command",
+        "why": "Setpoint command"
+      },
+      {
+        "ref": "MO 265",
+        "name": "IUxxx_FanSpeed_command",
+        "why": "Fan speed command (4 = auto)"
+      },
+      {
+        "ref": "BI 257",
+        "name": "IUxxx_OnOff_status",
+        "why": "Run status"
+      },
+      {
+        "ref": "AI 261",
+        "name": "IUxxx_SetPoint_status",
+        "why": "Setpoint in use"
+      },
+      {
+        "ref": "AI 263",
+        "name": "IUxxx_Room_Temperature",
+        "why": "Room temperature"
+      },
+      {
+        "ref": "BI 256",
+        "name": "IUxxx_IU_Exist",
+        "why": "Unit found on the adaptor"
+      },
+      {
+        "ref": "MI 270",
+        "name": "IUxxx_ErrorCode",
+        "why": "Fault code"
+      }
+    ],
+    "enable": "No enable point is documented. Remote-controller functions can be locked per unit (MV 271) or for all units (MO 22).",
+    "heartbeat": null,
+    "remote_sensors": null,
+    "setup": [
+      "Default device instance 246; device instance, name and IP are set with LinkBoxBACnet.",
+      "One IntesisBox integrates one CZ-CFUNC2 adaptor (bought separately from Panasonic), which has two links of up to 30 outdoor and 64 indoor units each."
+    ],
+    "gotchas": [
+      "OnOff_All, Mode_All, SetPoint_All, FanSpeed_All and the occupancy objects (instances 18-29) act on every indoor unit.",
+      "Outputs only use Priority_Array slot 16; slots 1-15 stay NULL.",
+      "State_Text cannot be read as a whole array; read one array index at a time."
+    ]
+  },
+  "points": [
+    {
+      "type": "DEV",
+      "instance": 246,
+      "name": "Panasonic AC Gateway",
+      "description": "Gateway device object (instance configurable)",
+      "units": "",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "MI",
+      "instance": 16,
+      "name": "AdaptorLink1_ErrorCode",
+      "description": "CZ-CFUNC2 link 1 error code",
+      "units": "",
+      "access": "R",
+      "states": "1-259 = Panasonic error codes (A01...); see manual"
+    },
+    {
+      "type": "MI",
+      "instance": 17,
+      "name": "AdaptorLink2_ErrorCode",
+      "description": "CZ-CFUNC2 link 2 error code",
+      "units": "",
+      "access": "R",
+      "states": "1-259 = Panasonic error codes (A01...); see manual"
+    },
+    {
+      "type": "BO",
+      "instance": 18,
+      "name": "OnOff_All",
+      "description": "On/off for all indoor units",
+      "units": "",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "MO",
+      "instance": 19,
+      "name": "Mode_All",
+      "description": "Mode for all indoor units",
+      "units": "",
+      "access": "W",
+      "states": "1=Heat, 2=Cool, 3=Fan, 4=Dry, 5=Auto"
+    },
+    {
+      "type": "AO",
+      "instance": 20,
+      "name": "SetPoint_All",
+      "description": "Setpoint for all indoor units, -15 to 60 °C",
+      "units": "°C / °F",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "MO",
+      "instance": 21,
+      "name": "FanSpeed_All",
+      "description": "Fan speed for all indoor units",
+      "units": "",
+      "access": "W",
+      "states": "1=Low, 2=Medium, 3=High, 4=Auto"
+    },
+    {
+      "type": "MO",
+      "instance": 22,
+      "name": "RemoteControl_Lock_All",
+      "description": "Remote controller lock for all units",
+      "units": "",
+      "access": "W",
+      "states": "1-32 = combinations of locked functions (OO on/off, OM mode, SP setpoint, AD air direction, FS fan speed); see manual table"
+    },
+    {
+      "type": "MO",
+      "instance": 23,
+      "name": "Occupancy_All",
+      "description": "Occupancy function for all units",
+      "units": "",
+      "access": "W",
+      "states": "1=Occupied, 2=Unoccupied, 3=Disabled"
+    },
+    {
+      "type": "AV",
+      "instance": 24,
+      "name": "Occ_Cool_SetPoint",
+      "description": "Occupied cooling setpoint",
+      "units": "°C / °F",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 25,
+      "name": "Occ_Heat_SetPoint",
+      "description": "Occupied heating setpoint",
+      "units": "°C / °F",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 26,
+      "name": "Unocc_Cool_SetPoint",
+      "description": "Unoccupied cooling setpoint",
+      "units": "°C / °F",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 27,
+      "name": "Unocc_Heat_SetPoint",
+      "description": "Unoccupied heating setpoint",
+      "units": "°C / °F",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "BO",
+      "instance": 28,
+      "name": "Occ_ContinuousCheck",
+      "description": "Keep checking setpoint and occupancy continuously",
+      "units": "",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "BO",
+      "instance": 29,
+      "name": "Unocc_DeadbandAction",
+      "description": "Action when unoccupied and inside the deadband",
+      "units": "",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "BO",
+      "instance": 34,
+      "name": "Consumption_Reset",
+      "description": "Reset consumption counters",
+      "units": "",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "BI",
+      "instance": 256,
+      "name": "IUxxx_IU_Exist",
+      "description": "Indoor unit present",
+      "units": "",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "BI",
+      "instance": 257,
+      "name": "IUxxx_OnOff_status",
+      "description": "Run status",
+      "units": "",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "BO",
+      "instance": 258,
+      "name": "IUxxx_OnOff_command",
+      "description": "Start/stop command",
+      "units": "",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "MI",
+      "instance": 259,
+      "name": "IUxxx_Mode_status",
+      "description": "Operating mode",
+      "units": "",
+      "access": "R",
+      "states": "1=Heat, 2=Cool, 3=Fan, 4=Dry, 5=AutoHeat, 6=AutoCool"
+    },
+    {
+      "type": "MO",
+      "instance": 260,
+      "name": "IUxxx_Mode_command",
+      "description": "Mode command",
+      "units": "",
+      "access": "W",
+      "states": "1=Heat, 2=Cool, 3=Fan, 4=Dry, 5=Auto"
+    },
+    {
+      "type": "AI",
+      "instance": 261,
+      "name": "IUxxx_SetPoint_status",
+      "description": "Setpoint in use",
+      "units": "°C / °F",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AO",
+      "instance": 262,
+      "name": "IUxxx_SetPoint_command",
+      "description": "Setpoint command, -15 to 60 °C",
+      "units": "°C / °F",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "AI",
+      "instance": 263,
+      "name": "IUxxx_Room_Temperature",
+      "description": "Room temperature at the indoor unit sensor",
+      "units": "°C / °F",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "MI",
+      "instance": 264,
+      "name": "IUxxx_FanSpeed_status",
+      "description": "Fan speed",
+      "units": "",
+      "access": "R",
+      "states": "1=Low, 2=Medium, 3=High, 4=Auto"
+    },
+    {
+      "type": "MO",
+      "instance": 265,
+      "name": "IUxxx_FanSpeed_command",
+      "description": "Fan speed command",
+      "units": "",
+      "access": "W",
+      "states": "1=Low, 2=Medium, 3=High, 4=Auto"
+    },
+    {
+      "type": "MI",
+      "instance": 266,
+      "name": "IUxxx_AirDirection_status",
+      "description": "Air direction (louver)",
+      "units": "",
+      "access": "R",
+      "states": "1=Horizontal, 2=Pos2, 3=Pos3, 4=Pos4, 5=Vertical, 6=Swing, 7=Off/Auto"
+    },
+    {
+      "type": "MO",
+      "instance": 267,
+      "name": "IUxxx_AirDirection_command",
+      "description": "Air direction command",
+      "units": "",
+      "access": "W",
+      "states": "1=Horizontal, 2=Pos2, 3=Pos3, 4=Pos4, 5=Vertical, 6=Swing, 7=Off/Auto"
+    },
+    {
+      "type": "BI",
+      "instance": 268,
+      "name": "IUxxx_FilterSign_status",
+      "description": "Filter sign",
+      "units": "",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "BO",
+      "instance": 269,
+      "name": "IUxxx_FilterSign_Reset_command",
+      "description": "Filter sign reset",
+      "units": "",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "MI",
+      "instance": 270,
+      "name": "IUxxx_ErrorCode",
+      "description": "Indoor unit error code",
+      "units": "",
+      "access": "R",
+      "states": "1-259 = Panasonic error codes (A01...); see manual"
+    },
+    {
+      "type": "MV",
+      "instance": 271,
+      "name": "IUxxx_RemoteControl_Lock",
+      "description": "Remote controller lock for this unit",
+      "units": "",
+      "access": "R",
+      "states": "1-32 = combinations of locked functions (OO on/off, OM mode, SP setpoint, AD air direction, FS fan speed); see manual table"
+    },
+    {
+      "type": "MV",
+      "instance": 286,
+      "name": "IUxxx_Occupancy",
+      "description": "Occupancy function for this unit",
+      "units": "",
+      "access": "R",
+      "states": "1=Occupied, 2=Unoccupied, 3=Disabled"
+    },
+    {
+      "type": "AI",
+      "instance": 287,
+      "name": "IUxxx_Consumption_Yesterday",
+      "description": "Consumption yesterday",
+      "units": "kW (as printed)",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AI",
+      "instance": 288,
+      "name": "IUxxx_Consumption_Today",
+      "description": "Consumption today",
+      "units": "kW (as printed)",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AI",
+      "instance": 289,
+      "name": "IUxxx_Consumption_Total",
+      "description": "Total consumption",
+      "units": "kW (as printed)",
+      "access": "R",
+      "states": ""
+    }
+  ]
+}

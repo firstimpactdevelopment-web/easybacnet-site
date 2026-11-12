@@ -1,0 +1,879 @@
+{
+ "manufacturer": "Flexit",
+ "manufacturer_slug": "flexit",
+ "model": "Nordic series (Nordic Basic BACnet list)",
+ "model_slug": "nordic-basic-bacnet",
+ "aliases": [
+  "Flexit Nordic",
+  "Nordic S2",
+  "Nordic S3",
+  "Nordic S4",
+  "Nordic CL2",
+  "Nordic CL3",
+  "Nordic CL4",
+  "Nordic KS",
+  "Flexit GO",
+  "BACnet Basic list - Nordic",
+  "Climatix S300 POS3.6715"
+ ],
+ "equipment_type": "Energy recovery ventilation unit (residential AHU)",
+ "applies_to": "Flexit Nordic series residential heat recovery ventilation units with the built-in Siemens Climatix S300 controller.",
+ "summary": "Flexit Nordic units have BACnet IP built in (Siemens Climatix S300 controller, POS3.6715). Flexit's basic list has 66 rows: ventilation mode commands and status, setpoints, timers for fireplace and rapid ventilation, sensor readings, outputs and A/B alarm handling. Several rows give two or three instance numbers because the object moves with the configured input or output terminal; each printed instance is listed here.",
+ "bacnet_transport": [
+  "BACnet IP"
+ ],
+ "firmware": "Application APTV 2.419 and above (per the Flexit GO BACnet guide)",
+ "default_device_instance": 2,
+ "access_inferred": false,
+ "notes": [
+  "Rows that depend on wiring (DI1, DI2, X8, Q1-Q3, CI79) or on temperature control mode (supply air vs extract air cascade) are listed once per printed instance; the description says which. Instances marked default in the list are noted.",
+  "AI 50 is printed twice: extract air humidity or room air quality, depending on what is configured on X3.",
+  "Many objects exist only when the matching option is configured (water or electric heating, cooling, duct pressure fan control, wireless room sensors CI75/CI76/CI77).",
+  "AI 31 (frost protection temperature) is printed with unit Pa and a -3000 to 3000 range in the source; kept as printed.",
+  "The object list is a spreadsheet; it has no document number. Network settings come from Flexit's GO BACnet guide 118278-02 (2025-04)."
+ ],
+ "source": {
+  "title": "BACnet Basic list - Nordic",
+  "doc_number": null,
+  "revision_date": "2020-10",
+  "url": "https://flexitwebsiteprodstorage.blob.core.windows.net/product-documents/2963"
+ },
+ "integration": {
+  "summary": "Set BV 50 Comfort button to 1 so the unit follows MV 42 Room operating mode, then write MV 42 (Stop/Away/Home/High). Write the home and away temperature setpoints (instance depends on supply or extract control). Read MV 361 for the present mode, the temperatures and fan speeds, and the A/B alarm indication points; MV 344 acknowledges or resets A alarms.",
+  "minimum_points": [
+   {
+    "ref": "BV 50",
+    "name": "Comfort button",
+    "why": "Must be 1 for MV 42 to take effect"
+   },
+   {
+    "ref": "MV 42",
+    "name": "Room operating mode",
+    "why": "Mode command: 1 Stop, 2 Away, 3 Home, 4 High"
+   },
+   {
+    "ref": "AV 1994",
+    "name": "Setpoint temperature when home",
+    "why": "Home setpoint (supply air control default)"
+   },
+   {
+    "ref": "MV 344",
+    "name": "A-Alarm acknowledgement",
+    "why": "Write 2 to acknowledge, 3 to reset A alarms"
+   },
+   {
+    "ref": "MV 361",
+    "name": "Heat recovery ventilation state",
+    "why": "Present ventilation mode"
+   },
+   {
+    "ref": "AI 4",
+    "name": "Supply air temperature",
+    "why": "Supply air temperature"
+   },
+   {
+    "ref": "AI 1",
+    "name": "Outside air temperature",
+    "why": "Outdoor air temperature"
+   },
+   {
+    "ref": "AI 59",
+    "name": "Extract air temperature",
+    "why": "Extract (return) air temperature"
+   },
+   {
+    "ref": "MV 343",
+    "name": "A-Alarm indication",
+    "why": "A alarm active when 2"
+   },
+   {
+    "ref": "MV 340",
+    "name": "B-Alarm indication",
+    "why": "B alarm active when 2"
+   }
+  ],
+  "enable": "MV 42 Room operating mode only works when BV 50 Comfort button is 1; with BV 50 at 0 the unit goes to Away after the AWAY delay (PIV 318). A ventilation mode wired to a digital input overrides MV 42.",
+  "heartbeat": null,
+  "remote_sensors": null,
+  "setup": [
+   "BACnet IP is built in; default device ID is 2.",
+   "Change BACnet settings in the Flexit GO app as installer (Other > Installer > BACnet settings); the unit restarts to apply them.",
+   "Network settings can also be written over BACnet on the network port object (device instance, IP, UDP port); set property 4894 to 1 to save."
+  ],
+  "gotchas": [
+   "Flexit says to write commandable objects at priority 13 only; other priorities can leave the unit out of control.",
+   "The home/away setpoint instance depends on temperature control mode: 1994/1985 for supply air control, 2070/1988 for extract air cascade.",
+   "Input and output objects change instance with the terminal they are configured on."
+  ]
+ },
+ "points": [
+  {
+   "type": "BV",
+   "instance": 50,
+   "name": "Comfort button",
+   "description": "0 = away after delay, 1 = follow room operating mode",
+   "units": "",
+   "access": "C",
+   "states": "0=Inactive, 1=Active"
+  },
+  {
+   "type": "MV",
+   "instance": 361,
+   "name": "Heat recovery ventilation state",
+   "description": "Present ventilation mode",
+   "units": "",
+   "access": "R",
+   "states": "1=Off, 2=Away, 3=Home, 4=High, 5=Fume hood, 6=Fireplace, 7=Temporary high"
+  },
+  {
+   "type": "MV",
+   "instance": 42,
+   "name": "Room operating mode",
+   "description": "Ventilation mode command; needs BV 50 = 1",
+   "units": "",
+   "access": "C",
+   "states": "1=Stop, 2=Away, 3=Home, 4=High"
+  },
+  {
+   "type": "AV",
+   "instance": 1985,
+   "name": "Setpoint temperature when away",
+   "description": "Instance used with Sup (default); Range 10 to 30",
+   "units": "°C",
+   "access": "W",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 1988,
+   "name": "Setpoint temperature when away",
+   "description": "Instance used with Ext; Range 10 to 30",
+   "units": "°C",
+   "access": "W",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 1994,
+   "name": "Setpoint temperature when home",
+   "description": "Instance used with Sup (default); Range 10 to 30",
+   "units": "°C",
+   "access": "W",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 2070,
+   "name": "Setpoint temperature when home",
+   "description": "Instance used with Ext; Range 10 to 30",
+   "units": "°C",
+   "access": "W",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 2038,
+   "name": "Remaining time of fireplace ventilation",
+   "description": "Range 0 to 360",
+   "units": "min",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 2031,
+   "name": "Remaining time of rapid ventilation",
+   "description": "Range 0 to 360",
+   "units": "min",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "PIV",
+   "instance": 270,
+   "name": "Fireplace ventilation runtime",
+   "description": "Range 0 to 360",
+   "units": "min",
+   "access": "W",
+   "states": ""
+  },
+  {
+   "type": "PIV",
+   "instance": 293,
+   "name": "Rapid ventilation runtime",
+   "description": "Range 1 to 360",
+   "units": "min",
+   "access": "W",
+   "states": ""
+  },
+  {
+   "type": "MV",
+   "instance": 360,
+   "name": "Trigger temporary fireplace ventilation",
+   "description": "",
+   "units": "",
+   "access": "W",
+   "states": "1=Ready, 2=Trigger"
+  },
+  {
+   "type": "MV",
+   "instance": 357,
+   "name": "Trigger temporary rapid ventilation",
+   "description": "",
+   "units": "",
+   "access": "W",
+   "states": "1=Ready, 2=Trigger"
+  },
+  {
+   "type": "PIV",
+   "instance": 318,
+   "name": "AWAY delay timer duration",
+   "description": "Range 0 to 600",
+   "units": "min",
+   "access": "W",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 2096,
+   "name": "Room air quality 1",
+   "description": "Range 0 to 2000",
+   "units": "ppm",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "AI",
+   "instance": 12,
+   "name": "Exhaust air fan speed feedback",
+   "description": "Range 0 to 18000",
+   "units": "rpm",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "AI",
+   "instance": 5,
+   "name": "Supply air fan speed feedback",
+   "description": "Range 0 to 18000",
+   "units": "rpm",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "AI",
+   "instance": 50,
+   "name": "Relative humidity for extract air",
+   "description": "Humidity sensor on X3; Range 0 to 100",
+   "units": "%",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "AI",
+   "instance": 72,
+   "name": "Extract air pressure",
+   "description": "Range -3000 to 3000",
+   "units": "Pa",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "AI",
+   "instance": 73,
+   "name": "Supply air pressure",
+   "description": "Range -3000 to 3000",
+   "units": "Pa",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "AI",
+   "instance": 11,
+   "name": "Exhaust air temperature",
+   "description": "Range -50 to 80",
+   "units": "°C",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "AI",
+   "instance": 59,
+   "name": "Extract air temperature",
+   "description": "Range -50 to 80",
+   "units": "°C",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "AI",
+   "instance": 31,
+   "name": "Frost protection temp.for heating coil",
+   "description": "Range -3000 to 3000",
+   "units": "Pa",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "AI",
+   "instance": 1,
+   "name": "Outside air temperature",
+   "description": "Range -50 to 50",
+   "units": "°C",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "AI",
+   "instance": 75,
+   "name": "Room temperature",
+   "description": "Range 0 to 50",
+   "units": "°C",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 2093,
+   "name": "Room air humidity 1",
+   "description": "Range 0 to 100",
+   "units": "%",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 2094,
+   "name": "Room air humidity 2",
+   "description": "Range 0 to 100",
+   "units": "%",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 2095,
+   "name": "Room air humidity 3",
+   "description": "Range 0 to 100",
+   "units": "%",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "AI",
+   "instance": 50,
+   "name": "Room air quality input value (CU)",
+   "description": "Air quality sensor on X3; Range 0 to 2000",
+   "units": "ppm",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "AI",
+   "instance": 4,
+   "name": "Supply air temperature",
+   "description": "Range -50 to 80",
+   "units": "°C",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "BI",
+   "instance": 22,
+   "name": "Away",
+   "description": "Instance used with DI1",
+   "units": "",
+   "access": "R",
+   "states": "0=Inactive, 1=Active"
+  },
+  {
+   "type": "BI",
+   "instance": 29,
+   "name": "Away",
+   "description": "Instance used with DI2",
+   "units": "",
+   "access": "R",
+   "states": "0=Inactive, 1=Active"
+  },
+  {
+   "type": "BI",
+   "instance": 31,
+   "name": "Away",
+   "description": "Instance used with X8 (default)",
+   "units": "",
+   "access": "R",
+   "states": "0=Inactive, 1=Active"
+  },
+  {
+   "type": "BI",
+   "instance": 87,
+   "name": "CO detector",
+   "description": "",
+   "units": "",
+   "access": "R",
+   "states": "0=Inactive, 1=Active"
+  },
+  {
+   "type": "BI",
+   "instance": 32,
+   "name": "Emergency off",
+   "description": "",
+   "units": "",
+   "access": "R",
+   "states": "0=Inactive, 1=Active"
+  },
+  {
+   "type": "BI",
+   "instance": 18,
+   "name": "Fire damper feedback",
+   "description": "Instance used with DI1",
+   "units": "",
+   "access": "R",
+   "states": "0=Inactive, 1=Active"
+  },
+  {
+   "type": "BI",
+   "instance": 25,
+   "name": "Fire damper feedback",
+   "description": "Instance used with DI2",
+   "units": "",
+   "access": "R",
+   "states": "0=Inactive, 1=Active"
+  },
+  {
+   "type": "BI",
+   "instance": 92,
+   "name": "Fire damper feedback",
+   "description": "Instance used with X8",
+   "units": "",
+   "access": "R",
+   "states": "0=Inactive, 1=Active"
+  },
+  {
+   "type": "BI",
+   "instance": 16,
+   "name": "Fume hood ventilation input",
+   "description": "Instance used with DI1",
+   "units": "",
+   "access": "R",
+   "states": "0=Inactive, 1=Active"
+  },
+  {
+   "type": "BI",
+   "instance": 23,
+   "name": "Fume hood ventilation input",
+   "description": "Instance used with DI2 (default)",
+   "units": "",
+   "access": "R",
+   "states": "0=Inactive, 1=Active"
+  },
+  {
+   "type": "BI",
+   "instance": 493,
+   "name": "Fume hood ventilation input",
+   "description": "Instance used with CI79",
+   "units": "",
+   "access": "R",
+   "states": "0=Inactive, 1=Active"
+  },
+  {
+   "type": "BI",
+   "instance": 17,
+   "name": "Fireplace ventilation input",
+   "description": "Instance used with DI1",
+   "units": "",
+   "access": "R",
+   "states": "0=Inactive, 1=Active"
+  },
+  {
+   "type": "BI",
+   "instance": 24,
+   "name": "Fireplace ventilation input",
+   "description": "Instance used with DI2",
+   "units": "",
+   "access": "R",
+   "states": "0=Inactive, 1=Active"
+  },
+  {
+   "type": "BI",
+   "instance": 33,
+   "name": "Heating coil overtemperature detector",
+   "description": "",
+   "units": "",
+   "access": "R",
+   "states": "0=Inactive, 1=Active"
+  },
+  {
+   "type": "BI",
+   "instance": 82,
+   "name": "High",
+   "description": "Instance used with DI1 (default)",
+   "units": "",
+   "access": "R",
+   "states": "0=Inactive, 1=Active"
+  },
+  {
+   "type": "BI",
+   "instance": 83,
+   "name": "High",
+   "description": "Instance used with DI2",
+   "units": "",
+   "access": "R",
+   "states": "0=Inactive, 1=Active"
+  },
+  {
+   "type": "BI",
+   "instance": 21,
+   "name": "Home",
+   "description": "Instance used with DI1",
+   "units": "",
+   "access": "R",
+   "states": "0=Inactive, 1=Active"
+  },
+  {
+   "type": "BI",
+   "instance": 28,
+   "name": "Home",
+   "description": "Instance used with DI2",
+   "units": "",
+   "access": "R",
+   "states": "0=Inactive, 1=Active"
+  },
+  {
+   "type": "BI",
+   "instance": 30,
+   "name": "Home",
+   "description": "Instance used with X8",
+   "units": "",
+   "access": "R",
+   "states": "0=Inactive, 1=Active"
+  },
+  {
+   "type": "BI",
+   "instance": 88,
+   "name": "Smoke/fire exhaust fan operation",
+   "description": "",
+   "units": "",
+   "access": "R",
+   "states": "0=Inactive, 1=Active"
+  },
+  {
+   "type": "BI",
+   "instance": 90,
+   "name": "Smoke/fire fan off operation",
+   "description": "",
+   "units": "",
+   "access": "R",
+   "states": "0=Inactive, 1=Active"
+  },
+  {
+   "type": "BI",
+   "instance": 91,
+   "name": "Smoke/fire supply & exhaust fan op.",
+   "description": "",
+   "units": "",
+   "access": "R",
+   "states": "0=Inactive, 1=Active"
+  },
+  {
+   "type": "BI",
+   "instance": 89,
+   "name": "Smoke/fire supply fan operation",
+   "description": "",
+   "units": "",
+   "access": "R",
+   "states": "0=Inactive, 1=Active"
+  },
+  {
+   "type": "BI",
+   "instance": 20,
+   "name": "Stop",
+   "description": "Instance used with DI1",
+   "units": "",
+   "access": "R",
+   "states": "0=Inactive, 1=Active"
+  },
+  {
+   "type": "BI",
+   "instance": 27,
+   "name": "Stop",
+   "description": "Instance used with DI2",
+   "units": "",
+   "access": "R",
+   "states": "0=Inactive, 1=Active"
+  },
+  {
+   "type": "AO",
+   "instance": 34,
+   "name": "Cooling coil valve position",
+   "description": "Range 0 to 100",
+   "units": "%",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "AO",
+   "instance": 4,
+   "name": "Exhaust air fan speed",
+   "description": "Range 0 to 100",
+   "units": "%",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "AO",
+   "instance": 3,
+   "name": "Supply air fan speed",
+   "description": "Range 0 to 100",
+   "units": "%",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "AO",
+   "instance": 29,
+   "name": "Heating coil electric position",
+   "description": "Range 0 to 100",
+   "units": "%",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "AO",
+   "instance": 12,
+   "name": "Heating coil valve position",
+   "description": "Range 0 to 100",
+   "units": "%",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "AO",
+   "instance": 0,
+   "name": "Rotary heat exchanger speed",
+   "description": "Range 0 to 100",
+   "units": "%",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "BO",
+   "instance": 64,
+   "name": "Cooling coil pump command",
+   "description": "Instance used with Q1",
+   "units": "",
+   "access": "R",
+   "states": "0=Inactive, 1=Active"
+  },
+  {
+   "type": "BO",
+   "instance": 68,
+   "name": "Cooling coil pump command",
+   "description": "Instance used with Q2",
+   "units": "",
+   "access": "R",
+   "states": "0=Inactive, 1=Active"
+  },
+  {
+   "type": "BO",
+   "instance": 57,
+   "name": "Cooling coil pump command",
+   "description": "Instance used with Q3",
+   "units": "",
+   "access": "R",
+   "states": "0=Inactive, 1=Active"
+  },
+  {
+   "type": "BO",
+   "instance": 18,
+   "name": "Outside air damper command",
+   "description": "Instance used with Q1 (default)",
+   "units": "",
+   "access": "R",
+   "states": "0=Inactive, 1=Active"
+  },
+  {
+   "type": "BO",
+   "instance": 65,
+   "name": "Outside air damper command",
+   "description": "Instance used with Q2",
+   "units": "",
+   "access": "R",
+   "states": "0=Inactive, 1=Active"
+  },
+  {
+   "type": "BO",
+   "instance": 69,
+   "name": "Outside air damper command",
+   "description": "Instance used with Q3",
+   "units": "",
+   "access": "R",
+   "states": "0=Inactive, 1=Active"
+  },
+  {
+   "type": "BO",
+   "instance": 19,
+   "name": "Fire damper command",
+   "description": "Instance used with Q1",
+   "units": "",
+   "access": "R",
+   "states": "0=Inactive, 1=Active"
+  },
+  {
+   "type": "BO",
+   "instance": 66,
+   "name": "Fire damper command",
+   "description": "Instance used with Q2",
+   "units": "",
+   "access": "R",
+   "states": "0=Inactive, 1=Active"
+  },
+  {
+   "type": "BO",
+   "instance": 46,
+   "name": "Fire damper command",
+   "description": "Instance used with Q3",
+   "units": "",
+   "access": "R",
+   "states": "0=Inactive, 1=Active"
+  },
+  {
+   "type": "BO",
+   "instance": 58,
+   "name": "Heating coil pump command",
+   "description": "",
+   "units": "",
+   "access": "R",
+   "states": "0=Inactive, 1=Active"
+  },
+  {
+   "type": "MV",
+   "instance": 344,
+   "name": "A-Alarm acknowledgement",
+   "description": "Acknowledge or reset A alarms",
+   "units": "",
+   "access": "W",
+   "states": "1=Ready, 2=Acknowledge, 3=Reset"
+  },
+  {
+   "type": "AV",
+   "instance": 8,
+   "name": "A-Alarm code",
+   "description": "Range 0 to 9999",
+   "units": "",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "MV",
+   "instance": 343,
+   "name": "A-Alarm indication",
+   "description": "",
+   "units": "",
+   "access": "R",
+   "states": "1=Normal, 2=Alarm"
+  },
+  {
+   "type": "MV",
+   "instance": 7,
+   "name": "A-Alarm state",
+   "description": "",
+   "units": "",
+   "access": "R",
+   "states": "1=Acknowledged, unlocked, 2=Unacknowledged, 3=Locked"
+  },
+  {
+   "type": "MV",
+   "instance": 341,
+   "name": "B-Alarm acknowledgement",
+   "description": "Acknowledge B alarms",
+   "units": "",
+   "access": "W",
+   "states": "1=Ready, 2=Acknowledge"
+  },
+  {
+   "type": "AV",
+   "instance": 130,
+   "name": "B-Alarm code",
+   "description": "Range 0 to 9999",
+   "units": "",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "MV",
+   "instance": 340,
+   "name": "B-Alarm indication",
+   "description": "",
+   "units": "",
+   "access": "R",
+   "states": "1=Normal, 2=Alarm"
+  },
+  {
+   "type": "MV",
+   "instance": 18,
+   "name": "B-Alarm state",
+   "description": "",
+   "units": "",
+   "access": "R",
+   "states": "1=Acknowledged, unlocked, 2=Unacknowledged, 3=Locked"
+  },
+  {
+   "type": "AV",
+   "instance": 2025,
+   "name": "Display fault list",
+   "description": "Range 0 to 10000",
+   "units": "",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 2026,
+   "name": "Fault counter",
+   "description": "Range 0 to 2000",
+   "units": "",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 2027,
+   "name": "Fault list number",
+   "description": "Range 1 to 10000",
+   "units": "",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "MV",
+   "instance": 342,
+   "name": "Fault list operation",
+   "description": "",
+   "units": "",
+   "access": "W",
+   "states": "1=Ready, 2=Next fault, 3=Refresh"
+  },
+  {
+   "type": "AV",
+   "instance": 285,
+   "name": "Operating time filter",
+   "description": "Range 0 to 99999",
+   "units": "h",
+   "access": "W",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 286,
+   "name": "Operating time for filter replacement",
+   "description": "Range 0 to 99990",
+   "units": "h",
+   "access": "W",
+   "states": ""
+  }
+ ],
+ "page": "https://easybacnet.com/bacnet-points-lists/flexit/nordic-basic-bacnet",
+ "note": "Provided as-is. Point availability varies by firmware and options; verify against the live device.",
+ "disclaimer": "DISCLAIMER: reference only, provided AS IS with no warranty. May contain errors or be out of date. You must verify every point against the manufacturer's current documentation and the live device before use. easybacnet.com accepts no liability for its use and is not affiliated with the manufacturer. Terms: https://easybacnet.com/terms#content"
+}

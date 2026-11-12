@@ -1,0 +1,658 @@
+{
+ "manufacturer": "Trane",
+ "manufacturer_slug": "trane",
+ "model": "BCI2-C for CGWN / CCUN chillers (CH530)",
+ "model_slug": "bci2-c-cgwn-ccun",
+ "aliases": [
+  "BCI2-C",
+  "BCI2C",
+  "BACnet Communication Interface for Chillers",
+  "CGWN",
+  "CCUN",
+  "CGWN water-cooled scroll chiller",
+  "CCUN condenserless chiller",
+  "BAS-SVP055"
+ ],
+ "equipment_type": "Water-cooled scroll chiller BACnet interface",
+ "applies_to": "Trane CGWN water-cooled and CCUN condenserless scroll chillers with CH530 controls, as listed in the BCI2-C integration guide.",
+ "summary": "The BCI2-C is a non-programmable Trane controller that connects to the CH530 chiller controls over the IPC3 link and serves the chiller data on BACnet MS/TP. This list is the CGWN/CCUN column of the guide's model tables: 62 objects with low instance numbers covering water temperatures, suction and discharge pressures, compressor starts and run times, flow and alarm status. The commands are BO 1 auto/stop, BO 2 diagnostic reset and MO 1 chiller mode.",
+ "bacnet_transport": [
+  "BACnet MS/TP"
+ ],
+ "firmware": null,
+ "default_device_instance": null,
+ "access_inferred": true,
+ "notes": [
+  "The guide's tables mark each object against RTWD, RTUD, RTHD, RTAC, CGAM/CXAM and CGWN/CCUN; this file holds the CGWN/CCUN column.",
+  "The guide's analog output (setpoint) table has columns only for RTWD, RTAC and CGAM, so no AO setpoint objects are listed for CGWN/CCUN. Check on site whether setpoint objects appear.",
+  "The guide's cover names only RTWD, RTAC and CGAM, although its tables include a CGWN/CCUN column; confirm that a BCI2-C (not the older BCI-C) is fitted.",
+  "The BCI2-C self-configures, so only the objects that match the connected chiller show up.",
+  "The tables have no read/write column: AI/BI/MI are read-only, and the BO/MO objects (listed with relinquish defaults) are the BAS commands, marked writable here.",
+  "Units are given as a quantity (Temperature, Pressure, Percent...); SI or I-P follows the BCI2-C Device Units setting. BI 24's active state is printed 'None' in the guide; it means alarm."
+ ],
+ "source": {
+  "title": "Integration Guide: BACnet Communication Interface for Chillers (BCI2-C)",
+  "doc_number": "BAS-SVP055A-EN",
+  "revision_date": "04/16/2022",
+  "url": "https://support.trane.com/hc/article_attachments/49472973334925"
+ },
+ "integration": {
+  "summary": "Address the BCI2-C on the MS/TP trunk and discover it. Write BO 1 auto/stop and MO 1 mode, then read back running state, leaving water temperature and capacity. BI 23 Alarm Present and BI 24 Shutdown Alarm Present are the summary alarms, BI 25 shows the last diagnostic, and BO 2 resets diagnostics remotely.",
+  "minimum_points": [
+   {
+    "ref": "BO 1",
+    "name": "Chiller Auto Stop Command",
+    "why": "BMS auto/stop (enable) command"
+   },
+   {
+    "ref": "MO 1",
+    "name": "Chiller Mode Command",
+    "why": "Cool/heat/ice mode command"
+   },
+   {
+    "ref": "BI 4",
+    "name": "Chiller Running State",
+    "why": "Chiller on/off status"
+   },
+   {
+    "ref": "BI 2",
+    "name": "Local Setpoint Control",
+    "why": "Shows if local setpoints override BAS setpoints"
+   },
+   {
+    "ref": "AI 45",
+    "name": "Evaporator Leaving Water Temp",
+    "why": "Leaving chilled water temperature"
+   },
+   {
+    "ref": "AI 5",
+    "name": "Actual Running Capacity",
+    "why": "Actual running capacity in percent"
+   },
+   {
+    "ref": "BI 23",
+    "name": "Alarm Present",
+    "why": "Any active alarm on the chiller"
+   }
+  ],
+  "enable": "BO 1 Chiller Auto Stop Command (Inactive = Stop, Active = Auto; relinquish default True, i.e. Auto) is the BMS auto/stop. BI 1 Run Enabled shows whether the chiller is available to run, and BI 2 Local Setpoint Control shows when the chiller is using local setpoints instead of the BAS setpoints. No BAS setpoint objects are listed for this model.",
+  "heartbeat": null,
+  "remote_sensors": null,
+  "setup": [
+   "The BCI2-C is a BACnet MS/TP device only (EIA-485 at 9600, 19200, 38400 or 76,800 bps); the default baud rate is 76,800.",
+   "It has no physical rotary dials: the factory address is on a label on the board and is changed in the embedded BCI2 Service Tool (USB, browser at 198.80.18.1) or Tracer TU. Valid MAC addresses are 001-127.",
+   "The default software Device ID equals the MAC address; tick 'Use Software Device ID' to set another one. A Tracer SC builds its own device ID from the SC address, link number and MAC.",
+   "Communicated units default to SI once the points are created. To switch to I-P, clear the controller with the IPC3 cable unplugged (or the unit powered down) so the Device Units choice unlocks.",
+   "For non-Trane front ends, set Max Master (Max Requestor) above the BCI2-C MAC address or the device will not be discovered."
+  ],
+  "gotchas": [
+   "The BCI2-C builds its point list from the CH530 controller at first power-up and stores it. If options are added later, clear the controller so it rebuilds the list.",
+   "BO 2 Remote Diagnostic Reset Command: after a write of 1 the BCI2-C sends the reset, sets the point back to 0 and clears the priority array. Some diagnostics still need a local reset.",
+   "With the external (hard-wired) setpoint option, the chiller follows the external setpoints when the CH530 setpoint source is External/Front Panel, when the setpoint AO is set Out of Service, or when a Tracer SC loses communication with the BCI2-C.",
+   "MI 3 MP Communication Status is marked 'Do Not Use This Point' in the document."
+  ]
+ },
+ "points": [
+  {
+   "type": "AI",
+   "instance": 1,
+   "name": "Active Cool/Heat Setpoint Temperature",
+   "description": "Active chiller water or hot water setpoint",
+   "units": "Temperature",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "AI",
+   "instance": 3,
+   "name": "Active Demand Limit Setpoint",
+   "description": "Active demand limit setpoint",
+   "units": "Percent",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "AI",
+   "instance": 5,
+   "name": "Actual Running Capacity",
+   "description": "Level of capacity that the chiller is currently running at",
+   "units": "Percent",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "AI",
+   "instance": 8,
+   "name": "Suction Pressure- Ckt 1",
+   "description": "Circuit 1 suction pressure",
+   "units": "Pressure",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "AI",
+   "instance": 11,
+   "name": "Suction Pressure- Ckt 2",
+   "description": "Circuit 2 suction pressure",
+   "units": "Pressure",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "AI",
+   "instance": 13,
+   "name": "Suction Saturated Refrigerant Temperature- Ckt 1",
+   "description": "Circuit 1 suction refrigerant temperature",
+   "units": "Temperature",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "AI",
+   "instance": 15,
+   "name": "Suction Saturated Refrigerant Temperature- Ckt 2",
+   "description": "Circuit 2 suction refrigerant temperature",
+   "units": "Temperature",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "AI",
+   "instance": 17,
+   "name": "Discharge Pressure- Ckt 1",
+   "description": "Circuit 1 discharge pressure",
+   "units": "Pressure",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "AI",
+   "instance": 21,
+   "name": "Discharge Saturated Refrigerant Temperature- Ckt 1",
+   "description": "Circuit 1 discharge refrigerant temperature",
+   "units": "Temperature",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "AI",
+   "instance": 23,
+   "name": "Discharge Saturated Refrigerant Temperature- Ckt 2",
+   "description": "Circuit 2 discharge refrigerant temperature",
+   "units": "Temperature",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "AI",
+   "instance": 25,
+   "name": "Local Atmospheric Pressure",
+   "description": "Local atmospheric pressure",
+   "units": "Pressure",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "AI",
+   "instance": 26,
+   "name": "Starts- Compressor 1A",
+   "description": "Number of starts for compressor 1A",
+   "units": "",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "AI",
+   "instance": 27,
+   "name": "Starts- Compressor 1B",
+   "description": "Number of starts for compressor 1B",
+   "units": "",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "AI",
+   "instance": 30,
+   "name": "Starts- Compressor 1C",
+   "description": "Number of starts for compressor 1C",
+   "units": "",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "AI",
+   "instance": 31,
+   "name": "Starts- Compressor 2A",
+   "description": "Number of starts for compressor 2A",
+   "units": "",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "AI",
+   "instance": 32,
+   "name": "Starts- Compressor 2B",
+   "description": "Number of starts for compressor 2B",
+   "units": "",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "AI",
+   "instance": 33,
+   "name": "Starts- Compressor 2C",
+   "description": "Number of starts for compressor 2C",
+   "units": "",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "AI",
+   "instance": 34,
+   "name": "Run Time- Compressor 1A",
+   "description": "Total run time of compressor 1A",
+   "units": "Time",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "AI",
+   "instance": 35,
+   "name": "Run Time- Compressor 1B",
+   "description": "Total run time of compressor 1B",
+   "units": "Time",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "AI",
+   "instance": 38,
+   "name": "Run Time- Compressor 1C",
+   "description": "Total run time of compressor 1C",
+   "units": "Time",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "AI",
+   "instance": 39,
+   "name": "Run Time- Compressor 2A",
+   "description": "Total run time of compressor 2A",
+   "units": "Time",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "AI",
+   "instance": 40,
+   "name": "Run Time- Compressor 2B",
+   "description": "Total run time of compressor 2B",
+   "units": "Time",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "AI",
+   "instance": 41,
+   "name": "Run Time- Compressor 2C",
+   "description": "Total run time of compressor 2C",
+   "units": "Time",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "AI",
+   "instance": 42,
+   "name": "Airflow Percentage- Circuit 1",
+   "description": "Approximate airflow percentage of circuit 1",
+   "units": "Percent",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "AI",
+   "instance": 43,
+   "name": "Airflow Percentage- Circuit 2",
+   "description": "Approximate airflow percentage of circuit 2",
+   "units": "Percent",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "AI",
+   "instance": 44,
+   "name": "Evaporator Entering Water Temp",
+   "description": "Temperature of the water entering the evaporator",
+   "units": "Temperature",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "AI",
+   "instance": 45,
+   "name": "Evaporator Leaving Water Temp",
+   "description": "Temperature of the water leaving the evaporator",
+   "units": "Temperature",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "AI",
+   "instance": 46,
+   "name": "Condenser Entering Water Temp",
+   "description": "Temperature of the water entering the condenser",
+   "units": "Temperature",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "AI",
+   "instance": 47,
+   "name": "Condenser Leaving Water Temp",
+   "description": "Temperature of the water leaving the condenser",
+   "units": "Temperature",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "AI",
+   "instance": 57,
+   "name": "Outdoor Air Temperature",
+   "description": "Outdoor air temperature",
+   "units": "Temperature",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "AI",
+   "instance": 95,
+   "name": "Number of Circuits",
+   "description": "Number of Circuits",
+   "units": "None",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "AI",
+   "instance": 96,
+   "name": "Number of Compressors, Ckt 1",
+   "description": "Number of Compressors, Ckt 1",
+   "units": "None",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "AI",
+   "instance": 97,
+   "name": "Number of Compressors, Ckt 2",
+   "description": "Number of Compressors, Ckt 2",
+   "units": "None",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "AI",
+   "instance": 98,
+   "name": "Chiller Design Capacity",
+   "description": "Design Capacity of the Chiller",
+   "units": "None",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "BI",
+   "instance": 1,
+   "name": "Run Enabled",
+   "description": "The chiller is available to run or is currently running",
+   "units": "",
+   "access": "R",
+   "states": "Inactive = Stop, Active = Auto"
+  },
+  {
+   "type": "BI",
+   "instance": 2,
+   "name": "Local Setpoint Control",
+   "description": "The chiller is being controlled by local setpoints instead of BAS setpoints",
+   "units": "",
+   "access": "R",
+   "states": "Inactive = Remote Control, Active = Local Control"
+  },
+  {
+   "type": "BI",
+   "instance": 3,
+   "name": "Capacity Limited",
+   "description": "Conditions may exist that prevent the chiller from reaching setpoint",
+   "units": "",
+   "access": "R",
+   "states": "Inactive = Not Limited, Active = Limited"
+  },
+  {
+   "type": "BI",
+   "instance": 4,
+   "name": "Chiller Running State",
+   "description": "The chiller is running or stopped",
+   "units": "",
+   "access": "R",
+   "states": "Inactive = Off, Active = On"
+  },
+  {
+   "type": "BI",
+   "instance": 5,
+   "name": "Condenser Water Flow Status",
+   "description": "Condenser water flow status",
+   "units": "",
+   "access": "R",
+   "states": "Inactive = No Flow, Active = Flow"
+  },
+  {
+   "type": "BI",
+   "instance": 6,
+   "name": "Maximum Capacity",
+   "description": "All available chiller capacity is being used",
+   "units": "",
+   "access": "R",
+   "states": "Inactive = Off, Active = On"
+  },
+  {
+   "type": "BI",
+   "instance": 9,
+   "name": "Compressor 1A Running",
+   "description": "Compressor 1A is running",
+   "units": "",
+   "access": "R",
+   "states": "Inactive = Off, Active = Running"
+  },
+  {
+   "type": "BI",
+   "instance": 10,
+   "name": "Compressor 1B Running",
+   "description": "Compressor 1B is running",
+   "units": "",
+   "access": "R",
+   "states": "Inactive = Off, Active = Running"
+  },
+  {
+   "type": "BI",
+   "instance": 13,
+   "name": "Compressor 1C Running",
+   "description": "Compressor 1C is running",
+   "units": "",
+   "access": "R",
+   "states": "Inactive = Off, Active = Running"
+  },
+  {
+   "type": "BI",
+   "instance": 14,
+   "name": "Compressor 2A Running",
+   "description": "Compressor 2A is running",
+   "units": "",
+   "access": "R",
+   "states": "Inactive = Off, Active = Running"
+  },
+  {
+   "type": "BI",
+   "instance": 15,
+   "name": "Compressor 2B Running",
+   "description": "Compressor 2B is running",
+   "units": "",
+   "access": "R",
+   "states": "Inactive = Off, Active = Running"
+  },
+  {
+   "type": "BI",
+   "instance": 16,
+   "name": "Compressor 2C Running",
+   "description": "Compressor 2C is running",
+   "units": "",
+   "access": "R",
+   "states": "Inactive = Off, Active = Running"
+  },
+  {
+   "type": "BI",
+   "instance": 17,
+   "name": "Evaporator Water Pump Request",
+   "description": "A request from the chiller to turn on the evaporator water pump",
+   "units": "",
+   "access": "R",
+   "states": "Inactive = Off, Active = On"
+  },
+  {
+   "type": "BI",
+   "instance": 19,
+   "name": "Condenser Water Pump Request",
+   "description": "A request from the chiller to turn on the condenser water pump",
+   "units": "",
+   "access": "R",
+   "states": "Inactive = Off, Active = On"
+  },
+  {
+   "type": "BI",
+   "instance": 22,
+   "name": "Evaporator Water Flow Status",
+   "description": "Water is flowing through the evaporator",
+   "units": "",
+   "access": "R",
+   "states": "Inactive = No Flow, Active = Flow"
+  },
+  {
+   "type": "BI",
+   "instance": 23,
+   "name": "Alarm Present",
+   "description": "An alarm is active",
+   "units": "",
+   "access": "R",
+   "states": "Inactive = No Alarm, Active = Alarm"
+  },
+  {
+   "type": "BI",
+   "instance": 24,
+   "name": "Shutdown Alarm Present",
+   "description": "A shutdown alarm is active",
+   "units": "",
+   "access": "R",
+   "states": "Inactive = No Alarm, Active = Alarm"
+  },
+  {
+   "type": "BI",
+   "instance": 25,
+   "name": "Last Diagnostic",
+   "description": "Last diagnostic for the chiller",
+   "units": "",
+   "access": "R",
+   "states": "Inactive = Off, Active = On"
+  },
+  {
+   "type": "BO",
+   "instance": 1,
+   "name": "Chiller Auto Stop Command",
+   "description": "Allows the chiller to run if conditions for running are met",
+   "units": "",
+   "access": "W",
+   "states": "Inactive = Stop, Active = Auto"
+  },
+  {
+   "type": "BO",
+   "instance": 2,
+   "name": "Remote Diagnostic Reset Command",
+   "description": "Resets remotely diagnostics that can be reset",
+   "units": "",
+   "access": "W",
+   "states": "Inactive = No Reset Request, Active = Reset Request"
+  },
+  {
+   "type": "MI",
+   "instance": 1,
+   "name": "Running Mode",
+   "description": "Primary running mode of the chiller",
+   "units": "",
+   "access": "R",
+   "states": "1 = Chiller Off, 2 = Chiller in Start Mode, 3 = Chiller in Run Mode, 4 = Chiller in Pre-shutdown Mode, 5 = Chiller in Service Mode"
+  },
+  {
+   "type": "MI",
+   "instance": 2,
+   "name": "Operating Mode",
+   "description": "Primary operating mode of the chiller",
+   "units": "",
+   "access": "R",
+   "states": "1 = HVAC_Cool, 2 = HVAC_Heat, 3 = HVAC_Ice (chiller set up for ice making), 4 = Not Used"
+  },
+  {
+   "type": "MI",
+   "instance": 3,
+   "name": "MP Communication Status",
+   "description": "Do Not Use This Point",
+   "units": "",
+   "access": "R",
+   "states": "Do Not Use This Point"
+  },
+  {
+   "type": "MI",
+   "instance": 4,
+   "name": "Refrigerant Type",
+   "description": "Refrigerant type",
+   "units": "",
+   "access": "R",
+   "states": "1 = R-11, 2 = R-12, 3 = R-22, 4 = R-123, 5 = R-134A, 6 = R407C, 7 = R-410A"
+  },
+  {
+   "type": "MI",
+   "instance": 5,
+   "name": "Model Information",
+   "description": "Model type of the chiller",
+   "units": "",
+   "access": "R",
+   "states": "1 = RTA, 2 = CVH, 3 = CVG, 4 = CVR, 5 = CDH, 6 = RTH, 7 = CGW, 8 = CGA, 9 = CCA, 10 = RTW, 11 = RTX, 12 = RTU, 13 = CCU, 14 = CXA, 15 = CGC, 16 = RAU"
+  },
+  {
+   "type": "MI",
+   "instance": 6,
+   "name": "Cooling Type",
+   "description": "Cooling type of the condenser",
+   "units": "",
+   "access": "R",
+   "states": "1 = Water Cooled, 2 = Air Cooled"
+  },
+  {
+   "type": "MI",
+   "instance": 7,
+   "name": "Manufacturing Location",
+   "description": "Location where chiller was manufactured",
+   "units": "",
+   "access": "R",
+   "states": "1 = Field Applied, 2 = La Crosse, 3 = Pueblo, 4 = Charmes, 5 = Rushville, 6 = Macon, 7 = Waco, 8 = Lexington, 9 = Forsyth, 10 = Clarksville, 11 = Ft. Smith, 12 = Penang, 13 = Colchester, 14 = Curitiba, 15 = Taicang, 16 = Taiwan, 17 = Epinal, 18 = Golbey"
+  },
+  {
+   "type": "MO",
+   "instance": 1,
+   "name": "Chiller Mode Command",
+   "description": "Mode of operation of the chiller",
+   "units": "",
+   "access": "W",
+   "states": "1 = HVAC_Cool, 2 = HVAC_Heat, 3 = HVAC_Ice (chiller set up for ice making), 4 = Not Used"
+  }
+ ],
+ "page": "https://easybacnet.com/bacnet-points-lists/trane/bci2-c-cgwn-ccun",
+ "note": "Provided as-is. Point availability varies by firmware and options; verify against the live device.",
+ "disclaimer": "DISCLAIMER: reference only, provided AS IS with no warranty. May contain errors or be out of date. You must verify every point against the manufacturer's current documentation and the live device before use. easybacnet.com accepts no liability for its use and is not affiliated with the manufacturer. Terms: https://easybacnet.com/terms#content"
+}

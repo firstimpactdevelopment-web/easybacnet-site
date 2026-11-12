@@ -1,0 +1,1586 @@
+{
+ "manufacturer": "EVAPCO",
+ "manufacturer_slug": "evapco",
+ "model": "Sage Water & Energy Conservation Control System (Sage PLC)",
+ "model_slug": "sage-water-energy-conservation-control",
+ "aliases": [
+  "Sage",
+  "EVAPCO Sage",
+  "Sage PLC",
+  "Sage controller",
+  "Sage control panel",
+  "EVAPCO fluid cooler controller"
+ ],
+ "equipment_type": "Fluid cooler / cooling tower control panel (1-4 cells)",
+ "applies_to": "EVAPCO fluid cooler units controlled by the Sage water and energy conservation control panel, for one to four cells.",
+ "summary": "The Sage PLC panel runs EVAPCO fluid cooler cells: pumps, fans on VFDs, make-up water, basin heaters, louver de-icing and lead/lag between cells. It talks BACnet MS/TP on its RS-485 port (or Modbus RTU, chosen at the HMI) and BACnet IP on its Ethernet port. The BMS can enable the system, send a leaving fluid setpoint, acknowledge alarms and must toggle a heartbeat object.",
+ "bacnet_transport": [
+  "BACnet IP",
+  "BACnet MS/TP"
+ ],
+ "firmware": null,
+ "default_device_instance": null,
+ "access_inferred": false,
+ "notes": [
+  "Objects are numbered for cells 1-4; objects for cells that are not installed have no meaning. Cell 1 and cell 2 have more objects than cells 3 and 4.",
+  "Temperatures are in 0.1 °F (850 = 85.0 °F) and fan speeds in 0.1 %.",
+  "The guide prints BINARY_VALUE 109 twice: bnC4DischargeDamper (cell 4 damper status) and bnBMSHeartbeat. Only the first is listed here; check which one the panel serves before mapping the heartbeat.",
+  "The guide warns that non-volatile objects (setpoints, configuration) are rated for about 100,000 writes; do not write them cyclically.",
+  "BACnet MS/TP and Modbus RTU share the serial port; only one runs at a time. BACnet IP and BACnet MS/TP are not available at the same time."
+ ],
+ "source": {
+  "title": "Operations & Maintenance Instructions Addendum - Communications Guide for Sage Water & Energy Conservation Control System",
+  "doc_number": null,
+  "revision_date": "Revision 1.3",
+  "url": "https://www.evapco.com/media/1962586"
+ },
+ "integration": {
+  "summary": "Pick BACnet MS/TP or Modbus RTU for the serial port at the HMI (BACnet IP uses the Ethernet port; IP and MS/TP are not available together). Write bnEnableSystem to enable the system and bnBASSP for the leaving fluid setpoint, and keep the BMS heartbeat toggling. Monitor bnSYSEnabled, bnLocalRemoteStatus, the common leaving temperature, cell fan speeds and the alarm flags; bnALM_ACK acknowledges alarms.",
+  "minimum_points": [
+   {
+    "ref": "BV 35",
+    "name": "bnEnableSystem",
+    "why": "System enable from the BMS (1 = enabled)"
+   },
+   {
+    "ref": "AV 24",
+    "name": "bnBASSP",
+    "why": "Leaving fluid setpoint, 0.1 °F (850 = 85.0 °F)"
+   },
+   {
+    "ref": "BV 36",
+    "name": "bnALM_ACK",
+    "why": "Acknowledge alarms (1 = acknowledge)"
+   },
+   {
+    "ref": "BV 25",
+    "name": "bnLocalRemoteStatus",
+    "why": "Control mode: 0 local, 1 remote"
+   },
+   {
+    "ref": "BV 26",
+    "name": "bnSYSEnabled",
+    "why": "System enabled status"
+   },
+   {
+    "ref": "AV 52",
+    "name": "bnActiveSetpoint",
+    "why": "Active fluid setpoint in use, 0.1 °F"
+   },
+   {
+    "ref": "AV 30",
+    "name": "bnCommonLeavingTemp",
+    "why": "Average leaving fluid temperature, 0.1 °F"
+   },
+   {
+    "ref": "AV 28",
+    "name": "bnC1VFDSpeed",
+    "why": "Cell 1 fan speed, 0.1 %"
+   },
+   {
+    "ref": "BV 21",
+    "name": "bnC1VFDFaultALM",
+    "why": "Cell 1 VFD fault alarm"
+   },
+   {
+    "ref": "BV 103",
+    "name": "bnHighCommonTempALM",
+    "why": "High common supply water temperature alarm"
+   }
+  ],
+  "enable": "bnEnableSystem (BV 35) enables the system from the BMS; bnLocalRemoteStatus shows whether the panel is in local or remote control.",
+  "heartbeat": "The guide lists bnBMSHeartbeat: 0 means waiting for the PLC to set it to 1 (5 s), 1 means waiting for the BMS to write it back to 0 (30 s). The guide does not say what the panel does when the BMS misses it. It is printed with the same instance as another object (BV 109), so confirm the live object before mapping it.",
+  "remote_sensors": null,
+  "setup": [
+   "Default communication parameters are printed on the Network Wiring page of the panel wiring schematic.",
+   "The serial protocol (BACnet MS/TP or Modbus RTU) is chosen in the HMI Operator Menu.",
+   "Modbus TCP stays active on the Ethernet port alongside BACnet IP."
+  ],
+  "gotchas": [
+   "Do not write setpoints or other non-volatile objects cyclically; the memory is rated for about 100,000 writes.",
+   "Runtime reset objects (pump/fan runtime reset) are writable and clear the hour counters.",
+   "Temperatures are tenths of a degree F."
+  ]
+ },
+ "points": [
+  {
+   "type": "BV",
+   "instance": 0,
+   "name": "bnC1MakeupOn",
+   "description": "Cell 1 Make-up Solenoid",
+   "units": "",
+   "access": "R",
+   "states": "0=Off, 1=On"
+  },
+  {
+   "type": "BV",
+   "instance": 1,
+   "name": "bnC1PumpAStatus",
+   "description": "Cell 1 Pump Status",
+   "units": "",
+   "access": "R",
+   "states": "0=Off, 1=On"
+  },
+  {
+   "type": "BV",
+   "instance": 2,
+   "name": "bnC1PumpALockedStatus",
+   "description": "Cell 1 Pump Locked Status",
+   "units": "",
+   "access": "R",
+   "states": "0=Pump Locked On, 1=Pump Not Locked On"
+  },
+  {
+   "type": "BV",
+   "instance": 3,
+   "name": "bnC1BasinHeaterStatus",
+   "description": "Cell 1 Basin Heater Status",
+   "units": "",
+   "access": "R",
+   "states": "0=Heaters Off, 1=Heaters On"
+  },
+  {
+   "type": "BV",
+   "instance": 4,
+   "name": "bnC1DischargeDamper",
+   "description": "Cell 1 Discharge Damper Status",
+   "units": "",
+   "access": "R",
+   "states": "0=Dampers Closed, 1=Dampers Energized"
+  },
+  {
+   "type": "BV",
+   "instance": 5,
+   "name": "bnC1DischargeDamperAUXSwitch",
+   "description": "Cell 1 Damper AUX Switch Status",
+   "units": "",
+   "access": "R",
+   "states": "0=Dampers Closed, 1=Dampers Open"
+  },
+  {
+   "type": "BV",
+   "instance": 6,
+   "name": "bnC1DeicingSeq",
+   "description": "Cell 1 De-icing Sequence Status",
+   "units": "",
+   "access": "R",
+   "states": "0=Not Active, 1=Active"
+  },
+  {
+   "type": "BV",
+   "instance": 7,
+   "name": "bnC1CyclePumps",
+   "description": "Cell 1 Cycle Pump Routine Status",
+   "units": "",
+   "access": "R",
+   "states": "0=Not Active, 1=Active"
+  },
+  {
+   "type": "BV",
+   "instance": 8,
+   "name": "bnC1VFDStatus",
+   "description": "Cell 1 VFD Status",
+   "units": "",
+   "access": "R",
+   "states": "0=Off, 1=On"
+  },
+  {
+   "type": "BV",
+   "instance": 9,
+   "name": "bnC1FanMotorHeaters",
+   "description": "Cell 1 Fan Space Heater Status",
+   "units": "",
+   "access": "R",
+   "states": "0=Off, 1=On"
+  },
+  {
+   "type": "BV",
+   "instance": 10,
+   "name": "bnC1HeaterLWA",
+   "description": "Cell 1 Basin Heater Low Water Alarm",
+   "units": "",
+   "access": "R",
+   "states": "0=No Alarm, 1=Alarm"
+  },
+  {
+   "type": "BV",
+   "instance": 11,
+   "name": "bnC1HeaterCONALM",
+   "description": "Cell 1 Basin Heater Contactor Alarm",
+   "units": "",
+   "access": "R",
+   "states": "0=No Alarm, 1=Alarm"
+  },
+  {
+   "type": "BV",
+   "instance": 12,
+   "name": "bnC1PumpAConFault",
+   "description": "Cell 1 Pump Contactor Alarm",
+   "units": "",
+   "access": "R",
+   "states": "0=No Alarm, 1=Alarm"
+  },
+  {
+   "type": "BV",
+   "instance": 13,
+   "name": "bnC1HWA",
+   "description": "Cell 1 High Water Alarm",
+   "units": "",
+   "access": "R",
+   "states": "0=No Alarm, 1=Alarm"
+  },
+  {
+   "type": "BV",
+   "instance": 14,
+   "name": "bnC1LWA",
+   "description": "Cell 1 Low Water Alarm",
+   "units": "",
+   "access": "R",
+   "states": "0=No Alarm, 1=Alarm"
+  },
+  {
+   "type": "BV",
+   "instance": 15,
+   "name": "bnC1LowBasinTempALM",
+   "description": "Cell 1 Low Basin Water Temperature Alarm",
+   "units": "",
+   "access": "R",
+   "states": "0=No Alarm, 1=Alarm"
+  },
+  {
+   "type": "BV",
+   "instance": 16,
+   "name": "bnC1HighSupplyTempALM",
+   "description": "Cell 1 High Supply Water Temperature Alarm",
+   "units": "",
+   "access": "R",
+   "states": "0=No Alarm, 1=Alarm"
+  },
+  {
+   "type": "BV",
+   "instance": 17,
+   "name": "bnC1LowSupplyTempALM",
+   "description": "Cell 1 Low Supply Water Temperature Alarm",
+   "units": "",
+   "access": "R",
+   "states": "0=No Alarm, 1=Alarm"
+  },
+  {
+   "type": "BV",
+   "instance": 18,
+   "name": "bnC1HighReturnTempALM",
+   "description": "Cell 1 High Return Water Temperature Alarm",
+   "units": "",
+   "access": "R",
+   "states": "0=No Alarm, 1=Alarm"
+  },
+  {
+   "type": "BV",
+   "instance": 19,
+   "name": "bnC1LowReturnTempALM",
+   "description": "Cell 1 Low Return Water Temperature Alarm",
+   "units": "",
+   "access": "R",
+   "states": "0=No Alarm, 1=Alarm"
+  },
+  {
+   "type": "BV",
+   "instance": 20,
+   "name": "bnC1BYPConALM",
+   "description": "Cell 1 Fan Bypass Contactor Alarm",
+   "units": "",
+   "access": "R",
+   "states": "0=No Alarm, 1=Alarm"
+  },
+  {
+   "type": "BV",
+   "instance": 21,
+   "name": "bnC1VFDFaultALM",
+   "description": "Cell 1 VFD Fault Alarm",
+   "units": "",
+   "access": "R",
+   "states": "0=No Alarm, 1=Alarm"
+  },
+  {
+   "type": "BV",
+   "instance": 22,
+   "name": "bnC1DamperLimitSwitchFLT",
+   "description": "Cell 1 Damper Limit Switch Alarm",
+   "units": "",
+   "access": "R",
+   "states": "0=No Alarm, 1=Alarm"
+  },
+  {
+   "type": "BV",
+   "instance": 23,
+   "name": "bnC1VibrationFaultALM",
+   "description": "Cell 1 Vibration Switch Alarm",
+   "units": "",
+   "access": "R",
+   "states": "0=No Alarm, 1=Alarm"
+  },
+  {
+   "type": "BV",
+   "instance": 24,
+   "name": "bnC1PumpANoFlow",
+   "description": "Cell 1 Pump No Flow Alarm",
+   "units": "",
+   "access": "R",
+   "states": "0=No Alarm, 1=Alarm"
+  },
+  {
+   "type": "BV",
+   "instance": 25,
+   "name": "bnLocalRemoteStatus",
+   "description": "System Control Mode",
+   "units": "",
+   "access": "R",
+   "states": "0=Local (Default), 1=Remote"
+  },
+  {
+   "type": "BV",
+   "instance": 26,
+   "name": "bnSYSEnabled",
+   "description": "System Enabled Status",
+   "units": "",
+   "access": "R",
+   "states": "0=Not Enabled (Default), 1=Enabled"
+  },
+  {
+   "type": "BV",
+   "instance": 27,
+   "name": "bnHotStartRoutine",
+   "description": "System Hot Start Routine Status",
+   "units": "",
+   "access": "R",
+   "states": "0=Not Active, 1=Active"
+  },
+  {
+   "type": "BV",
+   "instance": 28,
+   "name": "bnHighAmbientTempALM",
+   "description": "High Ambient Temperature Alarm",
+   "units": "",
+   "access": "R",
+   "states": "0=No Alarm, 1=Alarm"
+  },
+  {
+   "type": "BV",
+   "instance": 29,
+   "name": "bnLowAmbientTemp",
+   "description": "Low Ambient Temperature Alarm",
+   "units": "",
+   "access": "R",
+   "states": "0=No Alarm, 1=Alarm"
+  },
+  {
+   "type": "BV",
+   "instance": 30,
+   "name": "bn100CapALM",
+   "description": "100% Capacity Alarm",
+   "units": "",
+   "access": "R",
+   "states": "0=No Alarm, 1=Alarm"
+  },
+  {
+   "type": "BV",
+   "instance": 31,
+   "name": "bnC1MakeupDisable",
+   "description": "Cell 1 Drain Basin/Make-up Disable Status",
+   "units": "",
+   "access": "R",
+   "states": "0=Make-up Enabled (Default), 1=Drain Basin/Make-up Disabled"
+  },
+  {
+   "type": "BV",
+   "instance": 32,
+   "name": "bnC1PumpARuntimeReset",
+   "description": "Cell 1 Pump Runtime Reset",
+   "units": "",
+   "access": "W",
+   "states": "0=No Reset, 1=Reset Runtime Hours"
+  },
+  {
+   "type": "BV",
+   "instance": 33,
+   "name": "bnC1FanRuntimeReset",
+   "description": "Cell 1 Fan Runtime Reset",
+   "units": "",
+   "access": "W",
+   "states": "0=No Reset, 1=Reset Runtime Hours"
+  },
+  {
+   "type": "BV",
+   "instance": 34,
+   "name": "bnSavingsPrority",
+   "description": "System Savings Priority",
+   "units": "",
+   "access": "W",
+   "states": "0=Water Savings Priority (Default), 1=Energy Savings Priority"
+  },
+  {
+   "type": "BV",
+   "instance": 35,
+   "name": "bnEnableSystem",
+   "description": "System Enabled",
+   "units": "",
+   "access": "W",
+   "states": "0=Not Enabled (Default), 1=Enabled"
+  },
+  {
+   "type": "BV",
+   "instance": 36,
+   "name": "bnALM_ACK",
+   "description": "Acknowledge Alarms",
+   "units": "",
+   "access": "W",
+   "states": "0=Not Acknowledged, 1=Alarms Acknowledged"
+  },
+  {
+   "type": "BV",
+   "instance": 37,
+   "name": "bnC2MakeupON",
+   "description": "Cell 2 Make-up Solenoid",
+   "units": "",
+   "access": "R",
+   "states": "0=Off, 1=On"
+  },
+  {
+   "type": "BV",
+   "instance": 38,
+   "name": "bnC2PumpAStatus",
+   "description": "Cell 2 Pump Status",
+   "units": "",
+   "access": "R",
+   "states": "0=Off, 1=On"
+  },
+  {
+   "type": "BV",
+   "instance": 39,
+   "name": "bnC2PumpALockedStatus",
+   "description": "Cell 2 Pump Locked Status",
+   "units": "",
+   "access": "R",
+   "states": "0=Pump Locked On, 1=Pump Not Locked On"
+  },
+  {
+   "type": "BV",
+   "instance": 40,
+   "name": "bnC2BasinHeaterStatus",
+   "description": "Cell 2 Basin Heater Status",
+   "units": "",
+   "access": "R",
+   "states": "0=Heaters Off, 1=Heaters On"
+  },
+  {
+   "type": "BV",
+   "instance": 41,
+   "name": "bnC2DischargeDamper",
+   "description": "Cell 2 Discharge Damper Status",
+   "units": "",
+   "access": "R",
+   "states": "0=Dampers Closed, 1=Dampers Energized"
+  },
+  {
+   "type": "BV",
+   "instance": 42,
+   "name": "bnC2DischargeDamperAUXSwitch",
+   "description": "Cell 2 Discharge Damper Status",
+   "units": "",
+   "access": "R",
+   "states": "0=Dampers Closed, 1=Dampers Open"
+  },
+  {
+   "type": "BV",
+   "instance": 43,
+   "name": "bnC2DeicingSeq",
+   "description": "Cell 2 De-icing Sequence Status",
+   "units": "",
+   "access": "R",
+   "states": "0=Not Active, 1=Active"
+  },
+  {
+   "type": "BV",
+   "instance": 44,
+   "name": "bnC2CyclePumps",
+   "description": "Cell 2 Cycle Pump Routine Status",
+   "units": "",
+   "access": "R",
+   "states": "0=Not Active, 1=Active"
+  },
+  {
+   "type": "BV",
+   "instance": 45,
+   "name": "bnC2VFDStatus",
+   "description": "Cell 2 VFD Status",
+   "units": "",
+   "access": "R",
+   "states": "0=Off, 1=On"
+  },
+  {
+   "type": "BV",
+   "instance": 46,
+   "name": "bnC2FanMotorHeaters",
+   "description": "Cell 2 Fan Space Heater Status",
+   "units": "",
+   "access": "R",
+   "states": "0=Off, 1=On"
+  },
+  {
+   "type": "BV",
+   "instance": 47,
+   "name": "bnC2HeaterLWA",
+   "description": "Cell 2 Basin Heater Low Water Alarm",
+   "units": "",
+   "access": "R",
+   "states": "0=No Alarm, 1=Alarm"
+  },
+  {
+   "type": "BV",
+   "instance": 48,
+   "name": "bnC2HeaterCONALM",
+   "description": "Cell 2 Basin Heater Contactor Alarm",
+   "units": "",
+   "access": "R",
+   "states": "0=No Alarm, 1=Alarm"
+  },
+  {
+   "type": "BV",
+   "instance": 49,
+   "name": "bnC2PumpAConFault",
+   "description": "Cell 2 Pump Contactor Alarm",
+   "units": "",
+   "access": "R",
+   "states": "0=No Alarm, 1=Alarm"
+  },
+  {
+   "type": "BV",
+   "instance": 50,
+   "name": "bnC2HWA",
+   "description": "Cell 2 High Water Alarm",
+   "units": "",
+   "access": "R",
+   "states": "0=No Alarm, 1=Alarm"
+  },
+  {
+   "type": "BV",
+   "instance": 51,
+   "name": "bnC2LWA",
+   "description": "Cell 2 Low Water Alarm",
+   "units": "",
+   "access": "R",
+   "states": "0=No Alarm, 1=Alarm"
+  },
+  {
+   "type": "BV",
+   "instance": 52,
+   "name": "bnC2LowBasinTempALM",
+   "description": "Cell 2 Low Basin Water Temperature Alarm",
+   "units": "",
+   "access": "R",
+   "states": "0=No Alarm, 1=Alarm"
+  },
+  {
+   "type": "BV",
+   "instance": 53,
+   "name": "bnC2HighSupplyTempALM",
+   "description": "Cell 2 High Supply Water Temperature Alarm",
+   "units": "",
+   "access": "R",
+   "states": "0=No Alarm, 1=Alarm"
+  },
+  {
+   "type": "BV",
+   "instance": 54,
+   "name": "bnC2LowSupplyTempALM",
+   "description": "Cell 2 Low Supply Water Temperature Alarm",
+   "units": "",
+   "access": "R",
+   "states": "0=No Alarm, 1=Alarm"
+  },
+  {
+   "type": "BV",
+   "instance": 55,
+   "name": "bnC2HighReturnTempALM",
+   "description": "Cell 2 High Return Water Temperature Alarm",
+   "units": "",
+   "access": "R",
+   "states": "0=No Alarm, 1=Alarm"
+  },
+  {
+   "type": "BV",
+   "instance": 56,
+   "name": "bnC2LowReturnTempALM",
+   "description": "Cell 2 Low Return Water Temperature Alarm",
+   "units": "",
+   "access": "R",
+   "states": "0=No Alarm, 1=Alarm"
+  },
+  {
+   "type": "BV",
+   "instance": 57,
+   "name": "bnC2BYPConALM",
+   "description": "Cell 2 Fan Bypass Contactor Alarm",
+   "units": "",
+   "access": "R",
+   "states": "0=No Alarm, 1=Alarm"
+  },
+  {
+   "type": "BV",
+   "instance": 58,
+   "name": "bnC2VFDFaultALM",
+   "description": "Cell 2 VFD Fault Alarm",
+   "units": "",
+   "access": "R",
+   "states": "0=No Alarm, 1=Alarm"
+  },
+  {
+   "type": "BV",
+   "instance": 59,
+   "name": "bnC2DamperLimitSwitchFLT",
+   "description": "Cell 2 Damper Limit Switch Alarm",
+   "units": "",
+   "access": "R",
+   "states": "0=No Alarm, 1=Alarm"
+  },
+  {
+   "type": "BV",
+   "instance": 60,
+   "name": "bnC2VibrationFaultALM",
+   "description": "Cell 2 Vibration Switch Alarm",
+   "units": "",
+   "access": "R",
+   "states": "0=No Alarm, 1=Alarm"
+  },
+  {
+   "type": "BV",
+   "instance": 61,
+   "name": "bnC2PumpANoFlow",
+   "description": "Cell 2 Pump No Flow Alarm",
+   "units": "",
+   "access": "R",
+   "states": "0=No Alarm, 1=Alarm"
+  },
+  {
+   "type": "BV",
+   "instance": 62,
+   "name": "bnC2MakeupDisable",
+   "description": "Cell 2 Drain Basin/Make-up Disable Status",
+   "units": "",
+   "access": "R",
+   "states": "0=Make-up Enabled (Default), 1=Drain Basin/Make-up Disabled"
+  },
+  {
+   "type": "BV",
+   "instance": 63,
+   "name": "bnC2PumpARuntimeReset",
+   "description": "Cell 2 Pump Runtime Reset",
+   "units": "",
+   "access": "W",
+   "states": "0=No Reset, 1=Reset Runtime Hours"
+  },
+  {
+   "type": "BV",
+   "instance": 64,
+   "name": "bnC2FanRuntimeReset",
+   "description": "Cell 2 Fan Runtime Reset",
+   "units": "",
+   "access": "W",
+   "states": "0=No Reset, 1=Reset Runtime Hours"
+  },
+  {
+   "type": "BV",
+   "instance": 65,
+   "name": "bnLeadLagSet",
+   "description": "System Lead Lag Set",
+   "units": "",
+   "access": "W",
+   "states": "0=Cell 2 Lead, 1=Cell 1 Lead (Default)"
+  },
+  {
+   "type": "BV",
+   "instance": 66,
+   "name": "bnC3PumpAStatus",
+   "description": "Cell 3 Pump Status",
+   "units": "",
+   "access": "R",
+   "states": "0=Off, 1=On"
+  },
+  {
+   "type": "BV",
+   "instance": 67,
+   "name": "bnC3PumpALockedStatus",
+   "description": "Cell 3 Pump Locked Status",
+   "units": "",
+   "access": "R",
+   "states": "0=Pump Locked On, 1=Pump Not Locked On"
+  },
+  {
+   "type": "BV",
+   "instance": 68,
+   "name": "bnC3DischargeDamper",
+   "description": "Cell 3 Discharge Damper Status",
+   "units": "",
+   "access": "R",
+   "states": "0=Dampers Closed, 1=Dampers Energized"
+  },
+  {
+   "type": "BV",
+   "instance": 69,
+   "name": "bnC3DischargeDamperAUXSwitch",
+   "description": "Cell 3 Discharge Damper Switch Status",
+   "units": "",
+   "access": "R",
+   "states": "0=Dampers Closed, 1=Dampers Open"
+  },
+  {
+   "type": "BV",
+   "instance": 70,
+   "name": "bnC3CyclePumps",
+   "description": "Cell 3 Cycle Pump Routine Status",
+   "units": "",
+   "access": "R",
+   "states": "0=Not Active, 1=Active"
+  },
+  {
+   "type": "BV",
+   "instance": 71,
+   "name": "bnC3VFDStatus",
+   "description": "Cell 3 VFD Status",
+   "units": "",
+   "access": "R",
+   "states": "0=Off, 1=On"
+  },
+  {
+   "type": "BV",
+   "instance": 72,
+   "name": "bnC3FanMotorHeaters",
+   "description": "Cell 3 Fan Space Heater Status",
+   "units": "",
+   "access": "R",
+   "states": "0=Off, 1=On"
+  },
+  {
+   "type": "BV",
+   "instance": 73,
+   "name": "bnC3PumpAConFault",
+   "description": "Cell 3 Pump Contactor Alarm",
+   "units": "",
+   "access": "R",
+   "states": "0=No Alarm, 1=Alarm"
+  },
+  {
+   "type": "BV",
+   "instance": 74,
+   "name": "bnC3HighSupplyTempALM",
+   "description": "Cell 3 High Supply Water Temperature Alarm",
+   "units": "",
+   "access": "R",
+   "states": "0=No Alarm, 1=Alarm"
+  },
+  {
+   "type": "BV",
+   "instance": 75,
+   "name": "bnC3LowSupplyTempALM",
+   "description": "Cell 3 Low Supply Water Temperature Alarm",
+   "units": "",
+   "access": "R",
+   "states": "0=No Alarm, 1=Alarm"
+  },
+  {
+   "type": "BV",
+   "instance": 76,
+   "name": "bnC3HighReturnTempALM",
+   "description": "Cell 3 High Return Water Temperature Alarm",
+   "units": "",
+   "access": "R",
+   "states": "0=No Alarm, 1=Alarm"
+  },
+  {
+   "type": "BV",
+   "instance": 77,
+   "name": "bnC3LowReturnTempALM",
+   "description": "Cell 3 Low Return Water Temperature Alarm",
+   "units": "",
+   "access": "R",
+   "states": "0=No Alarm, 1=Alarm"
+  },
+  {
+   "type": "BV",
+   "instance": 78,
+   "name": "bnC3BYPConALM",
+   "description": "Cell 3 Fan Bypass Contactor Alarm",
+   "units": "",
+   "access": "R",
+   "states": "0=No Alarm, 1=Alarm"
+  },
+  {
+   "type": "BV",
+   "instance": 79,
+   "name": "bnC3VFDFaultALM",
+   "description": "Cell 3 VFD Fault Alarm",
+   "units": "",
+   "access": "R",
+   "states": "0=No Alarm, 1=Alarm"
+  },
+  {
+   "type": "BV",
+   "instance": 80,
+   "name": "bnC3DamperLimitSwitchFLT",
+   "description": "Cell 3 Damper Limit Switch Alarm",
+   "units": "",
+   "access": "R",
+   "states": "0=No Alarm, 1=Alarm"
+  },
+  {
+   "type": "BV",
+   "instance": 81,
+   "name": "bnC3VibrationFaultALM",
+   "description": "Cell 3 Vibration Switch Alarm",
+   "units": "",
+   "access": "R",
+   "states": "0=No Alarm, 1=Alarm"
+  },
+  {
+   "type": "BV",
+   "instance": 82,
+   "name": "bnC3PumpANoFlow",
+   "description": "Cell 3 Pump No Flow Alarm",
+   "units": "",
+   "access": "R",
+   "states": "0=No Alarm, 1=Alarm"
+  },
+  {
+   "type": "BV",
+   "instance": 83,
+   "name": "bnC3PumpARuntimeReset",
+   "description": "Cell 3 Pump Runtime Reset Status",
+   "units": "",
+   "access": "W",
+   "states": "0=No Reset, 1=Reset Runtime Hours"
+  },
+  {
+   "type": "BV",
+   "instance": 84,
+   "name": "bnC3FanRuntimeReset",
+   "description": "Cell 3 Fan Runtime Reset",
+   "units": "",
+   "access": "W",
+   "states": "0=No Reset, 1=Reset Runtime Hours"
+  },
+  {
+   "type": "BV",
+   "instance": 85,
+   "name": "bnC4PumpAStatus",
+   "description": "Cell 4 Pump Status",
+   "units": "",
+   "access": "R",
+   "states": "0=Off, 1=On"
+  },
+  {
+   "type": "BV",
+   "instance": 86,
+   "name": "bnC4PumpALockedStatus",
+   "description": "Cell 4 Pump Locked Status",
+   "units": "",
+   "access": "R",
+   "states": "0=Pump Locked On, 1=Pump Not Locked On"
+  },
+  {
+   "type": "BV",
+   "instance": 87,
+   "name": "bnC4DischargeDamperAUXSwitch",
+   "description": "Cell 4 Discharge Damper Status",
+   "units": "",
+   "access": "R",
+   "states": "0=Dampers Closed, 1=Dampers Open"
+  },
+  {
+   "type": "BV",
+   "instance": 88,
+   "name": "bnC4CyclePumps",
+   "description": "Cell 4 Cycle Pump Routine Status",
+   "units": "",
+   "access": "R",
+   "states": "0=Not Active, 1=Active"
+  },
+  {
+   "type": "BV",
+   "instance": 89,
+   "name": "bnC4VFDStatus",
+   "description": "Cell 4 VFD Status",
+   "units": "",
+   "access": "R",
+   "states": "0=Off, 1=On"
+  },
+  {
+   "type": "BV",
+   "instance": 90,
+   "name": "bnC4FanMotorHeaters",
+   "description": "Cell 4 Fan Space Heater Status",
+   "units": "",
+   "access": "R",
+   "states": "0=Off, 1=On"
+  },
+  {
+   "type": "BV",
+   "instance": 91,
+   "name": "bnC4PumpAConFault",
+   "description": "Cell 4 Pump Contactor Alarm",
+   "units": "",
+   "access": "R",
+   "states": "0=No Alarm, 1=Alarm"
+  },
+  {
+   "type": "BV",
+   "instance": 92,
+   "name": "bnC4HighSupplyTempALM",
+   "description": "Cell 4 High Supply Water Temperature Alarm",
+   "units": "",
+   "access": "R",
+   "states": "0=No Alarm, 1=Alarm"
+  },
+  {
+   "type": "BV",
+   "instance": 93,
+   "name": "bnC4LowSupplyTempALM",
+   "description": "Cell 4 Low Supply Water Temperature Alarm",
+   "units": "",
+   "access": "R",
+   "states": "0=No Alarm, 1=Alarm"
+  },
+  {
+   "type": "BV",
+   "instance": 94,
+   "name": "bnC4HighReturnTempALM",
+   "description": "Cell 4 High Return Water Temperature Alarm",
+   "units": "",
+   "access": "R",
+   "states": "0=No Alarm, 1=Alarm"
+  },
+  {
+   "type": "BV",
+   "instance": 95,
+   "name": "bnC4LowReturnTempALM",
+   "description": "Cell 4 Low Return Water Temperature Alarm",
+   "units": "",
+   "access": "R",
+   "states": "0=No Alarm, 1=Alarm"
+  },
+  {
+   "type": "BV",
+   "instance": 96,
+   "name": "bnC4BYPConALM",
+   "description": "Cell 4 Fan Bypass Contactor Alarm",
+   "units": "",
+   "access": "R",
+   "states": "0=No Alarm, 1=Alarm"
+  },
+  {
+   "type": "BV",
+   "instance": 97,
+   "name": "bnC4VFDFaultALM",
+   "description": "Cell 4 VFD Fault Alarm",
+   "units": "",
+   "access": "R",
+   "states": "0=No Alarm, 1=Alarm"
+  },
+  {
+   "type": "BV",
+   "instance": 98,
+   "name": "bnC4DamperLimitSwitchFLT",
+   "description": "Cell 4 Damper Limit Switch Alarm",
+   "units": "",
+   "access": "R",
+   "states": "0=No Alarm, 1=Alarm"
+  },
+  {
+   "type": "BV",
+   "instance": 99,
+   "name": "bnC4VibrationFaultALM",
+   "description": "Cell 4 Vibration Switch Alarm",
+   "units": "",
+   "access": "R",
+   "states": "0=No Alarm, 1=Alarm"
+  },
+  {
+   "type": "BV",
+   "instance": 100,
+   "name": "bnC4PumpANoFlow",
+   "description": "Cell 4 Pump No Flow Alarm",
+   "units": "",
+   "access": "R",
+   "states": "0=No Alarm, 1=Alarm"
+  },
+  {
+   "type": "BV",
+   "instance": 101,
+   "name": "bnC4PumpARuntimeReset",
+   "description": "Cell 4 Pump Runtime Reset Status",
+   "units": "",
+   "access": "W",
+   "states": "0=No Reset, 1=Reset Runtime Hours"
+  },
+  {
+   "type": "BV",
+   "instance": 102,
+   "name": "bnC4FanRuntimeReset",
+   "description": "Cell 4 Fan Runtime Reset",
+   "units": "",
+   "access": "W",
+   "states": "0=No Reset, 1=Reset Runtime Hours"
+  },
+  {
+   "type": "BV",
+   "instance": 103,
+   "name": "bnHighCommonTempALM",
+   "description": "High Common Supply Water Temperature Alarm",
+   "units": "",
+   "access": "R",
+   "states": "0=No Alarm, 1=Alarm"
+  },
+  {
+   "type": "BV",
+   "instance": 104,
+   "name": "bnLowCommonTempALM",
+   "description": "Low Common Supply Water Temperature Alarm",
+   "units": "",
+   "access": "R",
+   "states": "0=No Alarm, 1=Alarm"
+  },
+  {
+   "type": "BV",
+   "instance": 105,
+   "name": "bnLeadLagLocked",
+   "description": "Lead/Lag Cell Locked",
+   "units": "",
+   "access": "R",
+   "states": "0=Cell 2 Lead, 1=Cell 1 Lead"
+  },
+  {
+   "type": "BV",
+   "instance": 106,
+   "name": "bnC1MakeupDisableBAS",
+   "description": "Cell 1 Disable Make-up",
+   "units": "",
+   "access": "W",
+   "states": "0=Make-up Enabled (Default), 1=Drain Basin/Make-up Disabled"
+  },
+  {
+   "type": "BV",
+   "instance": 107,
+   "name": "bnC2MakeupDisableBAS",
+   "description": "Cell 2 Disable Make-up",
+   "units": "",
+   "access": "W",
+   "states": "0=Make-up Enabled (Default), 1=Drain Basin/Make-up Disabled"
+  },
+  {
+   "type": "BV",
+   "instance": 108,
+   "name": "bnCurrentOperation",
+   "description": "System Current Operation",
+   "units": "",
+   "access": "R",
+   "states": "0=Automatic (Default), 1=Manual"
+  },
+  {
+   "type": "BV",
+   "instance": 109,
+   "name": "bnC4DischargeDamper",
+   "description": "Cell 4 Discharge Damper Status",
+   "units": "",
+   "access": "R",
+   "states": "0=Dampers Closed, 1=Dampers Energized"
+  },
+  {
+   "type": "AV",
+   "instance": 0,
+   "name": "bnC1ReturnTemp",
+   "description": "Cell 1 return (entering) fluid temperature (value x10)",
+   "units": "°F",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 1,
+   "name": "bnC1SupplyTemp",
+   "description": "Cell 1 supply (leaving) fluid temperature (value x10)",
+   "units": "°F",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 2,
+   "name": "bnC1BasinWaterTemp",
+   "description": "Cell 1 basin water temperature (value x10)",
+   "units": "°F",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 3,
+   "name": "bnAmbientTemp",
+   "description": "Ambient air temperature (value x10)",
+   "units": "°F",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 4,
+   "name": "bnC1PumpARuntime",
+   "description": "Cell 1 pump runtime",
+   "units": "h",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 5,
+   "name": "bnC1CyclePumpTime",
+   "description": "Cell 1 cycle-pumps routine time left",
+   "units": "min",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 6,
+   "name": "bnC1DeicingTimeLeft",
+   "description": "Cell 1 de-icing routine time left",
+   "units": "min",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 7,
+   "name": "bnC1TimeLeftUnitDeicingStart",
+   "description": "Cell 1 time until de-icing starts",
+   "units": "min",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 8,
+   "name": "bnC1PumpALockTime",
+   "description": "Cell 1 pump lock time left",
+   "units": "min",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 9,
+   "name": "bnC1FanRuntime",
+   "description": "Cell 1 fan motor runtime",
+   "units": "h",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 10,
+   "name": "bnHeaterCntrlTemp",
+   "description": "Basin heater on temperature (default 400 = 40.0 °F) (value x10)",
+   "units": "°F",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 11,
+   "name": "bnDeicingSeqStartTemp",
+   "description": "Louver de-icing start temperature (default 400) (value x10)",
+   "units": "°F",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 12,
+   "name": "bnCurrentMode",
+   "description": "Current operating mode (0 = off)",
+   "units": "",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 13,
+   "name": "bnHotStartTimeLeft",
+   "description": "Hot start routine time left",
+   "units": "min",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 14,
+   "name": "bnHighReturnALMSP",
+   "description": "High return temperature alarm limit (default 1050) (value x10)",
+   "units": "°F",
+   "access": "W",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 15,
+   "name": "bnLowReturnALMSP",
+   "description": "Low return temperature alarm limit (default 850) (value x10)",
+   "units": "°F",
+   "access": "W",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 16,
+   "name": "bnHighSupplyALMSP",
+   "description": "High supply temperature alarm limit (default 950) (value x10)",
+   "units": "°F",
+   "access": "W",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 17,
+   "name": "bnLowSupplyALMSP",
+   "description": "Low supply temperature alarm limit (default 750) (value x10)",
+   "units": "°F",
+   "access": "W",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 18,
+   "name": "bnHighAmbientALMSP",
+   "description": "High ambient temperature alarm limit (default 1000) (value x10)",
+   "units": "°F",
+   "access": "W",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 19,
+   "name": "bnLowAmbientALMSP",
+   "description": "Low ambient temperature alarm limit (default 320) (value x10)",
+   "units": "°F",
+   "access": "W",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 20,
+   "name": "bnLowBasinTempALMSP",
+   "description": "Low basin temperature alarm limit (default 380) (value x10)",
+   "units": "°F",
+   "access": "W",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 21,
+   "name": "bnDamperOffsetTempSP",
+   "description": "Damper offset temperature (default 30) (value x10)",
+   "units": "°F",
+   "access": "W",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 22,
+   "name": "bnBasinHeaterTempSP",
+   "description": "Basin heater temperature setpoint (default 400) (value x10)",
+   "units": "°F",
+   "access": "W",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 23,
+   "name": "bnDeiceTempSP",
+   "description": "De-icing temperature setpoint (default 400) (value x10)",
+   "units": "°F",
+   "access": "W",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 24,
+   "name": "bnBASSP",
+   "description": "BAS leaving fluid temperature setpoint (default 850) (value x10)",
+   "units": "°F",
+   "access": "W",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 25,
+   "name": "bnC2ReturnTemp",
+   "description": "Cell 2 return (entering) fluid temperature (value x10)",
+   "units": "°F",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 26,
+   "name": "bnC2SupplyTemp",
+   "description": "Cell 2 supply (leaving) fluid temperature (value x10)",
+   "units": "°F",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 27,
+   "name": "bnC2BasinWaterTemp",
+   "description": "Cell 2 basin water temperature (value x10)",
+   "units": "°F",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 28,
+   "name": "bnC1VFDSpeed",
+   "description": "Cell 1 fan speed (value x10)",
+   "units": "%",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 29,
+   "name": "bnC2VFDSpeed",
+   "description": "Cell 2 fan speed (value x10)",
+   "units": "%",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 30,
+   "name": "bnCommonLeavingTemp",
+   "description": "Average leaving fluid temperature, all cells (value x10)",
+   "units": "°F",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 31,
+   "name": "bnC2PumpARuntime",
+   "description": "Cell 2 pump runtime",
+   "units": "h",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 32,
+   "name": "bnC2CyclePumpTimeLeft",
+   "description": "Cell 2 cycle-pumps routine time left",
+   "units": "min",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 33,
+   "name": "bnC2TimeLeftUnitDeicingStart",
+   "description": "Cell 2 time until de-icing starts",
+   "units": "min",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 34,
+   "name": "bnC2DeicingTimeLeft",
+   "description": "Cell 2 de-icing routine time left",
+   "units": "min",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 35,
+   "name": "bnC2PumpALockTime",
+   "description": "Cell 2 pump lock time left",
+   "units": "min",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 36,
+   "name": "bnC2FanRuntime",
+   "description": "Cell 2 fan motor runtime",
+   "units": "h",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 37,
+   "name": "bnRecordLeadCell",
+   "description": "Current lead cell",
+   "units": "",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 38,
+   "name": "bnC3FanRuntime",
+   "description": "Cell 3 fan motor runtime",
+   "units": "h",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 39,
+   "name": "bnC3CyclePumpTimeLeft",
+   "description": "Cell 3 cycle-pumps routine time left",
+   "units": "min",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 40,
+   "name": "bnC3PumpALockTime",
+   "description": "Cell 3 pump lock time left",
+   "units": "min",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 41,
+   "name": "bnC3PumpARuntime",
+   "description": "Cell 3 pump runtime",
+   "units": "h",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 42,
+   "name": "bnC3ReturnTemp",
+   "description": "Cell 3 return (entering) fluid temperature (value x10)",
+   "units": "°F",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 43,
+   "name": "bnC3SupplyTemp",
+   "description": "Cell 3 supply (leaving) fluid temperature (value x10)",
+   "units": "°F",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 44,
+   "name": "bnC3VFDSpeed",
+   "description": "Cell 3 fan speed (value x10)",
+   "units": "%",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 45,
+   "name": "bnC4ReturnTemp",
+   "description": "Cell 4 return (entering) fluid temperature (value x10)",
+   "units": "°F",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 46,
+   "name": "bnC4SupplyTemp",
+   "description": "Cell 4 supply (leaving) fluid temperature (value x10)",
+   "units": "°F",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 47,
+   "name": "bnC4VFDSpeed",
+   "description": "Cell 4 fan speed (value x10)",
+   "units": "%",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 48,
+   "name": "bnC4PumpARuntime",
+   "description": "Cell 4 pump runtime",
+   "units": "h",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 49,
+   "name": "bnC4CyclePumpTimeLeft",
+   "description": "Cell 4 cycle-pumps routine time left",
+   "units": "min",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 50,
+   "name": "bnC4PumpALockTime",
+   "description": "Cell 4 pump lock time left",
+   "units": "min",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 51,
+   "name": "bnC4FanRuntime",
+   "description": "Cell 4 fan motor runtime",
+   "units": "h",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 52,
+   "name": "bnActiveSetpoint",
+   "description": "Active fluid temperature setpoint (default 850) (value x10)",
+   "units": "°F",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 53,
+   "name": "bnTimeBTWNDeicingSequences",
+   "description": "Time between de-icing starts",
+   "units": "min",
+   "access": "R",
+   "states": ""
+  }
+ ],
+ "page": "https://easybacnet.com/bacnet-points-lists/evapco/sage-water-energy-conservation-control",
+ "note": "Provided as-is. Point availability varies by firmware and options; verify against the live device.",
+ "disclaimer": "DISCLAIMER: reference only, provided AS IS with no warranty. May contain errors or be out of date. You must verify every point against the manufacturer's current documentation and the live device before use. easybacnet.com accepts no liability for its use and is not affiliated with the manufacturer. Terms: https://easybacnet.com/terms#content"
+}
