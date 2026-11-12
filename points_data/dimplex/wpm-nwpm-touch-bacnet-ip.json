@@ -1,0 +1,1054 @@
+{
+  "manufacturer": "Dimplex",
+  "manufacturer_slug": "dimplex",
+  "model": "WPM heat pump manager with NWPM Touch (BACnet IP)",
+  "model_slug": "wpm-nwpm-touch-bacnet-ip",
+  "aliases": [
+    "WPM Touch",
+    "WPM Econ5",
+    "WPM Econ",
+    "NWPM Touch",
+    "378800",
+    "Dimplex Wärmepumpenmanager",
+    "Dimplex heat pump manager BACnet"
+  ],
+  "equipment_type": "Heat pump manager (controller)",
+  "applies_to": "Dimplex (Glen Dimplex Deutschland) heat pumps with a WPM Touch / WPM Econ5 heat pump manager fitted with the NWPM Touch BACnet IP extension.",
+  "summary": "The NWPM Touch card (article 378800) plugs into the Serial/BMS slot of the WPM heat pump manager and exposes it over BACnet IP. The published data point list (German names) covers status, lockout, fault and sensor-error codes, operating mode, temperatures and pressures, output states, run hours, heat quantities, heating-circuit settings, an outdoor temperature written by the BMS, Smart Grid control and BMS room-control inputs. All objects are Analog Values or Binary Values with instances 100000 / 200000 + key number.",
+  "bacnet_transport": [
+    "BACnet IP"
+  ],
+  "firmware": "WPM software M3.3 or later; NWPM Touch firmware A2.1.0 - B2.1.0 or later",
+  "default_device_instance": null,
+  "access_inferred": false,
+  "notes": [
+    "Names are German as printed in the Dimplex wiki. The wiki gives object types as numeric codes: 2 = Analog Value (also used for 'Integer Variable' keys), 5 = Binary Value.",
+    "Instances are kept as printed. The Betriebsdaten page prints AV 11 as 1000011, but the room-control page prints the same object (Analog Variable 11) as 100011, so 100011 is used. AV 46 Raumtemperatur 1. Heizkreis is printed only once, as 1000046, and is kept that way although every other object follows 100000 + key number; check it with a device scan.",
+    "Heat quantities come in three parts (digits 1-4, 5-8, 9-12): total = (9-12 x 100000000) + (5-8 x 10000) + (1-4). Only heat pumps with a built-in heat meter report them.",
+    "The fault/lockout history uses AV 100081 as a selector: write 100-190 or 200-290 to choose one of the last 10 fault or lockout entries, then read AV 100082-100086 and 100092. Multiplexed objects are printed once per use with different names (AV 100092 also as Sperrwert (Siehe Sperrmeldungen), AV 200064 per circuit, AV 200081 as Auswahl Heizkreis 3); the first printed name is used.",
+    "BV 177 Zustand Stellventil is printed with instance 177, not 100177.",
+    "Status, lockout, fault and sensor codes are decimal values such as 2.8; the state lists are on the Systemstatus sub-pages and are copied into the states field."
+  ],
+  "source": {
+    "title": "BACnet/IP - Datenpunktliste (Dimplex Wiki, with sub-pages and BACnet/IP - Funktionsbeschreibungen)",
+    "doc_number": null,
+    "revision_date": null,
+    "url": "https://dimplex.atlassian.net/wiki/spaces/DW/pages/3451355137/BACnet+IP+-+Datenpunktliste"
+  },
+  "integration": {
+    "summary": "Fit the NWPM Touch card and enable the network setting on the WPM. Read the status, lockout and fault codes and the main temperatures, and write the operating mode or circuit setpoints only if the BMS owns them. If the BMS supplies outdoor temperature or room values, the service technician must configure that on the WPM first.",
+    "minimum_points": [
+      {
+        "ref": "AV 200014",
+        "name": "Betriebsmodus",
+        "why": "Operating mode command (writable)"
+      },
+      {
+        "ref": "AV 200036",
+        "name": "Festwertsolltemperatur",
+        "why": "Fixed-value setpoint, 1st circuit, °C"
+      },
+      {
+        "ref": "AV 100053",
+        "name": "Ruecklaufsolltemperatur (Hz/Khl)",
+        "why": "Return temperature setpoint in use, °C"
+      },
+      {
+        "ref": "AV 100103",
+        "name": "Statusmeldungen",
+        "why": "Operating state code (heating, hot water, defrost...)"
+      },
+      {
+        "ref": "AV 100001",
+        "name": "Außentemperatur (R1)",
+        "why": "Outdoor temperature, °C"
+      },
+      {
+        "ref": "AV 100002",
+        "name": "Ruecklauftemperatur (R2)",
+        "why": "Return water temperature, °C"
+      },
+      {
+        "ref": "AV 100003",
+        "name": "Warmwassertemperatur (R3)",
+        "why": "Hot water temperature, °C"
+      },
+      {
+        "ref": "BV 100041",
+        "name": "Verdichter 1",
+        "why": "Compressor 1 running"
+      },
+      {
+        "ref": "AV 100104",
+        "name": "Sperrmeldungen",
+        "why": "Lockout code (why the heat pump is blocked)"
+      },
+      {
+        "ref": "AV 100105",
+        "name": "Stoermeldungen",
+        "why": "Fault code, 0 = no fault"
+      }
+    ],
+    "enable": "Set the Netzwerk parameter on the WPM (home app setting) to activate the NWPM Touch extension. The list has no separate BMS enable; writes go straight to the mode and setpoint objects.",
+    "remote_sensors": "AV 100112 takes outdoor temperature from the BMS (configured by the service technician before WPM software M3.15). If no value is written after a power reset it stays at -99.9 °C and raises an outdoor sensor fault. For Smart-RTC+ room control (WPM_L23.1+), select a room address page with AV 200064, then write room temperature AV 100011, humidity AV 100013, room setpoint AV 200080 and release AV 100173 for up to 10 rooms per circuit.",
+    "setup": [
+      "NWPM Touch: RJ45 10/100BaseT, BACnet IP (Annex J); usable from WPM software M3.3.",
+      "Dimplex publishes EDE files per WPM software version on the BACnet/IP Anbindung page.",
+      "To change 2nd or 3rd circuit settings, first write 2 or 3 to AV 200081, then write AV 200083-200087."
+    ],
+    "gotchas": [
+      "AV 100081-100092 are multiplexed: the meaning of the values depends on the selector written to AV 100081.",
+      "AV 100011 and AV 100013 are read as room temperature/humidity 1 but also act as BMS room inputs when room addressing via AV 200064 is in use.",
+      "Heat quantities must be combined from three AVs; reading one alone gives only part of the number.",
+      "The Betriebsmodus state texts are not published on the wiki."
+    ],
+    "heartbeat": null
+  },
+  "points": [
+    {
+      "type": "AV",
+      "instance": 100001,
+      "name": "Außentemperatur (R1)",
+      "description": "Outdoor temperature (sensor R1)",
+      "units": "°C",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 100002,
+      "name": "Ruecklauftemperatur (R2)",
+      "description": "Return temperature (R2)",
+      "units": "°C",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 100003,
+      "name": "Warmwassertemperatur (R3)",
+      "description": "Hot water temperature (R3)",
+      "units": "°C",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 100005,
+      "name": "Vorlauftemperatur (R9)",
+      "description": "Flow temperature (R9)",
+      "units": "°C",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 100006,
+      "name": "Waermequelleneintritt (R24)*",
+      "description": "Heat source inlet temperature (R24)",
+      "units": "°C",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 100007,
+      "name": "Waermequellenaustritt (R6)",
+      "description": "Heat source outlet temperature (R6)",
+      "units": "",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 100008,
+      "name": "Hochdruck",
+      "description": "High pressure",
+      "units": "bar",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 100009,
+      "name": "Temperatur 2. Heizkreis (R5)",
+      "description": "2nd heating circuit temperature (R5)",
+      "units": "°C",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 100010,
+      "name": "Temperatur 3. Heizkreis",
+      "description": "3rd heating circuit temperature",
+      "units": "°C",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 100011,
+      "name": "Raumtemperatur 1 / RT-RTH Econ",
+      "description": "Room temperature 1; also BMS room temperature input (see notes)",
+      "units": "°C",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 100012,
+      "name": "Raumtemperatur 2",
+      "description": "Room temperature 2",
+      "units": "°C",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 100013,
+      "name": "Raumfeuchte 1 / RT-RTH Econ",
+      "description": "Room humidity 1; also BMS room humidity input (see notes)",
+      "units": "%RH",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 100014,
+      "name": "Raumfeuchte 2",
+      "description": "Room humidity 2",
+      "units": "%RH",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 100019,
+      "name": "Vorlauftemperatur (R11) Passiv Kuehlen",
+      "description": "Passive cooling flow temperature (R11)",
+      "units": "°C",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 100020,
+      "name": "Ruecklauftemperatur (R4) Passiv Kuehlen",
+      "description": "Passive cooling return temperature (R4)",
+      "units": "°C",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 100021,
+      "name": "Ruecklauftemperatur gemeinsamer Primaerkreis (R24)",
+      "description": "Shared primary circuit return temperature (R24)",
+      "units": "°C",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 1000046,
+      "name": "Raumtemperatur 1. Heizkreis",
+      "description": "Room temperature, 1st heating circuit (instance as printed)",
+      "units": "°C",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 100053,
+      "name": "Ruecklaufsolltemperatur (Hz/Khl)",
+      "description": "Return setpoint (heating/cooling)",
+      "units": "°C",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 100054,
+      "name": "Solltemperatur 2. Heizkreis",
+      "description": "Setpoint, 2nd heating circuit",
+      "units": "°C",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 100055,
+      "name": "Solltemperatur 3. Heizkreis",
+      "description": "Setpoint, 3rd heating circuit",
+      "units": "°C",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 100056,
+      "name": "Minimale Temperatur 2. Heizkreis",
+      "description": "Minimum temperature 2nd circuit (as printed)",
+      "units": "°C",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 100057,
+      "name": "Minimale Temperatur 2. Heizkreis",
+      "description": "Second row printed with the same name",
+      "units": "°C",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 100058,
+      "name": "Aktuelle Warmwasser-Solltemperatur",
+      "description": "Current hot water setpoint",
+      "units": "°C",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 100060,
+      "name": "Leistungsstufe Heizen",
+      "description": "Heating output stage",
+      "units": "",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 100061,
+      "name": "Leistungsstufe Kuehlen",
+      "description": "Cooling output stage",
+      "units": "",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 100071,
+      "name": "Zusatzumwaelzpumpe (M16)",
+      "description": "Run hours",
+      "units": "h",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 100072,
+      "name": "Verdichter 1",
+      "description": "Run hours",
+      "units": "h",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 100073,
+      "name": "Verdichter 2",
+      "description": "Run hours",
+      "units": "h",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 100074,
+      "name": "Primaerpumpe /Ventilator (M11)",
+      "description": "Run hours",
+      "units": "h",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 100075,
+      "name": "2. Waermeerzeuger (E10)",
+      "description": "Run hours",
+      "units": "h",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 100076,
+      "name": "Heizungspumpe (M13)",
+      "description": "Run hours",
+      "units": "h",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 100077,
+      "name": "Warmwasserpumpe (M18)",
+      "description": "Run hours",
+      "units": "h",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 100078,
+      "name": "Flanschheizung (E9)",
+      "description": "Run hours",
+      "units": "h",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 100079,
+      "name": "Schwimmbadpumpe (M19)",
+      "description": "Run hours",
+      "units": "h",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 100080,
+      "name": "Internes 4-Wege-Ventil",
+      "description": "Run hours",
+      "units": "h",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 100081,
+      "name": "Auswahl Stör-/ Sperrwert 1 - 10",
+      "description": "Write 100-190 (faults) or 200-290 (lockouts) to pick a stored entry",
+      "units": "",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 100082,
+      "name": "Stunde",
+      "description": "Date/time part of the selected stored entry",
+      "units": "h",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 100083,
+      "name": "Minute",
+      "description": "Date/time part of the selected stored entry",
+      "units": "min",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 100084,
+      "name": "Monat",
+      "description": "Date/time part of the selected stored entry",
+      "units": "month",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 100085,
+      "name": "Tag",
+      "description": "Date/time part of the selected stored entry",
+      "units": "day",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 100086,
+      "name": "Jahr",
+      "description": "Date/time part of the selected stored entry",
+      "units": "year",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 100092,
+      "name": "Störwert (Siehe Störmeldungen)",
+      "description": "Stored fault or lockout code for the selected entry",
+      "units": "",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 100101,
+      "name": "Niederdruck",
+      "description": "Low pressure",
+      "units": "bar",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 100103,
+      "name": "Statusmeldungen",
+      "description": "Operating status code (see state list)",
+      "units": "",
+      "access": "R",
+      "states": "0.0=Aus; 0.1=Aus; 0.2=Heizen; 0.3=Schwimmbad; 0.4=Warmwasser; 0.5=Kühlen; 1.0=Abtauen; 1.1=Durchflussüberwachung; 2.4=Verzögerung Betriebsmodusumschaltung; 3.0=Sperre (siehe Kapitel Sperrmeldungen)"
+    },
+    {
+      "type": "AV",
+      "instance": 100104,
+      "name": "Sperrmeldungen",
+      "description": "Lockout (block) message code",
+      "units": "",
+      "access": "R",
+      "states": "0.2=Volumenstrom; 0.5=Funktionskontrolle; 0.6=Einsatzgrenze HT; 0.7=Systemkontrolle; 0.8=Verzögerung Betriebsartenumschaltung; 0.9=Pumpenvorlauf; 1.0=Mindeststandzeit; 1.1=Netzbelastung; 1.2=Schaltspielsperre; 1.3=Warmwasser Nacherwärmung; 1.4=Regenerativ; 1.5=EVU-Sperre; 1.6=Sanftanlasser; 1.7=Durchfluss; 1.8=Einsatzgrenze Wärmepumpe (2. Wärmeerzeuger); 1.9=Hochdruck; 2.0=Niederdruck; 2.1=Einsatzgrenze Wärmequelle; 2.3=System Grenze; 2.4=Last Primärkreis; 2.5=Sperre Extern; 2.9=Inverter; 3.1=Aufwärmen; 3.3=EvD Initialisierung; 3.4=2.Wärmeerzeuger freigegeben; 3.5=Störung (siehe Wert für Störmeldungen); 5.1=Minimale Wärmequellentemperatur; 5.2=Maximale Wärmequellentemperatur; 5.3=Minimale Rücklauftemperatur; 5.4=Maximale Rücklauftemperatur; 5.5=Minimale Vorlauftemperatur; 5.6=Maximale Vorlauftemperatur; 5.7=Kommunikation Propansensor"
+    },
+    {
+      "type": "AV",
+      "instance": 100105,
+      "name": "Stoermeldungen",
+      "description": "Fault message code",
+      "units": "",
+      "access": "R",
+      "states": "0=kein Fehler; 0.1=Fehler N17.1; 0.2=Fehler N17.2; 0.3=Fehler N17.3; 0.4=Fehler N17.4; 0.5=Fehler N17; 0.6=Elektronisches Ex.Ventil; 0.7=Raumregler RTM Econ; 0.8=Fehler ODU; 0.9=Durchfluss Frostschutz; 1.0=Erweiterung WPIO; 1.2=Inverter; 1.3=Erweiterung WQIF; 1.4=Nasslauf; 1.5=Sensorik (siehe Wert für Sensorik); 1.6=Niederdruck Sole; 1.9=Primärkreis; 2.0=Abtauen; 2.1=Niederdruck Sole; 2.2=Warmwasser; 2.3=Last Verdichter; 2.4=Codierung; 2.5=Niederdruck; 2.6=Frostschutz; 2.8=Hochdruck; 2.9=Temperatur Differenz; 3.0=Heisgasthermostat; 3.1=Durchfluss; 3.2=Aufwärmen; 3.3=Abtauung Frostschutz; 5.0=Propan Alarm; 5.1=Propan Sensor Fehler"
+    },
+    {
+      "type": "AV",
+      "instance": 100106,
+      "name": "Sensormeldungen",
+      "description": "Sensor fault code",
+      "units": "",
+      "access": "R",
+      "states": "0.1=Außenfühler (R1); 0.2=Rücklauffühler (R2); 0.3=Warmwasserfühler (R3); 0.4=Codierung (R7); 0.5=Vorlauffühler (R9); 0.6=2.Heizkreisfühler (R5); 0.7=3.Heizkreisfühler (R13); 0.8=Regenerativfühler (R13); 0.9=Raumfühler 1; 1.0=Raumfühler 2; 1.1=Fühler Wärmequellenaustritt (R6); 1.2=Fühler Wärmequelleneintritt (R24); 1.4=Kollektorfühler (R23); 1.5=Niederdrucksensor (R25); 1.6=Hochdrucksensor (R26); 1.7=Raumfeuchte 1; 1.8=Raumfeuchte 2; 1.9=Fühler Frostschutz-Kälte; 2.0=Heißgas; 2.1=Rücklauffühler (R2.1); 2.2=Schwimmbadfühler (R20); 2.3=Vorlauffühler Kühlen Passiv (R11); 2.4=Rücklauffühler Kühlen Passiv (R4); 2.6=Fühler Solarspeicher (R22); 2.8=Anforderungsfühler Heizen (R2.2); 2.9=RTM Econ; 3.0=Anforderungsfühler Kühlen (R39); 3.7=Öltemperaturfühler Verdichter 1; 3.9=Öltemperaturfühler Verdichter 2; 4.1=Heißgasfühler Verdichter 1; 4.3=Heißgasfühler Verdichter 2; 4.5=Verdampfer Lufteintrittsfühler; 4.8=Durchflusssensor Sekundärkreis; 4.9=Drucksensor Sekundärkreis; 5.0=Durchflusssensor Primärkreis; 5.1=Drucksensor Primärkreis; 5.2=Sauggasfühler"
+    },
+    {
+      "type": "AV",
+      "instance": 100112,
+      "name": "Aussentemperatur über BMS",
+      "description": "Outdoor temperature written by the BMS",
+      "units": "",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 100120,
+      "name": "Außenlufttemperatur",
+      "description": "Ventilation: outdoor air temperature",
+      "units": "°C",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 100121,
+      "name": "Zulufttemperatur",
+      "description": "Ventilation: supply air temperature",
+      "units": "°C",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 100122,
+      "name": "Ablufttemperatur",
+      "description": "Ventilation: extract air temperature",
+      "units": "°C",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 100123,
+      "name": "Fortlufttemperatur",
+      "description": "Ventilation: exhaust air temperature",
+      "units": "°C",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 100125,
+      "name": "Drehzahl Zuluftventilator",
+      "description": "Ventilation: supply fan speed",
+      "units": "rpm",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 100126,
+      "name": "Drehzahl Abluftventilator",
+      "description": "Ventilation: extract fan speed",
+      "units": "rpm",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 100173,
+      "name": "Raumfreigabe 50-79 BMS",
+      "description": "Room release for selected room address",
+      "units": "",
+      "access": "W",
+      "states": "1=Heizen (Kühlen gesperrt); 3=Heizen und Kühlen"
+    },
+    {
+      "type": "AV",
+      "instance": 200014,
+      "name": "Betriebsmodus",
+      "description": "Operating mode (state texts not published)",
+      "units": "",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 200035,
+      "name": "Parallelverschiebung",
+      "description": "Heating curve parallel shift, 1st circuit",
+      "units": "",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 200036,
+      "name": "Festwertsolltemperatur",
+      "description": "Fixed-value setpoint temperature, 1st circuit",
+      "units": "°C",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 200037,
+      "name": "Heizkurvenendpunkt",
+      "description": "Heating curve end point, 1st circuit",
+      "units": "",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 200042,
+      "name": "Sollwert dyn. Kuehlung bei 15°C",
+      "description": "Dynamic cooling setpoint at 15 °C outdoor",
+      "units": "°C",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 200064,
+      "name": "Raumadressen 1.Heiz/Kühlkreis",
+      "description": "Room address page: 50-59, 60-69 or 70-79 for circuit 1, 2 or 3",
+      "units": "",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 200080,
+      "name": "Raumsolltemperatur 50-79 BMS",
+      "description": "Room setpoint for selected room address (x10)",
+      "units": "",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 200081,
+      "name": "Auswahl Heizkreis 2",
+      "description": "Selects circuit for writes: 2 = 2nd, 3 = 3rd",
+      "units": "",
+      "access": "W",
+      "states": "2=2. Heizkreis; 3=3. Heizkreis"
+    },
+    {
+      "type": "AV",
+      "instance": 200083,
+      "name": "Heizkurvenendpunkt",
+      "description": "Heating curve end point, selected circuit",
+      "units": "°C",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 200084,
+      "name": "Festwertemperatur",
+      "description": "Fixed temperature, selected circuit",
+      "units": "°C",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 200085,
+      "name": "Parallelverschiebung",
+      "description": "Parallel shift, selected circuit",
+      "units": "K",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 200087,
+      "name": "Maximale Temperatur",
+      "description": "Maximum temperature, selected circuit",
+      "units": "°C",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 200095,
+      "name": "Heizen 1-4",
+      "description": "Energy counter digits 1-4 (combine 3 parts)",
+      "units": "kWh",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 200096,
+      "name": "Heizen 5-8",
+      "description": "Energy counter digits 5-8 (combine 3 parts)",
+      "units": "kWh",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 200097,
+      "name": "Heizen 9-12",
+      "description": "Energy counter digits 9-12 (combine 3 parts)",
+      "units": "kWh",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 200098,
+      "name": "Warmwasser 1-4",
+      "description": "Energy counter digits 1-4 (combine 3 parts)",
+      "units": "kWh",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 200099,
+      "name": "Warmwasser 5-8",
+      "description": "Energy counter digits 5-8 (combine 3 parts)",
+      "units": "kWh",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 200100,
+      "name": "Warmwasser 9-12",
+      "description": "Energy counter digits 9-12 (combine 3 parts)",
+      "units": "kWh",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 200101,
+      "name": "Schwimmbad 1-4",
+      "description": "Energy counter digits 1-4 (combine 3 parts)",
+      "units": "kWh",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 200102,
+      "name": "Schwimmbad 5-8",
+      "description": "Energy counter digits 5-8 (combine 3 parts)",
+      "units": "kWh",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 200103,
+      "name": "Schwimmbad 9-12",
+      "description": "Energy counter digits 9-12 (combine 3 parts)",
+      "units": "kWh",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 200126,
+      "name": "Umweltenergie 1-4",
+      "description": "Energy counter digits 1-4 (combine 3 parts)",
+      "units": "kWh",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 200127,
+      "name": "Umweltenergie 5-8",
+      "description": "Energy counter digits 5-8 (combine 3 parts)",
+      "units": "kWh",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 200128,
+      "name": "Umweltenergie 9-12",
+      "description": "Energy counter digits 9-12 (combine 3 parts)",
+      "units": "kWh",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 200133,
+      "name": "Sollwert dyn. Kuehlung bei 30°C",
+      "description": "Dynamic cooling setpoint at 30 °C outdoor",
+      "units": "°C",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 200166,
+      "name": "Smart Grid",
+      "description": "Smart Grid state from the BMS",
+      "units": "",
+      "access": "W",
+      "states": "0=Hardwareeingang; 10=Zustand gelb; 11=Zustand grün; 12=Zustand rot; 13=Zustand dunkelgrün"
+    },
+    {
+      "type": "BV",
+      "instance": 177,
+      "name": "Zustand Stellventil",
+      "description": "Control valve state",
+      "units": "",
+      "access": "R",
+      "states": "0=geschlossen; 1=geöffnet"
+    },
+    {
+      "type": "BV",
+      "instance": 100003,
+      "name": "Smart-Grid 1",
+      "description": "Input state (read-only)",
+      "units": "",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "BV",
+      "instance": 100004,
+      "name": "Smart-Grid 2",
+      "description": "Input state (read-only)",
+      "units": "",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "BV",
+      "instance": 100005,
+      "name": "EVU Sperre",
+      "description": "Input state (read-only)",
+      "units": "",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "BV",
+      "instance": 100006,
+      "name": "Sperre extern",
+      "description": "Input state (read-only)",
+      "units": "",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "BV",
+      "instance": 100041,
+      "name": "Verdichter 1",
+      "description": "Output state",
+      "units": "",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "BV",
+      "instance": 100042,
+      "name": "Verdichter 2",
+      "description": "Output state",
+      "units": "",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "BV",
+      "instance": 100043,
+      "name": "Primaerpumpe (M11) /Ventilator (M2)",
+      "description": "Output state",
+      "units": "",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "BV",
+      "instance": 100044,
+      "name": "2.Waermeerzeuger (E10)",
+      "description": "Output state",
+      "units": "",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "BV",
+      "instance": 100045,
+      "name": "Heizungspumpe (M13)",
+      "description": "Output state",
+      "units": "",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "BV",
+      "instance": 100046,
+      "name": "Warmwasserpumpe (M18)",
+      "description": "Output state",
+      "units": "",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "BV",
+      "instance": 100047,
+      "name": "Mischer Auf 3.Heizkreis (M21)",
+      "description": "Output state",
+      "units": "",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "BV",
+      "instance": 100048,
+      "name": "Mischer Zu 3.Heizkreis (M21)",
+      "description": "Output state",
+      "units": "",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "BV",
+      "instance": 100050,
+      "name": "Flanschheizung (E9)",
+      "description": "Output state",
+      "units": "",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "BV",
+      "instance": 100051,
+      "name": "Heizungspumpe 2.Heizkreis (M15)",
+      "description": "Output state",
+      "units": "",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "BV",
+      "instance": 100052,
+      "name": "Mischer Auf 2.Heizkreis (M22)",
+      "description": "Output state",
+      "units": "",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "BV",
+      "instance": 100053,
+      "name": "Mischer Zu 2.Heizkreis (M22)",
+      "description": "Output state",
+      "units": "",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "BV",
+      "instance": 100056,
+      "name": "Schwimmbadumwaelzpumpe (M19)",
+      "description": "Output state",
+      "units": "",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "BV",
+      "instance": 100057,
+      "name": "Stoerfernanzeige (h5)",
+      "description": "Output state",
+      "units": "",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "BV",
+      "instance": 100058,
+      "name": "Zirkulationspumpe (M24)",
+      "description": "Output state",
+      "units": "",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "BV",
+      "instance": 100060,
+      "name": "Kuehlumwaelzpumpe (M17)",
+      "description": "Output state",
+      "units": "",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "BV",
+      "instance": 100061,
+      "name": "Heizungsumwaelzpumpe 3. Heizkreis (M20)",
+      "description": "Output state",
+      "units": "",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "BV",
+      "instance": 100066,
+      "name": "Umschaltung Raumthermostate Heizen/Kuehlen (N9)",
+      "description": "Output state",
+      "units": "",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "BV",
+      "instance": 100068,
+      "name": "Primaerpumpe Kuehlen (M12)",
+      "description": "Output state",
+      "units": "",
+      "access": "R",
+      "states": ""
+    }
+  ]
+}

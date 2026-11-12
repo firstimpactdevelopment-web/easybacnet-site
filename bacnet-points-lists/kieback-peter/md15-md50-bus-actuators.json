@@ -1,0 +1,842 @@
+{
+ "manufacturer": "Kieback&Peter",
+ "manufacturer_slug": "kieback-peter",
+ "model": "MD15-BUS / MD50-BUS small valve actuators (BACnet MS/TP)",
+ "model_slug": "md15-md50-bus-actuators",
+ "aliases": [
+  "MD15-BUS",
+  "MD15-BUS-HE",
+  "MD15-BUS-Q",
+  "MD15-BUS-N-Q",
+  "MD15-BUS-N-HE",
+  "MD50-BUS",
+  "MD50-BUS-N",
+  "Kieback Peter MD15",
+  "Kieback Peter MD50"
+ ],
+ "equipment_type": "Valve actuator (bus, with energy functions)",
+ "applies_to": "Kieback&Peter MD15-BUS (-Q, -N-Q, -HE, -N-HE) and MD50-BUS / MD50-BUS-N communicating small valve actuators on BACnet MS/TP or Modbus RTU.",
+ "summary": "The Kieback&Peter MD15-BUS and MD50-BUS actuators take a position command or run their own control (room, return or differential temperature, or thermal power) over BACnet MS/TP. Objects cover the operating mode and change-over selection, setpoints, PI and limit settings, sensor input configuration for P1/P2, valve selection and hydraulic balancing, flushing and anti-seize timers, actual position, flow, temperatures, thermal power and energy, and status and fault flags.",
+ "bacnet_transport": [
+  "BACnet MS/TP"
+ ],
+ "firmware": null,
+ "default_device_instance": null,
+ "access_inferred": false,
+ "notes": [
+  "The source is a German manual; object names are the German parameter names from its data point list (Bezeichnung). The live Object_Name in the actuator may differ.",
+  "Many objects exist only on some models (marked \"only ...\"): power, energy and flow values need the pressure-independent MD15-Q / -N / MD50 types. P1/P2 inputs are not on the -N types.",
+  "BI 3-9 are not named in the table; they are bits of the operating status word (register 318) and are listed with the bit text. BI 3 and BI 8 each carry more than one condition (busy/flushing, three limit functions).",
+  "MV 8 valve type selection has a different valve list per model; see the manual.",
+  "Temperatures written by the BMS (AV 4, AV 5, AV 17) are read-only when a P1/P2 sensor is assigned as their source; the manual says to write them at most once per hour (persistent memory)."
+ ],
+ "source": {
+  "title": "Handbuch Konfiguration und Anwendungsbeispiele MD50-BUS und MD15-BUS-xx (AppNotes), ch. 2.5 Datenpunktliste fuer Bus-Stellantriebe",
+  "doc_number": null,
+  "revision_date": "Rev. 1.10",
+  "url": "https://kieback-peter.com/fileadmin/downloads/produkte/aktoren/Betriebsanleitungen/MD50/MD50-BUS/AppNotes_DE_MD50-BUS__MD15-BUS-xx_Rev._1.10.pdf"
+ },
+ "integration": {
+  "summary": "Pick the operating mode with MV 4 (external position signal or one of the internal control modes) and the heating/cooling change-over with MV 9. In position mode write AV 1 (0-100 %); in room-temperature mode write AV 18 setpoint and the room temperature AV 17. Read AI 6 actual position, AI 7 flow and the fault flags.",
+  "minimum_points": [
+   {
+    "ref": "MV 4",
+    "name": "Betriebmodus",
+    "why": "Operating mode; 1 = external position signal AV 1"
+   },
+   {
+    "ref": "MV 9",
+    "name": "Auswahl HLK Modus (Change-Over)",
+    "why": "Change-over: 1 shut, 2 heat, 3 cool, 4 auto"
+   },
+   {
+    "ref": "AV 1",
+    "name": "Externes Stellsignal",
+    "why": "Position command, 0-100 %"
+   },
+   {
+    "ref": "AV 18",
+    "name": "Sollwert Raumtemperatur",
+    "why": "Room temperature setpoint"
+   },
+   {
+    "ref": "AV 17",
+    "name": "Istwert Raumtemperatur",
+    "why": "Room temperature from the BMS"
+   },
+   {
+    "ref": "AI 6",
+    "name": "Istwert Stellsignal",
+    "why": "Actual relative flow, %"
+   },
+   {
+    "ref": "AI 7",
+    "name": "Istwert Volumenstrom",
+    "why": "Actual flow, l/h"
+   },
+   {
+    "ref": "BI 6",
+    "name": "Fehler: Ventil ist blockiert",
+    "why": "Valve blocked"
+   },
+   {
+    "ref": "BI 4",
+    "name": "Störung Hardware",
+    "why": "Hardware fault"
+   }
+  ],
+  "enable": "MV 4 Betriebmodus selects position control from AV 1 or an internal control mode; MV 9 sets heating, cooling or shut-off.",
+  "heartbeat": "MV 6 sets the reaction to a 300 s bus communication loss: no change, close, open, go to the emergency position (AV 8, default 30 %) or follow the 0-10 V input.",
+  "remote_sensors": "Room (AV 17), supply (AV 4) and return (AV 5) temperatures can be written by the BMS when MV 10 / MV 5 select the bus as their source.",
+  "setup": [
+   "MAC address comes from the DIP switches; with switch setting 63 it can be written through AV 28. MV 7 sets the baud rate (default 38400)."
+  ],
+  "gotchas": [
+   "MV 6 decides what the actuator does after 300 s without bus communication (no change, close, open, emergency position AV 8, or follow the 0-10 V input).",
+   "Write bus temperatures (AV 4, AV 5, AV 17) no more than once an hour; they are stored persistently."
+  ]
+ },
+ "points": [
+  {
+   "type": "AI",
+   "instance": 1,
+   "name": "Software-Version",
+   "description": "Software version (123 = 1.23)",
+   "units": "",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "AI",
+   "instance": 2,
+   "name": "Analoger Eingang P1",
+   "description": "Input P1 value; unit follows sensor type; only MD15/MD15-HE/MD15-Q/MD50",
+   "units": "",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "AI",
+   "instance": 3,
+   "name": "Analoger Eingang P2",
+   "description": "Input P2 value; unit follows sensor type; only MD15/MD15-HE/MD15-Q/MD50",
+   "units": "",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "AI",
+   "instance": 4,
+   "name": "Sollposition",
+   "description": "Target stem position",
+   "units": "mm",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "AI",
+   "instance": 5,
+   "name": "Ist Position",
+   "description": "Actual stem position",
+   "units": "mm",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "AI",
+   "instance": 6,
+   "name": "Istwert Stellsignal",
+   "description": "Actual relative flow",
+   "units": "%",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "AI",
+   "instance": 7,
+   "name": "Istwert Volumenstrom",
+   "description": "Actual flow from valve data; only MD15-Q/-N types/MD50",
+   "units": "l/h",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "AI",
+   "instance": 8,
+   "name": "Istwert Differenztemperatur",
+   "description": "Supply minus return temperature",
+   "units": "K",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "AI",
+   "instance": 9,
+   "name": "Spueltimer aktuell",
+   "description": "Hours to next flush, or minutes left while flushing",
+   "units": "",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "AI",
+   "instance": 10,
+   "name": "Ventilblockierschutz-Timer aktuell",
+   "description": "Hours until anti-seize run",
+   "units": "h",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "AI",
+   "instance": 11,
+   "name": "Betriebsstunden",
+   "description": "Total operating hours",
+   "units": "h",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "AI",
+   "instance": 12,
+   "name": "Wegzähler",
+   "description": "Total stem travel",
+   "units": "mm",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "AI",
+   "instance": 13,
+   "name": "Gesamt-Stellhub",
+   "description": "Learned stroke between end positions",
+   "units": "mm",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "AI",
+   "instance": 15,
+   "name": "Aktuelle Volumenstrombegrenzung",
+   "description": "Active flow limit (heating or cooling); only MD15-Q/-N types/MD50",
+   "units": "l/h",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "AI",
+   "instance": 16,
+   "name": "Istwert der thermischen Leistung",
+   "description": "Thermal power (pressure-independent valves); only MD15-Q/-N types/MD50",
+   "units": "kW",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "AI",
+   "instance": 17,
+   "name": "Energie seit 0:00 Uhr",
+   "description": "Energy since midnight; only MD15-Q/-N types/MD50",
+   "units": "kWh",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "AI",
+   "instance": 18,
+   "name": "Energie in den letzten 24 h",
+   "description": "Energy in the last 24 h; only MD15-Q/-N types/MD50",
+   "units": "kWh",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "AI",
+   "instance": 20,
+   "name": "Gültigkeitsdauer kontinuierlicher Energiezähler",
+   "description": "Time since continuous energy counter reset; only MD15-Q/-N types/MD50",
+   "units": "h",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "AO",
+   "instance": 1,
+   "name": "Analoger Ausgang P2",
+   "description": "Output P2 value when P2 is a 0-10 V output; only MD15/MD15-HE/MD15-Q/MD50",
+   "units": "%",
+   "access": "W",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 1,
+   "name": "Externes Stellsignal",
+   "description": "Position command (relative flow)",
+   "units": "%",
+   "access": "W",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 2,
+   "name": "Minimaler Stellhub",
+   "description": "Lower limit of the position signal",
+   "units": "%",
+   "access": "W",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 3,
+   "name": "Maximaler Stellhub",
+   "description": "Upper limit of the position signal",
+   "units": "%",
+   "access": "W",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 4,
+   "name": "Istwert Vorlauftemperatur",
+   "description": "Supply temperature (write from BMS if bus source)",
+   "units": "°C",
+   "access": "W",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 5,
+   "name": "Istwert Rücklauftemperatur",
+   "description": "Return temperature (write from BMS if bus source)",
+   "units": "°C",
+   "access": "W",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 6,
+   "name": "Korrekturwert P1",
+   "description": "Offset for sensor P1; only MD15/MD15-HE/MD15-Q/MD50",
+   "units": "K",
+   "access": "W",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 7,
+   "name": "Korrekturwert P2",
+   "description": "Offset for sensor P2; only MD15/MD15-HE/MD15-Q/MD50",
+   "units": "K",
+   "access": "W",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 8,
+   "name": "Notposition",
+   "description": "Emergency position on bus loss or control fault",
+   "units": "%",
+   "access": "W",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 9,
+   "name": "Spültimer",
+   "description": "Flush timer in minutes (old; use AV 35)",
+   "units": "min",
+   "access": "W",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 10,
+   "name": "Timer Ventilblockierschutz",
+   "description": "Anti-seize timer; 0 = off",
+   "units": "h",
+   "access": "W",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 11,
+   "name": "Hydraulischer Abgleich Heizen",
+   "description": "Flow limit, heating; only MD15-Q/-N types/MD50",
+   "units": "l/h",
+   "access": "W",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 12,
+   "name": "Hydraulischer Abgleich Kühlen",
+   "description": "Flow limit, cooling; only MD15-Q/-N types/MD50",
+   "units": "l/h",
+   "access": "W",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 13,
+   "name": "Federweg Ventil",
+   "description": "Valve stroke; change triggers relearn; only MD15-HE/MD15-Q/-N types",
+   "units": "mm",
+   "access": "W",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 14,
+   "name": "Medium-Energiekonstante",
+   "description": "Medium heat capacity (water 4183)",
+   "units": "J/(kg·K)",
+   "access": "W",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 15,
+   "name": "Xp",
+   "description": "PI controller proportional band",
+   "units": "",
+   "access": "W",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 16,
+   "name": "Tn",
+   "description": "PI controller reset time",
+   "units": "s",
+   "access": "W",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 17,
+   "name": "Istwert Raumtemperatur",
+   "description": "Room temperature (write from BMS if bus source)",
+   "units": "°C",
+   "access": "W",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 18,
+   "name": "Sollwert Raumtemperatur",
+   "description": "Room temperature setpoint",
+   "units": "°C",
+   "access": "W",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 19,
+   "name": "Sollwert thermische Leistung",
+   "description": "Thermal power setpoint; only MD15-Q/-N types/MD50",
+   "units": "kW",
+   "access": "W",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 20,
+   "name": "Sollwert Rücklauftemperatur",
+   "description": "Return temperature setpoint",
+   "units": "°C",
+   "access": "W",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 21,
+   "name": "Sollwert Differenztemperatur",
+   "description": "Differential temperature setpoint",
+   "units": "°C",
+   "access": "W",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 22,
+   "name": "Grenzwert maximale thermische Leistung",
+   "description": "Maximum thermal power limit; 0 = off; only MD15-Q/-N types/MD50",
+   "units": "kW",
+   "access": "W",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 23,
+   "name": "Grenzwert Ruecklauftemperatur",
+   "description": "Return temperature limit; 0 = off",
+   "units": "°C",
+   "access": "W",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 24,
+   "name": "Grenzwert Differenztemperatur",
+   "description": "Minimum differential temperature limit; 0 = off",
+   "units": "K",
+   "access": "W",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 28,
+   "name": "MAC-Adresse",
+   "description": "MS/TP MAC address (writable at DIP setting 63)",
+   "units": "",
+   "access": "W",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 29,
+   "name": "Schließen wenn Stellbereich",
+   "description": "Band near end positions that drives fully open/closed",
+   "units": "%",
+   "access": "W",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 30,
+   "name": "Kvs Wert des ausgewaehlten Ventils",
+   "description": "Kvs of the selected valve; only MD15-Q/-N types/MD50",
+   "units": "l/h",
+   "access": "W",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 31,
+   "name": "Sensitivität Begrenzung thermische Leistung",
+   "description": "Power limit sensitivity; only MD15-Q/-N types/MD50",
+   "units": "",
+   "access": "W",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 32,
+   "name": "Sensitivität Begrenzung Rücklauftemperatur",
+   "description": "Return temperature limit sensitivity",
+   "units": "",
+   "access": "W",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 33,
+   "name": "Sensitivität Begrenzung Differenztemperatur",
+   "description": "Differential temperature limit sensitivity",
+   "units": "",
+   "access": "W",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 34,
+   "name": "Kontinuierlicher Energiezähler",
+   "description": "Continuous energy counter; write 0 to reset; only MD15-Q/-N types/MD50",
+   "units": "kWh",
+   "access": "W",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 35,
+   "name": "Spültimer",
+   "description": "Flush timer in hours; 0 = off",
+   "units": "h",
+   "access": "W",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 36,
+   "name": "Spültimer Öffnungszeit",
+   "description": "Time held fully open while flushing",
+   "units": "min",
+   "access": "W",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 37,
+   "name": "Startwert externes Stellsignal",
+   "description": "Start value of the position signal at power-up",
+   "units": "%",
+   "access": "W",
+   "states": ""
+  },
+  {
+   "type": "BI",
+   "instance": 1,
+   "name": "Binaerer Eingang P1",
+   "description": "Binary input P1; only MD15/MD15-HE/MD15-Q/MD50",
+   "units": "",
+   "access": "R",
+   "states": "0=Aus, 1=Ein"
+  },
+  {
+   "type": "BI",
+   "instance": 2,
+   "name": "Binaerer Eingang P2",
+   "description": "Binary input P2; only MD15/MD15-HE/MD15-Q/MD50",
+   "units": "",
+   "access": "R",
+   "states": "0=Aus, 1=Ein"
+  },
+  {
+   "type": "BI",
+   "instance": 3,
+   "name": "Antrieb ist beschaeftigt",
+   "description": "Actuator busy (also set while flushing) (status word bit)",
+   "units": "",
+   "access": "R",
+   "states": "0=Normal, 1=Active"
+  },
+  {
+   "type": "BI",
+   "instance": 4,
+   "name": "Störung Hardware",
+   "description": "Hardware fault (status word bit)",
+   "units": "",
+   "access": "R",
+   "states": "0=Normal, 1=Active"
+  },
+  {
+   "type": "BI",
+   "instance": 5,
+   "name": "Fehler beim Anlernen des Ventils",
+   "description": "Valve learning failed (status word bit)",
+   "units": "",
+   "access": "R",
+   "states": "0=Normal, 1=Active"
+  },
+  {
+   "type": "BI",
+   "instance": 6,
+   "name": "Fehler: Ventil ist blockiert",
+   "description": "Valve blocked (status word bit)",
+   "units": "",
+   "access": "R",
+   "states": "0=Normal, 1=Active"
+  },
+  {
+   "type": "BI",
+   "instance": 7,
+   "name": "Warnung: Leckage erkannt",
+   "description": "Leak warning (dT over 8 K with valve closed 6 h)",
+   "units": "",
+   "access": "R",
+   "states": "0=keine Warnung, 1=Leckage erkannt (Differenztemperatur ueber 8 K während Ventil min. 6 h geschlossen)"
+  },
+  {
+   "type": "BI",
+   "instance": 8,
+   "name": "Begrenzung thermische Leistung aktiv",
+   "description": "Power, return or dT limit active (status word bit)",
+   "units": "",
+   "access": "R",
+   "states": "0=Normal, 1=Active"
+  },
+  {
+   "type": "BI",
+   "instance": 9,
+   "name": "Taupunkt/Frostschutzwächter aktiv",
+   "description": "Dew point or frost monitor active (status word bit)",
+   "units": "",
+   "access": "R",
+   "states": "0=Normal, 1=Active"
+  },
+  {
+   "type": "BV",
+   "instance": 1,
+   "name": "P1 Invertierung (binaerer Eingang)",
+   "description": "Invert binary input P1; only MD15/MD15-HE/MD15-Q/MD50",
+   "units": "",
+   "access": "W",
+   "states": "0=Normal, 1=Invertiert"
+  },
+  {
+   "type": "BV",
+   "instance": 2,
+   "name": "P2 Invertierung (binaerer Eingang)",
+   "description": "Invert binary input P2; only MD15/MD15-HE/MD15-Q/MD50",
+   "units": "",
+   "access": "W",
+   "states": "0=Normal, 1=Invertiert"
+  },
+  {
+   "type": "BV",
+   "instance": 3,
+   "name": "P2 Invertierung (analoger Ausgang)",
+   "description": "Invert analog output P2; only MD15/MD15-HE/MD15-Q/MD50",
+   "units": "",
+   "access": "W",
+   "states": "0=Normal, 1=Invertiert"
+  },
+  {
+   "type": "BV",
+   "instance": 4,
+   "name": "Invertierung der Ventilstellrichtung",
+   "description": "Invert valve direction",
+   "units": "",
+   "access": "W",
+   "states": "0=Normal, 1=Invertiert"
+  },
+  {
+   "type": "MI",
+   "instance": 1,
+   "name": "Status HLK Modus (Change-Over)",
+   "description": "Change-over status",
+   "units": "",
+   "access": "R",
+   "states": "1=Aus (Absperren), 2=Heizen, 3=Kühlen"
+  },
+  {
+   "type": "MV",
+   "instance": 1,
+   "name": "Service- und Wartungsfunktionen auswählen",
+   "description": "Service functions (learn, test run, reset ...)",
+   "units": "",
+   "access": "W",
+   "states": "1=Normalbetrieb, 2=Anlernen des Ventils, 3=Testlauf, 4=Ventil synchronisieren, 5=Fehlermeldungen zuruecksetzen, 6=Bus-Neustart, 7=Auf Werkseinstellungen zuruecksetzen"
+  },
+  {
+   "type": "MV",
+   "instance": 2,
+   "name": "Sensortyp P1",
+   "description": "Sensor type on P1; only MD15/MD15-HE/MD15-Q/MD50",
+   "units": "",
+   "access": "W",
+   "states": "1=Aus, 2=Binaerer Eingang, 3=0..10 V Eingang, 4=KP10, 5=NI1000-DIN, 6=NI1000-LG, 7=PT1000, 8=Potentiometer 10k, 9=Potentiometer 10k Sollwertkorrektur +/-3 K, 10=Potentiometer 10k Sollwertkorrektur +/-5 K"
+  },
+  {
+   "type": "MV",
+   "instance": 3,
+   "name": "Sensor-/Ausgangstyp P2",
+   "description": "Sensor or output type on P2; only MD15/MD15-HE/MD15-Q/MD50",
+   "units": "",
+   "access": "W",
+   "states": "1=Aus, 2=Binaerer Eingang, 3=0..10 V Eingang, 4=KP10, 5=NI1000-DIN, 6=NI1000-LG, 7=PT1000, 8=Potentiometer 10k, 9=0..10 V Ausgang (nach Register 426/AO1), 10=0..10 V Stellungsrueckmeldung (nach Register 401/AI6), 11=Change-Over-Ausgang für 6-Wege Ventil (nach Register 201/MV9)"
+  },
+  {
+   "type": "MV",
+   "instance": 4,
+   "name": "Betriebmodus",
+   "description": "Operating mode",
+   "units": "",
+   "access": "W",
+   "states": "1=Steuerung über externes Stellsignal / (Register 400/AV1), 2=Auf (100 %), 3=Zu (0 %), 4=Min. Pos (Register 312/AV2), 5=res., 6=Max. Pos (Register 313/AV3), 7=Regelung nach Raumtemperatur (Register 403/AV17 und 300/AV18), 8=Regelung nach thermischer Leistung (Register 410/AI16 und 301/AV19), 9=Regelung nach Ruecklauftemperatur (Register 405/AV5 und 302/AV20), 10=Regelung nach Differenztemperatur (Register 406/AI8 und 303/AV21), 11=Steuerung über YIN 0..10V (P1), 12=Steuerung über YIN 0..10V (P2)"
+  },
+  {
+   "type": "MV",
+   "instance": 5,
+   "name": "Quellen für Vor- und Ruecklauftemperatur",
+   "description": "Source of supply and return temperature; only MD15/MD15-HE/MD15-Q/MD50",
+   "units": "",
+   "access": "W",
+   "states": "1=Buswerte über Register 404/AV4 und / 405/AV5, 2=Vorlauf: P1, Rücklauf: P2, 3=Vorlauf: P2, Rücklauf: P1, 4=Vorlauf: P1, Rücklauf: Bus, 5=Vorlauf: P2, Rücklauf: Bus, 6=Vorlauf: Bus, Rücklauf: P1, 7=Vorlauf: Bus, Rücklauf: P2"
+  },
+  {
+   "type": "MV",
+   "instance": 6,
+   "name": "Modus Kommunikationsausfall",
+   "description": "Reaction to bus communication loss (300 s)",
+   "units": "",
+   "access": "W",
+   "states": "1=Keine Aenderung, 2=Zu (0%) Zeitüberschreitung (300s), 3=Auf (100%) bei Zeitüberschreitung (300s), 4=Notposition (Register 134/AV8) bei Zeitüberschreitung (300s), 5=Nach YIN 0..10V (P1) bei Zeitüberschreitung (300s), 6=Nach YIN 0..10V (P2) bei Zeitüberschreitung (300s)"
+  },
+  {
+   "type": "MV",
+   "instance": 7,
+   "name": "RS485 Baudrate",
+   "description": "RS-485 baud rate",
+   "units": "",
+   "access": "W",
+   "states": "1=Default (38400), 2=9600, 3=19200, 4=38400, 5=57600, 6=76800, 7=115200"
+  },
+  {
+   "type": "MV",
+   "instance": 8,
+   "name": "Ventiltyp Auswahl",
+   "description": "Valve type; list depends on actuator model",
+   "units": "",
+   "access": "W",
+   "states": ""
+  },
+  {
+   "type": "MV",
+   "instance": 9,
+   "name": "Auswahl HLK Modus (Change-Over)",
+   "description": "Change-over: shut, heat, cool or auto",
+   "units": "",
+   "access": "W",
+   "states": "1=Absperren, 2=Heizen, 3=Kühlen, 4=Automatisch über Vorlauftemperatur (keine Ansteuerung des Change-Over Ausgangs (P2))"
+  },
+  {
+   "type": "MV",
+   "instance": 10,
+   "name": "Quelle fuer Raumtemperatur auswählen",
+   "description": "Source of room temperature; only MD15/MD15-HE/MD15-Q/MD50",
+   "units": "",
+   "access": "W",
+   "states": "1=Buswert über Register 403/AV17, 2=P1, 3=P2"
+  },
+  {
+   "type": "MV",
+   "instance": 11,
+   "name": "LED Modus",
+   "description": "LED mode",
+   "units": "",
+   "access": "W",
+   "states": "1=LED aus, 2=Betriebsstatus ohne Bus, 3=Betriebsstatus mit Bus"
+  },
+  {
+   "type": "MV",
+   "instance": 12,
+   "name": "Stellgeschwindigkeit",
+   "description": "Actuator speed",
+   "units": "",
+   "access": "W",
+   "states": "1=Normal: 22 s/mm, 2=Langsam: 28 s/mm, 3=Schnell: 16 s/mm"
+  },
+  {
+   "type": "MV",
+   "instance": 13,
+   "name": "Stellsignal Charakteristik",
+   "description": "Control signal characteristic",
+   "units": "",
+   "access": "W",
+   "states": "1=Linear, 3=Gleichprozentig, 4=Gleichprozentig (Invertiert)"
+  },
+  {
+   "type": "MV",
+   "instance": 14,
+   "name": "Taupunktwächter",
+   "description": "Dew point monitor",
+   "units": "",
+   "access": "W",
+   "states": "1=Off, 2=P1 (Zu = 0%), 3=P2 (Zu = 0%), 4=P1 (Notposition AV8), 5=P2 (Notposition AV8)"
+  },
+  {
+   "type": "MV",
+   "instance": 15,
+   "name": "Froschutzwächter",
+   "description": "Frost protection monitor",
+   "units": "",
+   "access": "W",
+   "states": "1=Off, 2=P1 (Auf = 100%), 3=P2 (Auf = 100%), 4=P1 (Notposition AV8), 5=P2 (Notposition AV8)"
+  }
+ ],
+ "page": "https://easybacnet.com/bacnet-points-lists/kieback-peter/md15-md50-bus-actuators",
+ "note": "Provided as-is. Point availability varies by firmware and options; verify against the live device.",
+ "disclaimer": "DISCLAIMER: reference only, provided AS IS with no warranty. May contain errors or be out of date. You must verify every point against the manufacturer's current documentation and the live device before use. easybacnet.com accepts no liability for its use and is not affiliated with the manufacturer. Terms: https://easybacnet.com/terms#content"
+}

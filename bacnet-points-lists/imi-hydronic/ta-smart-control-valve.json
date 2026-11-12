@@ -1,0 +1,1373 @@
+{
+ "manufacturer": "IMI Hydronic",
+ "manufacturer_slug": "imi-hydronic",
+ "model": "TA-Smart smart control valve (BACnet MS/TP and BACnet IP)",
+ "model_slug": "ta-smart-control-valve",
+ "aliases": [
+  "TA-Smart",
+  "TA-Smart-Dp",
+  "TA-Smart fail-safe",
+  "IMI TA-Smart",
+  "322231",
+  "322232",
+  "322233",
+  "TA-Smart BACnet IP",
+  "TA-Smart BACnet MS/TP"
+ ],
+ "equipment_type": "Control valve (pressure-independent, flow and energy measuring)",
+ "applies_to": "IMI TA-Smart, TA-Smart-Dp and TA-Smart fail-safe 2-way control valves DN15-150 with ultrasonic flow measurement, BACnet MS/TP or BACnet IP versions.",
+ "summary": "TA-Smart is a 2-way control valve with an integrated ultrasonic flow meter and supply/return temperature sensors, so it can control flow, power, differential pressure (Dp version) or position and meter energy. The MS/TP and IP versions publish the same 140 objects: valve data, setpoints and measurements in two selectable unit sets, regime limits, temperature limitation, overrides, status words, error/event logs and integer energy counters.",
+ "bacnet_transport": [
+  "BACnet MS/TP",
+  "BACnet IP"
+ ],
+ "firmware": null,
+ "default_device_instance": null,
+ "access_inferred": false,
+ "notes": [
+  "Taken from the TA-Smart BACnet MS/TP PICS (07.2026); the TA-Smart BACnet IP PICS (https://cdn.tessa.imihy.eimed-project.de/673551/TA-Smart_BACnet_IP_Protocol_Implementation.pdf) prints the identical object table.",
+  "Most values come in two unit sets: _unit1/_unit2 objects use the units chosen in MSV 5-10, 15-16 and 18-19 (for example FlowUnit1 = m3/h by default, FlowUnit2 = GPM).",
+  "The error and event logs are printed as ranges: AV 50 LastErrors[1] ... AV 59 LastErrors[10] and AV 60 LastEvents[1] ... AV 69 LastEvents[10]; only the first and last of each are listed here.",
+  "Footnotes: Dp objects only on TA-Smart-Dp; temperature limitation objects not on the Dp; others need firmware 8.0.0 to 13.0.0 (markers removed from names).",
+  "MSI 6-9 are not printed in the table."
+ ],
+ "source": {
+  "title": "TA-Smart BACnet MS/TP Protocol Implementation Conformance Statement - PICS",
+  "doc_number": null,
+  "revision_date": "07.2026",
+  "url": "https://cdn.tessa.imihy.eimed-project.de/673548/TA-Smart_BACnet_MS_TP_Protocol_Implementation.pdf"
+ },
+ "integration": {
+  "summary": "Set ControlSource (MSV 4) to Bus and choose the ControlMode (MSV 2), then write RelativeSetpoint AV 23 as a percentage of the regime maximum. Read measured flow, temperatures, power and energy, and watch StatusSummary MSI 10. Enable the cyclic timeout if the valve should fall back when the BMS goes quiet.",
+  "minimum_points": [
+   {
+    "ref": "MV 4",
+    "name": "ControlSource",
+    "why": "Must be 2 = Bus for BMS control"
+   },
+   {
+    "ref": "MV 2",
+    "name": "ControlMode",
+    "why": "1 flow, 2 power, 3 Dp, 4 position"
+   },
+   {
+    "ref": "AV 23",
+    "name": "RelativeSetpoint",
+    "why": "Setpoint, % of max for the regime"
+   },
+   {
+    "ref": "MV 17",
+    "name": "CyclicControlTimeoutEnabled",
+    "why": "Fallback timeout: 2 = active"
+   },
+   {
+    "ref": "AV 43",
+    "name": "CyclicControlTimeout",
+    "why": "Fallback delay, minutes"
+   },
+   {
+    "ref": "AI 20",
+    "name": "MeasuredFlow_unit1",
+    "why": "Measured flow (FlowUnit1)"
+   },
+   {
+    "ref": "AI 22",
+    "name": "MeasuredSupplyTemp_degC",
+    "why": "Supply temperature, °C"
+   },
+   {
+    "ref": "AI 24",
+    "name": "MeasuredReturnTemp_degC",
+    "why": "Return temperature, °C"
+   },
+   {
+    "ref": "AI 29",
+    "name": "MeasuredPower_unit1",
+    "why": "Measured power (PowerUnit1)"
+   },
+   {
+    "ref": "MI 10",
+    "name": "StatusSummary",
+    "why": "1 ok, 2 error, 3 warning"
+   }
+  ],
+  "enable": "The valve takes AV 23 only when ControlSource (MSV 4) is Bus; with Analog the bus is monitoring only.",
+  "heartbeat": "With CyclicControlTimeoutEnabled (MSV 17) active, the valve starts its fallback (moves to a user-set position) when no bus or analog control signal arrives within CyclicControlTimeout (AV 43, 1-1440 min, default 20).",
+  "remote_sensors": null,
+  "setup": [
+   "MS/TP baud Auto, 9600 (default), 19200-115200.",
+   "Device instance defaults to a value computed from the serial number; Object_Name, Location and Max_Master are writable.",
+   "The IP version supports BACnet/IP and foreign-device registration."
+  ],
+  "gotchas": [
+   "A bus override (MSV 13 OverrideType) returns to normal after 3 hours by default.",
+   "CurrentRegime (MSV 12) can only be written when RegimeSwitching is Bus.",
+   "Check the unit objects (MSV 5-10) before scaling _unit1/_unit2 values."
+  ]
+ },
+ "points": [
+  {
+   "type": "AI",
+   "instance": 0,
+   "name": "ValveNominalFlow_unit1",
+   "description": "Nominal flow of the valve (FlowUnit1)",
+   "units": "FlowUnit1",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "AI",
+   "instance": 1,
+   "name": "ValveNominalFlow_unit2",
+   "description": "",
+   "units": "FlowUnit2",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "AI",
+   "instance": 2,
+   "name": "ValveMinAdjustableFlow_unit1",
+   "description": "Minimum adjustable flow (FlowUnit1)",
+   "units": "FlowUnit1",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "AI",
+   "instance": 3,
+   "name": "ValveMinAdjustableFlow_unit2",
+   "description": "",
+   "units": "FlowUnit2",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "AI",
+   "instance": 4,
+   "name": "ValveNominalPower_unit1",
+   "description": "Nominal power of the valve (PowerUnit1)",
+   "units": "PowerUnit1",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "AI",
+   "instance": 5,
+   "name": "ValveNominalPower_unit2",
+   "description": "",
+   "units": "PowerUnit2",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "AI",
+   "instance": 6,
+   "name": "ValveMinAdjustablePower_unit1",
+   "description": "Minimum adjustable power (PowerUnit1)",
+   "units": "PowerUnit1",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "AI",
+   "instance": 7,
+   "name": "ValveMinAdjustablePower_unit2",
+   "description": "",
+   "units": "PowerUnit2",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "AI",
+   "instance": 8,
+   "name": "ValveNominalStroke_mm",
+   "description": "Nominal stroke of the valve expressed in millimeters and inches respectively",
+   "units": "mm",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "AI",
+   "instance": 9,
+   "name": "ValveNominalStroke_inch",
+   "description": "",
+   "units": "in",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "AI",
+   "instance": 10,
+   "name": "ValveMinAdjustableStroke_mm",
+   "description": "Min adjustable stroke of the valve expressed in millimeters and inches respectively",
+   "units": "mm",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "AI",
+   "instance": 11,
+   "name": "ValveMinAdjustableStroke_inch",
+   "description": "",
+   "units": "in",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "AI",
+   "instance": 12,
+   "name": "AnalogSetPointValue",
+   "description": "Analog input signal used as setpoint, V or mA",
+   "units": "VDC or mA",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "AI",
+   "instance": 13,
+   "name": "FlowSetPoint_unit1",
+   "description": "Flow setpoint",
+   "units": "FlowUnit1",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "AI",
+   "instance": 14,
+   "name": "FlowSetPoint_unit2",
+   "description": "",
+   "units": "FlowUnit2",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "AI",
+   "instance": 15,
+   "name": "PowerSetPoint_unit1",
+   "description": "Power setpoint",
+   "units": "PowerUnit1",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "AI",
+   "instance": 16,
+   "name": "PowerSetPoint_unit2",
+   "description": "",
+   "units": "PowerUnit2",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "AI",
+   "instance": 17,
+   "name": "PositionSetPoint_mm",
+   "description": "Position setpoint",
+   "units": "mm",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "AI",
+   "instance": 18,
+   "name": "PositionSetPoint_inch",
+   "description": "",
+   "units": "in",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "AI",
+   "instance": 19,
+   "name": "RelativeMeasuredFlow",
+   "description": "Measured flow, % of the active maximum",
+   "units": "%",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "AI",
+   "instance": 20,
+   "name": "MeasuredFlow_unit1",
+   "description": "Measured flow",
+   "units": "FlowUnit1",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "AI",
+   "instance": 21,
+   "name": "MeasuredFlow_unit2",
+   "description": "",
+   "units": "FlowUnit2",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "AI",
+   "instance": 22,
+   "name": "MeasuredSupplyTemp_degC",
+   "description": "Measured supply temperature",
+   "units": "°C",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "AI",
+   "instance": 23,
+   "name": "MeasuredSupplyTemp_degF",
+   "description": "",
+   "units": "°F",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "AI",
+   "instance": 24,
+   "name": "MeasuredReturnTemp_degC",
+   "description": "Measured return temperature",
+   "units": "°C",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "AI",
+   "instance": 25,
+   "name": "MeasuredReturnTemp_degF",
+   "description": "",
+   "units": "°F",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "AI",
+   "instance": 26,
+   "name": "MeasuredDeltaT_K",
+   "description": "Measured Delta T",
+   "units": "K",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "AI",
+   "instance": 27,
+   "name": "MeasuredDeltaT_degF",
+   "description": "",
+   "units": "°F",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "AI",
+   "instance": 28,
+   "name": "RelativeMeasuredPower",
+   "description": "Measured power, % of the active maximum",
+   "units": "%",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "AI",
+   "instance": 29,
+   "name": "MeasuredPower_unit1",
+   "description": "Measured power",
+   "units": "PowerUnit1",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "AI",
+   "instance": 30,
+   "name": "MeasuredPower_unit2",
+   "description": "",
+   "units": "PowerUnit2",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "AI",
+   "instance": 31,
+   "name": "EnergyCounterRegime1_unit1",
+   "description": "Energy counter in regime 1",
+   "units": "EnergyUnit 1",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "AI",
+   "instance": 32,
+   "name": "EnergyCounterRegime1_unit2",
+   "description": "",
+   "units": "EnergyUnit 2",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "AI",
+   "instance": 33,
+   "name": "EnergyCounterRegime2_unit1",
+   "description": "Energy counter in regime 2",
+   "units": "EnergyUnit 1",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "AI",
+   "instance": 34,
+   "name": "EnergyCounterRegime2_unit2",
+   "description": "",
+   "units": "EnergyUnit 2",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "AI",
+   "instance": 35,
+   "name": "RelativeMeasuredPosition",
+   "description": "Measured position, % of the active maximum",
+   "units": "%",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "AI",
+   "instance": 36,
+   "name": "MeasuredPosition_mm",
+   "description": "Measured position",
+   "units": "mm",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "AI",
+   "instance": 37,
+   "name": "MeasuredPosition_inch",
+   "description": "",
+   "units": "in",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "AI",
+   "instance": 38,
+   "name": "MaxAdjustableDpStab_unit1",
+   "description": "Maximum adjustable stabilised Dp (DpUnit1)",
+   "units": "DpUnit 1",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "AI",
+   "instance": 39,
+   "name": "MaxAdjustableDpStab_unit2",
+   "description": "",
+   "units": "DpUnit 2",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "AI",
+   "instance": 40,
+   "name": "MinAdjustableDpStab_unit1",
+   "description": "Minimum adjustable stabilised Dp (DpUnit1)",
+   "units": "DpUnit 1",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "AI",
+   "instance": 41,
+   "name": "MinAdjustableDpStab_unit2",
+   "description": "",
+   "units": "DpUnit 2",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "AI",
+   "instance": 42,
+   "name": "MeasuredDpStab_unit1",
+   "description": "Stabilised differential pressure measured by Dp sensor",
+   "units": "DpUnit 1",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "AI",
+   "instance": 43,
+   "name": "MeasuredDpStab_unit2",
+   "description": "",
+   "units": "DpUnit 2",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "AI",
+   "instance": 44,
+   "name": "VolumeCounterRegime1_unit1",
+   "description": "Volume counter in Regime 1",
+   "units": "Volume Unit1",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "AI",
+   "instance": 45,
+   "name": "VolumeCounterRegime1_unit2",
+   "description": "",
+   "units": "Volume Unit1",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "AI",
+   "instance": 46,
+   "name": "VolumeCounterRegime2_unit1",
+   "description": "Volume counter in Regime 2",
+   "units": "Volume Unit2",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "AI",
+   "instance": 47,
+   "name": "VolumeCounterRegime2_unit2",
+   "description": "",
+   "units": "Volume Unit2",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 0,
+   "name": "ControlCharCoefficient",
+   "description": "Curvature coefficient for EQM / inverted EQM control",
+   "units": "",
+   "access": "W",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 1,
+   "name": "R1SetbackPercentage",
+   "description": "Setback percentage applied when CurrentRegime is set to Regime1Setback",
+   "units": "%",
+   "access": "W",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 2,
+   "name": "R2SetbackPercentage",
+   "description": "Setback percentage applied when CurrentRegime is set to Regime2Setback",
+   "units": "%",
+   "access": "W",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 3,
+   "name": "MaxFlowRegime1_unit1",
+   "description": "Max flow in regime 1 (FlowUnit1)",
+   "units": "FlowUnit1",
+   "access": "W",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 4,
+   "name": "MaxFlowRegime1_unit2",
+   "description": "",
+   "units": "FlowUnit2",
+   "access": "W",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 5,
+   "name": "MaxFlowRegime2_unit1",
+   "description": "Max flow in regime 2 (FlowUnit1)",
+   "units": "FlowUnit1",
+   "access": "W",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 6,
+   "name": "MaxFlowRegime2_unit2",
+   "description": "",
+   "units": "FlowUnit2",
+   "access": "W",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 7,
+   "name": "MinFlowRegime1_unit1",
+   "description": "Min flow in regime 1 (FlowUnit1)",
+   "units": "FlowUnit1",
+   "access": "W",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 8,
+   "name": "MinFlowRegime1_unit2",
+   "description": "",
+   "units": "FlowUnit2",
+   "access": "W",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 9,
+   "name": "MinFlowRegime2_unit1",
+   "description": "Min flow in regime 2 (FlowUnit1)",
+   "units": "FlowUnit1",
+   "access": "W",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 10,
+   "name": "MinFlowRegime2_unit2",
+   "description": "",
+   "units": "FlowUnit2",
+   "access": "W",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 11,
+   "name": "MaxPowerRegime1_unit1",
+   "description": "Max power in regime 1 (PowerUnit1)",
+   "units": "PowerUnit1",
+   "access": "W",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 12,
+   "name": "MaxPowerRegime1_unit2",
+   "description": "",
+   "units": "PowerUnit2",
+   "access": "W",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 13,
+   "name": "MaxPowerRegime2_unit1",
+   "description": "Max power in regime 2 (PowerUnit1)",
+   "units": "PowerUnit1",
+   "access": "W",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 14,
+   "name": "MaxPowerRegime2_unit2",
+   "description": "",
+   "units": "PowerUnit2",
+   "access": "W",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 15,
+   "name": "MaxPositionRegime1_mm",
+   "description": "Max position in regime 1 (mm)",
+   "units": "mm",
+   "access": "W",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 16,
+   "name": "MaxPositionRegime1_inch",
+   "description": "",
+   "units": "in",
+   "access": "W",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 17,
+   "name": "MaxPositionRegime2_mm",
+   "description": "Max position in regime 2 (mm)",
+   "units": "mm",
+   "access": "W",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 18,
+   "name": "MaxPositionRegime2_inch",
+   "description": "",
+   "units": "in",
+   "access": "W",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 19,
+   "name": "MinPositionRegime1_mm",
+   "description": "Min position in regime 1 (mm)",
+   "units": "mm",
+   "access": "W",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 20,
+   "name": "MinPositionRegime1_inch",
+   "description": "",
+   "units": "in",
+   "access": "W",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 21,
+   "name": "MinPositionRegime2_mm",
+   "description": "Min position in regime 2 (mm)",
+   "units": "mm",
+   "access": "W",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 22,
+   "name": "MinPositionRegime2_inch",
+   "description": "",
+   "units": "in",
+   "access": "W",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 23,
+   "name": "RelativeSetpoint",
+   "description": "Relative setpoint in percentage of currently applicable max value",
+   "units": "%",
+   "access": "W",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 24,
+   "name": "AdditiveConcentration",
+   "description": "Additive concentration in water in % weight",
+   "units": "%",
+   "access": "W",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 25,
+   "name": "OverrideValue_unit1",
+   "description": "Override value (flow, power, Dp or position), unit set 1",
+   "units": "",
+   "access": "W",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 26,
+   "name": "OverrideValue_unit2",
+   "description": "Override value (flow, power, Dp or position), unit set 2",
+   "units": "",
+   "access": "W",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 27,
+   "name": "MinFlowThresholdRegime1_unit1",
+   "description": "Flow threshold under which temperature limitation ceases to operate in regime 1",
+   "units": "FlowUnit1",
+   "access": "W",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 28,
+   "name": "MinFlowThresholdRegime1_unit2",
+   "description": "Flow threshold under which temperature limitation ceases to operate in regime 1",
+   "units": "FlowUnit2",
+   "access": "W",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 29,
+   "name": "MinFlowThresholdRegime2_unit1",
+   "description": "Flow threshold under which temperature limitation ceases to operate in regime 2",
+   "units": "FlowUnit1",
+   "access": "W",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 30,
+   "name": "MinFlowThresholdRegime2_unit2",
+   "description": "Flow threshold under which temperature limitation ceases to operate in regime 2",
+   "units": "FlowUnit2",
+   "access": "W",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 31,
+   "name": "DeltaTSetpointRegime1_degK",
+   "description": "Delta T limitation setpoint, regime 1, K",
+   "units": "K",
+   "access": "W",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 32,
+   "name": "DeltaTSetpointRegime1_degF",
+   "description": "",
+   "units": "°F",
+   "access": "W",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 33,
+   "name": "DeltaTSetpointRegime2_degK",
+   "description": "Delta T limitation setpoint, regime 2, K",
+   "units": "K",
+   "access": "W",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 34,
+   "name": "DeltaTSetpointRegime2_degF",
+   "description": "",
+   "units": "°F",
+   "access": "W",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 35,
+   "name": "TReturnSetpointRegime1_degC",
+   "description": "Return temperature limit setpoint, regime 1, °C",
+   "units": "°C",
+   "access": "W",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 36,
+   "name": "TReturnSetpointRegime1_degF",
+   "description": "",
+   "units": "°F",
+   "access": "W",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 37,
+   "name": "TReturnSetpointRegime2_degC",
+   "description": "Return temperature limit setpoint, regime 2, °C",
+   "units": "°C",
+   "access": "W",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 38,
+   "name": "TReturnSetpointRegime2_degF",
+   "description": "",
+   "units": "°F",
+   "access": "W",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 39,
+   "name": "DpStabSetpointRegime1_unit1",
+   "description": "Stabilised Dp setpoint, regime 1 (DpUnit1)",
+   "units": "DpUnit1",
+   "access": "W",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 40,
+   "name": "DpStabSetpointRegime1_unit2",
+   "description": "",
+   "units": "DpUnit2",
+   "access": "W",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 41,
+   "name": "DpStabSetpointRegime2_unit1",
+   "description": "Stabilised Dp setpoint, regime 2 (DpUnit1)",
+   "units": "DpUnit1",
+   "access": "W",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 42,
+   "name": "DpStabSetpointRegime2_unit2",
+   "description": "",
+   "units": "DpUnit2",
+   "access": "W",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 43,
+   "name": "CyclicControlTimeout",
+   "description": "Delay before fallback when no control signal arrives",
+   "units": "min",
+   "access": "W",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 44,
+   "name": "AnalogOutputCharCoefficient",
+   "description": "Curvature coefficient for the analog output characteristic",
+   "units": "",
+   "access": "W",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 45,
+   "name": "TempLimActivationDelay",
+   "description": "Start delay before temperature limitation acts",
+   "units": "sec",
+   "access": "W",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 46,
+   "name": "TempLimActivationMargin",
+   "description": "Margin the return temp must exceed before limiting",
+   "units": "K",
+   "access": "W",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 50,
+   "name": "LastErrors[1]",
+   "description": "Newest error in error log",
+   "units": "",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 59,
+   "name": "LastErrors[10]",
+   "description": "Oldest error in error log",
+   "units": "",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 60,
+   "name": "LastEvents[1]",
+   "description": "Newest event in event log",
+   "units": "",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 69,
+   "name": "LastEvents[10]",
+   "description": "Oldest event in event log",
+   "units": "",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "MI",
+   "instance": 0,
+   "name": "ValveFamily",
+   "description": "Family to which the valve belongs",
+   "units": "",
+   "access": "R",
+   "states": "1=TA-Smart, 2=TA-Smart-Dp, 3=TA-Smart FS"
+  },
+  {
+   "type": "MI",
+   "instance": 1,
+   "name": "ValveVersion",
+   "description": "Version of the valve",
+   "units": "",
+   "access": "R",
+   "states": "1=Standard"
+  },
+  {
+   "type": "MI",
+   "instance": 2,
+   "name": "ValveSize",
+   "description": "Size of the valve",
+   "units": "",
+   "access": "R",
+   "states": "2=DN15 - 1/2\", 3=DN20 - 3/4\", 4=DN25 - 1\", 5=DN32 - 1\"1/4, 6=DN40 - 1\"1/2, 7=DN50 - 2\", 8=DN65 - 2\"1/2, 9=DN80 - 3\", 10=DN100 - 4\", 11=DN125 - 5\", 12=DN150 - 6\""
+  },
+  {
+   "type": "MI",
+   "instance": 3,
+   "name": "AnalogSignalType",
+   "description": "Analog input type (set by internal jumper)",
+   "units": "",
+   "access": "R",
+   "states": "1=Voltage (VDC), 2=Current (mA)"
+  },
+  {
+   "type": "MI",
+   "instance": 4,
+   "name": "TemperatureLimitationStatus",
+   "description": "Current status of the temperature limitation",
+   "units": "",
+   "access": "R",
+   "states": "1=Inactive, 2=Active"
+  },
+  {
+   "type": "MI",
+   "instance": 5,
+   "name": "OverrideStatus",
+   "description": "Current status of the override",
+   "units": "",
+   "access": "R",
+   "states": "1=Inactive, 2=Active"
+  },
+  {
+   "type": "MV",
+   "instance": 0,
+   "name": "FluidType",
+   "description": "Type of the fluid",
+   "units": "",
+   "access": "W",
+   "states": "1=Water, 2=Monoethylene glycol, 3=Monopropylene glycol, 4=Kilfrost GEO, 5=Glysofor E"
+  },
+  {
+   "type": "MV",
+   "instance": 1,
+   "name": "FlowSide",
+   "description": "Piping side on which the valve is installed (supply or return)",
+   "units": "",
+   "access": "W",
+   "states": "1=Supply side, 2=Return side"
+  },
+  {
+   "type": "MV",
+   "instance": 2,
+   "name": "ControlMode",
+   "description": "The control mode indicates which variable is being controlled by the valve",
+   "units": "",
+   "access": "W",
+   "states": "1=Flow control, 2=Power control, 3=Dp control, 4=Position control"
+  },
+  {
+   "type": "MV",
+   "instance": 3,
+   "name": "ControlCharacteristics",
+   "description": "Characteristic applied to the relative setpoint",
+   "units": "",
+   "access": "W",
+   "states": "1=Linear, 2=Equal-percentage (EQM), 3=Inverted EQM"
+  },
+  {
+   "type": "MV",
+   "instance": 4,
+   "name": "ControlSource",
+   "description": "Where the setpoint comes from (analog, bus, HyTune)",
+   "units": "",
+   "access": "W",
+   "states": "1=Analog, 2=Bus, 3=HyTune Mobile, 4=HyTune Webapp"
+  },
+  {
+   "type": "MV",
+   "instance": 5,
+   "name": "FlowUnit1",
+   "description": "First selected flow unit",
+   "units": "",
+   "access": "W",
+   "states": "1=m3/h, 2=l/s, 3=l/min, 4=l/h, 5=GPM"
+  },
+  {
+   "type": "MV",
+   "instance": 6,
+   "name": "FlowUnit2",
+   "description": "Second selected flow unit",
+   "units": "",
+   "access": "W",
+   "states": "1=m3/h, 2=l/s, 3=l/min, 4=l/h, 5=GPM"
+  },
+  {
+   "type": "MV",
+   "instance": 7,
+   "name": "PowerUnit1",
+   "description": "First selected power unit",
+   "units": "",
+   "access": "W",
+   "states": "1=kW, 2=W, 3=Btu/h, 4=kBtu/h, 5=ton (refrig.)"
+  },
+  {
+   "type": "MV",
+   "instance": 8,
+   "name": "PowerUnit2",
+   "description": "Second selected power unit",
+   "units": "",
+   "access": "W",
+   "states": "1=kW, 2=W, 3=Btu/h, 4=kBtu/h, 5=ton (refrig.)"
+  },
+  {
+   "type": "MV",
+   "instance": 9,
+   "name": "EnergyUnit1",
+   "description": "First selected energy unit",
+   "units": "",
+   "access": "W",
+   "states": "1=kWh, 2=kJ, 3=MJ, 4=kBtu, 5=MBtu, 6=ton.h"
+  },
+  {
+   "type": "MV",
+   "instance": 10,
+   "name": "EnergyUnit2",
+   "description": "Second selected energy unit",
+   "units": "",
+   "access": "W",
+   "states": "1=kWh, 2=kJ, 3=MJ, 4=kBtu, 5=MBtu, 6=ton.h"
+  },
+  {
+   "type": "MV",
+   "instance": 11,
+   "name": "RegimeSwitching",
+   "description": "Switching mode between regimes 1 and 2",
+   "units": "",
+   "access": "R",
+   "states": "1=None, 2=Dual-range input signal, 3=Bus, 4=Temperature detection, 6=Delta temperature detection"
+  },
+  {
+   "type": "MV",
+   "instance": 12,
+   "name": "CurrentRegime",
+   "description": "Current change-over regime",
+   "units": "",
+   "access": "W",
+   "states": "1=Regime1, 2=Regime2, 3=Regime1Setback, 4=Regime2Setback"
+  },
+  {
+   "type": "MV",
+   "instance": 13,
+   "name": "OverrideType",
+   "description": "Override action (bus overrides end after 3 h by default)",
+   "units": "",
+   "access": "W",
+   "states": "1=None, 2=Flow, 3=Power, 4=Dp, 5=Valve position, 6=Stop, 7=Simulated operation"
+  },
+  {
+   "type": "MV",
+   "instance": 14,
+   "name": "TemperatureLimitationType",
+   "description": "Temperature limitation type to be chosen between DT or return temperature",
+   "units": "",
+   "access": "W",
+   "states": "1=None, 2=DT limitation, 3=T return limitation"
+  },
+  {
+   "type": "MV",
+   "instance": 15,
+   "name": "DpUnit1",
+   "description": "First selected differential pressure unit",
+   "units": "",
+   "access": "W",
+   "states": "1=kPa, 2=bar, 3=psi"
+  },
+  {
+   "type": "MV",
+   "instance": 16,
+   "name": "DpUnit2",
+   "description": "Second selected differential pressure unit",
+   "units": "",
+   "access": "W",
+   "states": "1=kPa, 2=bar, 3=psi"
+  },
+  {
+   "type": "MV",
+   "instance": 17,
+   "name": "CyclicControlTimeoutEnabled",
+   "description": "Raise an error if no control signal is sent before Time out",
+   "units": "",
+   "access": "W",
+   "states": "1=Inactive, 2=Active"
+  },
+  {
+   "type": "MV",
+   "instance": 18,
+   "name": "VolumeUnit1",
+   "description": "First selected volume unit",
+   "units": "",
+   "access": "W",
+   "states": "1=ft3, 2=m3, 3=l, 4=USG"
+  },
+  {
+   "type": "MV",
+   "instance": 19,
+   "name": "VolumeUnit2",
+   "description": "Second selected volume unit",
+   "units": "",
+   "access": "W",
+   "states": "1=ft3, 2=m3, 3=l, 4=USG"
+  },
+  {
+   "type": "MV",
+   "instance": 20,
+   "name": "AnalogOutputCharacteristics",
+   "description": "Signal characteristics applied to the analog output value",
+   "units": "",
+   "access": "W",
+   "states": "1=Linear, 2=Equal-percentage (EQM), 3=Inverted EQM"
+  },
+  {
+   "type": "MV",
+   "instance": 21,
+   "name": "TempLimMinThresholdMonitoring",
+   "description": "Stop temperature limitation below the min thresholds",
+   "units": "",
+   "access": "W",
+   "states": "1=Disabled, 2=Enabled"
+  },
+  {
+   "type": "MV",
+   "instance": 22,
+   "name": "OperatingMode",
+   "description": "Determines the accepted sign of the ΔT for energy counting",
+   "units": "",
+   "access": "W",
+   "states": "1=Not Configured, 2=Heating, 3=Cooling"
+  },
+  {
+   "type": "MI",
+   "instance": 10,
+   "name": "StatusSummary",
+   "description": "Summarizes all status information",
+   "units": "",
+   "access": "R",
+   "states": "1=Ok, 2=Error, 3=Warning"
+  },
+  {
+   "type": "MI",
+   "instance": 11,
+   "name": "StatusFlowSensor",
+   "description": "Provides status information related to the flow measurement section",
+   "units": "",
+   "access": "R",
+   "states": "1=Ok, 2=ErrorFlowMeasurement"
+  },
+  {
+   "type": "MI",
+   "instance": 12,
+   "name": "StatusLocalTempSensor",
+   "description": "Provides status information related to the local temperature measurement",
+   "units": "",
+   "access": "R",
+   "states": "1=Ok, 2=ErrorLocalTempSensorDisconnected, 3=ErrorLocalTempSensorShortCircuit, 4=ErrorLocalTempSensorBelowMin, 5=ErrorLocalTempSensorAboveMax"
+  },
+  {
+   "type": "MI",
+   "instance": 13,
+   "name": "StatusRemoteTempSensor",
+   "description": "Provides status information related to the remote temperature measurement",
+   "units": "",
+   "access": "R",
+   "states": "1=Ok, 2=ErrorRemoteTempSensorDisconnected, 3=ErrorRemoteTempSensorShortCircuit, 4=ErrorRemoteTempSensorBelowMin, 5=ErrorRemoteTempSensorAboveMax"
+  },
+  {
+   "type": "MI",
+   "instance": 14,
+   "name": "StatusActuator",
+   "description": "Provides status information related to the actuator",
+   "units": "",
+   "access": "R",
+   "states": "1=Ok, 2=WarningActuatorManualOverride, 3=ErrorActuatorComFailure"
+  },
+  {
+   "type": "MI",
+   "instance": 15,
+   "name": "StatusOperation",
+   "description": "Power supply and input line status",
+   "units": "",
+   "access": "R",
+   "states": "1=Ok, 2=ErrorLowPower, 3=ErrorInputLineBroken"
+  },
+  {
+   "type": "MI",
+   "instance": 16,
+   "name": "StatusSystem",
+   "description": "Whether the valve can reach its flow/power setpoint",
+   "units": "",
+   "access": "R",
+   "states": "1=Ok, 2=WarningFlowNotReached, 3=WarningPowerNotReached"
+  },
+  {
+   "type": "MI",
+   "instance": 17,
+   "name": "StatusDpSensor",
+   "description": "Provides status information related to the remote differential pressure sensor measurement",
+   "units": "",
+   "access": "R",
+   "states": "1=Ok, 2=ErrorDpSensorDisconnected, 3=WarningAvailDpTooLowForDpStab, 4=WarningKvLoadTooHighForDpStab, 5=WarningDpStabAboveMax"
+  },
+  {
+   "type": "PIV",
+   "instance": 0,
+   "name": "EnergyCounterRegime1_kWh",
+   "description": "Energy counter in regime 1, integer value",
+   "units": "kWh",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "PIV",
+   "instance": 1,
+   "name": "EnergyCounterRegime1_kBtu",
+   "description": "",
+   "units": "kBtu",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "PIV",
+   "instance": 2,
+   "name": "EnergyCounterRegime2_kWh",
+   "description": "Energy counter in regime 2, integer value",
+   "units": "kWh",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "PIV",
+   "instance": 3,
+   "name": "EnergyCounterRegime2_kBtu",
+   "description": "",
+   "units": "kBtu",
+   "access": "R",
+   "states": ""
+  }
+ ],
+ "page": "https://easybacnet.com/bacnet-points-lists/imi-hydronic/ta-smart-control-valve",
+ "note": "Provided as-is. Point availability varies by firmware and options; verify against the live device.",
+ "disclaimer": "DISCLAIMER: reference only, provided AS IS with no warranty. May contain errors or be out of date. You must verify every point against the manufacturer's current documentation and the live device before use. easybacnet.com accepts no liability for its use and is not affiliated with the manufacturer. Terms: https://easybacnet.com/terms#content"
+}

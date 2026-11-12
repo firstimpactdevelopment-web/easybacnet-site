@@ -1,0 +1,911 @@
+{
+ "manufacturer": "IMI Hydronic",
+ "manufacturer_slug": "imi-hydronic",
+ "model": "TA-Slider 160 / 500 / 750 / 1250 / 1600 BACnet MS/TP actuator",
+ "model_slug": "ta-slider-750-1250-1600-bacnet-mstp",
+ "aliases": [
+  "TA-Slider 750",
+  "TA-Slider 1250",
+  "TA-Slider 1600",
+  "TA-Slider 750 Plus",
+  "TA-Slider 1600 Plus",
+  "TA-Slider 750 2T",
+  "TA-Slider 1600 2T",
+  "322226",
+  "322227",
+  "322228",
+  "TA-Slider 160",
+  "TA-Slider 500",
+  "TA-Slider 160 BACnet MS/TP",
+  "TA-Slider 500 BACnet MS/TP R24",
+  "TA-Slider 160 CO",
+  "IMI TA TA-Slider",
+  "322224 13011",
+  "322225 13011"
+ ],
+ "equipment_type": "Valve actuator (digital, BACnet MS/TP)",
+ "applies_to": "IMI TA TA-Slider BACnet MS/TP valve actuators: 160 (incl. CO), 500 (incl. R24), 750, 1250 (discontinued 2023) and 1600 Plus and 2T, firmware 2.5.0.",
+ "summary": "Digitally configurable TA-Slider valve actuators (160 N to 1600 N) with BACnet MS/TP. Over the bus they take a relative setpoint, report position, interpolated flow and two optional temperature sensors, and expose stroke/flow limits, change-over regimes, temperature limitation and an error log. The 160/500 and the 750/1250/1600 documents print the same object table, except that only the larger actuators have the second relay (BV 4).",
+ "bacnet_transport": [
+  "BACnet MS/TP"
+ ],
+ "firmware": "2.5.0",
+ "default_device_instance": null,
+ "access_inferred": false,
+ "notes": [
+  "Taken from the protocol implementation tables (object, name, access, unit, value range, default, resolution) of both TA-Slider documents; footnote markers after names are removed.",
+  "Differences between the two documents: BV 4 Relay2 exists only on the 750/1250/1600; the 160/500 document prints AV 0 as \"ControlSetpoint\" and MSI 1 state 2 as reserved; stroke and flow ranges are model-specific.",
+  "Many objects come in SI and US pairs (µm/in, l/h/USGPM, °C/°F); read the one that matches your units.",
+  "Several limits and temperature functions only apply when the change-over regime, valve type (AV 31) or temperature limitation is configured, usually with the HyTune app and TA-Dongle. Access [RW] (relay, limited stroke) is writable only in some configurations.",
+  "Some objects need firmware 1.1.0 (main board 4.0.0), 2.4.4/2.4.5 or 2.5.0 per the footnotes; BV 3/BV 4 relays need the relay option.",
+  "TA-Slider 160/500 document (dated 29/01/2024): https://assets.imi-hydronic.com/Documents/Instructions/IMI_TA/Low/TA-Slider_160-500_BACnet_MS-TP_Protocol_Implementation.pdf"
+ ],
+ "source": {
+  "title": "TA-Slider 750/1250/1600 BACnet MS/TP Protocol Implementation Conformance Statement - PICS",
+  "doc_number": null,
+  "revision_date": "11.2024",
+  "url": "https://assets.imi-hydronic.com/Documents/Instructions/IMI_TA/Low/TA-Slider_750-1250-1600_BACnet_MS-TP_Protocol_Implementation.pdf"
+ },
+ "integration": {
+  "summary": "Configure the actuator with HyTune (device ID, baud, parity) and set Signal Source to BusCom, then write the relative setpoint AV 0 and read back position, flow and the motor status. Set AV 2 if you want an error when the BMS stops sending.",
+  "minimum_points": [
+   {
+    "ref": "AV 0",
+    "name": "Control Setpoint",
+    "why": "Relative setpoint, 0-100 %"
+   },
+   {
+    "ref": "AI 0",
+    "name": "Actuator position Feedback",
+    "why": "Actuator position, %"
+   },
+   {
+    "ref": "MI 0",
+    "name": "Motor status",
+    "why": "Motor status (7 = error)"
+   },
+   {
+    "ref": "AI 7",
+    "name": "FlowFeedback SI",
+    "why": "Interpolated flow, l/h (needs valve type)"
+   },
+   {
+    "ref": "BI 0",
+    "name": "Override Status",
+    "why": "Manual/electrical override active"
+   },
+   {
+    "ref": "AV 10",
+    "name": "Errors code",
+    "why": "Error code (0 = no error)"
+   }
+  ],
+  "enable": "The actuator follows AV 0 only when Signal Source (MSI 11) is BusCom; that is set with the HyTune app and TA-Dongle.",
+  "heartbeat": "AV 2 Cyclic control timeout (0-60 min, default 0 = off) raises a CyclicTime error if no control signal arrives within the time.",
+  "remote_sensors": null,
+  "setup": [
+   "Baud rate Auto (default), 9600-115200; device ID, baud and parity are set with HyTune.",
+   "Device instance defaults to a value computed from the serial number; Max_Master and Location are writable.",
+   "RS-485 termination: switched on with HyTune on the 160/500; on the 750/1250/1600 remove the jumper behind the wire connector on the communication board."
+  ],
+  "gotchas": [
+   "Flow objects need the valve type defined (AV 31 or HyTune), otherwise they are meaningless.",
+   "Change-over by bus uses BV 2 (regime) and BV 3 (relay for a 6-way valve) and needs HyTune pre-configuration (FW 2.5.0+)."
+  ]
+ },
+ "points": [
+  {
+   "type": "AI",
+   "instance": 0,
+   "name": "Actuator position Feedback",
+   "description": "Current actuator position, % of stroke",
+   "units": "%",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "AI",
+   "instance": 1,
+   "name": "Calibrated stroke SI",
+   "description": "Stroke found by calibration, µm",
+   "units": "µm",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "AI",
+   "instance": 2,
+   "name": "Calibrated stroke US",
+   "description": "Stroke found by calibration, inches",
+   "units": "in",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "AI",
+   "instance": 3,
+   "name": "Motor ontime",
+   "description": "Total motor running time since first power-up",
+   "units": "s",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "AI",
+   "instance": 4,
+   "name": "Actuator ontime",
+   "description": "Total time in service since first power-up",
+   "units": "s",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "AI",
+   "instance": 5,
+   "name": "Actuator distance SI",
+   "description": "Total travel since first power-up, mm",
+   "units": "mm",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "AI",
+   "instance": 6,
+   "name": "Actuator distance US",
+   "description": "Total travel since first power-up, inches",
+   "units": "in",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "AI",
+   "instance": 7,
+   "name": "FlowFeedback SI",
+   "description": "Interpolated flow, l/h (needs valve type)",
+   "units": "l/h",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "AI",
+   "instance": 8,
+   "name": "FlowFeedback US",
+   "description": "Interpolated flow, USGPM (needs valve type)",
+   "units": "USGPM",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "AI",
+   "instance": 9,
+   "name": "Temperature 1 SI",
+   "description": "Sensor 1 temperature, °C (10000/10001 = fault)",
+   "units": "°C",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "AI",
+   "instance": 10,
+   "name": "Temperature 1 US",
+   "description": "Sensor 1 temperature, °F (10000/10001 = fault)",
+   "units": "°F",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "AI",
+   "instance": 11,
+   "name": "Temperature 2 SI",
+   "description": "Sensor 2 temperature, °C (10000/10001 = fault)",
+   "units": "°C",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "AI",
+   "instance": 12,
+   "name": "Temperature 2 US",
+   "description": "Sensor 2 temperature, °F (10000/10001 = fault)",
+   "units": "°F",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 0,
+   "name": "Control Setpoint",
+   "description": "Relative setpoint, % of the active maximum",
+   "units": "%",
+   "access": "W",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 1,
+   "name": "Communication address",
+   "description": "MS/TP address of the actuator",
+   "units": "",
+   "access": "W",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 2,
+   "name": "Cyclic control timeout",
+   "description": "Error if no control signal within this time (0 = off)",
+   "units": "min",
+   "access": "W",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 3,
+   "name": "Max Stroke Limitation R1 SI",
+   "description": "Max stroke in regime 1, µm",
+   "units": "µm",
+   "access": "W",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 4,
+   "name": "Max Stroke Limitation R1 US",
+   "description": "Max stroke in regime 1, inches",
+   "units": "in",
+   "access": "W",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 5,
+   "name": "Max Stroke Limitation R2 SI",
+   "description": "Max stroke in regime 2, µm",
+   "units": "µm",
+   "access": "W",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 6,
+   "name": "Max Stroke Limitation R2 US",
+   "description": "Max stroke in regime 2, inches",
+   "units": "in",
+   "access": "W",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 7,
+   "name": "Min stroke limitation R1 SI",
+   "description": "Min stroke in regime 1, µm",
+   "units": "µm",
+   "access": "W",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 8,
+   "name": "Min stroke limitation R1 US",
+   "description": "Min stroke in regime 1, inches",
+   "units": "in",
+   "access": "W",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 10,
+   "name": "Errors code",
+   "description": "Active error code (0 = no error)",
+   "units": "",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 11,
+   "name": "Error 1",
+   "description": "Error log, oldest entry",
+   "units": "",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 12,
+   "name": "Error 2",
+   "description": "Error log entry 2",
+   "units": "",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 13,
+   "name": "Error 3",
+   "description": "Error log entry 3",
+   "units": "",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 14,
+   "name": "Error 4",
+   "description": "Error log entry 4",
+   "units": "",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 15,
+   "name": "Error 5",
+   "description": "Error log entry 5",
+   "units": "",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 16,
+   "name": "Error 6",
+   "description": "Error log entry 6",
+   "units": "",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 17,
+   "name": "Error 7",
+   "description": "Error log entry 7",
+   "units": "",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 18,
+   "name": "Error 8",
+   "description": "Error log entry 8",
+   "units": "",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 19,
+   "name": "Error 9",
+   "description": "Error log entry 9",
+   "units": "",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 20,
+   "name": "Error 10",
+   "description": "Error log, newest entry",
+   "units": "",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 21,
+   "name": "Min stroke limitation R2 SI",
+   "description": "Min stroke in regime 2, µm",
+   "units": "µm",
+   "access": "W",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 22,
+   "name": "Min stroke limitation R2 US",
+   "description": "Min stroke in regime 2, inches",
+   "units": "in",
+   "access": "W",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 23,
+   "name": "Max Flow limitation R1 SI",
+   "description": "Max flow in regime 1, l/h",
+   "units": "l/h",
+   "access": "W",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 24,
+   "name": "Max Flow limitation R1 US",
+   "description": "Max flow in regime 1, USGPM",
+   "units": "USGPM",
+   "access": "W",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 25,
+   "name": "Max Flow limitation R2 SI",
+   "description": "Max flow in regime 2, l/h",
+   "units": "l/h",
+   "access": "W",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 26,
+   "name": "Max Flow limitation R2 US",
+   "description": "Max flow in regime 2, USGPM",
+   "units": "USGPM",
+   "access": "W",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 27,
+   "name": "Min Flow limitation R1 SI",
+   "description": "Min flow in regime 1, l/h",
+   "units": "l/h",
+   "access": "W",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 28,
+   "name": "Min Flow limitation R1 US",
+   "description": "Min flow in regime 1, USGPM",
+   "units": "USGPM",
+   "access": "W",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 29,
+   "name": "Min Flow limitation R2 SI",
+   "description": "Min flow in regime 2, l/h",
+   "units": "l/h",
+   "access": "W",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 30,
+   "name": "Min Flow limitation R2 US",
+   "description": "Min flow in regime 2, USGPM",
+   "units": "USGPM",
+   "access": "W",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 31,
+   "name": "Valve",
+   "description": "Valve type the actuator is mounted on",
+   "units": "",
+   "access": "W",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 32,
+   "name": "DeltaT Setpoint R1",
+   "description": "Delta T limitation setpoint, regime 1",
+   "units": "K",
+   "access": "W",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 33,
+   "name": "DeltaT Setpoint R2",
+   "description": "Delta T limitation setpoint, regime 2",
+   "units": "K",
+   "access": "W",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 34,
+   "name": "Return T Setpoint R1 SI",
+   "description": "Return temperature limit, regime 1, °C",
+   "units": "°C",
+   "access": "W",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 35,
+   "name": "Return T Setpoint R1 US",
+   "description": "Return temperature limit, regime 1, °F",
+   "units": "°F",
+   "access": "W",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 36,
+   "name": "Return T Setpoint R2 SI",
+   "description": "Return temperature limit, regime 2, °C",
+   "units": "°C",
+   "access": "W",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 37,
+   "name": "Return T Setpoint R2 US",
+   "description": "Return temperature limit, regime 2, °F",
+   "units": "°F",
+   "access": "W",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 38,
+   "name": "Min Flow threshold R1 SI",
+   "description": "Flow below which temp limitation stops, regime 1",
+   "units": "l/h",
+   "access": "W",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 39,
+   "name": "Min Flow threshold R1 US",
+   "description": "Flow below which temp limitation stops, regime 1",
+   "units": "USGPM",
+   "access": "W",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 40,
+   "name": "Min Flow threshold R2 SI",
+   "description": "Flow below which temp limitation stops, regime 2",
+   "units": "l/h",
+   "access": "W",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 41,
+   "name": "Min Flow threshold R2 US",
+   "description": "Flow below which temp limitation stops, regime 2",
+   "units": "USGPM",
+   "access": "W",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 42,
+   "name": "Min stroke threshold R1 SI",
+   "description": "Stroke below which temp limitation stops, regime 1",
+   "units": "µm",
+   "access": "W",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 43,
+   "name": "Min stroke threshold R1 US",
+   "description": "Stroke below which temp limitation stops, regime 1",
+   "units": "in",
+   "access": "W",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 44,
+   "name": "Min stroke threshold R2 SI",
+   "description": "Stroke below which temp limitation stops, regime 2",
+   "units": "µm",
+   "access": "W",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 45,
+   "name": "Min stroke threshold R2 US",
+   "description": "Stroke below which temp limitation stops, regime 2",
+   "units": "in",
+   "access": "W",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 46,
+   "name": "Heating reference Supply DT",
+   "description": "Reference supply delta T for heating return-temp limit",
+   "units": "K",
+   "access": "W",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 47,
+   "name": "Cooling reference Supply DT",
+   "description": "Reference supply delta T for cooling return-temp limit",
+   "units": "K",
+   "access": "W",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 48,
+   "name": "ChangeOver Temp Switch R1 SI",
+   "description": "Supply temp that switches to cooling, °C",
+   "units": "°C",
+   "access": "W",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 49,
+   "name": "ChangeOver Temp Switch R1 US",
+   "description": "Supply temp that switches to cooling, °F",
+   "units": "°F",
+   "access": "W",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 50,
+   "name": "ChangeOver Temp Switch R2 SI",
+   "description": "Supply temp that switches to heating, °C",
+   "units": "°C",
+   "access": "W",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 51,
+   "name": "ChangeOver Temp Switch R2 US",
+   "description": "Supply temp that switches to heating, °F",
+   "units": "°F",
+   "access": "W",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 52,
+   "name": "CoRegime switching DT",
+   "description": "Temperature difference needed to switch regimes",
+   "units": "K",
+   "access": "W",
+   "states": ""
+  },
+  {
+   "type": "BI",
+   "instance": 0,
+   "name": "Override Status",
+   "description": "Mechanical or electrical override active",
+   "units": "",
+   "access": "R",
+   "states": "0=No, 1=Yes"
+  },
+  {
+   "type": "BI",
+   "instance": 1,
+   "name": "Physical Binary Input",
+   "description": "State of the physical binary input",
+   "units": "",
+   "access": "R",
+   "states": "0=Off, 1=On"
+  },
+  {
+   "type": "BI",
+   "instance": 2,
+   "name": "Temp Limitation Status",
+   "description": "Current status of the temperature limitation",
+   "units": "",
+   "access": "R",
+   "states": "0=Inactive, 1=Active"
+  },
+  {
+   "type": "BI",
+   "instance": 3,
+   "name": "Temp 1 Used",
+   "description": "Defines whether the Temperature sensor 1 is used or not",
+   "units": "",
+   "access": "R",
+   "states": "0=Not used, 1=Used"
+  },
+  {
+   "type": "BI",
+   "instance": 4,
+   "name": "Temp 2 Used",
+   "description": "Defines whether the Temperature sensor 2 is used or not",
+   "units": "",
+   "access": "R",
+   "states": "0=Not used, 1=Used"
+  },
+  {
+   "type": "BV",
+   "instance": 0,
+   "name": "Valve opening type",
+   "description": "Valve direction (push-to-close or push-to-open)",
+   "units": "",
+   "access": "R",
+   "states": "0=Push-to-close, 1=Push-to-open"
+  },
+  {
+   "type": "BV",
+   "instance": 1,
+   "name": "Force calibration",
+   "description": "Request forced calibration",
+   "units": "",
+   "access": "W",
+   "states": "0=Off, 1=On"
+  },
+  {
+   "type": "BV",
+   "instance": 2,
+   "name": "Bus Binary input",
+   "description": "Regime or flushing request from the bus (see MSI 10)",
+   "units": "",
+   "access": "W",
+   "states": "0=Regime1 / No flushing, 1=Regime2 / Flushing"
+  },
+  {
+   "type": "BV",
+   "instance": 3,
+   "name": "Relay1",
+   "description": "Relay 1 command when its trigger is BusCom",
+   "units": "",
+   "access": "W",
+   "states": "0=Deactivated, 1=Activated"
+  },
+  {
+   "type": "BV",
+   "instance": 4,
+   "name": "Relay2",
+   "description": "Relay 2 command when its trigger is BusCom",
+   "units": "",
+   "access": "W",
+   "states": "0=Deactivated, 1=Activated"
+  },
+  {
+   "type": "BV",
+   "instance": 5,
+   "name": "Enable Limited Stroke",
+   "description": "Enable stroke limits (read-only with some change-over types)",
+   "units": "",
+   "access": "W",
+   "states": "0=Deactivated, 1=Activated"
+  },
+  {
+   "type": "MI",
+   "instance": 0,
+   "name": "Motor status",
+   "description": "Motor status",
+   "units": "",
+   "access": "R",
+   "states": "1=Stopped, 2=Retracting, 3=Extending, 4=Calibration, 5=Manual-override, 6=Clogging, 7=Error"
+  },
+  {
+   "type": "MI",
+   "instance": 1,
+   "name": "Power type",
+   "description": "Power type",
+   "units": "",
+   "access": "R",
+   "states": "1=Low, 2=High, 3=USB"
+  },
+  {
+   "type": "MI",
+   "instance": 2,
+   "name": "Actuator Control Characteristics",
+   "description": "Characteristic of the actuator",
+   "units": "",
+   "access": "R",
+   "states": "1=Linear, 2=Equal Percentage Modified (EQM), 3=Inverted EQM"
+  },
+  {
+   "type": "MI",
+   "instance": 3,
+   "name": "Actuator Speed",
+   "description": "Actuator speed (set with HyTune)",
+   "units": "s/mm",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "MI",
+   "instance": 4,
+   "name": "Operating Mode",
+   "description": "Heating or cooling mode (sets defaults and limits)",
+   "units": "",
+   "access": "R",
+   "states": "1=Heating, 2=Cooling"
+  },
+  {
+   "type": "MI",
+   "instance": 5,
+   "name": "Current CoRegime",
+   "description": "Current change-over regime status",
+   "units": "",
+   "access": "R",
+   "states": "1=Regime1, 2=Regime2"
+  },
+  {
+   "type": "MI",
+   "instance": 6,
+   "name": "CoRegime switching",
+   "description": "Switching mode between regimes 1 and 2",
+   "units": "",
+   "access": "R",
+   "states": "1=None, 2=Dual-Range input Signal, 3=BusCom, 4=Temperature detection, 6=Delta Temperature Detection, 7=Binary input"
+  },
+  {
+   "type": "MI",
+   "instance": 7,
+   "name": "Temp 1 location",
+   "description": "Location on which the Temperature sensor 1 is installed",
+   "units": "",
+   "access": "R",
+   "states": "1=Supply side, 2=Return side"
+  },
+  {
+   "type": "MI",
+   "instance": 8,
+   "name": "Temp 2 location",
+   "description": "Location on which the Temperature sensor 2 is installed",
+   "units": "",
+   "access": "R",
+   "states": "1=Supply side, 2=Return side"
+  },
+  {
+   "type": "MI",
+   "instance": 9,
+   "name": "Temp Limitation Type",
+   "description": "Temperature limitation type to be chosen between DT or return temperature",
+   "units": "",
+   "access": "R",
+   "states": "1=None, 2=DT limitation, 3=T return limitation"
+  },
+  {
+   "type": "MI",
+   "instance": 10,
+   "name": "Bus Binary Action",
+   "description": "What BV 2 does when regime switching is BusCom",
+   "units": "",
+   "access": "R",
+   "states": "1=None, 2=Change-Over, 3=Flushing"
+  },
+  {
+   "type": "MI",
+   "instance": 11,
+   "name": "Signal Source",
+   "description": "SignalSource used to control the TA-Slider",
+   "units": "",
+   "access": "R",
+   "states": "1=Analog (V), 5=BusCom"
+  },
+  {
+   "type": "MV",
+   "instance": 0,
+   "name": "RS-485 Baud rate",
+   "description": "Baud rate for the BACnet MS/TP communication",
+   "units": "",
+   "access": "W",
+   "states": ""
+  },
+  {
+   "type": "MV",
+   "instance": 1,
+   "name": "Valve Control Char",
+   "description": "Control characteristic of the valve type",
+   "units": "",
+   "access": "W",
+   "states": "1=Linear, 2=EQM"
+  }
+ ],
+ "page": "https://easybacnet.com/bacnet-points-lists/imi-hydronic/ta-slider-750-1250-1600-bacnet-mstp",
+ "note": "Provided as-is. Point availability varies by firmware and options; verify against the live device.",
+ "disclaimer": "DISCLAIMER: reference only, provided AS IS with no warranty. May contain errors or be out of date. You must verify every point against the manufacturer's current documentation and the live device before use. easybacnet.com accepts no liability for its use and is not affiliated with the manufacturer. Terms: https://easybacnet.com/terms#content"
+}

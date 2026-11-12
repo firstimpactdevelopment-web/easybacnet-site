@@ -1,0 +1,311 @@
+{
+ "manufacturer": "Armstrong Monitoring",
+ "manufacturer_slug": "armstrong-monitoring",
+ "model": "AMC-1DBx digital gas monitor (BACnet IP)",
+ "model_slug": "amc-1dbx-digital-gas-monitor",
+ "short_model": "AMC-1DBx",
+ "aliases": [
+  "AMC-1DBx",
+  "AMC-1DB",
+  "1DBx",
+  "AMC 1DBX",
+  "Armstrong 1DBx",
+  "Digital Gas Monitor 1DBx"
+ ],
+ "equipment_type": "Gas detection controller (sensor monitor)",
+ "applies_to": "Armstrong Monitoring AMC-1DBx digital gas detection controllers with up to 988 sensors, 256 relays, 128 zones and 128 analog outputs.",
+ "summary": "The AMC-1DBx is a gas detection controller for large sensor networks. Over BACnet IP it exposes 4,119 fixed objects: a system state, then for each possible sensor a raw value, a cause state and a status string, and the same kind of blocks for relays, zones and analog outputs, plus file objects for logs, database and firmware. Configuration is not available over BACnet.",
+ "bacnet_transport": [
+  "BACnet IP"
+ ],
+ "firmware": null,
+ "default_device_instance": 677003,
+ "access_inferred": false,
+ "notes": [
+  "Objects come in fixed instance ranges, one object per sensor, relay, zone or output. Only the first object of each range is listed; the range is in each description (e.g. AI 0-987 = sensors 1-988).",
+  "Object names are not printed; the group labels from the object list are used.",
+  "Analog outputs are Analog Input objects AI 988-1115. OctetString Value objects (OS) carry packed status bytes.",
+  "All objects are read-only except File objects; some support Out-Of-Service for testing interlocks.",
+  "Cause states are 6-bit masks reported as values 1-32, where 32 = All Clear."
+ ],
+ "source": {
+  "title": "Digital Monitor 1DBx Series BAS Interface Manual",
+  "doc_number": null,
+  "revision_date": "2015-06-25",
+  "url": "https://armstrongmonitoring.com/wp-content/uploads/2022/01/AMC-1DBx-BAS-Interface-Manual.pdf"
+ },
+ "integration": {
+  "summary": "Watch MSI 0 for the overall state (32 = All Clear; the Relay bit means an alarm event). Then read only the sensors, relays and zones actually installed, using the device counts in OS 0, rather than discovering all 4,119 objects. COV on the cause-state objects avoids heavy polling.",
+  "minimum_points": [
+   {
+    "ref": "MI 0",
+    "name": "System Status State",
+    "why": "Monitor state; 32 = All Clear"
+   },
+   {
+    "ref": "AI 0",
+    "name": "Sensors Raw Input",
+    "why": "Sensor 1 gas level, mV (800-4000 = 0-100 %)"
+   },
+   {
+    "ref": "MI 1",
+    "name": "Sensor Cause State",
+    "why": "Sensor 1 alarm/fail state; 32 = All Clear"
+   },
+   {
+    "ref": "BI 0",
+    "name": "Relay Current Condition",
+    "why": "Relay 1 state; check Polarity"
+   },
+   {
+    "ref": "MI 1245",
+    "name": "Zone Cause State",
+    "why": "Zone 1 alarm/fail state; 32 = All Clear"
+   }
+  ],
+  "enable": null,
+  "heartbeat": null,
+  "remote_sensors": null,
+  "setup": [
+   "BACnet IP only (MS/TP not available); default IP 10.0.0.103/24, router 10.0.0.1, UDP 47808 (47808-47823 allowed).",
+   "Default device ID 677003, network 0; BBMD address 0.0.0.0 when not used; BACnet IP time to live 60 s.",
+   "Settings are made in the monitor's Interface > BACnet menu."
+  ],
+  "gotchas": [
+   "Full discovery of 4,119 objects can take many minutes; add only the objects for installed devices.",
+   "Up to 255 simultaneous confirmed COV messages; COV lists over 31 entries may cause segmentation aborts.",
+   "After IP or BACnet changes treat the monitor as unreliable for another 120 s once it answers again.",
+   "Writing push.fw or push.db starts a firmware or database update; never write those files casually."
+  ]
+ },
+ "points": [
+  {
+   "type": "MI",
+   "instance": 0,
+   "name": "System Status State",
+   "description": "Monitor state, 6-bit mask: Failed, HourGlass, Relay, Acknowledge, PowerUp",
+   "units": "",
+   "access": "R",
+   "states": "32 = All Clear; values 1-31 = bit mask [Failed, HourGlass, Relay, Acknowledge, PowerUp]"
+  },
+  {
+   "type": "OSV",
+   "instance": 0,
+   "name": "System Status Info.",
+   "description": "9-byte system info: state, DIP disables, delays, device counts",
+   "units": "",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "AI",
+   "instance": 0,
+   "name": "Sensors Raw Input",
+   "description": "Sensor 001 raw value (AI 0-987 = sensors 1-988); 800-4000 mV = 0-100 % FS",
+   "units": "mV",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "MI",
+   "instance": 1,
+   "name": "Sensor Cause State",
+   "description": "Sensor 001 cause (MSI 1-988 = sensors 1-988)",
+   "units": "",
+   "access": "R",
+   "states": "32 = All Clear; values 1-31 = bit mask [Delay Timer, Fail, Alarm3, Alarm2, Alarm1]"
+  },
+  {
+   "type": "OSV",
+   "instance": 1,
+   "name": "Sensor Status Info.",
+   "description": "Sensor 001 info (OS 1-988): availability, state, assigned relays",
+   "units": "",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "BI",
+   "instance": 0,
+   "name": "Relay Current Condition",
+   "description": "Relay 001 condition (BI 0-255 = relays 1-256); read with Polarity",
+   "units": "",
+   "access": "R",
+   "states": "0=Off/Inactive, 1=On/Active (Polarity Normal); inverted when Polarity Reverse"
+  },
+  {
+   "type": "MI",
+   "instance": 989,
+   "name": "Relay Cause State",
+   "description": "Relay 001 cause (MSI 989-1244 = relays 1-256)",
+   "units": "",
+   "access": "R",
+   "states": "32 = All Clear; values 1-31 = bit mask [Run Timer, Dew, Schedule, Zone, Sensor]"
+  },
+  {
+   "type": "OSV",
+   "instance": 989,
+   "name": "Relay Status Info.",
+   "description": "Relay 001 info (OS 989-1244): availability, state, alarm counts, run timers",
+   "units": "",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "MI",
+   "instance": 1245,
+   "name": "Zone Cause State",
+   "description": "Zone 001 cause (MSI 1245-1372 = zones 1-128)",
+   "units": "",
+   "access": "R",
+   "states": "32 = All Clear; values 1-31 = bit mask [Schedule, Fail, Alarm3, Alarm2, Alarm1]"
+  },
+  {
+   "type": "OSV",
+   "instance": 1245,
+   "name": "Zone Status Info.",
+   "description": "Zone 001 info (OS 1245-1372): availability, state, relays, analog output",
+   "units": "",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "AI",
+   "instance": 988,
+   "name": "Analog Output Raw Output",
+   "description": "Analog output 001 level (AI 988-1115 = outputs 1-128); 0-4000 mV",
+   "units": "mV",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "FILE",
+   "instance": 0,
+   "name": "RAM1:\\push.fw",
+   "description": "Command file: write to start a firmware upgrade",
+   "units": "",
+   "access": "W",
+   "states": ""
+  },
+  {
+   "type": "FILE",
+   "instance": 1,
+   "name": "RAM1:\\pull.db",
+   "description": "Command file: write to export the database",
+   "units": "",
+   "access": "W",
+   "states": ""
+  },
+  {
+   "type": "FILE",
+   "instance": 2,
+   "name": "RAM1:\\push.db",
+   "description": "Command file: write to load a database",
+   "units": "",
+   "access": "W",
+   "states": ""
+  },
+  {
+   "type": "FILE",
+   "instance": 3,
+   "name": "RAM1:\\10aquila.elf.csum",
+   "description": "Firmware image checksum",
+   "units": "",
+   "access": "W",
+   "states": ""
+  },
+  {
+   "type": "FILE",
+   "instance": 4,
+   "name": "RAM1:\\10aquila.elf.rbin",
+   "description": "Firmware image",
+   "units": "",
+   "access": "W",
+   "states": ""
+  },
+  {
+   "type": "FILE",
+   "instance": 5,
+   "name": "RAM1:\\amc-1db.adf",
+   "description": "Configuration database",
+   "units": "",
+   "access": "W",
+   "states": ""
+  },
+  {
+   "type": "FILE",
+   "instance": 6,
+   "name": "C:\\system.log",
+   "description": "System log",
+   "units": "",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "FILE",
+   "instance": 7,
+   "name": "C:\\sensor.log",
+   "description": "Sensor log",
+   "units": "",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "FILE",
+   "instance": 8,
+   "name": "C:\\relay.log",
+   "description": "Relay log",
+   "units": "",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "FILE",
+   "instance": 9,
+   "name": "C:\\alarm.log",
+   "description": "Alarm log",
+   "units": "",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "FILE",
+   "instance": 10,
+   "name": "C:\\admin.log",
+   "description": "Admin log",
+   "units": "",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "FILE",
+   "instance": 11,
+   "name": "C:\\security.log",
+   "description": "Security log",
+   "units": "",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "FILE",
+   "instance": 12,
+   "name": "C:\\comm.log",
+   "description": "Communication log",
+   "units": "",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "FILE",
+   "instance": 13,
+   "name": "C:\\print.log",
+   "description": "Print log",
+   "units": "",
+   "access": "R",
+   "states": ""
+  }
+ ],
+ "page": "https://easybacnet.com/bacnet-points-lists/armstrong-monitoring/amc-1dbx-digital-gas-monitor",
+ "note": "Provided as-is. Point availability varies by firmware and options; verify against the live device.",
+ "disclaimer": "DISCLAIMER: reference only, provided AS IS with no warranty. May contain errors or be out of date. You must verify every point against the manufacturer's current documentation and the live device before use. easybacnet.com accepts no liability for its use and is not affiliated with the manufacturer. Terms: https://easybacnet.com/terms#content"
+}

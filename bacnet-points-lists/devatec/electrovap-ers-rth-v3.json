@@ -1,0 +1,698 @@
+{
+ "manufacturer": "Devatec",
+ "manufacturer_slug": "devatec",
+ "model": "ElectroVap ERS / RTH resistive steam humidifier (V3 controller)",
+ "model_slug": "electrovap-ers-rth-v3",
+ "aliases": [
+  "ERS",
+  "ERS-HC",
+  "ERS-LC",
+  "RTH-HC",
+  "RTH-LC",
+  "ElectroVap ERS",
+  "ElectroVap RTH",
+  "Devatec ERS",
+  "Devatec RTH",
+  "Armstrong Motherboard"
+ ],
+ "equipment_type": "Resistive steam humidifier",
+ "applies_to": "Devatec ElectroVap ERS, ERS-LC, RTH-HC and RTH-LC electric resistive steam humidifiers with the V3 controller and RS485 port.",
+ "summary": "The ElectroVap ERS and RTH ranges are resistive-element steam humidifiers built around the same V3 main board (an Armstrong motherboard), which speaks Modbus RTU or BACnet MS/TP on RS485. The BACnet map exposes valve, contactor, relay and A1-A10 alarm states as Binary Inputs, a start/stop Binary Output, run data and counters as Analog Inputs, and setpoints, control signal type and PID settings as Analog Values.",
+ "bacnet_transport": [
+  "BACnet MS/TP"
+ ],
+ "firmware": "Application software 1, firmware 1 (PICS)",
+ "default_device_instance": "0x02000000 + vendor ID x 1000 + MS/TP address (settable in the menu)",
+ "access_inferred": true,
+ "notes": [
+  "The manual's table has no read/write column; access is inferred from the Modbus register area (coils and holding registers writable).",
+  "The table gives each object's class, instance, hex ID and a description; the description is used as the object name.",
+  "AV 3 is printed with class \"A0\" and ID 00000003; its Modbus holding register (40004) and place in the AV block point to Analog Value 3. Check with a scan.",
+  "Several values are scaled: steam output and partial drain timer are 10x, totals are split into MSB/LSB words, and the adjustment AVs are raw minus 128 = %.",
+  "The ERS-LC, RTH-HC and RTH-LC manuals (rev B.2) print the same objects and IDs with older wording (Fill valve, Contactor 1, Contactor 2, Onoff Relay); this list follows the newer ERS rev B.3.",
+  "AI 24 is not printed."
+ ],
+ "source": {
+  "title": "ElectroVap ERS Series Instruction & Operation Manual",
+  "doc_number": "DT_ERS-V3_EN REV B.3",
+  "revision_date": null,
+  "url": "https://www.devatec.com/wp-content/uploads/2024/12/DT_ERS-V3_EN_REV-B.3_L-2.pdf"
+ },
+ "integration": {
+  "summary": "Wire RS485 to J2, choose BACnet MS/TP and an address in the controller menu, then start/stop the humidifier with BO 0 and send demand or RH through AV 3 (or use the unit's own setpoint AV 4). Watch run status, steam output and the alarm relay.",
+  "minimum_points": [
+   {
+    "ref": "BO 0",
+    "name": "On/Off BMS command",
+    "why": "Start/stop (1 = start requested)"
+   },
+   {
+    "ref": "AV 3",
+    "name": "Digital Rh value or digital demand",
+    "why": "Demand or RH from the BMS, 1-100 %"
+   },
+   {
+    "ref": "AV 4",
+    "name": "Rh set point",
+    "why": "Humidity setpoint, %RH"
+   },
+   {
+    "ref": "AI 4",
+    "name": "Run status",
+    "why": "Run status code"
+   },
+   {
+    "ref": "AI 3",
+    "name": "Steam output",
+    "why": "Steam output, 10 x kg/h"
+   },
+   {
+    "ref": "AI 2",
+    "name": "Demand",
+    "why": "Current demand, %"
+   },
+   {
+    "ref": "BI 6",
+    "name": "Alarm relay",
+    "why": "Alarm relay on"
+   },
+   {
+    "ref": "BI 19",
+    "name": "Rh sensor error",
+    "why": "Humidity sensor fault"
+   }
+  ],
+  "enable": "BO 0 On/Off BMS command starts (1) or stops (0) the unit.",
+  "heartbeat": null,
+  "remote_sensors": "AV 3 takes a digital RH value or digital demand (1-100 %) from the BMS; AV 9 sets whether the control signal is a digital command, a digital sensor or an analog input.",
+  "setup": [
+   "RS485 on connector J2 (1 Data-, 2 Data+, 3 GND); SW1 switches the line termination and bias resistors.",
+   "Baud 2400 to 230400 (9600 default), 8 data bits, no parity; BACnet MS/TP uses 1 stop bit.",
+   "Device instance defaults to 0x02000000 + vendor ID x 1000 + station address and can be set in the menu."
+  ],
+  "gotchas": [
+   "The adjustment and PID AVs are tuning values; leave them at factory settings unless told otherwise.",
+   "Totals are split into two 16-bit words (MSB/LSB); combine them in the BMS.",
+   "Tank 2 points only apply to two-tank units (AI 26)."
+  ]
+ },
+ "points": [
+  {
+   "type": "BI",
+   "instance": 0,
+   "name": "inlet valve",
+   "description": "Fill valve",
+   "units": "",
+   "access": "R",
+   "states": "0=No filling, 1=Filling"
+  },
+  {
+   "type": "BI",
+   "instance": 1,
+   "name": "drain valve",
+   "description": "Drain valve",
+   "units": "",
+   "access": "R",
+   "states": "0=No drain, 1=Drain"
+  },
+  {
+   "type": "BI",
+   "instance": 2,
+   "name": "contactor K1",
+   "description": "Heater contactor K1",
+   "units": "",
+   "access": "R",
+   "states": "0=Off, 1=On"
+  },
+  {
+   "type": "BI",
+   "instance": 3,
+   "name": "contactor K3",
+   "description": "Heater contactor K3",
+   "units": "",
+   "access": "R",
+   "states": "0=Off, 1=On"
+  },
+  {
+   "type": "BI",
+   "instance": 4,
+   "name": "Blower pack",
+   "description": "Blower pack output",
+   "units": "",
+   "access": "R",
+   "states": "0=Off, 1=On"
+  },
+  {
+   "type": "BI",
+   "instance": 5,
+   "name": "Service relay",
+   "description": "Service relay",
+   "units": "",
+   "access": "R",
+   "states": "0=Off, 1=On"
+  },
+  {
+   "type": "BI",
+   "instance": 6,
+   "name": "Alarm relay",
+   "description": "Alarm relay",
+   "units": "",
+   "access": "R",
+   "states": "0=Off, 1=On"
+  },
+  {
+   "type": "BI",
+   "instance": 7,
+   "name": "On/off Relay",
+   "description": "On/off relay",
+   "units": "",
+   "access": "R",
+   "states": "0=Off, 1=On"
+  },
+  {
+   "type": "BI",
+   "instance": 8,
+   "name": "High limite sw",
+   "description": "High limit switch",
+   "units": "",
+   "access": "R",
+   "states": "0=Not detected, 1=Detected"
+  },
+  {
+   "type": "BI",
+   "instance": 9,
+   "name": "Alarm A1 state",
+   "description": "Alarm A1 active",
+   "units": "",
+   "access": "R",
+   "states": "0=Off, 1=On"
+  },
+  {
+   "type": "BI",
+   "instance": 10,
+   "name": "Alarm A2 state",
+   "description": "Alarm A2 active",
+   "units": "",
+   "access": "R",
+   "states": "0=Off, 1=On"
+  },
+  {
+   "type": "BI",
+   "instance": 11,
+   "name": "Alarm A3 state",
+   "description": "Alarm A3 active",
+   "units": "",
+   "access": "R",
+   "states": "0=Off, 1=On"
+  },
+  {
+   "type": "BI",
+   "instance": 12,
+   "name": "Alarm A4 state",
+   "description": "Alarm A4 active",
+   "units": "",
+   "access": "R",
+   "states": "0=Off, 1=On"
+  },
+  {
+   "type": "BI",
+   "instance": 13,
+   "name": "Alarm A5 state",
+   "description": "Alarm A5 active",
+   "units": "",
+   "access": "R",
+   "states": "0=Off, 1=On"
+  },
+  {
+   "type": "BI",
+   "instance": 14,
+   "name": "Alarm A6 state",
+   "description": "Alarm A6 active",
+   "units": "",
+   "access": "R",
+   "states": "0=Off, 1=On"
+  },
+  {
+   "type": "BI",
+   "instance": 15,
+   "name": "Alarm A7 state",
+   "description": "Alarm A7 active",
+   "units": "",
+   "access": "R",
+   "states": "0=Off, 1=On"
+  },
+  {
+   "type": "BI",
+   "instance": 16,
+   "name": "Alarm A8 state",
+   "description": "Alarm A8 active",
+   "units": "",
+   "access": "R",
+   "states": "0=Off, 1=On"
+  },
+  {
+   "type": "BI",
+   "instance": 17,
+   "name": "Alarm A9 state",
+   "description": "Alarm A9 active",
+   "units": "",
+   "access": "R",
+   "states": "0=Off, 1=On"
+  },
+  {
+   "type": "BI",
+   "instance": 18,
+   "name": "Alarm A10 state",
+   "description": "Alarm A10 active",
+   "units": "",
+   "access": "R",
+   "states": "0=Off, 1=On"
+  },
+  {
+   "type": "BI",
+   "instance": 19,
+   "name": "Rh sensor error",
+   "description": "Humidity sensor fault",
+   "units": "",
+   "access": "R",
+   "states": "0=Off, 1=On"
+  },
+  {
+   "type": "BO",
+   "instance": 0,
+   "name": "On/Off BMS command",
+   "description": "Start/stop from the BMS",
+   "units": "",
+   "access": "W",
+   "states": "0=Off (device off), 1=On (start required)"
+  },
+  {
+   "type": "BV",
+   "instance": 1,
+   "name": "EOS drain statue",
+   "description": "End-of-season drain",
+   "units": "",
+   "access": "W",
+   "states": "0=Off, 1=On"
+  },
+  {
+   "type": "AI",
+   "instance": 0,
+   "name": "Type unit",
+   "description": "Unit type code",
+   "units": "",
+   "access": "R",
+   "states": "4=ERS, 5=RTH-LC, 6=ERS-HC, 7=ERS LC"
+  },
+  {
+   "type": "AI",
+   "instance": 1,
+   "name": "Reg version",
+   "description": "Register map version",
+   "units": "",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "AI",
+   "instance": 2,
+   "name": "Demand",
+   "description": "Current demand",
+   "units": "%",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "AI",
+   "instance": 3,
+   "name": "Steam output",
+   "description": "Steam output, value = 10 x kg/h",
+   "units": "kg/h",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "AI",
+   "instance": 4,
+   "name": "Run status",
+   "description": "Operating status",
+   "units": "",
+   "access": "R",
+   "states": "1=Idle, 2=Preheat cycle, 3=Steam production, 4=Manual drain, 5=Ready for use, 6=Maintenance due, 7=Fault, 8=Aquastat on"
+  },
+  {
+   "type": "AI",
+   "instance": 5,
+   "name": "Estimated time to service",
+   "description": "Hours to next service",
+   "units": "h",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "AI",
+   "instance": 6,
+   "name": "Production since last service (MSB)",
+   "description": "Steam since last service, high word",
+   "units": "kg",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "AI",
+   "instance": 7,
+   "name": "Production since last service (LSB)",
+   "description": "Steam since last service, low word",
+   "units": "kg",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "AI",
+   "instance": 8,
+   "name": "Total production (MSB)",
+   "description": "Total steam, high word",
+   "units": "kg",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "AI",
+   "instance": 9,
+   "name": "Total production (LSB)",
+   "description": "Total steam, low word",
+   "units": "kg",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "AI",
+   "instance": 10,
+   "name": "Total run time (MSB)",
+   "description": "Total run time, high word",
+   "units": "h",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "AI",
+   "instance": 11,
+   "name": "Total run time (LSB)",
+   "description": "Total run time, low word",
+   "units": "h",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "AI",
+   "instance": 12,
+   "name": "Remaining idle time to EOS drain",
+   "description": "Idle hours left before end-of-season drain",
+   "units": "h",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "AI",
+   "instance": 13,
+   "name": "Control signal value",
+   "description": "Control signal, 10 x V or 10 x mA or %",
+   "units": "",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "AI",
+   "instance": 14,
+   "name": "Temperature tank 1",
+   "description": "Tank 1 water temperature",
+   "units": "°C",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "AI",
+   "instance": 15,
+   "name": "Temperature tank 2",
+   "description": "Tank 2 water temperature",
+   "units": "°C",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "AI",
+   "instance": 16,
+   "name": "Alarm A2 counter",
+   "description": "A2 alarm count",
+   "units": "",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "AI",
+   "instance": 17,
+   "name": "Alarm A3 counter",
+   "description": "A3 alarm count",
+   "units": "",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "AI",
+   "instance": 18,
+   "name": "Alarm A6 counter",
+   "description": "A6 alarm count",
+   "units": "",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "AI",
+   "instance": 19,
+   "name": "Alarm A7 counter",
+   "description": "A7 alarm count",
+   "units": "",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "AI",
+   "instance": 20,
+   "name": "Alarm A8 counter",
+   "description": "A8 alarm count",
+   "units": "",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "AI",
+   "instance": 21,
+   "name": "Partial drain timer",
+   "description": "Partial drain timer, 10 x s",
+   "units": "s",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "AI",
+   "instance": 22,
+   "name": "PWM main supply",
+   "description": "PWM trigger value",
+   "units": "",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "AI",
+   "instance": 23,
+   "name": "PWM counter",
+   "description": "PWM counter",
+   "units": "",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "AI",
+   "instance": 25,
+   "name": "Max production capability",
+   "description": "Maximum steam capacity",
+   "units": "",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "AI",
+   "instance": 26,
+   "name": "Number of tank",
+   "description": "Number of tanks, 1 or 2",
+   "units": "",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "AI",
+   "instance": 27,
+   "name": "Unit type ID",
+   "description": "Unit type code",
+   "units": "",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "AI",
+   "instance": 28,
+   "name": "Unit voltage type",
+   "description": "Unit voltage code",
+   "units": "",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "AI",
+   "instance": 29,
+   "name": "Water level status",
+   "description": "Water level detected, 0-3",
+   "units": "",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "AI",
+   "instance": 30,
+   "name": "Power consumed",
+   "description": "Power consumed",
+   "units": "kW",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "AI",
+   "instance": 31,
+   "name": "Max power rating",
+   "description": "Maximum power rating",
+   "units": "kW",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 3,
+   "name": "Digital Rh value or digital demand",
+   "description": "RH or demand from the BMS, 1-100 %",
+   "units": "%",
+   "access": "W",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 4,
+   "name": "Rh set point",
+   "description": "Humidity setpoint, 1-100 %",
+   "units": "%RH",
+   "access": "W",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 5,
+   "name": "EOS drain timer",
+   "description": "End-of-season drain delay, 1-120 h",
+   "units": "h",
+   "access": "W",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 6,
+   "name": "Service counter",
+   "description": "Service interval, kg/100, 1-65000",
+   "units": "",
+   "access": "W",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 7,
+   "name": "Aquastat status",
+   "description": "Tank keep-warm aquastat",
+   "units": "",
+   "access": "W",
+   "states": "1=Activate, 2=Deactivate"
+  },
+  {
+   "type": "AV",
+   "instance": 8,
+   "name": "Aquastat setpoint",
+   "description": "Aquastat setpoint, 10-80 °C",
+   "units": "°C",
+   "access": "W",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 9,
+   "name": "Control signal type",
+   "description": "Control signal type",
+   "units": "",
+   "access": "W",
+   "states": "20=OnOff, 21=digital ctrl, 22=control digital, 23=0-10V ctrl, 24=1-5V ctrl, 25=4-20mA ctrl, 26=0-10V sensor, 27=0-5V sensor"
+  },
+  {
+   "type": "AV",
+   "instance": 11,
+   "name": "Control signal adjustment",
+   "description": "Control signal trim, raw minus 128 = %, 123-133",
+   "units": "",
+   "access": "W",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 13,
+   "name": "Temperature 1 adjustment",
+   "description": "Tank 1 temperature trim, raw minus 128, 123-135",
+   "units": "",
+   "access": "W",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 14,
+   "name": "Temperature 2 adjustment",
+   "description": "Tank 2 temperature trim, raw minus 128, 123-136",
+   "units": "",
+   "access": "W",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 15,
+   "name": "Proportional factor of PID",
+   "description": "PID P factor, 0-50, typ. 20",
+   "units": "",
+   "access": "W",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 16,
+   "name": "Integral factor PID",
+   "description": "PID I factor, 0-50",
+   "units": "",
+   "access": "W",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 17,
+   "name": "Derivative factor PID",
+   "description": "PID D factor, 0-50",
+   "units": "",
+   "access": "W",
+   "states": ""
+  }
+ ],
+ "page": "https://easybacnet.com/bacnet-points-lists/devatec/electrovap-ers-rth-v3",
+ "note": "Provided as-is. Point availability varies by firmware and options; verify against the live device.",
+ "disclaimer": "DISCLAIMER: reference only, provided AS IS with no warranty. May contain errors or be out of date. You must verify every point against the manufacturer's current documentation and the live device before use. easybacnet.com accepts no liability for its use and is not affiliated with the manufacturer. Terms: https://easybacnet.com/terms#content"
+}

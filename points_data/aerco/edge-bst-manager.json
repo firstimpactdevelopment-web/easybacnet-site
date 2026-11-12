@@ -1,0 +1,1005 @@
+{
+  "manufacturer": "AERCO",
+  "manufacturer_slug": "aerco",
+  "model": "Benchmark / Innovation Edge controller - BST Manager plant objects",
+  "model_slug": "edge-bst-manager",
+  "aliases": [
+    "BST Manager",
+    "Boiler Sequencing Technology",
+    "Edge [i]",
+    "Edge [ii]",
+    "Benchmark Edge",
+    "BMK Edge",
+    "Innovation Edge",
+    "OMM-0140",
+    "SmartPlate via Edge"
+  ],
+  "equipment_type": "Boiler plant manager (sequencing controller)",
+  "applies_to": "AERCO Benchmark boilers and Innovation water heaters with an Edge [i] or Edge [ii] controller acting as BST Manager for up to 16 units, with optional SmartPlate / SmartPlate EV units.",
+  "summary": "When an Edge controller is the BST (Boiler Sequencing Technology) Manager it serves extra BACnet objects for the whole plant on top of its own unit objects: plant status and setpoints as Analog Inputs, plant settings as writable Analog Values, a read-only block for each of up to 16 BST units, and readings from up to 6 SmartPlate water heaters. BACnet IP runs on the Ethernet port and BACnet MS/TP on the RS-485 BAS port.",
+  "bacnet_transport": [
+    "BACnet IP",
+    "BACnet MS/TP"
+  ],
+  "firmware": null,
+  "default_device_instance": null,
+  "access_inferred": false,
+  "notes": [
+    "From tables 4-3 to 4-6 of the manual (pages 19-22). The manager also serves the stand-alone / client objects of tables 4-1 and 4-2, which match the AERCO Edge [ii] list; they are not repeated here.",
+    "Access follows the table type: AI tables are read only, AV tables read/write.",
+    "BST unit blocks: unit 1 is AI 300-319 (listed); unit n uses the same names at AI 300 + 100 x (n - 1), up to unit 16 = AI 1800-1819.",
+    "SmartPlate blocks: SmartPlate 1 is AI 3500-3507 (listed); SmartPlate n uses AI 3500 + 100 x (n - 1), up to 4000-4007. SP Delta Pres, SP DHW Inlet and SP Flow apply to SmartPlate EV only.",
+    "The manual prints DHW Header Temp twice (AI 120 and AI 126) and Rtn Hdr Temp Sensor twice (AV 215 selector, AV 216 temperature); both are kept. AI 134-151 are not used.",
+    "Columns mark some objects NA for BMK Edge[ii], BMK Edge[i] or Innovation Edge[i] (mostly DHW, VSP pump and SmartPlate objects); check the manual for your model. Trailing colons on names are dropped."
+  ],
+  "source": {
+    "title": "Edge Communication Manual for Systems Integrators",
+    "doc_number": "OMM-0140J",
+    "revision_date": "2025-11-04",
+    "url": "https://stagesc10.watts.com/dfsmedia/0533dbba17714b1ab581ab07a4cbb521/650538-source",
+    "unofficial": true,
+    "host": "Watts staging media server"
+  },
+  "integration": {
+    "summary": "Connect the BAS to the BST Manager only. Check Allow BAS to Write (AV 51), then drive the plant with Remote Disable Code (AV 229) and the plant remote setpoint (AV 200); read plant status, header temperature, firing rate and the per-unit blocks.",
+    "minimum_points": [
+      {
+        "ref": "AV 229",
+        "why": "0 = enable plant, 85 = disable plant",
+        "name": "Remote Disable Code"
+      },
+      {
+        "ref": "AV 200",
+        "why": "Plant remote setpoint, 20-245 °F",
+        "name": "Plant Remote Setpoint"
+      },
+      {
+        "ref": "AV 51",
+        "why": "BAS write permission (0-1)",
+        "name": "Allow BAS to Write"
+      },
+      {
+        "ref": "AI 114",
+        "why": "Active plant setpoint",
+        "name": "Act Setpt"
+      },
+      {
+        "ref": "AI 110",
+        "why": "Header temperature",
+        "name": "Header Temp"
+      },
+      {
+        "ref": "AI 112",
+        "why": "Plant firing rate, %",
+        "name": "BST Fire Rate"
+      },
+      {
+        "ref": "AI 113",
+        "why": "Units firing",
+        "name": "Units Ignited"
+      },
+      {
+        "ref": "AI 108",
+        "why": "Number of units in fault",
+        "name": "Units Faulted"
+      },
+      {
+        "ref": "AI 301",
+        "why": "Unit 1 status (5 = fault)",
+        "name": "unit Status"
+      }
+    ],
+    "enable": "Allow BAS to Write (AV 51, 0-1) controls BAS write access. The plant is disabled by writing 85 to Remote Disable Code (AV 229) and enabled with 0; this needs Allow System Disable = Yes under Advanced Setup > Comm & Network > BAS.",
+    "heartbeat": "Network Timeout (AV 53) is 5-999 s; the manual lists it but these tables do not describe the fallback action.",
+    "remote_sensors": "Header, return header, DHW header and outdoor temperatures can be written by the BAS (AV 214, AV 216, AV 206, AV 218) when their sensor source (AV 213, AV 215, AV 205, AV 217) is set to BAS.",
+    "setup": [
+      "Choose the BAS protocol (AV 219 or the BAS menu): BACnet IP on the Ethernet port or BACnet MS/TP on RS-485; MS/TP baud 9600-57600 (AV 220)."
+    ],
+    "gotchas": [
+      "Read the per-unit blocks for unit faults; AI 108 only counts faulted units.",
+      "Run cycles and run hours are split into upper and lower words."
+    ]
+  },
+  "points": [
+    {
+      "type": "AI",
+      "instance": 100,
+      "name": "Unit Mode",
+      "description": "Unit role",
+      "units": "",
+      "access": "R",
+      "states": "0=Off, 1=BST Client, 2=BST Manager"
+    },
+    {
+      "type": "AI",
+      "instance": 101,
+      "name": "Plant Constant Setpoint",
+      "description": "Plant constant setpoint, 20-245 °F",
+      "units": "°F",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AI",
+      "instance": 102,
+      "name": "Setback Setpoint",
+      "description": "Setback setpoint, 20-245 °F",
+      "units": "°F",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AI",
+      "instance": 103,
+      "name": "Setback Start Time",
+      "description": "Setback start time",
+      "units": "",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AI",
+      "instance": 104,
+      "name": "Setback Stop Time",
+      "description": "Setback stop time",
+      "units": "",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AI",
+      "instance": 105,
+      "name": "Auto-Manager Transfer",
+      "description": "Automatic manager transfer",
+      "units": "",
+      "access": "R",
+      "states": "Disabled / Enabled"
+    },
+    {
+      "type": "AI",
+      "instance": 106,
+      "name": "OutletTemp",
+      "description": "Plant outlet temperature",
+      "units": "°F",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AI",
+      "instance": 107,
+      "name": "UEnabled",
+      "description": "Units enabled, 0-16",
+      "units": "",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AI",
+      "instance": 108,
+      "name": "Units Faulted",
+      "description": "Units in fault, 0-16",
+      "units": "",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AI",
+      "instance": 109,
+      "name": "Unit Address",
+      "description": "Unit address, 0-16",
+      "units": "",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AI",
+      "instance": 110,
+      "name": "Header Temp",
+      "description": "Header temperature",
+      "units": "°F",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AI",
+      "instance": 111,
+      "name": "BST Outdoor Temp",
+      "description": "Outdoor temperature, -70 to 130 °F",
+      "units": "°F",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AI",
+      "instance": 112,
+      "name": "BST Fire Rate",
+      "description": "Plant firing rate",
+      "units": "%",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AI",
+      "instance": 113,
+      "name": "Units Ignited",
+      "description": "Units firing, 0-16",
+      "units": "",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AI",
+      "instance": 114,
+      "name": "Act Setpt",
+      "description": "Active plant setpoint",
+      "units": "°F",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AI",
+      "instance": 115,
+      "name": "SH Next On Valve Pos",
+      "description": "Valve position to start the next unit, 16-100 %",
+      "units": "%",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AI",
+      "instance": 116,
+      "name": "BST Setpt Hi Lim",
+      "description": "Plant setpoint high limit",
+      "units": "°F",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AI",
+      "instance": 117,
+      "name": "BST Setpt Low Limit",
+      "description": "Plant setpoint low limit",
+      "units": "°F",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AI",
+      "instance": 118,
+      "name": "Cascade Temp Hi Limit",
+      "description": "Cascade temperature high limit",
+      "units": "°F",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AI",
+      "instance": 119,
+      "name": "SH Operating Mode",
+      "description": "Space-heating setpoint mode",
+      "units": "",
+      "access": "R",
+      "states": "0=Constant Setpoint, 1=Rmt Stpt, 2=Outdoor Air Reset"
+    },
+    {
+      "type": "AI",
+      "instance": 120,
+      "name": "DHW Header Temp",
+      "description": "DHW header temperature",
+      "units": "°F",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AI",
+      "instance": 121,
+      "name": "DHW Setpoint",
+      "description": "DHW setpoint, 40-245 °F",
+      "units": "°F",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AI",
+      "instance": 122,
+      "name": "Fuel Type",
+      "description": "Fuel type",
+      "units": "",
+      "access": "R",
+      "states": "0=Natural Gas, 1=Propane"
+    },
+    {
+      "type": "AI",
+      "instance": 123,
+      "name": "VSP Pump Output",
+      "description": "Variable-speed pump signal, 0-10 V",
+      "units": "V",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AI",
+      "instance": 124,
+      "name": "VSP Pump Relay",
+      "description": "Variable-speed pump relay",
+      "units": "",
+      "access": "R",
+      "states": "Off / On"
+    },
+    {
+      "type": "AI",
+      "instance": 125,
+      "name": "Loop Return Temp",
+      "description": "Loop return temperature",
+      "units": "°F",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AI",
+      "instance": 126,
+      "name": "DHW Header Temp",
+      "description": "DHW header temperature (second object)",
+      "units": "°F",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AI",
+      "instance": 127,
+      "name": "SmartPlate Outlet",
+      "description": "SmartPlate outlet temperature",
+      "units": "°F",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AI",
+      "instance": 128,
+      "name": "SmartPlate Valve Pos",
+      "description": "SmartPlate valve position",
+      "units": "%",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AI",
+      "instance": 129,
+      "name": "SmartPlate Setpoint",
+      "description": "SmartPlate setpoint, 0-140 °F",
+      "units": "°F",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AI",
+      "instance": 130,
+      "name": "SmartPlate Error Number",
+      "description": "SmartPlate error number, 0-10",
+      "units": "",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AI",
+      "instance": 131,
+      "name": "SmartPlate Pmp Unit Addr",
+      "description": "SmartPlate pump unit address, 0-16",
+      "units": "",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AI",
+      "instance": 132,
+      "name": "SmartPlate Start Address",
+      "description": "SmartPlate start address, 50-54",
+      "units": "",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AI",
+      "instance": 133,
+      "name": "Number of SmartPlates",
+      "description": "Number of SmartPlates, 0-6",
+      "units": "",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AI",
+      "instance": 152,
+      "name": "Unit Mode",
+      "description": "Unit role",
+      "units": "",
+      "access": "R",
+      "states": "0=OFF, 1=Client, 2=Manager"
+    },
+    {
+      "type": "AV",
+      "instance": 51,
+      "name": "Allow BAS to Write",
+      "description": "Enable BAS writes, 0-1",
+      "units": "",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 53,
+      "name": "Network Timeout",
+      "description": "Network timeout, 5-999 s",
+      "units": "s",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 200,
+      "name": "Plant Remote Setpoint",
+      "description": "Plant remote setpoint from the BAS, 20-245 °F",
+      "units": "°F",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 201,
+      "name": "Setback Setpoint",
+      "description": "Setback setpoint",
+      "units": "°F",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 202,
+      "name": "Setback Start Time",
+      "description": "Setback start time",
+      "units": "",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 203,
+      "name": "Setback Stop Time",
+      "description": "Setback stop time",
+      "units": "",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 204,
+      "name": "Setback Schedule",
+      "description": "Setback schedule",
+      "units": "",
+      "access": "W",
+      "states": "Disable / Enable"
+    },
+    {
+      "type": "AV",
+      "instance": 205,
+      "name": "DHW Temp Sensor",
+      "description": "DHW header sensor source",
+      "units": "",
+      "access": "W",
+      "states": "0=OFF, 1=Network, 2=Direct, 3=BAS"
+    },
+    {
+      "type": "AV",
+      "instance": 206,
+      "name": "DHW Header Temp",
+      "description": "DHW header temperature written by the BAS",
+      "units": "°F",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 207,
+      "name": "DHW Operating Mode",
+      "description": "DHW setpoint mode",
+      "units": "",
+      "access": "W",
+      "states": "0=Constant Setpoint, 1=Remote Setpoint"
+    },
+    {
+      "type": "AV",
+      "instance": 208,
+      "name": "DHW Rmt Setpt Signal",
+      "description": "DHW remote setpoint signal",
+      "units": "",
+      "access": "W",
+      "states": "0=1-5V, 1=0-5V, 2=Network, 3=BAS"
+    },
+    {
+      "type": "AV",
+      "instance": 209,
+      "name": "DHW BAS Remote Setpoint",
+      "description": "DHW remote setpoint from the BAS, 40-245 °F",
+      "units": "°F",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 210,
+      "name": "Other SH PRI Setpt Mode",
+      "description": "Other space-heating priority setpoint mode",
+      "units": "",
+      "access": "W",
+      "states": "0=Constant Setpoint, 1=Remote Setpoint"
+    },
+    {
+      "type": "AV",
+      "instance": 211,
+      "name": "Other SH PRI Remote Signl",
+      "description": "Other space-heating priority remote signal",
+      "units": "",
+      "access": "W",
+      "states": "0=1-5V, 1=0-5V, 2=Network, 3=BAS"
+    },
+    {
+      "type": "AV",
+      "instance": 212,
+      "name": "Other SH PRI Setpoint",
+      "description": "Other space-heating priority setpoint",
+      "units": "°F",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 213,
+      "name": "Hdr Temp Sensor",
+      "description": "Header sensor source",
+      "units": "",
+      "access": "W",
+      "states": "0=Network, 1=FFWD Temp, 2=Direct, 3=BAS, 4=OFF"
+    },
+    {
+      "type": "AV",
+      "instance": 214,
+      "name": "BAS Header Temp",
+      "description": "Header temperature written by the BAS",
+      "units": "°F",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 215,
+      "name": "Rtn Hdr Temp Sensor",
+      "description": "Return header sensor source",
+      "units": "",
+      "access": "W",
+      "states": "0=OFF, 1=Network, 2=Direct, 3=BAS"
+    },
+    {
+      "type": "AV",
+      "instance": 216,
+      "name": "Rtn Hdr Temp Sensor",
+      "description": "Return header temperature, 0-250 °F (second object)",
+      "units": "°F",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 217,
+      "name": "Outdoor Air Temp Sens",
+      "description": "Outdoor air sensor source",
+      "units": "",
+      "access": "W",
+      "states": "0=Network, 1=Direct, 2=BAS, 3=OFF"
+    },
+    {
+      "type": "AV",
+      "instance": 218,
+      "name": "OAT BAS Temp",
+      "description": "Outdoor temperature written by the BAS",
+      "units": "°F",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 219,
+      "name": "BAS",
+      "description": "BAS protocol",
+      "units": "",
+      "access": "W",
+      "states": "0=OFF, 1=BACnet MSTP, 2=BACnet IP, 3=Modbus RTU, 4=Modbus TCP"
+    },
+    {
+      "type": "AV",
+      "instance": 220,
+      "name": "Baud Rate",
+      "description": "BAS baud rate",
+      "units": "",
+      "access": "W",
+      "states": "0=9600, 1=19200, 2=38400, 3=57600"
+    },
+    {
+      "type": "AV",
+      "instance": 221,
+      "name": "INTL Communication",
+      "description": "Internal (unit-to-unit) communication",
+      "units": "",
+      "access": "W",
+      "states": "0=Disabled, 1=Enabled"
+    },
+    {
+      "type": "AV",
+      "instance": 222,
+      "name": "Intl Baud Rate",
+      "description": "Internal baud rate",
+      "units": "",
+      "access": "W",
+      "states": "0=9600, 1=19200, 2=38400, 3=57600"
+    },
+    {
+      "type": "AV",
+      "instance": 223,
+      "name": "onAER Mode",
+      "description": "onAER connection",
+      "units": "",
+      "access": "W",
+      "states": "0=Disabled, 1=Ethernet, 2=Wi-Fi, 3=Wiznet"
+    },
+    {
+      "type": "AV",
+      "instance": 224,
+      "name": "AERtrim",
+      "description": "AERtrim",
+      "units": "",
+      "access": "W",
+      "states": "0=Disabled, 1=Enabled"
+    },
+    {
+      "type": "AV",
+      "instance": 225,
+      "name": "O2 Monitoring",
+      "description": "O2 monitoring",
+      "units": "",
+      "access": "W",
+      "states": "0=No, 1=Yes"
+    },
+    {
+      "type": "AV",
+      "instance": 226,
+      "name": "SmartPlate Setpoint",
+      "description": "SmartPlate setpoint",
+      "units": "",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 227,
+      "name": "SP Pump Out Signal",
+      "description": "SmartPlate pump output signal",
+      "units": "",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 228,
+      "name": "SmartPlate Pmp Unit Addr",
+      "description": "SmartPlate pump unit address",
+      "units": "",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 229,
+      "name": "Remote Disable Code",
+      "description": "Plant enable / disable code (needs Allow System Disable = Yes)",
+      "units": "",
+      "access": "W",
+      "states": "0=Enable Plant, 85=Disable Plant"
+    },
+    {
+      "type": "AV",
+      "instance": 230,
+      "name": "VSP Pump Mode",
+      "description": "Variable-speed pump mode, 0-10",
+      "units": "",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 231,
+      "name": "VSP Pump Adjust Time",
+      "description": "Variable-speed pump adjust time, 1-600",
+      "units": "",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 233,
+      "name": "VSP Pump Adjust Value",
+      "description": "Variable-speed pump adjust value",
+      "units": "%",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 245,
+      "name": "SH Setpoint",
+      "description": "Space-heating setpoint, 60-180",
+      "units": "°F",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 246,
+      "name": "Remote Manager Disable",
+      "description": "Same setting as AV 229",
+      "units": "",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "AI",
+      "instance": 300,
+      "name": "Communication Address",
+      "description": "Unit communication address, 0-255",
+      "units": "",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AI",
+      "instance": 301,
+      "name": "unit Status",
+      "description": "Unit status",
+      "units": "",
+      "access": "R",
+      "states": "0=Disabled, 1=Standby, 2=Manual, 3=Remote, 4=Auto, 5=Fault"
+    },
+    {
+      "type": "AI",
+      "instance": 302,
+      "name": "Fault Code",
+      "description": "Fault code (manual section 6)",
+      "units": "",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AI",
+      "instance": 303,
+      "name": "Outlet Temperature",
+      "description": "Unit outlet temperature",
+      "units": "°F",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AI",
+      "instance": 304,
+      "name": "FFWD Temperature",
+      "description": "Unit feed-forward temperature",
+      "units": "°F",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AI",
+      "instance": 305,
+      "name": "Inlet Temperature",
+      "description": "Unit inlet temperature",
+      "units": "°F",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AI",
+      "instance": 306,
+      "name": "Exhaust Temperature",
+      "description": "Exhaust temperature, 50-450 °F",
+      "units": "°F",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AI",
+      "instance": 307,
+      "name": "Inlet Air Temperature",
+      "description": "Inlet air temperature, -70 to 130 °F",
+      "units": "°F",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AI",
+      "instance": 308,
+      "name": "Flame Strength",
+      "description": "Flame strength",
+      "units": "%",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AI",
+      "instance": 309,
+      "name": "Fire Rate In",
+      "description": "Firing rate command",
+      "units": "%",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AI",
+      "instance": 310,
+      "name": "Fire Rate Out",
+      "description": "Actual firing rate",
+      "units": "%",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AI",
+      "instance": 311,
+      "name": "Unit Type",
+      "description": "Unit type code",
+      "units": "",
+      "access": "R",
+      "states": "0=KC Boiler, 1=KC Boiler LN, 2=BMK Boiler Std, 3=BMK Blr Std Dual, 4=BMK Boiler LN, 5=BMK Blr LN Dual, 6=KC Water Heater, 7=KC Water Heater LN, 8=Innovation, 9=Innovation N"
+    },
+    {
+      "type": "AI",
+      "instance": 312,
+      "name": "Unit Size",
+      "description": "Unit size code",
+      "units": "",
+      "access": "R",
+      "states": "0=SPARE, 1=600 MBH, 2=800 MBH, 3=1060 MBH, 4=1350 MBH, 5=500 MBH, 6=750 MBH, 7=1000 MBH, 8=1.5 MBTU, 9=1500 MBH, 10=2.0 MBTU, 11=2000 MBH, 12=2500 MBH, 13=3.0 MBTU, 14=3000 MBH, 15=4000 MBH, 16=5000 MBH, 17=6000 MBH"
+    },
+    {
+      "type": "AI",
+      "instance": 313,
+      "name": "Valve State",
+      "description": "Isolation valve state",
+      "units": "",
+      "access": "R",
+      "states": "close / open"
+    },
+    {
+      "type": "AI",
+      "instance": 314,
+      "name": "Net Remote Setpoint",
+      "description": "Network remote setpoint, 0-9999",
+      "units": "",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AI",
+      "instance": 315,
+      "name": "Run Cycle Upper",
+      "description": "Run cycles, upper word",
+      "units": "",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AI",
+      "instance": 316,
+      "name": "Run Cycle Lower",
+      "description": "Run cycles, lower word",
+      "units": "",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AI",
+      "instance": 317,
+      "name": "Run Hours Upper",
+      "description": "Run hours, upper word",
+      "units": "",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AI",
+      "instance": 318,
+      "name": "Run Hours Lower",
+      "description": "Run hours, lower word",
+      "units": "",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AI",
+      "instance": 319,
+      "name": "Oxygen Lvel",
+      "description": "Flue O2, 0-24 %",
+      "units": "%",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AI",
+      "instance": 3500,
+      "name": "SP Outlet",
+      "description": "SmartPlate 1 outlet temperature, 30-245 °F",
+      "units": "°F",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AI",
+      "instance": 3501,
+      "name": "SP Valve Position",
+      "description": "SmartPlate 1 valve position",
+      "units": "%",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AI",
+      "instance": 3502,
+      "name": "SP Setpoint",
+      "description": "SmartPlate 1 setpoint",
+      "units": "°F",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AI",
+      "instance": 3503,
+      "name": "SP Error #",
+      "description": "SmartPlate 1 error number, 0-20",
+      "units": "",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AI",
+      "instance": 3504,
+      "name": "SP Delta Pres",
+      "description": "SmartPlate EV 1 differential pressure, 0-100 psi",
+      "units": "psi",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AI",
+      "instance": 3505,
+      "name": "SP DHW Inlet",
+      "description": "SmartPlate EV 1 DHW inlet temperature",
+      "units": "°F",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AI",
+      "instance": 3506,
+      "name": "SP Flow",
+      "description": "SmartPlate EV 1 flow, 0-200 gpm",
+      "units": "gpm",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AI",
+      "instance": 3507,
+      "name": "SP Boiler Inlet",
+      "description": "SmartPlate 1 boiler inlet temperature",
+      "units": "°F",
+      "access": "R",
+      "states": ""
+    }
+  ]
+}
