@@ -1093,7 +1093,8 @@ GUIDES.append(dict(
 
 GUIDES.append(dict(
     slug="guides/bacnet-object-types-explained",
-    title="BACnet Object Types and Type Numbers | Easy BACnet",
+    title="BACnet Object Types List: Type Numbers, AI/AO/AV/BI/BV",
+    updated="2026-11-17",
     question="What do the BACnet object types mean?",
     description="Reference table of BACnet object types: Analog and Binary Input/Output/Value, Multi-state, Device, Schedule, Trend Log and the rest, with what each is for.",
     answer_html="""<p>BACnet describes everything in a controller as an
@@ -1164,9 +1165,10 @@ GUIDES.append(dict(
 
 GUIDES.append(dict(
     slug="guides/bacnet-device-id-explained",
-    title="What is a BACnet Device ID? | Easy BACnet",
+    title="BACnet Device ID (Instance): Range 0-4194302 and Duplicates",
+    updated="2026-11-17",
     question="What is a BACnet Device ID, and why do duplicates matter?",
-    description="A BACnet Device ID (device instance) uniquely identifies a controller across the whole network. What it is, and why duplicates break discovery.",
+    description="A BACnet Device ID (device instance) is 0 to 4194302 and must be unique across the whole internetwork; 4194303 is the wildcard. How to find and fix duplicates.",
     answer_html="""<p>The Device ID, properly the <em>device instance number</em>, is a
     number from 0 to 4194302 that identifies one controller across the whole BACnet
     internetwork, not just its own subnet or MS/TP trunk. Integrators and head-ends
@@ -2080,9 +2082,10 @@ GUIDES.append(dict(
 
 GUIDES.append(dict(
     slug="guides/bacnet-vs-modbus",
-    title="BACnet vs Modbus: the difference | Easy BACnet",
+    title="BACnet vs Modbus: Key Differences Compared | Easy BACnet",
+    updated="2026-11-17",
     question="BACnet vs Modbus — what is the difference?",
-    description="BACnet is self-describing with built-in discovery; Modbus is a bare register protocol with neither. Where you meet each, and why it matters.",
+    description="BACnet vs Modbus side by side: discovery, point names and units, BACnet IP and MS/TP vs Modbus TCP and RTU, and which one HVAC equipment uses.",
     answer_html="""<p>Both move data to and from building and industrial equipment, but
     they work at different levels. <strong>BACnet</strong> is object-oriented and
     self-describing: devices can be discovered on the network, and every point carries a
@@ -2198,9 +2201,10 @@ GUIDES.append(dict(
 
 GUIDES.append(dict(
     slug="guides/bacnet-mstp-vs-bacnet-ip",
-    title="BACnet MS/TP vs BACnet/IP | Easy BACnet",
-    question="BACnet MS/TP vs BACnet/IP — what is the difference?",
-    description="BACnet/IP runs over Ethernet on UDP 47808; MS/TP runs over an RS-485 twisted pair. How they differ, how a router joins them, and which one you have.",
+    title="BACnet IP vs MS/TP: Wiring, Speed and Addressing Compared",
+    updated="2026-11-17",
+    question="BACnet IP vs MS/TP — what is the difference?",
+    description="BACnet IP vs MS/TP side by side: Ethernet on UDP 47808 vs an RS-485 pair at 9600-115200 baud, IP addresses vs MAC 0-127, and how a router joins them.",
     answer_html="""<p><strong>BACnet/IP</strong> carries BACnet over Ethernet using
     <a href="what-port-does-bacnet-use.html">UDP&nbsp;47808</a>.
     <strong>BACnet MS/TP</strong> (Master-Slave/Token-Passing; recent editions of the
@@ -2210,6 +2214,17 @@ GUIDES.append(dict(
     controllers and plant controllers are on IP, while VAV boxes, fan coils and unit
     controllers sit on MS/TP trunks behind a BACnet router.</p>""",
     body_html="""
+  <h2>BACnet IP vs MS/TP at a glance</h2>
+  <table>
+    <tr><th></th><th>BACnet IP</th><th>BACnet MS/TP</th></tr>
+    <tr><td>Wiring</td><td>Ethernet, a switch port per device</td><td>RS-485 shielded pair daisy-chained controller to controller, terminated at both ends</td></tr>
+    <tr><td>Speed</td><td>10/100/1000 Mbit/s</td><td>9600 to 115200 baud; 38400 and 76800 are common</td></tr>
+    <tr><td>Address</td><td>IP address and UDP port (default 47808)</td><td>One-byte MAC on the trunk: 0&ndash;127 for masters</td></tr>
+    <tr><td>Device ID</td><td colspan="2">Same on both: a Device Instance unique across the whole internetwork</td></tr>
+    <tr><td>Typical devices</td><td>Supervisory controllers, plant controllers, gateways</td><td>VAV boxes, fan coils, unit controllers, VFDs</td></tr>
+    <tr><td>Reached from a laptop or phone</td><td>Directly, on the same subnet</td><td>Through a BACnet router onto BACnet IP</td></tr>
+  </table>
+
   <h2>Different wires, same BACnet</h2>
   <p>The objects, properties and services are the same on both; only the lower layers
   differ. BACnet/IP rides on an Ethernet network, usually a dedicated controls network or
@@ -2256,7 +2271,8 @@ GUIDES.append(dict(
 
 GUIDES.append(dict(
     slug="guides/what-port-does-bacnet-use",
-    title="BACnet Port: UDP 47808 (0xBAC0), the Default BACnet IP Port",
+    title="BACnet Port 47808 (0xBAC0): UDP, Firewall Rules and 47809+",
+    updated="2026-11-17",
     question="What port does BACnet IP use?",
     description="The default BACnet port is UDP 47808 (0xBAC0). Why it is UDP, when sites use 47809 and up, what to open in a firewall, and how to check a device answers.",
     answer_html="""<p>BACnet/IP uses <strong>UDP port 47808</strong> by default. That is
@@ -3201,9 +3217,10 @@ GUIDES.append(dict(
 
 GUIDES.append(dict(
     slug="guides/bacnet-engineering-units-explained",
-    title="BACnet engineering units explained | Easy BACnet",
+    title="BACnet Engineering Units List and Unit Codes | Easy BACnet",
+    updated="2026-11-17",
     question="What do the units on a BACnet point mean?",
-    description="BACnet analog points carry an engineering-units code: degrees F, inches of water, %RH, CFM and many more. What the Units property is and how to read it.",
+    description="BACnet unit codes for the Units property: 64 = degrees F, 62 = degrees C, 29 = %RH, 58 = inches of water, 84 = CFM, 98 = percent. What they mean and how to read them.",
     answer_html="""<p><strong>Analog BACnet points carry a <code>Units</code> property, a
     standard code that says what the number means.</strong> A Present_Value of
     <code>55.0</code> on <code>AHU-1 SA-T</code> is just a number; with
@@ -3236,6 +3253,33 @@ GUIDES.append(dict(
     <tr><td>Power and energy</td><td>kW, kWh, A, V</td><td>Meters, VFDs</td></tr>
     <tr><td>Air quality</td><td>ppm</td><td>CO2 sensors</td></tr>
     <tr><td>Time</td><td>hours, minutes, seconds</td><td>Runtimes, delays, timers</td></tr>
+  </table>
+
+  <h2>Common BACnet unit codes</h2>
+  <p>The number a device returns in the <code>Units</code> property, and what it means.
+  The <a href="../bacnet-reference/engineering-units.html">full engineering units list</a>
+  has every code.</p>
+  <table>
+    <tr><th>Code</th><th>Unit</th><th>Shown as</th></tr>
+    <tr><td>64</td><td>degrees-fahrenheit</td><td>&deg;F</td></tr>
+    <tr><td>62</td><td>degrees-celsius</td><td>&deg;C</td></tr>
+    <tr><td>29</td><td>percent-relative-humidity</td><td>% RH</td></tr>
+    <tr><td>98</td><td>percent</td><td>%</td></tr>
+    <tr><td>58</td><td>inches-of-water</td><td>in of water</td></tr>
+    <tr><td>53</td><td>pascals</td><td>Pa</td></tr>
+    <tr><td>56</td><td>pounds-force-per-square-inch</td><td>psi</td></tr>
+    <tr><td>54</td><td>kilopascals</td><td>kPa</td></tr>
+    <tr><td>84</td><td>cubic-feet-per-minute</td><td>CFM</td></tr>
+    <tr><td>87</td><td>liters-per-second</td><td>L/s</td></tr>
+    <tr><td>89</td><td>us-gallons-per-minute</td><td>GPM</td></tr>
+    <tr><td>96</td><td>parts-per-million</td><td>ppm</td></tr>
+    <tr><td>48</td><td>kilowatts</td><td>kW</td></tr>
+    <tr><td>19</td><td>kilowatt-hours</td><td>kWh</td></tr>
+    <tr><td>3</td><td>amperes</td><td>A</td></tr>
+    <tr><td>5</td><td>volts</td><td>V</td></tr>
+    <tr><td>27</td><td>hertz</td><td>Hz</td></tr>
+    <tr><td>71 / 72 / 73</td><td>hours / minutes / seconds</td><td>h / min / s</td></tr>
+    <tr><td>95</td><td>no-units</td><td>(blank)</td></tr>
   </table>
 
   <div class="callout">
@@ -4339,7 +4383,7 @@ INDEX = """<!doctype html>
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <link rel="icon" type="image/svg+xml" href="icon.svg">
 <link rel="apple-touch-icon" href="/apple-touch-icon.png">
-<title>Easy BACnet &mdash; scan, read &amp; control BACnet/IP devices</title>
+<title>Easy BACnet: Free BACnet Points Lists and BACnet IP Scanner</title>
 <meta name="description" content="Free Android app to scan a network for BACnet IP devices, read and command points by priority, build custom remotes, and export an Excel report.">
 <link rel="canonical" href="{{BASE}}/index.html">
 <meta name="robots" content="index, follow">
@@ -4348,12 +4392,12 @@ INDEX = """<!doctype html>
 <meta name="theme-color" content="#14171a">
 <meta property="og:type" content="website">
 <meta property="og:site_name" content="Easy BACnet">
-<meta property="og:title" content="Easy BACnet &mdash; scan, read &amp; control BACnet/IP devices">
+<meta property="og:title" content="Easy BACnet: Free BACnet Points Lists and BACnet IP Scanner">
 <meta property="og:description" content="Free Android app to scan a network for BACnet IP devices, read and command points by priority, build custom remotes, and export an Excel report.">
 <meta property="og:url" content="{{BASE}}/index.html">
 <meta property="og:image" content="{{BASE}}/img/og-image.png">
 <meta name="twitter:card" content="summary_large_image">
-<meta name="twitter:title" content="Easy BACnet &mdash; scan, read &amp; control BACnet/IP devices">
+<meta name="twitter:title" content="Easy BACnet: Free BACnet Points Lists and BACnet IP Scanner">
 <meta name="twitter:description" content="Free Android app to scan a network for BACnet IP devices, read and command points by priority, build custom remotes, and export an Excel report.">
 <meta name="twitter:image" content="{{BASE}}/img/og-image.png">
 <link rel="preconnect" href="https://fonts.googleapis.com">
