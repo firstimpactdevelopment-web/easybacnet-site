@@ -1236,6 +1236,7 @@ GUIDES.append(dict(
 GUIDES.append(dict(
     slug="guides/how-to-use-easy-bacnet",
     title="How to Scan for Your BACnet Points List | Easy BACnet",
+    updated="2026-11-19",
     question="How do I scan for my BACnet points list?",
     description="Step by step: get on the controls network, scan for BACnet IP devices, check their points, and share the whole lot as an Excel report from your phone.",
     answer_html="""<p>Get the phone onto the same network as the building controls
@@ -1271,7 +1272,7 @@ GUIDES.append(dict(
   <p>The first time you open the app it asks you to <strong>Choose your
   language</strong> (English, Espa&ntilde;ol, Deutsch, Fran&ccedil;ais, Portugu&ecirc;s
   or Thai) and to accept a short safety notice (<strong>I Agree</strong>). After that
-  it opens on <em>Choose how you want to work today</em> with three cards:</p>
+  it opens on <em>Choose how you want to work today</em> with four cards:</p>
   <ul>
     <li><strong>Easy BACnet Mode</strong> &mdash; the scan, read and export flow
     this guide covers.</li>
@@ -1279,8 +1280,11 @@ GUIDES.append(dict(
     vendor detail, and a tool to read any property of any object by number.</li>
     <li><strong>Custom Remotes</strong> &mdash; your own control screen for one device
     (<a href="how-to-build-a-custom-remote.html">guide</a>).</li>
+    <li><strong>Device Emulator</strong> &mdash; the phone answers as a BACnet IP device
+    with the Device ID you choose and logs every write sent to it
+    (<a href="bacnet-device-emulator-check-writes.html">guide</a>).</li>
   </ul>
-  <p>Testers on the beta version also see a fourth card, <strong>Control Panel
+  <p>Testers on the beta version also see a fifth card, <strong>Control Panel
   Builder</strong> (<a href="how-to-build-a-control-panel.html">guide</a>). Tap
   <strong>Easy BACnet Mode</strong>.</p>
 
@@ -2319,6 +2323,7 @@ GUIDES.append(dict(
 GUIDES.append(dict(
     slug="guides/bacnet-scanner-app-android",
     title="BACnet IP scanner app for Android | Easy BACnet",
+    updated="2026-11-19",
     question="Is there a BACnet IP scanner app for Android?",
     description="Yes. How to discover, read and command BACnet/IP devices from an Android phone, what a phone can and cannot reach, and the subnet and MS/TP catches.",
     answer_html="""<p>Yes. <a href="../index.html">Easy BACnet</a> is an Android app that
@@ -2365,6 +2370,12 @@ GUIDES.append(dict(
   <a href="bacnet-priority-and-stuck-overrides.html">BACnet priority and stuck
   overrides</a> and <a href="how-to-write-to-a-bacnet-point.html">how to write to a
   BACnet point</a>.</p>
+
+  <h2>The phone can be a device, too</h2>
+  <p>In <strong>Device Emulator</strong> mode the phone answers on the network as a BACnet
+  IP device with any Device ID you choose, and lists every write a supervisor or controller
+  sends it. That answers &ldquo;is the BMS really commanding this unit?&rdquo; without
+  the unit. See <a href="bacnet-device-emulator-check-writes.html">how to check what a BMS writes</a>.</p>
 
   <h2>What you walk away with</h2>
   <p>The devices and points the scan finds, with present values, units and status, can be
@@ -2622,6 +2633,7 @@ GUIDES.append(dict(
 GUIDES.append(dict(
     slug="guides/bacnet-value-does-not-change-when-written",
     title="BACnet value won't change when written? | Easy BACnet",
+    updated="2026-11-19",
     question="Why doesn't my BACnet value change when I write to it?",
     description="You wrote a BACnet point and nothing changed. Usually a higher priority already commands it, the program overwrites it, or the output is overridden locally.",
     answer_html="""<p>You wrote the point, the device accepted it, and nothing happened.
@@ -2685,6 +2697,13 @@ GUIDES.append(dict(
   cannot hold it from outside, and on a live system you should not try. The program needs
   changing, or the sequence needs a proper override point, which is a job for the
   <a href="who-to-call-it-hvac-or-controls.html">controls contractor</a>.</p>
+
+  <h2>If the supervisor's write never seems to arrive</h2>
+  <p>When the write comes from a head-end rather than from you, first check that it
+  arrives at all. With the real device disconnected, Easy BACnet's
+  <strong>Device Emulator</strong> can answer as that Device ID and log every write it
+  receives: point, value, priority and sender. A write with no priority shows as 16, which
+  explains a lot of commands that &ldquo;do nothing&rdquo;. See <a href="bacnet-device-emulator-check-writes.html">how to check what a BMS writes</a>.</p>
 
   <h2>If the write was refused instead</h2>
   <p>If the device answered with an error rather than accepting the write, see
@@ -2812,8 +2831,113 @@ GUIDES.append(dict(
 ))
 
 GUIDES.append(dict(
+    slug="guides/bacnet-device-emulator-check-writes",
+    title="BACnet Device Emulator: See What Your BMS Writes | Easy BACnet",
+    published="2026-11-19",
+    updated="2026-11-19",
+    question="How do I check whether a BMS or controller is really writing to a BACnet device?",
+    description="Turn an Android phone into a BACnet IP device with any Device ID, point the supervisor at it, and see every write that arrives: point, value, priority and sender.",
+    answer_html="""<p>Make something answer as that device and watch what arrives. Easy BACnet's
+    <strong>Device Emulator</strong> mode turns your phone into a BACnet IP device with the
+    Device ID you choose. Start it on the controls network, let the supervisor or controller
+    send its commands, and each <strong>WriteProperty</strong> shows up on the phone: which
+    point, what value, at what priority, from which IP address, and whether it was accepted
+    or refused and why. If nothing shows up, the commands are not leaving the supervisor,
+    or not reaching that Device ID.</p>""",
+    body_html="""
+  <h2>When this helps</h2>
+  <ul>
+    <li><strong>&ldquo;Is the BMS actually sending the command?&rdquo;</strong> The
+    equipment isn't responding and everyone blames someone else. If the writes land on the
+    emulator, the supervisor side is doing its job and the problem is at the equipment or
+    its controller.</li>
+    <li><strong>Before the equipment arrives.</strong> The integrator can map and test the
+    head-end against the Device ID the new unit will have, and see the exact points and
+    priorities it writes.</li>
+    <li><strong>Checking a mapping.</strong> A write to the wrong instance number, or a
+    setpoint sent as the wrong data type, is obvious in the write log.</li>
+  </ul>
+
+  <h2>Step 1 &mdash; Set up the device</h2>
+  <p>Get the phone onto the controls network the same way you would for a scan (see
+  <a href="how-to-use-easy-bacnet.html">how to use Easy BACnet</a>), open the app and tap
+  the <strong>Device Emulator</strong> card. Fill in:</p>
+  <ul>
+    <li><strong>Device ID</strong> (0 to 4194302): the ID the supervisor expects.</li>
+    <li><strong>Device name</strong>: anything that makes it obvious, for example
+    <code>TEST RTU-3</code>.</li>
+    <li><strong>UDP port</strong>: leave it at 47808 unless the site uses another
+    (<a href="what-port-does-bacnet-use.html">which port?</a>).</li>
+    <li><strong>Points</strong>: the simplest choice is <em>Create any point a client reads
+    or writes</em>, so whatever the supervisor touches (AI, AO, AV, BI, BO, BV, MSI, MSO,
+    MSV) appears on its own. You can also add your own under <strong>My points</strong>
+    (type, number, name, starting value, writable or not) or include 5 sample points.</li>
+  </ul>
+  <p>Tap <strong>Start emulator</strong>. The screen shows the Device ID, the phone's IP
+  address and port, and live counts of Who-Is requests, reads and writes.</p>
+
+  <div class="callout">
+  <p><strong>Don't run two devices with the same ID.</strong> If the real controller is
+  still on the network, mimicking its Device ID creates a
+  <a href="duplicate-bacnet-device-id.html">duplicate Device ID</a> and the supervisor may
+  write to either one. Disconnect or power down the real device first, or test with a spare
+  ID the supervisor is mapped to. Stop the emulator when you are done.</p>
+  </div>
+
+  <h2>Step 2 &mdash; Let the supervisor find it</h2>
+  <p>Most head-ends find a device with a <a href="who-is-i-am-explained.html">Who-Is</a>
+  and bind to whoever answers with an I-Am for that ID; the emulator answers like a real
+  device, and the Who-Is count goes up when it is asked. If the head-end has the real
+  device's IP address stored instead, it keeps sending to that address: re-discover the
+  device or point it at the phone's IP. The phone has to be on the same subnet as the
+  supervisor, or reachable by IP through the router.</p>
+
+  <h2>Step 3 &mdash; Read the write log</h2>
+  <p>Every write appears under <strong>Writes received</strong> as soon as it arrives:</p>
+  <ul>
+    <li><strong>The point and value</strong>, with the data type it was sent as.</li>
+    <li><strong>The priority</strong> it was written at. A write that carries no priority
+    lands at 16, the lowest, which is a common reason a command &ldquo;does nothing&rdquo;
+    on the real equipment (see <a href="bacnet-priority-and-stuck-overrides.html">priority
+    and stuck overrides</a>).</li>
+    <li><strong>Who sent it</strong>: the sender's IP address and port, and the time.</li>
+    <li><strong>Accepted or refused</strong>. A refused write is shown in red with the
+    reason, for example the wrong data type for that object. A real controller would refuse
+    it the same way.</li>
+  </ul>
+  <p><strong>Points on this device</strong> shows each point's current value and which
+  priority is commanding it, and the activity log can be copied to paste into a report or
+  an email.</p>
+
+  <h2>Leaving it running</h2>
+  <p>By default the emulator stops when you leave the screen, so nothing keeps answering as
+  that device by accident. For a longer capture, turn on <strong>Run in background</strong>:
+  the phone keeps answering with the screen off and shows a notification with the live
+  counts and a Stop button.</p>
+
+  <h2>What it doesn't do</h2>
+  <ul>
+    <li>It doesn't run the equipment's program. Values change only when something writes
+    them, so it shows what the supervisor sends, not how the real unit would react.</li>
+    <li>WritePropertyMultiple requests are logged and then refused; supervisors that use it
+    normally fall back to single writes.</li>
+    <li>It is a BACnet IP device. It can stand in for an MS/TP controller only from the IP
+    side, not on an RS-485 trunk.</li>
+  </ul>
+""",
+    related=[
+        ("guides/test-bacnet-device-without-bms", "How do I test a BACnet IP device without a BMS?"),
+        ("guides/bacnet-value-does-not-change-when-written", "Why doesn't my BACnet value change when I write to it?"),
+        ("guides/duplicate-bacnet-device-id", "Two devices have the same BACnet Device ID: what do I do?"),
+        ("guides/who-is-i-am-explained", "How do Who-Is and I-Am work?"),
+        ("guides/bacnet-priority-and-stuck-overrides", "BACnet priority and stuck overrides"),
+    ],
+))
+
+GUIDES.append(dict(
     slug="guides/test-bacnet-device-without-bms",
     title="Test a BACnet IP device without a BMS | Easy BACnet",
+    updated="2026-11-19",
     question="How do I test a BACnet IP device without a BMS?",
     description="You don't need the BMS to prove a BACnet IP device works. How to discover it, read its points and check that it responds to commands, with a phone.",
     answer_html="""<p>You do not need the head-end to prove a BACnet IP controller is up and
@@ -2862,6 +2986,13 @@ GUIDES.append(dict(
   <a href="bacnet-priority-and-stuck-overrides.html">priority and stuck overrides</a>.</p>
 {{fig:writeflow}}
 
+  <h2>The other way round: test the BMS without the device</h2>
+  <p>If the controller isn't there yet, or you need to know whether the supervisor is
+  really sending its commands, the phone can stand in for the device. Easy BACnet's
+  <strong>Device Emulator</strong> answers as a BACnet IP device with the Device ID you give
+  it and logs every write that arrives, with the value, priority and sender. See
+  <a href="bacnet-device-emulator-check-writes.html">how to check what a BMS writes</a>.</p>
+
   <h2>What a phone test can and cannot tell you</h2>
   <ul>
     <li><strong>Can</strong>: confirm the controller is online, that inputs read sensible
@@ -2880,6 +3011,7 @@ GUIDES.append(dict(
         ("guides/bacnet-device-shows-offline", "Why does my BACnet IP device show offline?"),
         ("guides/how-to-write-to-a-bacnet-point", "How do I write to a BACnet point?"),
         ("guides/export-bacnet-points-to-csv", "How do I export a BACnet IP points list to Excel or CSV?"),
+        ("guides/bacnet-device-emulator-check-writes", "How do I check whether a BMS is really writing to a BACnet device?"),
     ],
 ))
 
@@ -3316,6 +3448,7 @@ GUIDES.append(dict(
 GUIDES.append(dict(
     slug="guides/duplicate-bacnet-device-id",
     title="Duplicate BACnet Device ID: how to fix it | Easy BACnet",
+    updated="2026-11-19",
     question="Two devices have the same BACnet Device ID &mdash; what do I do?",
     description="A BACnet Device ID must be unique network-wide. When two devices share one, the head-end loses track of them. How to spot a duplicate and get it fixed.",
     answer_html="""<p><strong>A Device ID has to be unique across the whole BACnet network,
@@ -3367,6 +3500,10 @@ GUIDES.append(dict(
     its own numbering scheme.</li>
     <li><strong>New controllers left at the vendor default ID</strong> and installed side by
     side.</li>
+    <li><strong>A test device or emulator left running</strong> with a live ID. If you use
+    Easy BACnet's <a href="bacnet-device-emulator-check-writes.html">Device Emulator</a> to
+    stand in for a controller, take the real one off the network first and stop the emulator
+    when you finish.</li>
   </ul>
 
   <h2>How it gets fixed</h2>
@@ -3969,9 +4106,10 @@ GUIDE_GROUPS = [
         "bacnet-value-does-not-change-when-written",
         "bacnet-write-access-denied",
     ]),
-    ("Custom remotes and control panels", [
+    ("Custom remotes, control panels and the emulator", [
         "how-to-build-a-custom-remote",
         "how-to-build-a-control-panel",
+        "bacnet-device-emulator-check-writes",
     ]),
     ("BACnet reference", [
         "bacnet-object-types-explained",
@@ -4532,7 +4670,7 @@ footer a{color:var(--mut); text-decoration:underline}
       "downloadUrl": "https://play.google.com/store/apps/details?id=com.easybacnet.app",
       "offers": { "@type": "Offer", "price": "0", "priceCurrency": "USD" },
       "publisher": { "@id": "{{BASE}}/#org" },
-      "description": "Scans a local network for BACnet IP devices, reads their points, commands and releases them by priority, builds custom remotes for its devices, and exports the results as an Excel (.xlsx) spreadsheet."
+      "description": "Scans a local network for BACnet IP devices, reads their points, commands and releases them by priority, builds custom remotes for its devices, exports the results as an Excel (.xlsx) spreadsheet, and can act as a BACnet IP device itself (Device Emulator) to log the writes a supervisor sends."
     }
   ]
 }
