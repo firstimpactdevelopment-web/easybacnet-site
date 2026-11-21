@@ -2831,6 +2831,103 @@ GUIDES.append(dict(
 ))
 
 GUIDES.append(dict(
+    slug="guides/troubleshoot-bacnet-with-remotes-and-emulator",
+    title="Troubleshoot BACnet HVAC Faults with a Phone | Easy BACnet",
+    published="2026-11-21",
+    updated="2026-11-21",
+    question="How can a custom remote or the device emulator help me troubleshoot a BACnet IP system?",
+    description="Field fixes with Easy BACnet: a custom remote puts command, status and setpoint side by side; the Device Emulator proves whether the BMS is sending writes at all.",
+    answer_html="""<p>Most BACnet service calls come down to one question: <strong>is the command
+    leaving the BMS, reaching the controller, and moving the equipment?</strong> Easy BACnet
+    gives you a tool for each half. A <a href="how-to-build-a-custom-remote.html">custom
+    remote</a> puts the command, its proof (status or feedback) and the setpoint on one screen,
+    so you can watch the controller react while you stand at the unit. The
+    <a href="bacnet-device-emulator-check-writes.html">Device Emulator</a> stands in for the
+    controller, so you can see exactly what the BMS sends: which points, what values, at what
+    priority. Between them you can tell a programming problem from a network problem from a
+    mechanical one.</p>""",
+    body_html="""
+  <h2>Which tool for which problem</h2>
+  <table>
+    <tr><th>The symptom</th><th>Use</th><th>What you'll see</th></tr>
+    <tr><td>The BMS says it commanded the unit, the unit does nothing</td><td>Device Emulator</td><td>Whether the write arrives at all, and at what priority. No write = a head-end or mapping problem.</td></tr>
+    <tr><td>Command reaches the controller, equipment doesn't run</td><td>Custom remote</td><td>Command on, status off: the problem is past BACnet (hand/off/auto switch, overload, fault).</td></tr>
+    <tr><td>You change a setpoint and it snaps back</td><td>Custom remote</td><td>&ldquo;Sent 72 at priority 8, but it still reads 70&rdquo;: something higher is holding it.</td></tr>
+    <tr><td>Points drop offline now and then</td><td>Custom remote</td><td>The status line goes to <em>No response from device</em> and values grey out while you watch.</td></tr>
+    <tr><td>New unit not installed yet, integrator wants to test</td><td>Device Emulator</td><td>The head-end's writes land on the phone with the new unit's Device ID.</td></tr>
+    <tr><td>Two supervisors fight over one point</td><td>Device Emulator</td><td>Writes from two sender IP addresses, at different priorities.</td></tr>
+  </table>
+
+  <h2>Build a checkout remote</h2>
+  <p>For a rooftop unit, air handler or fan coil, one remote with eight or so controls covers
+  most calls. Put each command next to its proof, so a mismatch is obvious:</p>
+  <ul>
+    <li><strong>Fan command</strong> (Toggle, coloured red) beside <strong>Fan status</strong>
+    (Indicator).</li>
+    <li><strong>Occupied cooling setpoint</strong> (Setpoint) beside <strong>Zone
+    temperature</strong> and <strong>Supply air temperature</strong> (Readouts).</li>
+    <li><strong>Occupancy</strong> or <strong>Mode</strong> (Multi-state).</li>
+    <li>A <strong>Release</strong> control next to every control that writes.</li>
+  </ul>
+  <p>Build it once per unit; it stays on the phone for the next visit and can be shared as an
+  <code>.ebremote</code> file with the next tech. The free version keeps one remote; Easy
+  BACnet Pro keeps as many as you like.</p>
+
+  <h2>Reading the remote when something is wrong</h2>
+  <h3>Command on, status off</h3>
+  <p>The controller took the command, so BACnet is fine. Look at the equipment: a
+  hand/off/auto switch, a tripped overload, a VFD fault, a failed current switch. Check the
+  point's <em>Overridden</em> and <em>Out Of Service</em> flags too; see
+  <a href="bacnet-value-does-not-change-when-written.html">why a value doesn't change when
+  written</a>.</p>
+  <h3>&ldquo;Sent &hellip; but it still reads &hellip;&rdquo;</h3>
+  <p>After each write the remote reads the point back. When the device accepted the write but
+  the value didn't move, it tells you, which means a higher priority (another operator, a
+  schedule, the BMS) or the controller's own program is holding the point. Find out which
+  before you write at a higher priority: <a href="bacnet-priority-and-stuck-overrides.html">BACnet
+  priority and stuck overrides</a>.</p>
+  <h3>Values grey out</h3>
+  <p>The device stopped answering. If it comes back by itself, suspect the network (a
+  duplicate IP or Device ID, a flapping switch port, a busy MS/TP trunk behind a router)
+  before the controller: see <a href="bacnet-device-shows-offline.html">why a device shows
+  offline</a>.</p>
+
+  <h2>When you need to see what the BMS sends</h2>
+  <p>If the remote proves the controller and equipment work when you command them, but the
+  BMS still can't run the unit, the question moves to the head-end. Take the real controller
+  off the network, start the <strong>Device Emulator</strong> with its Device ID, and let the
+  BMS send its commands. Each write is listed with the point, value, data type, priority and
+  sender. Common findings:</p>
+  <ul>
+    <li><strong>No writes at all.</strong> The point isn't mapped, the schedule isn't
+    active, or the head-end is bound to an old IP address.</li>
+    <li><strong>Writes to the wrong point.</strong> For example AV 12 instead of AV 21: a
+    mapping error.</li>
+    <li><strong>Writes at priority 16.</strong> The head-end sends no priority, so almost
+    anything at the controller outranks it.</li>
+    <li><strong>Refused writes.</strong> A setpoint sent as the wrong data type, or a write to
+    an input. The emulator shows the reason a real controller would give.</li>
+  </ul>
+  <p>The free version emulates one Device ID with up to three points; Easy BACnet Pro removes
+  the limits. Step by step: <a href="bacnet-device-emulator-check-writes.html">how to check
+  what a BMS writes</a>.</p>
+
+  <div class="callout">
+  <p><strong>Leave it as you found it.</strong> Release every point you commanded from the
+  remote, stop the emulator, and put the real controller back on the network before you
+  leave site.</p>
+  </div>
+""",
+    related=[
+        ("guides/how-to-build-a-custom-remote", "How do I build a custom remote in Easy BACnet?"),
+        ("guides/bacnet-device-emulator-check-writes", "How do I check whether a BMS is really writing to a BACnet device?"),
+        ("guides/bacnet-value-does-not-change-when-written", "Why doesn't my BACnet value change when I write to it?"),
+        ("guides/bacnet-priority-and-stuck-overrides", "BACnet priority and stuck overrides"),
+        ("guides/bacnet-device-shows-offline", "Why does my BACnet IP device show offline?"),
+    ],
+))
+
+GUIDES.append(dict(
     slug="guides/bacnet-device-emulator-check-writes",
     title="BACnet Device Emulator: See What Your BMS Writes | Easy BACnet",
     published="2026-11-19",
@@ -2870,9 +2967,13 @@ GUIDES.append(dict(
     (<a href="what-port-does-bacnet-use.html">which port?</a>).</li>
     <li><strong>Points</strong>: the simplest choice is <em>Create any point a client reads
     or writes</em>, so whatever the supervisor touches (AI, AO, AV, BI, BO, BV, MSI, MSO,
-    MSV) appears on its own. You can also add your own under <strong>My points</strong>
-    (type, number, name, starting value, writable or not) or include 5 sample points.</li>
+    MSV) appears on its own. You can also set up your own under <strong>My points</strong>
+    (type, number, name, starting value, writable or not), so the device already has the
+    points the supervisor expects when it connects.</li>
   </ul>
+  <p>The free version emulates one Device ID with up to three points, which covers the
+  usual &ldquo;is the start/stop and the setpoint arriving?&rdquo; check. Easy BACnet Pro
+  emulates any Device ID with as many points as you need.</p>
   <p>Tap <strong>Start emulator</strong>. The screen shows the Device ID, the phone's IP
   address and port, and live counts of Who-Is requests, reads and writes.</p>
 
@@ -4110,6 +4211,7 @@ GUIDE_GROUPS = [
         "how-to-build-a-custom-remote",
         "how-to-build-a-control-panel",
         "bacnet-device-emulator-check-writes",
+        "troubleshoot-bacnet-with-remotes-and-emulator",
     ]),
     ("BACnet reference", [
         "bacnet-object-types-explained",
@@ -4522,7 +4624,7 @@ INDEX = """<!doctype html>
 <link rel="icon" type="image/svg+xml" href="icon.svg">
 <link rel="apple-touch-icon" href="/apple-touch-icon.png">
 <title>Easy BACnet: Free BACnet Points Lists and BACnet IP Scanner</title>
-<meta name="description" content="Free Android app to scan a network for BACnet IP devices, read and command points by priority, build custom remotes, and export an Excel report.">
+<meta name="description" content="Free Android app to scan for BACnet IP devices, read and command points, build custom remotes, emulate a device to see what the BMS writes, and export to Excel.">
 <link rel="canonical" href="{{BASE}}/index.html">
 <meta name="robots" content="index, follow">
 <meta name="google-site-verification" content="5mp_Qm6jQXeHC7IbyiRUwPt3te2kFjKv67pCaqqLAhQ">
@@ -4531,12 +4633,12 @@ INDEX = """<!doctype html>
 <meta property="og:type" content="website">
 <meta property="og:site_name" content="Easy BACnet">
 <meta property="og:title" content="Easy BACnet: Free BACnet Points Lists and BACnet IP Scanner">
-<meta property="og:description" content="Free Android app to scan a network for BACnet IP devices, read and command points by priority, build custom remotes, and export an Excel report.">
+<meta property="og:description" content="Free Android app to scan for BACnet IP devices, read and command points, build custom remotes, emulate a device to see what the BMS writes, and export to Excel.">
 <meta property="og:url" content="{{BASE}}/index.html">
 <meta property="og:image" content="{{BASE}}/img/og-image.png">
 <meta name="twitter:card" content="summary_large_image">
 <meta name="twitter:title" content="Easy BACnet: Free BACnet Points Lists and BACnet IP Scanner">
-<meta name="twitter:description" content="Free Android app to scan a network for BACnet IP devices, read and command points by priority, build custom remotes, and export an Excel report.">
+<meta name="twitter:description" content="Free Android app to scan for BACnet IP devices, read and command points, build custom remotes, emulate a device to see what the BMS writes, and export to Excel.">
 <meta name="twitter:image" content="{{BASE}}/img/og-image.png">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -4721,23 +4823,25 @@ footer a{color:var(--mut); text-decoration:underline}
         <h3>Browse devices &amp; points</h3>
         <p>Every object on every device &mdash; type, instance, name, live value, units,
         status flags and description. A full browser in your pocket.</p></div>
-      <div class="cell"><div class="n">03 / INSPECT</div>
-        <h3>See who&rsquo;s commanding</h3>
-        <p>The priority array and relinquish default, so you can tell at a glance whether a
-        point is being overridden, and at what level.</p></div>
-      <div class="cell"><div class="n">04 / COMMAND</div>
-        <h3>Command &amp; release</h3>
-        <p>Write a value at the BACnet priority you choose, then release it back to
-        automatic. Write mode is off by default and resets on every launch.</p></div>
-      <div class="cell"><div class="n">05 / BUILD</div>
+      <div class="cell"><div class="n">03 / COMMAND</div>
+        <h3>See who&rsquo;s commanding, then command &amp; release</h3>
+        <p>The priority array shows whether a point is overridden and at what level. Write
+        at the priority you choose, then release it back to automatic. Write mode is off by
+        default and resets on every launch.</p></div>
+      <div class="cell"><div class="n">04 / BUILD</div>
         <h3>Build custom BACnet/IP controls</h3>
         <p>Create your own on-screen control menu for a unit &mdash; run an air handler,
         chiller or any BMS point from setpoints, toggles and readouts you arrange yourself.</p></div>
-      <div class="cell"><div class="n">06 / EXPORT</div>
+      <div class="cell"><div class="n">05 / EXPORT</div>
         <h3>Export a device &amp; points list</h3>
         <p>Scan and export the whole network as an Excel (.xlsx) spreadsheet &mdash; a
         device summary plus every point &mdash; ready to hand to an integrator, keep on
         file, or feed an AI.</p></div>
+      <div class="cell"><div class="n">06 / EMULATE</div>
+        <h3>Emulate a device</h3>
+        <p>Make the phone answer as a BACnet IP device with any Device ID and see every
+        write the BMS sends it: point, value, priority and sender.
+        <a href="guides/bacnet-device-emulator-check-writes.html">How it works</a></p></div>
     </div>
   </div>
 </section>
@@ -4760,6 +4864,8 @@ footer a{color:var(--mut); text-decoration:underline}
       <li><a href="guides/how-to-write-to-a-bacnet-point.html">How do I write to a BACnet point, and release it afterwards?</a></li>
       <li><a href="guides/how-to-build-a-custom-remote.html">How do I build a custom remote for a device?</a></li>
       <li><a href="guides/how-to-build-a-control-panel.html">How do I build a control panel for several devices?</a></li>
+      <li><a href="guides/bacnet-device-emulator-check-writes.html">How do I check whether the BMS is really writing to a device?</a></li>
+      <li><a href="guides/troubleshoot-bacnet-with-remotes-and-emulator.html">How do remotes and the emulator help me troubleshoot?</a></li>
       <li><a href="guides/export-bacnet-points-to-csv.html">How do I export a BACnet IP points list to Excel?</a></li>
       <li><a href="guides/cant-find-what-im-looking-for.html">The app can&rsquo;t find what I&rsquo;m looking for &mdash; what do I do?</a></li>
     </ul>
@@ -5130,7 +5236,7 @@ def main(ping=False):
 
     # llms.txt for AI agents: site name, purpose, and key URLs
     llms = ["# Easy BACnet",
-            "Free Android app to scan a network for BACnet IP devices, read and command points by priority, build custom remotes, and export an Excel report. Plus plain-English BACnet guides.",
+            "Free Android app to scan for BACnet IP devices, read and command points, build custom remotes, emulate a device to see what the BMS writes, and export to Excel. Plus plain-English BACnet guides.",
             "",
             "## Free tools"]
     for t in TOOLS:
