@@ -1,0 +1,759 @@
+{
+ "manufacturer": "Honeywell",
+ "manufacturer_slug": "honeywell",
+ "model": "TR100 wall module (BACnet MS/TP)",
+ "model_slug": "tr100-wall-module",
+ "aliases": [
+  "TR100",
+  "TR100-T-G",
+  "TR100-TH-G",
+  "TR100-THC-G",
+  "Honeywell TR100 touch wall module",
+  "31-00676"
+ ],
+ "equipment_type": "Room wall module / sensor",
+ "applies_to": "Honeywell TR100 touchscreen wall modules (temperature, temperature + humidity, temperature + humidity + CO2) used as the room interface of a BACnet MS/TP controller.",
+ "summary": "The TR100 is a touchscreen room wall module that measures space temperature (plus humidity on TH models and CO2 on THC models) and gives the room user setpoint, fan, HVAC mode and occupancy override buttons. On BACnet MS/TP it exposes its readings as Analog Inputs, and its configuration and the values a controller writes for display as Analog, Binary and Multistate Values. Most objects are meant to be exchanged with a master controller; many are bit masks.",
+ "bacnet_transport": [
+  "BACnet MS/TP"
+ ],
+ "firmware": null,
+ "default_device_instance": 4194302,
+ "access_inferred": false,
+ "notes": [
+  "Object names are printed wrapped and hyphenated across lines in a narrow column; they are rejoined here without the wrap hyphens and spaces (e.g. Cfg_FanOverride). Spellings such as ni_PM2.5Oudoor, Cfg_AlloweOverridesFromOCC and no_TeperatureSetpointLimited are as printed.",
+  "AV 103 is printed with the name no_CleaningModeStatus, but its range and description are the room user's minimum fan stage/level (the partner of AV 104 Cfg_FanUserMaxSpeed). MV 11 CleaningModeStatus is the actual cleaning mode status.",
+  "AV 505 (Cfg_AllowedOverridesFromSTANDBY) and MV 505 (Cfg_BrandType) share instance 505 but are different object types.",
+  "Display values written by the controller (AV 2-15, AV 51, AV 102) use 32767 (0x7FFF) to mean not available.",
+  "Humidity objects apply to TR100-TH-G and TR100-THC-G; CO2 objects to TR100-THC-G only.",
+  "Device object properties (Object_Identifier, MS/TP MAC range, baud rate, brand text and Honeywell firmware-update properties) are also listed in the guide; they are device properties, not separate objects, and are left out here."
+ ],
+ "source": {
+  "title": "TR100 Wall Module BACnet Integration Guide",
+  "doc_number": "31-00676M-02",
+  "revision_date": "Rev. 09-25",
+  "url": "https://prod-edam.honeywell.com/content/dam/honeywell-edam/hbt/en-us/documents/manuals-and-guides/installation-guides/tr-100/hon-ba-bms-tr100-bacnet-integration-guide-31-00676m-02-drop-3-d1-3.pdf"
+ },
+ "integration": {
+  "summary": "Enable BACnet MS/TP on the TR100 touchscreen, give it a unique device ID and let it auto-detect the baud rate and MAC. Read the space readings and the room user's selections (setpoint, fan, HVAC mode, occupancy override); write the occupancy mode and, if wanted, a setpoint and the values to display.",
+  "minimum_points": [
+   {
+    "ref": "MV 32",
+    "name": "ni_OccMdFromSchedAndOccSensor",
+    "why": "Occupancy mode from the controller schedule"
+   },
+   {
+    "ref": "AV 605",
+    "name": "Cfg_SetptUser",
+    "why": "Setpoint write from controller; 0x7FFF = no change"
+   },
+   {
+    "ref": "AI 1",
+    "name": "no_SpaceTempReading",
+    "why": "Space temperature"
+   },
+   {
+    "ref": "AI 2",
+    "name": "no_SpaceHumiReading",
+    "why": "Space humidity (TH and THC models)"
+   },
+   {
+    "ref": "AI 3",
+    "name": "no_SpaceCO2Reading",
+    "why": "Space CO2, ppm (THC model)"
+   },
+   {
+    "ref": "AV 604",
+    "name": "no_TeperatureSetpointLimited",
+    "why": "Effective setpoint after min/max limits"
+   },
+   {
+    "ref": "MV 21",
+    "name": "Cfg_UserSelectedHVACMode",
+    "why": "HVAC mode picked by the room user"
+   },
+   {
+    "ref": "AV 101",
+    "name": "Cfg_FanOverride",
+    "why": "Room user fan override; 0x7FFF = auto"
+   },
+   {
+    "ref": "AV 501",
+    "name": "Cfg_UserSelectedOccupancyMode",
+    "why": "Room user occupancy override"
+   },
+   {
+    "ref": "AV 701",
+    "name": "no_AlarmInfoFromWallModule",
+    "why": "Wall module alarm bits (sensor, comm, limits)"
+   }
+  ],
+  "enable": "BACnet MS/TP is off until enabled on the touchscreen (swipe left, Connection, BACnet MS/TP).",
+  "heartbeat": null,
+  "remote_sensors": "The controller can write values for the module to display (AQI, CO2, humidity, PM, TVOC, UV index, fresh air, AV 2-15) and the displayed temperature (AV 51); 32767 means not available. A setpoint written to AV 605 is stored, limited by AV 602/603 and shown as AV 604; the controller then writes 0x7FFF again to mean no change.",
+  "setup": [
+   "Default device instance 4194302; enter a unique Device ID on the touchscreen.",
+   "Auto baud for the first 4 minutes after start-up or enable; falls back to 38400 if no rate is found (e.g. single device). Baud can be set manually.",
+   "Auto-MAC addressing is on by default (MAC range defaults 1-30); a manual MAC can be entered.",
+   "Max Master default 127, Max Info Frames default 10."
+  ],
+  "gotchas": [
+   "Many objects are bit masks (alarms, display selection, allowed overrides, reset); write the summed bit value.",
+   "Persistent settings (Cfg_ objects) are stored in flash; AV 605 writes go to flash only when the value differs, so write 0x7FFF between changes as the guide describes.",
+   "AV 203 Cfg_OverrideReset clears room-user overrides by bit (setpoint, fan, HVAC mode, occupancy)."
+  ]
+ },
+ "points": [
+  {
+   "type": "AV",
+   "instance": 705,
+   "name": "Cfg_AlarmCO2UpperLimit",
+   "description": "CO2 alarm upper limit",
+   "units": "ppm",
+   "access": "W",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 706,
+   "name": "Cfg_AlarmHumiUpperLimit",
+   "description": "Humidity alarm upper limit",
+   "units": "%",
+   "access": "W",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 701,
+   "name": "no_AlarmInfoFromWallModule",
+   "description": "Alarm bit mask raised by the wall module",
+   "units": "",
+   "access": "R",
+   "states": "BIT0: Alarm - Temperature Sensor Failure (1), BIT1: Alarm - Humidity Sensor Failure (2), BIT2: Alarm - Communication Failure (4), BIT3: Alarm - CO2 Upper Limit (8), BIT4: Alarm - Humidity Upper Limit (16)"
+  },
+  {
+   "type": "AV",
+   "instance": 702,
+   "name": "ni_AlarmInfoFromController",
+   "description": "Alarm bit mask written by the controller for display",
+   "units": "",
+   "access": "W",
+   "states": "BIT0: Alarm - Window Open (1), BIT1: Alarm - Condensation (2), BIT3: Alarm - Drip Pan (4), BIT4: Alarm - Fan failure (8)"
+  },
+  {
+   "type": "AV",
+   "instance": 703,
+   "name": "Cfg_AlarmInfoNotifyEnable",
+   "description": "Which alarms show a home-screen banner (bit mask)",
+   "units": "",
+   "access": "W",
+   "states": "BIT0: Alarm - Temperature Sensor Failure (1), BIT1: Alarm - Humidity Sensor Failure (2), BIT2: Alarm - Communication failure (4), BIT3: Alarm - CO2 Upper Limit (8), BIT4: Alarm - Humidity Upper Limit (16), BIT5: Alarm - Window Open (32), BIT6: Alarm - Condensation (64), BIT7: Alarm-Drip Pan (128), BIT8: Alarm-Fan failure (256)"
+  },
+  {
+   "type": "AV",
+   "instance": 704,
+   "name": "Cfg_AlarmHumidityCO2UpperLimitEnable",
+   "description": "Enable humidity / CO2 upper-limit alarms (bit mask)",
+   "units": "",
+   "access": "W",
+   "states": "BIT0: enable/disable humidity upper limit alarm, BIT1: enable/disable CO2 upper limit alarm"
+  },
+  {
+   "type": "AV",
+   "instance": 1,
+   "name": "Cfg_DispParaCollection",
+   "description": "Which values the LCD shows (bit mask)",
+   "units": "",
+   "access": "W",
+   "states": "BIT0: AQI Indoor (01) BIT1: AQI Outdoor (02) BIT2: Air Quality (Room CO2) (04) BIT3: Humidity Indoor (08) BIT4: Humidity Outdoor (16) BIT5: Intake Fresh Air (32) BIT6: PM2.5 Indoor (64) BIT7: PM2.5 Outdoor (128) BIT8: PM10 Indoor (256) BIT9: PM10 Outdoor (512) BIT10: TVOC (1024) BIT11: UV Index Outdoor (2048) BIT12: Reserved1 (4096) BIT13: Reserved2 (8192)"
+  },
+  {
+   "type": "AV",
+   "instance": 2,
+   "name": "ni_AqiIndoor",
+   "description": "Indoor AQI from controller, for display",
+   "units": "",
+   "access": "W",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 3,
+   "name": "ni_AqiOutdoor",
+   "description": "Outdoor AQI from controller, for display",
+   "units": "",
+   "access": "W",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 4,
+   "name": "ni_AirQuality(RoomSpaceCO2)",
+   "description": "Room CO2 from controller, for display",
+   "units": "ppm",
+   "access": "W",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 5,
+   "name": "ni_HumidityIndoor",
+   "description": "Indoor humidity from controller, for display",
+   "units": "",
+   "access": "W",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 6,
+   "name": "ni_HumidityOutdoor",
+   "description": "Outdoor humidity from controller, for display",
+   "units": "",
+   "access": "W",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 7,
+   "name": "ni_IntakeFreshAir",
+   "description": "Fresh air intake flow from controller, for display",
+   "units": "m3/h",
+   "access": "W",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 8,
+   "name": "ni_PM2.5Indoor",
+   "description": "Indoor PM2.5 from controller, for display",
+   "units": "ug/m3",
+   "access": "W",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 9,
+   "name": "ni_PM2.5Oudoor",
+   "description": "Outdoor PM2.5 from controller, for display",
+   "units": "ug/m3",
+   "access": "W",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 10,
+   "name": "ni_PM10Indoor",
+   "description": "Indoor PM10 from controller, for display",
+   "units": "ug/m3",
+   "access": "W",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 11,
+   "name": "ni_PM10Outdoor",
+   "description": "Outdoor PM10 from controller, for display",
+   "units": "ug/m3",
+   "access": "W",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 12,
+   "name": "ni_TVOCIndoor",
+   "description": "Indoor TVOC from controller, for display",
+   "units": "ug/m3",
+   "access": "W",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 13,
+   "name": "ni_UVIndexOutdoor",
+   "description": "Outdoor UV index from controller, for display",
+   "units": "",
+   "access": "W",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 14,
+   "name": "ni_DispParaReserved1",
+   "description": "Reserved display value 1",
+   "units": "",
+   "access": "W",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 15,
+   "name": "ni_DispParaReserved2",
+   "description": "Reserved display value 2",
+   "units": "",
+   "access": "W",
+   "states": ""
+  },
+  {
+   "type": "BV",
+   "instance": 1,
+   "name": "Cfg_OnOffEnable",
+   "description": "On/Off button enabled",
+   "units": "",
+   "access": "W",
+   "states": "Disable=0,Enable=1"
+  },
+  {
+   "type": "BV",
+   "instance": 2,
+   "name": "Cfg_OnOffStatus",
+   "description": "On/Off status",
+   "units": "",
+   "access": "W",
+   "states": "Off=0,On=1"
+  },
+  {
+   "type": "AV",
+   "instance": 101,
+   "name": "Cfg_FanOverride",
+   "description": "Room user fan override (0 = off, 0x7FFF = auto)",
+   "units": "",
+   "access": "W",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 102,
+   "name": "ni_CurrentFanspeed",
+   "description": "Current fan speed from controller, for display",
+   "units": "",
+   "access": "W",
+   "states": ""
+  },
+  {
+   "type": "MV",
+   "instance": 1,
+   "name": "Cfg_FanType",
+   "description": "Fan type / fan button style",
+   "units": "",
+   "access": "W",
+   "states": "No Fan=1, Single-speed Fan=2, Two-speed Fan=3, 3-speed Fan=4, Variable Speed Fan=5"
+  },
+  {
+   "type": "MV",
+   "instance": 2,
+   "name": "Cfg_VariableSpeedFanAdjStepSize",
+   "description": "Variable-speed fan step size",
+   "units": "",
+   "access": "W",
+   "states": "1%=1, 2%=2, 5%=3, 10%=4, 20%=5"
+  },
+  {
+   "type": "AV",
+   "instance": 103,
+   "name": "no_CleaningModeStatus",
+   "description": "Lowest fan stage/level the room user may select",
+   "units": "",
+   "access": "W",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 104,
+   "name": "Cfg_FanUserMaxSpeed",
+   "description": "Highest fan stage/level the room user may select",
+   "units": "",
+   "access": "W",
+   "states": ""
+  },
+  {
+   "type": "MV",
+   "instance": 11,
+   "name": "CleaningModeStatus",
+   "description": "Screen cleaning mode status",
+   "units": "",
+   "access": "R",
+   "states": "Not In Cleaning Mode=1,Cleaning Mode=2"
+  },
+  {
+   "type": "AV",
+   "instance": 201,
+   "name": "no_DeviceFaults",
+   "description": "Device fault bit mask",
+   "units": "",
+   "access": "R",
+   "states": "BIT0: Reserved, BIT1: Setpoint min/ max mismatch, BIT2: Fan Speed min/max mismatch, BIT3: Humidity sensor communication failure, BIT4: Humidity sensor initialize failure, BIT5: CO2 sensor communication failure, BIT6: CO2 sensor initialize failure, BIT7: CO2 sensor self-checking failure, BIT8: CO2 sensor data not ready, BIT9: both of heat mode and cool mode is set, BIT10: both of heating call and cooling call is active"
+  },
+  {
+   "type": "MV",
+   "instance": 12,
+   "name": "Cfg_TempDisplayUnit",
+   "description": "Temperature display unit",
+   "units": "",
+   "access": "W",
+   "states": "Degree Celsius=1,Degree Fahrenheit=2"
+  },
+  {
+   "type": "MV",
+   "instance": 13,
+   "name": "Cfg_TempCommUnit",
+   "description": "Temperature unit sent to controller",
+   "units": "",
+   "access": "W",
+   "states": "Degree Celsius=1,Degree Fahrenheit=2"
+  },
+  {
+   "type": "AV",
+   "instance": 202,
+   "name": "Cfg_CleaningModeTime",
+   "description": "Screen cleaning mode duration",
+   "units": "s",
+   "access": "W",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 203,
+   "name": "Cfg_OverrideReset",
+   "description": "Reset room-user overrides (bit mask)",
+   "units": "",
+   "access": "W",
+   "states": "BIT0=Reset Setpoint (1), BIT1=Reset Fan Speed To AUTO (2), BIT2=Clear HVAC Mode Override (4), BIT3=Clear Occupancy Override Except Holiday (8), BIT4=Clear Occupancy Override Including Holiday (16), BIT7=Reset Temperature Display Unit To Configured Unit (128), BIT15=Reset WM (32768)"
+  },
+  {
+   "type": "MV",
+   "instance": 505,
+   "name": "Cfg_BrandType",
+   "description": "Brand shown on home screen",
+   "units": "",
+   "access": "W",
+   "states": "Honeywell=1, Alerton=2, None=3, Customize=4"
+  },
+  {
+   "type": "MV",
+   "instance": 14,
+   "name": "Cfg_LanguageType",
+   "description": "User interface language",
+   "units": "",
+   "access": "W",
+   "states": "English=1, International=2"
+  },
+  {
+   "type": "AV",
+   "instance": 204,
+   "name": "Cfg_HomescreenPara",
+   "description": "What the home screen shows (bit mask)",
+   "units": "",
+   "access": "W",
+   "states": "BIT0= Whether Temperature Setpoint Is Visible, BIT1= Whether Temperature Is Visible, BIT2= Whether Humidity Is Visible, BIT3= Whether CO2 Is Visible"
+  },
+  {
+   "type": "MV",
+   "instance": 21,
+   "name": "Cfg_UserSelectedHVACMode",
+   "description": "Room user HVAC mode selection",
+   "units": "",
+   "access": "W",
+   "states": "Auto=1, Heating=2, Cooling=3, Fan-only=4, Off=5, Heating 1=6, Heating 2=7, Cooling 1=8, Cooling 2=9"
+  },
+  {
+   "type": "AV",
+   "instance": 301,
+   "name": "Cfg_AvailableHVACModes",
+   "description": "HVAC modes the room user may select (bit mask)",
+   "units": "",
+   "access": "W",
+   "states": "BIT0=\"AUTO\" (1), BIT1=\"HEAT\" (2), BIT2=\"COOL\" (4), BIT3=\"FAN ONLY\" (8), BIT4=\"OFF\" (16), BIT5=\"HTG1\" (32), BIT6=\"HTG2\" (64), BIT7=\"CLG1\" (128), BIT8=\"CLG2\" (256)"
+  },
+  {
+   "type": "AV",
+   "instance": 302,
+   "name": "ni_EffectiveHVACMode_HeatCoolCall",
+   "description": "Effective HVAC mode and heat/cool call from controller",
+   "units": "",
+   "access": "W",
+   "states": "BIT0: represent whether effective HVAC status is available from controller or not BIT1: heat BIT2: cool BIT8: represent whether heating call and cooling call is active information sent from controller or not BIT9: heating call is active BIT10: cooling call is active"
+  },
+  {
+   "type": "AV",
+   "instance": 901,
+   "name": "Cfg_LCDBacklightBrightness",
+   "description": "LCD backlight brightness",
+   "units": "%",
+   "access": "W",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 902,
+   "name": "Cfg_LEDRingBrightness",
+   "description": "LED ring brightness",
+   "units": "%",
+   "access": "W",
+   "states": ""
+  },
+  {
+   "type": "MV",
+   "instance": 903,
+   "name": "Cfg_InactiveDisplayType",
+   "description": "Display behaviour when inactive",
+   "units": "",
+   "access": "W",
+   "states": "Display Off =1, Always On=2, Always Off=3"
+  },
+  {
+   "type": "AV",
+   "instance": 2005,
+   "name": "no_ms/tpHeaderCrcError",
+   "description": "MS/TP header CRC error count",
+   "units": "",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 2006,
+   "name": "no_ms/tpDataCrcErr",
+   "description": "MS/TP data CRC error count",
+   "units": "",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 174,
+   "name": "ni_ms/tpClearErr",
+   "description": "Clear MS/TP CRC error counts",
+   "units": "",
+   "access": "W",
+   "states": "Unclear=0, Clear=1"
+  },
+  {
+   "type": "MV",
+   "instance": 32,
+   "name": "ni_OccMdFromSchedAndOccSensor",
+   "description": "Occupancy mode from controller schedule / sensor",
+   "units": "",
+   "access": "W",
+   "states": "Unknown=1, Occupied(23° 21°C)=2, Off(Building Protection 30° 8°C)=3, Unoccupied(27°C 16°)=5, Standby(25° 18°)=6"
+  },
+  {
+   "type": "AV",
+   "instance": 501,
+   "name": "Cfg_UserSelectedOccupancyMode",
+   "description": "Room user occupancy override",
+   "units": "",
+   "access": "W",
+   "states": "No Overwrite=1, occupied=2, off=3, holiday=4, unoccupied=5, standby=6, bypass=7, Do-nothing=255"
+  },
+  {
+   "type": "AV",
+   "instance": 502,
+   "name": "Cfg_AlloweOverridesFromOCC",
+   "description": "Overrides allowed while occupied (bit mask)",
+   "units": "",
+   "access": "W",
+   "states": "BIT0=Unused (1), BIT1=Unused (2), BIT2: Unused (4), BIT3=Allow Override To OFF (8), BIT4=Allow Override To HOLIDAY (16), BIT5=Allow Override To UNOCC (32), BIT6=Allow Override To STANDBY (64), BIT7=Allow Override To BYPASS (128)"
+  },
+  {
+   "type": "AV",
+   "instance": 503,
+   "name": "Cfg_AllowedOverridesFromOFF",
+   "description": "Overrides allowed while off (bit mask)",
+   "units": "",
+   "access": "W",
+   "states": "BIT0=Unused (1), BIT1=Unused (2), BIT2=Allow Override To OCCUPIED (4), BIT3=Unused (8), BIT4=Allow Override To HOLIDAY (16), BIT5=Allow Override To UNOCC (32), BIT6=Allow Override To STANDBY (64), BIT7=Allow Override To BYPASS (128)"
+  },
+  {
+   "type": "AV",
+   "instance": 504,
+   "name": "Cfg_AllowedOverridesFromUNOCC",
+   "description": "Overrides allowed while unoccupied (bit mask)",
+   "units": "",
+   "access": "W",
+   "states": "BIT0=Unused (1), BIT1=Unused (2), BIT2= Allow Override To OCCUPIED (4), BIT3=Allow Override To OFF (8), BIT4=Allow Override To HOLIDAY (16), BIT5=Unused (32), BIT6=Allow Override To STANDBY (64), BIT7=Allow Override To BYPASS (128)"
+  },
+  {
+   "type": "AV",
+   "instance": 505,
+   "name": "Cfg_AllowedOverridesFromSTANDBY",
+   "description": "Overrides allowed while standby (bit mask)",
+   "units": "",
+   "access": "W",
+   "states": "BIT0=Unused (1), BIT1=Unused (2), BIT2=Allow Override To OCCUPIED (4), BIT3=Allow Override To OFF (8), BIT4=Allow Override To HOLIDAY (16), BIT5=Allow Override To UNOCC (32), BIT6=Unused (64), BIT7=Allow Override To BYPASS (128)"
+  },
+  {
+   "type": "AV",
+   "instance": 506,
+   "name": "Cfg_OccupancyAutoReset",
+   "description": "Which mode changes cancel an override (bit mask)",
+   "units": "",
+   "access": "W",
+   "states": "BIT0=A Change To OCC Cancels BYPASS Override (1), BIT1=A Change To STBY Cancels OCC Override (2), BIT2=A Change To UNOCC Cancels OCC Override (4), BIT3=A Change To UNOCC Cancels STBY Override (8), BIT4=A Change To OFF Cancels OCC Override (16), BIT5=A Change To OFF Cancels STBY Override (32), BIT6=A Change To OFF Cancels UNOCC Override (64), BIT7=A Change To Fanspeed Selection OFF Cancels OCC Override (128), BIT8=A Change To Fanspeed Selection OFF Cancels OFF Override (256), BIT9=A Change To Fanspeed selection OFF Cancels UNOCC Override (512), BIT10=A Change To Fanspeed Selection OFF Cancels STBY Override (1024), BIT11=A Change To Fanspeed Selection OFF Cancels BYPASS Override (2048)"
+  },
+  {
+   "type": "AV",
+   "instance": 507,
+   "name": "Cfg_BypassTimeDefault",
+   "description": "Default bypass (temporary occupied) time",
+   "units": "min",
+   "access": "W",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 508,
+   "name": "Cfg_BypassTimeMax",
+   "description": "Maximum bypass time",
+   "units": "min",
+   "access": "W",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 509,
+   "name": "Cfg_BypassTimer",
+   "description": "Bypass time remaining",
+   "units": "min",
+   "access": "W",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 510,
+   "name": "Cfg_HolidayTimeDefault",
+   "description": "Default holiday time",
+   "units": "days",
+   "access": "W",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 511,
+   "name": "Cfg_HolidayTimer",
+   "description": "Holiday time remaining",
+   "units": "days",
+   "access": "W",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 801,
+   "name": "Cfg_SpaceTempOffset",
+   "description": "Space temperature sensor offset",
+   "units": "°F or °C",
+   "access": "W",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 802,
+   "name": "Cfg_SpaceHumiOffset",
+   "description": "Space humidity sensor offset",
+   "units": "%RH",
+   "access": "W",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 803,
+   "name": "Cfg_SpaceCO2Offset",
+   "description": "Space CO2 sensor offset",
+   "units": "ppm",
+   "access": "W",
+   "states": ""
+  },
+  {
+   "type": "AI",
+   "instance": 1,
+   "name": "no_SpaceTempReading",
+   "description": "Space temperature (on-board sensor)",
+   "units": "°F or °C",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "AI",
+   "instance": 2,
+   "name": "no_SpaceHumiReading",
+   "description": "Space humidity (TH and THC models)",
+   "units": "%RH",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "AI",
+   "instance": 3,
+   "name": "no_SpaceCO2Reading",
+   "description": "Space CO2 (THC model only)",
+   "units": "ppm",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 51,
+   "name": "ni_DisplayedTempFromController",
+   "description": "Displayed temperature written by controller",
+   "units": "°F or °C",
+   "access": "W",
+   "states": ""
+  },
+  {
+   "type": "MV",
+   "instance": 41,
+   "name": "Cfg_SetpointType",
+   "description": "Setpoint type",
+   "units": "",
+   "access": "W",
+   "states": "No Setpoint=1, Temperature Setpoint Relative=2, Temperature Setpoint Absolute=3"
+  },
+  {
+   "type": "AV",
+   "instance": 601,
+   "name": "Cfg_DefaultSetpoint",
+   "description": "Default setpoint after first power-up or reset",
+   "units": "°F or °C",
+   "access": "W",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 602,
+   "name": "Cfg_SetpointMinimum",
+   "description": "Setpoint minimum",
+   "units": "°F or °C",
+   "access": "W",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 603,
+   "name": "Cfg_SetpointMaximum",
+   "description": "Setpoint maximum",
+   "units": "°F or °C",
+   "access": "W",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 604,
+   "name": "no_TeperatureSetpointLimited",
+   "description": "Effective (limited) setpoint",
+   "units": "°F or °C",
+   "access": "R",
+   "states": ""
+  },
+  {
+   "type": "AV",
+   "instance": 605,
+   "name": "Cfg_SetptUser",
+   "description": "Setpoint written by controller (0x7FFF = no change)",
+   "units": "°F or °C",
+   "access": "W",
+   "states": ""
+  }
+ ],
+ "page": "https://easybacnet.com/bacnet-points-lists/honeywell/tr100-wall-module",
+ "note": "Provided as-is. Point availability varies by firmware and options; verify against the live device.",
+ "disclaimer": "DISCLAIMER: reference only, provided AS IS with no warranty. May contain errors or be out of date. You must verify every point against the manufacturer's current documentation and the live device before use. easybacnet.com accepts no liability for its use and is not affiliated with the manufacturer. Terms: https://easybacnet.com/terms#content"
+}

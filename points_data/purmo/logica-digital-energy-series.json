@@ -1,0 +1,727 @@
+{
+  "manufacturer": "Purmo",
+  "manufacturer_slug": "purmo",
+  "model": "LOGICA Digital Energy-series actuator DN10-DN50 (BACnet MS/TP)",
+  "model_slug": "logica-digital-energy-series",
+  "aliases": [
+    "LOGICA Digital",
+    "LOGICA Digital Energy",
+    "Purmo LOGICA",
+    "TOV valve actuator",
+    "Purmo Group LOGICA",
+    "Handbok för BACnet-integrering"
+  ],
+  "equipment_type": "Valve actuator",
+  "applies_to": "Purmo LOGICA Digital Energy-series actuators on TOV valves DN10-DN50, using BACnet MS/TP.",
+  "summary": "LOGICA Digital is a digital valve actuator for Purmo TOV valves that talks Modbus RTU or BACnet MS/TP. Over BACnet it takes a 0-100 % flow command or runs its own thermal-power or return-temperature control, reads two sensor inputs (P1/P2) for delta-T and energy, and reports position, estimated flow, power, energy and fault flags. Valve type, max flow and the control mode are set through writable objects.",
+  "bacnet_transport": [
+    "BACnet MS/TP"
+  ],
+  "firmware": "2,02 (example value of AI 1)",
+  "default_device_instance": null,
+  "access_inferred": false,
+  "notes": [
+    "Object names are the Swedish labels printed in the Swedish edition of the integration guide (APR 22); the names stored in the actuator may differ. Descriptions here are in English.",
+    "The guide marks AV 4, AV 5 and AV 28 as R/(W): AV 4/5 are writable only when no P1/P2 sensor source is assigned, AV 28 only when the DIP address is 63.",
+    "MSV objects are listed as MV. MV 8 has two state lists, one for DN10-32 and one for DN40-50 actuators.",
+    "Hardware version and RTC time are properties of the device object, and the serial number a property of AI 1; they are not separate objects.",
+    "AI 9 is printed across a page break: it counts hours until flushing starts (0-4320), then the minutes left of a running flush (0-600). Units for AI 2/AI 3 follow the selected sensor type.",
+    "Some state texts are machine-translated in the guide (e.g. 'Fr.o.m'/'T.o.m' for off/on, 'Sida 2' where P2 is meant); they are kept as printed."
+  ],
+  "source": {
+    "title": "LOGICA Digital, Energy-series, DN10-DN50 - Handbok för BACnet-integrering",
+    "doc_number": null,
+    "revision_date": "APR 22",
+    "url": "https://web.archive.org/web/20240630151915/https://www.purmo.com/public/prod/bcd2c0f2-6156-46c6-99cd-ddcde7354507/15413/52628bd44ea54cb217fd4d0c30fe6583/sv-se-files-logica-digital-energy-series-bacnet-integration-guide-apr-22-sv.pdf",
+    "unofficial": true,
+    "host": "Internet Archive (copy of purmo.com)"
+  },
+  "integration": {
+    "summary": "Set the MS/TP address on the DIP switches (19 200 baud default), pick the valve with MV 8 and its max flow in AV 30, then choose the operating mode in MV 4. In the default mode the BMS writes AV 1 (0-100 % relative flow); for energy control it writes the power or return-temperature setpoint instead. Read actual flow, position, power and the fault BIs, and set MV 6 for what happens on bus loss.",
+    "minimum_points": [
+      {
+        "ref": "MV 4",
+        "name": "Driftsätt",
+        "why": "Control mode: external signal, power or return temp"
+      },
+      {
+        "ref": "AV 1",
+        "name": "Extern styrsignal",
+        "why": "Flow command from the BMS, 0-100 %"
+      },
+      {
+        "ref": "AV 19",
+        "name": "Börvärde för termisk effekt",
+        "why": "Thermal power setpoint, kW (power mode)"
+      },
+      {
+        "ref": "AV 20",
+        "name": "Börvärde för returtemperatur",
+        "why": "Return temperature setpoint, °C"
+      },
+      {
+        "ref": "AI 6",
+        "name": "Ärvärde för reglersignal",
+        "why": "Actual relative flow, %"
+      },
+      {
+        "ref": "AI 7",
+        "name": "Faktisk låg hastighet",
+        "why": "Estimated flow, l/h"
+      },
+      {
+        "ref": "AI 16",
+        "name": "Faktiskt värde för termisk effekt",
+        "why": "Calculated thermal power, kW"
+      },
+      {
+        "ref": "BI 4",
+        "name": "Funktionsfel på ställdonet",
+        "why": "Actuator fault or sensor limit exceeded"
+      },
+      {
+        "ref": "BI 6",
+        "name": "Error (fel): Ventil blockerad",
+        "why": "Valve blocked"
+      }
+    ],
+    "enable": "MV 4 Driftsätt selects the control source: 1 = external signal on AV 1 (default), 8 = thermal power (AV 19), 9 = return temperature (AV 20); 2/3 force fully open or closed.",
+    "heartbeat": "MV 6 Kommunikationsfel sets the action after 120 s without bus traffic: no change, close, open, or go to the emergency position in AV 8 (default 30 %).",
+    "remote_sensors": "Supply and return temperatures come from P1/P2 sensors or from the bus: MV 5 picks the source, and with bus values the BMS writes AV 4 (supply) and AV 5 (return).",
+    "setup": [
+      "MS/TP address is set on the DIP switches; AV 28 can only be written when the DIP address is 63.",
+      "Default baud rate 19 200; change it with MV 7, then restart the bus with MV 1 = 6.",
+      "Select the valve type in MV 8 and set AV 30 to the max flow that matches the manual valve presetting.",
+      "Sensor types for P1/P2 are set in MV 2/MV 3 (e.g. 7 = Pt1000)."
+    ],
+    "gotchas": [
+      "AV 4/AV 5 are read-only once a P1/P2 sensor is assigned as the temperature source.",
+      "Limit settings AV 22-24 use 0 to switch the limit off.",
+      "Writing 0 to AV 34 resets the continuous energy counter.",
+      "Object names in this list are the Swedish guide's labels."
+    ]
+  },
+  "points": [
+    {
+      "type": "AI",
+      "instance": 1,
+      "name": "Programvaruversion",
+      "description": "Software version",
+      "units": "",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AI",
+      "instance": 2,
+      "name": "Analog ingång P1",
+      "description": "Input P1 value; unit follows the P1 sensor type",
+      "units": "",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AI",
+      "instance": 3,
+      "name": "Analog ingång P2",
+      "description": "Input P2 value; unit follows the P2 sensor type",
+      "units": "",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AI",
+      "instance": 4,
+      "name": "Målposition",
+      "description": "Target spindle position, 0-15",
+      "units": "mm",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AI",
+      "instance": 5,
+      "name": "Faktisk position",
+      "description": "Actual spindle position, 0-15",
+      "units": "mm",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AI",
+      "instance": 6,
+      "name": "Ärvärde för reglersignal",
+      "description": "Actual relative flow",
+      "units": "%",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AI",
+      "instance": 7,
+      "name": "Faktisk låg hastighet",
+      "description": "Estimated flow from the valve data",
+      "units": "l/h",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AI",
+      "instance": 8,
+      "name": "Ärvärde för differenstemperatur",
+      "description": "Supply/return temperature difference",
+      "units": "K",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AI",
+      "instance": 9,
+      "name": "Faktiskt värde för rensningstid",
+      "description": "Hours to next flush (0-4320) or minutes left in a flush (0-600)",
+      "units": "",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AI",
+      "instance": 10,
+      "name": "Ärvärde för tid för aktivering av ventilblockerande säkring",
+      "description": "Hours until the anti-seize valve exercise",
+      "units": "h",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AI",
+      "instance": 11,
+      "name": "Drifttimmar",
+      "description": "Actuator operating hours",
+      "units": "h",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AI",
+      "instance": 12,
+      "name": "Avståndsräknare",
+      "description": "Total travel since manufacture",
+      "units": "mm",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AI",
+      "instance": 13,
+      "name": "Total slaglängd",
+      "description": "Measured stroke between open and closed",
+      "units": "mm",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AI",
+      "instance": 15,
+      "name": "Begränsning av verkligt volymflöde",
+      "description": "Active flow limit (heating or cooling)",
+      "units": "l/h",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AI",
+      "instance": 16,
+      "name": "Faktiskt värde för termisk effekt",
+      "description": "Calculated thermal power",
+      "units": "kW",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AI",
+      "instance": 17,
+      "name": "Energi sedan 00:00",
+      "description": "Energy since midnight (internal clock)",
+      "units": "kWh",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AI",
+      "instance": 18,
+      "name": "Energi under de senaste 24 timmarna",
+      "description": "Energy over the last 24 hours",
+      "units": "kWh",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AI",
+      "instance": 20,
+      "name": "Energiräknarens varaktighet",
+      "description": "Hours since the energy counter was reset",
+      "units": "h",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AO",
+      "instance": 1,
+      "name": "Analog utgång P2",
+      "description": "P2 0-10 V output when P2 is set as output",
+      "units": "%",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 1,
+      "name": "Extern styrsignal",
+      "description": "Control signal from the BMS, relative flow",
+      "units": "%",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 2,
+      "name": "Lägsta värde för reglersignal",
+      "description": "Lower limit for the control signal",
+      "units": "%",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 3,
+      "name": "Maximalt värde för reglersignal",
+      "description": "Upper limit for the control signal",
+      "units": "%",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 4,
+      "name": "Ärvärde Tilloppstemperatur",
+      "description": "Supply temperature; writable when no P1/P2 source",
+      "units": "°C",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 5,
+      "name": "Ärvärde returtemperatur",
+      "description": "Return temperature; writable when no P1/P2 source",
+      "units": "°C",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 6,
+      "name": "Korrigeringsvärde P1",
+      "description": "Sensor offset P1, -5 to +5",
+      "units": "K",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 7,
+      "name": "Korrigeringsvärde P2",
+      "description": "Sensor offset P2, -5 to +5",
+      "units": "K",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 8,
+      "name": "Nödläge",
+      "description": "Position on bus failure or invalid control (default 30 %)",
+      "units": "%",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 10,
+      "name": "Tidur för ventilblockerande säkring",
+      "description": "Anti-seize exercise interval; 0 = off",
+      "units": "h",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 13,
+      "name": "Ventilens slaglängd",
+      "description": "Stroke of the selected valve, 0.5-9.0",
+      "units": "mm",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 14,
+      "name": "Medelhög energikonstant",
+      "description": "Medium heat capacity, default 4183 (water)",
+      "units": "J/(kg·K)",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 15,
+      "name": "Xp PI-regulator",
+      "description": "PI controller proportional gain",
+      "units": "",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 16,
+      "name": "Tn PI-regulator",
+      "description": "PI controller integral time",
+      "units": "s",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 19,
+      "name": "Börvärde för termisk effekt",
+      "description": "Thermal power setpoint",
+      "units": "kW",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 20,
+      "name": "Börvärde för returtemperatur",
+      "description": "Return temperature setpoint",
+      "units": "°C",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 22,
+      "name": "Gränsvärde för maximal termisk effekt",
+      "description": "Max thermal power limit; 0 = off",
+      "units": "kW",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 23,
+      "name": "Returtemperatur begränsning",
+      "description": "Return temperature limit; 0 = off",
+      "units": "°C",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 24,
+      "name": "Gränsvärde för differenstemperatur",
+      "description": "Delta-T limit; 0 = off",
+      "units": "K",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 28,
+      "name": "MAC-adress",
+      "description": "MS/TP address; writable only with DIP address 63",
+      "units": "",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 29,
+      "name": "Stäng vid justering av intervall",
+      "description": "Signal band where end positions hold, 0-5",
+      "units": "%",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 30,
+      "name": "Maximalt flöde",
+      "description": "Max flow of the selected valve, 10-50 000",
+      "units": "l/h",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 31,
+      "name": "Termisk effektbegränsning (Xp)",
+      "description": "Gain for the power limit",
+      "units": "",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 32,
+      "name": "Returtemperatur begränsning (Xp)",
+      "description": "Gain for the return temperature limit",
+      "units": "",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 33,
+      "name": "∆T-begränsning (Xp)",
+      "description": "Gain for the delta-T limit",
+      "units": "",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 34,
+      "name": "Energiräknare (kontinuerlig räkning)",
+      "description": "Continuous energy counter; write 0 to reset",
+      "units": "kWh",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 35,
+      "name": "Rensningstid",
+      "description": "Flushing timer; 0 = off",
+      "units": "h",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 36,
+      "name": "Öppningstid för rensning",
+      "description": "Time held 100 % open while flushing",
+      "units": "min",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 37,
+      "name": "Inledande reglersignal",
+      "description": "Control signal used after start-up",
+      "units": "%",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "BI",
+      "instance": 1,
+      "name": "Binär ingång P1",
+      "description": "P1 as binary input",
+      "units": "",
+      "access": "R",
+      "states": "0=Fr.o.m, 1=T.o.m"
+    },
+    {
+      "type": "BI",
+      "instance": 2,
+      "name": "Binär ingång P2",
+      "description": "P2 as binary input",
+      "units": "",
+      "access": "R",
+      "states": "0=Fr.o.m, 1=T.o.m"
+    },
+    {
+      "type": "BI",
+      "instance": 3,
+      "name": "Ställdonet är upptaget",
+      "description": "Busy calibrating or flushing",
+      "units": "",
+      "access": "R",
+      "states": "0=Normal drift, 1=Ställdonet kalibrerar eller spolar"
+    },
+    {
+      "type": "BI",
+      "instance": 4,
+      "name": "Funktionsfel på ställdonet",
+      "description": "Actuator fault or P1/P2 limit exceeded",
+      "units": "",
+      "access": "R",
+      "states": "0=Inga fel, 1=Trasig maskinvara eller överskriden begränsning"
+    },
+    {
+      "type": "BI",
+      "instance": 5,
+      "name": "Fel vid anpassning av ventil",
+      "description": "Valve adaption failed (valve fitted wrongly)",
+      "units": "",
+      "access": "R",
+      "states": "0=Inga fel, 1=Ventilanpassning defekt"
+    },
+    {
+      "type": "BI",
+      "instance": 6,
+      "name": "Error (fel): Ventil blockerad",
+      "description": "Valve blocked",
+      "units": "",
+      "access": "R",
+      "states": "0=Inga fel, 1=Ventil blockerad"
+    },
+    {
+      "type": "BI",
+      "instance": 7,
+      "name": "FÖRSIKTIGHET! Läckage upptäckt",
+      "description": "Leak warning: delta-T over 8 K, valve shut 6 h",
+      "units": "",
+      "access": "R",
+      "states": "0=Ingen varning, 1=Läckage upptäckt"
+    },
+    {
+      "type": "BI",
+      "instance": 8,
+      "name": "Begränsningsfunktion aktiv",
+      "description": "Delta-T or power limit active",
+      "units": "",
+      "access": "R",
+      "states": "0=Ingen aktiv begränsningsfunktion, 1=ΔT eller effektbegränsning aktiv"
+    },
+    {
+      "type": "BV",
+      "instance": 1,
+      "name": "P1-invertering (binär ingång)",
+      "description": "Invert P1 binary input",
+      "units": "",
+      "access": "W",
+      "states": "0=Direktnummer, 1=Inverterad"
+    },
+    {
+      "type": "BV",
+      "instance": 2,
+      "name": "P2-invertering (binär ingång)",
+      "description": "Invert P2 binary input",
+      "units": "",
+      "access": "W",
+      "states": "0=Direktnummer, 1=Inverterad"
+    },
+    {
+      "type": "BV",
+      "instance": 3,
+      "name": "P2-invertering (analog utgång)",
+      "description": "Invert P2 analog output",
+      "units": "",
+      "access": "W",
+      "states": "0=Direktnummer, 1=Inverterad"
+    },
+    {
+      "type": "BV",
+      "instance": 4,
+      "name": "Invertering av ventilens ställdonsriktning",
+      "description": "Invert actuator direction",
+      "units": "",
+      "access": "W",
+      "states": "0=Direktnummer, 1=Inverterad"
+    },
+    {
+      "type": "MV",
+      "instance": 1,
+      "name": "Service-kommando",
+      "description": "Service command",
+      "units": "",
+      "access": "W",
+      "states": "1=Normal drift, 2=Ventilanpassning, 3=Spolventil, 4=Synkroniseringsventil, 5=Återställ felmeddelanden, 6=Omstart buss, 7=Återställa fabriksinställningar"
+    },
+    {
+      "type": "MV",
+      "instance": 2,
+      "name": "Givartyp P1",
+      "description": "P1 sensor type",
+      "units": "",
+      "access": "W",
+      "states": "1=Fr.o.m, 2=Binär ingång, 3=0-10 V ingång, 4=KP10, 5=Ni1000-DIN, 6=Ni1000-LG, 7=Pt1000, 8=Potentiometer 10 k, 9=Potentiometer setpoint 10 K +/- 3 K, 10=Potentiometer setpoint 10 K +/- 5 K"
+    },
+    {
+      "type": "MV",
+      "instance": 3,
+      "name": "Givar-/utgångstyp P2",
+      "description": "P2 sensor or output type",
+      "units": "",
+      "access": "W",
+      "states": "1=Fr.o.m, 2=Binär ingång, 3=0-10 V ingång, 4=KP10, 5=Ni1000-DIN, 6=Ni1000-LG, 7=PT1000, 8=Potentiometer 10 K, 9=0-10 V-utgång (AO1), 10=0-10 V Y-position feedback (AI6), 11=6-vägsventil växlingssignal (MSV9)"
+    },
+    {
+      "type": "MV",
+      "instance": 4,
+      "name": "Driftsätt",
+      "description": "Operating mode",
+      "units": "",
+      "access": "W",
+      "states": "1=Extern styrsignal (AV1), 2=Öppen (100 %), 3=Stängd (0 %), 4=Minbegr. pos (AV2), 5=Uppskjuten, 6=Maximum pos (AV3), 7=Uppskjuten, 8=Termisk effekt (AI16 + AV19), 9=Returtemperatur (AV5 + AV20)"
+    },
+    {
+      "type": "MV",
+      "instance": 5,
+      "name": "Tillopps- och returtemperatur källa",
+      "description": "Source of supply/return temperatures",
+      "units": "",
+      "access": "W",
+      "states": "1=Bussvärden via AV4 och AV5, 2=Tillopp: P1, retur: Sida 2, 3=Tillopp: P2, retur: P1, 4=Tillopp: P1, retur: Bussvärde, 5=Tillopp: P2, retur: Bussvärde, 6=Tillopp: Bussvärde, retur: P1, 7=Tillopp: Bussvärde, retur: Sida 2"
+    },
+    {
+      "type": "MV",
+      "instance": 6,
+      "name": "Kommunikationsfel",
+      "description": "Action on bus timeout (120 s)",
+      "units": "",
+      "access": "W",
+      "states": "1=Ingen förändring, 2=Stängd (0 %) efter 120 s, 3=Öppen (100 %) efter 120 s, 4=Nödläge (AV8) efter 120 s"
+    },
+    {
+      "type": "MV",
+      "instance": 7,
+      "name": "RS485-baudhastighet",
+      "description": "MS/TP baud rate",
+      "units": "",
+      "access": "W",
+      "states": "1=Default (19 200), 2=9600, 3=19 200, 4=38 400, 5=57 600, 6=76 800, 7=115 200"
+    },
+    {
+      "type": "MV",
+      "instance": 8,
+      "name": "Välj ventiltyp",
+      "description": "Valve type; list differs for DN10-32 and DN40-50",
+      "units": "",
+      "access": "W",
+      "states": "DN10-32: 1=Linjär (standard), 2=TOV låg 2,5 DN10/15 30-200 l/h linjär, 3=TOV Low 5.0 DN10/15 65-370 l/h linjär, 4=TOV High 2.5 DN15/20 100-575 l/h linjär, 5=TOV High 5.0 DN15/20 220-1330 l/h linjär, 6=TOV High 5.5 DN20 300-1 800 l/h linjär, 7=TOV Low 5.5 DN25 280-1 800 l/h linjär, 8=TOV High 5.5 DN25L 600-3609 l/h linjär, 9=TOV 5.5 DN32 550-4001 l/h linjär, 10=TOV låg 2,5 DN10/15 30-200 l/h EQ %, 11=TOV Low 5.0 DN10/15 65-370 l/h EQ %, 12=TOV High 2.5 DN15/20 100-575 l/h EQ %, 13=TOV High 5.0 DN15/20 220-1330 l/h EQ %, 14=TOV High 5.5 DN20 300-1 800 l/h EQ %, 15=TOV Low 5,5 DN25 280-1 800 l/h EQ %, 16=TOV High 5.5 DN25L 600-3609 l/h EQ %, 17=TOV 5.5 DN32 550-4001 l/h EQ %; DN40-50: 1=Linjär (standard), 2=TOV DN40 1370-9500 l/h linjär, 3=TOV DN50 1400-11500 l/h linjär, 4=TOV DN40 1370-9500 l/h EQ %, 5=TOV DN50 1400-11500 l/h EQ %"
+    },
+    {
+      "type": "MV",
+      "instance": 11,
+      "name": "LED-status",
+      "description": "LED behaviour",
+      "units": "",
+      "access": "W",
+      "states": "1=Lysdiod av, 2=Enhetsstatus utan buss, 3=Enhetsstatus med buss"
+    },
+    {
+      "type": "MV",
+      "instance": 12,
+      "name": "Ackumuleringshastighet",
+      "description": "Actuator running speed",
+      "units": "",
+      "access": "W",
+      "states": "1=Normal: 22 s/mm, 2=Långsamt: 28 sek/mm, 3=Snabbt: 16 s/mm"
+    }
+  ]
+}
