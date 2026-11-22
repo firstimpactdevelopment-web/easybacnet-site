@@ -24,6 +24,14 @@
     d.querySelector('#cc-no').onclick=function(){try{localStorage.setItem(KEY,'denied');}catch(e){}d.remove();};
   }
   if(document.readyState==='loading'){document.addEventListener('DOMContentLoaded',banner);}else{banner();}
+  // "Get the app" taps: one named event per Google Play link click, with the
+  // placement (nav/hero/guide_cta/footer, from the link's utm_medium) and page.
+  // Queued in dataLayer, so it is only sent for visitors who accepted analytics.
+  document.addEventListener('click',function(e){
+    var a=e.target&&e.target.closest&&e.target.closest('a[href*="play.google.com/store/apps"]');if(!a)return;
+    var m=/[?&]utm_medium=([^&#]+)/.exec(a.href);
+    gtag('event','play_store_click',{placement:m?decodeURIComponent(m[1]):'other',page_path:location.pathname,link_url:a.href,transport_type:'beacon'});
+  },true);
 })();
 </script>
 <style>
@@ -109,6 +117,9 @@
   footer { margin-top:3.5rem; padding-top:1.5rem; border-top:1px solid var(--line);
            color:var(--muted); font-size:.9rem; }
   footer a { color:var(--accent); }
+  .shotkey { margin:.2rem 0 1.6rem; padding-left:1.1rem; font-size:.95rem; }
+  .shotkey li { margin:.25rem 0; }
+  .shotrow.big figure { flex:0 1 300px; }
   .shotrow { display:flex; flex-wrap:wrap; gap:1rem; margin:1.75rem 0; }
   .shotrow figure { margin:0; flex:0 1 200px; }
   .shotrow img { width:100%; height:auto; border:1px solid var(--line);
@@ -284,6 +295,15 @@
     <li><strong>Refused writes.</strong> A setpoint sent as the wrong data type, or a write to
     an input. The emulator shows the reason a real controller would give.</li>
   </ul>
+
+  <div class="shotrow big"><figure><img src="../img/emu-writes.png" alt="Writes received, with two refused writes and a priority 16 write marked" width="480" height="1069" loading="lazy"><figcaption>The write log after a supervisor's commands</figcaption></figure></div>
+  <ol class="shotkey">
+    <li><strong>1:</strong> a write to a read-only input, refused: &ldquo;read-only input&rdquo;.</li>
+    <li><strong>2:</strong> a setpoint sent as the wrong data type, refused with the reason.</li>
+    <li><strong>3:</strong> a write with no priority lands at 16. It was accepted, but the
+    point still reads 70 because priority 8 holds it. This is the classic &ldquo;the BMS
+    sent it and nothing happened&rdquo;.</li>
+  </ol>
   <p>The free version emulates one Device ID with up to three points; Easy BACnet Pro removes
   the limits. Step by step: <a href="bacnet-device-emulator-check-writes">how to check
   what a BMS writes</a>.</p>
