@@ -1,0 +1,1274 @@
+{
+  "manufacturer": "Schneider Electric",
+  "manufacturer_slug": "schneider-electric",
+  "model": "SE8300 / SER8300 Series Fan Coil Controller (SE8000 Series, 2014 BACnet list)",
+  "short_model": "SE8300/SER8300 fan coil",
+  "model_slug": "se8300-ser8300-fan-coil-controller",
+  "aliases": [
+    "SE8300",
+    "SER8300",
+    "SE8300UxBxx",
+    "SER8300AxBxx",
+    "SE8000 Series",
+    "SE83xx",
+    "SER83xx",
+    "IG-SE8000-BNET"
+  ],
+  "equipment_type": "Fan coil unit controller (room thermostat)",
+  "applies_to": "Schneider Electric SE8000 Series touchscreen terminal equipment controllers for fan coils: SER8300/SER8350 (shown with the SC3000 relay pack) and SE8300/SE8350, as covered by the February 2014 BACnet integration manual.",
+  "summary": "The SE8300 and SER8300 are SE8000 Series touchscreen fan coil controllers on BACnet MS/TP (B-ASC). This 2014 manual prints one object list with tick columns for four models: SER8300, SER8350, SE8300 and SE8350. The 8350 models add humidity sensing and dehumidification objects; the SE models add universal outputs UO 9-12, remote sensor inputs and an auxiliary output, while the SER models have dedicated heating/cooling outputs. Object names are those of this older firmware and differ from the later SpaceLogic SE8350 guides.",
+  "bacnet_transport": [
+    "BACnet MS/TP"
+  ],
+  "firmware": null,
+  "default_device_instance": "83000 + MAC address",
+  "access_inferred": false,
+  "notes": [
+    "Model availability is given at the end of a description when an object is not on all four models (SER8300, SER8350, SE8300, SE8350).",
+    "Access follows the manual's property tables: AV, AO, BV, BO and MV present values are commandable, CSVs are writable, and AI, BI and MSI (MI here) objects are read-only.",
+    "BI 29, BI 30, BI 91, MV 46 and MV 47 are printed with both names (e.g. 'BI 1 / UI 16 Status'): the part before the slash applies to SER83xx models, after the slash to SE83xx models.",
+    "The range tables use a few alternative names (e.g. Unoccupied Cooling Setpoint, RH Display for MV 70, Fan Menu Sequence for MV 57); names here follow the main object list. No state tables are printed for MV 49, 81, 91, 92 and 94, and no ranges for AV 5, 6 and 46.",
+    "For the newer SpaceLogic SE8350 / SER8350 firmware (much larger object list, different names) see the separate SE8350 and SER8350 lists."
+  ],
+  "source": {
+    "title": "SE8000 Series BACnet Integration Manual - Terminal Equipment Controller, Commercial and Lodging HVAC Applications",
+    "doc_number": "IG-SE8000-BNET-US.EN.02.2014.v1",
+    "revision_date": "February 2014",
+    "url": "https://assets.kele.com/Catalog/22%20Thermostats_Controllers/PDFs/SE8000%20Series%20BACnet%20User%20Manual-2014.pdf",
+    "unofficial": true,
+    "host": "Kele"
+  },
+  "integration": {
+    "summary": "Set a MAC address from 0 to 127 (the factory value 254 keeps BACnet off), then command occupancy (MV 10), system mode (MV 16), fan mode (MV 17) and the occupied setpoints (AV 39 / AV 40). Read room temperature (AV 100), effective occupancy (MI 33), the PI demands and the alarm BVs. Use priorities 4-16 for live commands.",
+    "minimum_points": [
+      {
+        "ref": "MV 10",
+        "name": "Occupancy Command",
+        "why": "BMS occupancy: local, occupied or unoccupied"
+      },
+      {
+        "ref": "MV 16",
+        "name": "System Mode",
+        "why": "Off / auto / cool / heat"
+      },
+      {
+        "ref": "MV 17",
+        "name": "Fan Mode",
+        "why": "Fan mode: low / medium / high / auto / on"
+      },
+      {
+        "ref": "AV 39",
+        "name": "Occupied Heat Setpoint",
+        "why": "Occupied heating setpoint"
+      },
+      {
+        "ref": "AV 40",
+        "name": "Occupied Cool Setpoint",
+        "why": "Occupied cooling setpoint"
+      },
+      {
+        "ref": "MI 33",
+        "name": "Effective Occupancy",
+        "why": "Actual occupancy state"
+      },
+      {
+        "ref": "AV 100",
+        "name": "Room Temperature",
+        "why": "Space temperature used for control"
+      },
+      {
+        "ref": "AO 21",
+        "name": "PI Heating Demand",
+        "why": "Heating demand, 0-100 %"
+      },
+      {
+        "ref": "AO 22",
+        "name": "PI Cooling Demand",
+        "why": "Cooling demand, 0-100 %"
+      },
+      {
+        "ref": "BV 37",
+        "name": "Service Alarm",
+        "why": "Service alarm from an input set to Service"
+      }
+    ],
+    "enable": "BACnet communication starts once the MAC address is changed from the factory value 254 to 0-127. The BMS then writes MV 10 Occupancy Command (1 = Local Occupancy, 2 = Occupied, 3 = Unoccupied) and MV 16 System Mode.",
+    "heartbeat": "No heartbeat point. If the controller goes offline, network-bound Room Temperature, Outdoor Temperature and Occupancy are released.",
+    "remote_sensors": "The manual lists Outdoor Temperature (AV 101) as a global value the BMS can send to all controllers, and Room Temperature (AV 100) for testing and override. Writes at priority 4-16 override the controller's own value until relinquished or power is lost.",
+    "setup": [
+      "Factory MAC address is 254, which disables BACnet; set 0-127 to join the token ring.",
+      "Default Device ID is 83000 + MAC (MAC 63 gives 83063); default device name is the model number plus MAC. Both are writable.",
+      "Baud rate auto-detects at power-up (MV 8, default Auto); after a speed change the device keeps the old rate for 10 minutes before auto-bauding again.",
+      "Up to 64 nodes per EIA-485 segment; maximum data rate used is 76800 bps."
+    ],
+    "gotchas": [
+      "Priorities 1-3 are saved to flash and survive a power cycle, locking the value until a NULL is written at the same priority; use 4-16 (RAM) for live control and rewrite after a restart.",
+      "Writing the Relinquish_Default stores a new value in flash without bypassing the controller logic; the manual prefers it for configuration and user HMI objects.",
+      "CSV 1 / CSV 2 screen messages are not saved in flash and are lost on power loss.",
+      "Remove configuration objects from the BAS after setup to cut polling traffic, as the manual recommends."
+    ]
+  },
+  "points": [
+    {
+      "type": "AV",
+      "instance": 2,
+      "name": "User HMI",
+      "description": "Default 0; range 0 to 11",
+      "units": "",
+      "access": "C",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 3,
+      "name": "Low Backlight",
+      "description": "Default 60%; range 0% to 100%",
+      "units": "%",
+      "access": "C",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 4,
+      "name": "Night Backlight",
+      "description": "Default 5%; range 0% to 100%",
+      "units": "%",
+      "access": "C",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 5,
+      "name": "Purge Sample Period",
+      "description": "",
+      "units": "",
+      "access": "C",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 6,
+      "name": "Purge Open",
+      "description": "",
+      "units": "",
+      "access": "C",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 7,
+      "name": "Calibrate Temperature Sensor",
+      "description": "Default 0°F (0°C); maximum 5°F(2.5°C) (minimum printed as '-')",
+      "units": "°F/°C",
+      "access": "C",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 8,
+      "name": "Calibrate Humidity Sensor",
+      "description": "Default 0%; range -15% to 15%; Models: SER8350, SE8350",
+      "units": "%",
+      "access": "C",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 10,
+      "name": "COM Address",
+      "description": "Default 254; range 0 to 254",
+      "units": "",
+      "access": "C",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 11,
+      "name": "ZigBee PAN ID",
+      "description": "Default 0; range 0 to 1000",
+      "units": "",
+      "access": "C",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 12,
+      "name": "ZigBee channel",
+      "description": "Default 10; range 0 to 26",
+      "units": "",
+      "access": "C",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 13,
+      "name": "ZigBee Short Address",
+      "description": "Default 0; range -32768 to 32767",
+      "units": "",
+      "access": "C",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 14,
+      "name": "ZigBee IEEE Address",
+      "description": "Default 0; range -32768 to 32767",
+      "units": "",
+      "access": "C",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 15,
+      "name": "Get from COM",
+      "description": "Default 0; range 0 to 254",
+      "units": "",
+      "access": "C",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 16,
+      "name": "BACnet Stack Poll Rate",
+      "description": "Default 4; range 1 to 5",
+      "units": "",
+      "access": "C",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 39,
+      "name": "Occupied Heat Setpoint",
+      "description": "Default 72°F (22°C); range 40°F (4.5°C) to 90°F (32°C)",
+      "units": "°F/°C",
+      "access": "C",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 40,
+      "name": "Occupied Cool Setpoint",
+      "description": "Default 75°F (24°C); range 54°F (12°C) to 100°F (37.5°C)",
+      "units": "°F/°C",
+      "access": "C",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 41,
+      "name": "Standby Heat Setpoint",
+      "description": "Default 69°F (21°C); range 40°F (4.5°C) to 90°F (32°C)",
+      "units": "°F/°C",
+      "access": "C",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 42,
+      "name": "Standby Cool Setpoint",
+      "description": "Default 78°F (26°C); range 54°F (12°C) to 100°F (37.5°C)",
+      "units": "°F/°C",
+      "access": "C",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 43,
+      "name": "Unoccupied Heat Setpoint",
+      "description": "Default 62°F (16.5°C); range 40°F (4.5°C) to 90°F (32°C)",
+      "units": "°F/°C",
+      "access": "C",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 44,
+      "name": "Unoccupied Cool Setpoint",
+      "description": "Default 80°F (26.5°C); range 54°F (12°C) to 100°F (37.5°C)",
+      "units": "°F/°C",
+      "access": "C",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 45,
+      "name": "Default Heating Setpoint",
+      "description": "Default 72°F; range 65°F to 80°F",
+      "units": "°F/°C",
+      "access": "C",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 46,
+      "name": "Standby Differential",
+      "description": "",
+      "units": "",
+      "access": "C",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 52,
+      "name": "Pipe Number",
+      "description": "Default 2; range 2 to 4",
+      "units": "",
+      "access": "C",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 56,
+      "name": "Main Password",
+      "description": "Default N/A; range 0 to 9999",
+      "units": "",
+      "access": "C",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 57,
+      "name": "User Password",
+      "description": "Default 0; range 0 to 9999",
+      "units": "",
+      "access": "C",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 58,
+      "name": "Heating Setpoint Limit",
+      "description": "Default 90°F (32°C); range 40°F (4.5°C) to 90°F (32°C)",
+      "units": "°F/°C",
+      "access": "C",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 59,
+      "name": "Cooling Setpoint Limit",
+      "description": "Default 54°F (12°C); range 54°F (12°C) to 100°F (37.5°C)",
+      "units": "°F/°C",
+      "access": "C",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 62,
+      "name": "Temporary Occupancy Time",
+      "description": "Default 2H; range 0H to 24H",
+      "units": "h",
+      "access": "C",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 63,
+      "name": "Minimum Deadband",
+      "description": "Default 2°F (1°C); range 2°F (1°C) to 5°F (2.5°C)",
+      "units": "°F/°C",
+      "access": "C",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 65,
+      "name": "Proportional Band",
+      "description": "Default 3°F (1.2°C); range 3°F (1.2°C) to 10°F (5.6°C)",
+      "units": "°F/°C",
+      "access": "C",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 67,
+      "name": "Standby Time",
+      "description": "Default 5H; range 5H to 24H",
+      "units": "h",
+      "access": "C",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 68,
+      "name": "Unoccupied Time",
+      "description": "Default 0H; range 0H to 24H",
+      "units": "h",
+      "access": "C",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 71,
+      "name": "RH Setpoint",
+      "description": "Default 50%; range 30% to 95%; Models: SER8350, SE8350",
+      "units": "%",
+      "access": "C",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 72,
+      "name": "Dehumidification Hysterisys",
+      "description": "Default 5%; range 2% to 20%; Models: SER8350, SE8350",
+      "units": "%",
+      "access": "C",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 73,
+      "name": "Dehumidification Max Cooling",
+      "description": "Default 100%; range 20% to 100%; Models: SER8350, SE8350",
+      "units": "%",
+      "access": "C",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 84,
+      "name": "Heating CPH",
+      "description": "Default 4; range 3 to 8",
+      "units": "",
+      "access": "C",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 85,
+      "name": "Cooling CPH",
+      "description": "Default 4; range 3 to 8; Models: SER8300, SER8350",
+      "units": "",
+      "access": "C",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 88,
+      "name": "Heating Demand Limit",
+      "description": "Default N/A; range 0% to 100%",
+      "units": "%",
+      "access": "C",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 89,
+      "name": "Cooling Demand Limit",
+      "description": "Default N/A; range 0% to 100%",
+      "units": "%",
+      "access": "C",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 90,
+      "name": "Floating Time",
+      "description": "Default 15; range 5 to 90; Models: SE8300, SE8350",
+      "units": "",
+      "access": "C",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 100,
+      "name": "Room Temperature",
+      "description": "Default N/A; range -40°F (-40°C) to 122°F (50°C)",
+      "units": "°F/°C",
+      "access": "C",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 101,
+      "name": "Outdoor Temperature",
+      "description": "Default N/A; range -40°F (-40°C) to 122°F (50°C); can be written by the BMS",
+      "units": "°F/°C",
+      "access": "C",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 103,
+      "name": "Room Humidity",
+      "description": "Default N/A; range 5% to 95%; Models: SER8350, SE8350",
+      "units": "%",
+      "access": "C",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 102,
+      "name": "Supply Temperature",
+      "description": "Default N/A; range -40°F (-40°C) to 122°F (50°C)",
+      "units": "°F/°C",
+      "access": "C",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 104,
+      "name": "RUI Temperature",
+      "description": "Default N/A; range -40°F (-40°C) to 122°F (50°C)",
+      "units": "°F/°C",
+      "access": "C",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 105,
+      "name": "Remote Sensor Temperature",
+      "description": "Default N/A; range -40°F (-40°C) to 122°F (50°C); Models: SE8300, SE8350",
+      "units": "°F/°C",
+      "access": "C",
+      "states": ""
+    },
+    {
+      "type": "AO",
+      "instance": 21,
+      "name": "PI Heating Demand",
+      "description": "Default N/A; range 0% to 100%",
+      "units": "%",
+      "access": "C",
+      "states": ""
+    },
+    {
+      "type": "AO",
+      "instance": 22,
+      "name": "PI Cooling Demand",
+      "description": "Default N/A; range 0% to 100%",
+      "units": "%",
+      "access": "C",
+      "states": ""
+    },
+    {
+      "type": "AO",
+      "instance": 90,
+      "name": "Pulsed Heating Demand",
+      "description": "Default N/A; range 0% to 100%",
+      "units": "%",
+      "access": "C",
+      "states": ""
+    },
+    {
+      "type": "AO",
+      "instance": 123,
+      "name": "UO 11 Analog Status",
+      "description": "Default 0; range 0 to 100; Models: SE8300, SE8350",
+      "units": "",
+      "access": "C",
+      "states": ""
+    },
+    {
+      "type": "AO",
+      "instance": 124,
+      "name": "UO 12 Analog Status",
+      "description": "Default 0; range 0 to 100; Models: SE8300, SE8350",
+      "units": "",
+      "access": "C",
+      "states": ""
+    },
+    {
+      "type": "AO",
+      "instance": 125,
+      "name": "UO 9 Status",
+      "description": "Default 0; range 0 to 100; Models: SE8300, SE8350",
+      "units": "",
+      "access": "C",
+      "states": ""
+    },
+    {
+      "type": "AO",
+      "instance": 126,
+      "name": "UO 10 Status",
+      "description": "Default 0; range 0 to 100; Models: SE8300, SE8350",
+      "units": "",
+      "access": "C",
+      "states": ""
+    },
+    {
+      "type": "AI",
+      "instance": 1,
+      "name": "Thermistor",
+      "description": "Default 0; range -400 to 1220",
+      "units": "",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AI",
+      "instance": 2,
+      "name": "Light Sensor Level",
+      "description": "Default N/A; range 0 to 30000",
+      "units": "",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AI",
+      "instance": 3,
+      "name": "Thermistor Self Heating",
+      "description": "Default 0; range -400 to 1220",
+      "units": "",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AI",
+      "instance": 4,
+      "name": "Relative Humidity Raw Value",
+      "description": "Default 0; range 200 to 800",
+      "units": "",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AI",
+      "instance": 5,
+      "name": "Rem. Sensor",
+      "description": "Default 0; range 0 to 4095; Models: SE8300, SE8350",
+      "units": "",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AI",
+      "instance": 7,
+      "name": "Outdoor Remote Input",
+      "description": "Default 0; range 0 to 4095; Models: SE8300, SE8350",
+      "units": "",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AI",
+      "instance": 8,
+      "name": "Supply Temp Input",
+      "description": "Default 0; range 0 to 4095; Models: SE8300, SE8350",
+      "units": "",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AI",
+      "instance": 31,
+      "name": "UI 19 Status",
+      "description": "Default 0; range 0 to 4095; Models: SE8300, SE8350",
+      "units": "",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "BV",
+      "instance": 1,
+      "name": "Door Contact Status",
+      "description": "Default Closed",
+      "units": "",
+      "access": "C",
+      "states": "Closed / Open"
+    },
+    {
+      "type": "BV",
+      "instance": 2,
+      "name": "Door Contact Installed",
+      "description": "Default No",
+      "units": "",
+      "access": "C",
+      "states": "No / Yes"
+    },
+    {
+      "type": "BV",
+      "instance": 3,
+      "name": "Window Contact Status",
+      "description": "Default Closed",
+      "units": "",
+      "access": "C",
+      "states": "Closed / Opened"
+    },
+    {
+      "type": "BV",
+      "instance": 4,
+      "name": "Window Contact Installed",
+      "description": "Default No",
+      "units": "",
+      "access": "C",
+      "states": "No / Yes"
+    },
+    {
+      "type": "BV",
+      "instance": 5,
+      "name": "Low Battery Alarm",
+      "description": "Default Off",
+      "units": "",
+      "access": "C",
+      "states": "Off / On"
+    },
+    {
+      "type": "BV",
+      "instance": 6,
+      "name": "Force High Backlight",
+      "description": "Default Off",
+      "units": "",
+      "access": "C",
+      "states": "Off / On"
+    },
+    {
+      "type": "BV",
+      "instance": 7,
+      "name": "Display Long Screen Message",
+      "description": "Default No",
+      "units": "",
+      "access": "C",
+      "states": "Off / On"
+    },
+    {
+      "type": "BV",
+      "instance": 32,
+      "name": "Local Motion",
+      "description": "Default On",
+      "units": "",
+      "access": "C",
+      "states": "On / Off"
+    },
+    {
+      "type": "BV",
+      "instance": 35,
+      "name": "Window Alarm",
+      "description": "Default Off",
+      "units": "",
+      "access": "C",
+      "states": "Off / On"
+    },
+    {
+      "type": "BV",
+      "instance": 36,
+      "name": "Filter Alarm",
+      "description": "Default Off",
+      "units": "",
+      "access": "C",
+      "states": "Off / On"
+    },
+    {
+      "type": "BV",
+      "instance": 37,
+      "name": "Service Alarm",
+      "description": "Default Off",
+      "units": "",
+      "access": "C",
+      "states": "Off / On"
+    },
+    {
+      "type": "BV",
+      "instance": 38,
+      "name": "Dehumidification Status",
+      "description": "Default Off; Models: SER8350, SE8350",
+      "units": "",
+      "access": "C",
+      "states": "Off / On"
+    },
+    {
+      "type": "BO",
+      "instance": 93,
+      "name": "Cooling Output",
+      "description": "Default Off; Models: SER8300, SER8350",
+      "units": "",
+      "access": "C",
+      "states": "Off / On"
+    },
+    {
+      "type": "BO",
+      "instance": 94,
+      "name": "Heating Output",
+      "description": "Default Off; Models: SER8300, SER8350",
+      "units": "",
+      "access": "C",
+      "states": "Off / On"
+    },
+    {
+      "type": "BO",
+      "instance": 95,
+      "name": "High Speed Fan Output",
+      "description": "Default Off",
+      "units": "",
+      "access": "C",
+      "states": "Off / On"
+    },
+    {
+      "type": "BO",
+      "instance": 96,
+      "name": "Medium Speed Fan Output",
+      "description": "Default Off",
+      "units": "",
+      "access": "C",
+      "states": "Off / On"
+    },
+    {
+      "type": "BO",
+      "instance": 97,
+      "name": "Low Speed Fan Output",
+      "description": "Default Off",
+      "units": "",
+      "access": "C",
+      "states": "Off / On"
+    },
+    {
+      "type": "BO",
+      "instance": 98,
+      "name": "BO8 Aux Output",
+      "description": "Default Off; Models: SE8300, SE8350",
+      "units": "",
+      "access": "C",
+      "states": "Off / On"
+    },
+    {
+      "type": "BO",
+      "instance": 99,
+      "name": "UO 9 Binary Status",
+      "description": "Default Off; Models: SE8300, SE8350",
+      "units": "",
+      "access": "C",
+      "states": "Off / On"
+    },
+    {
+      "type": "BO",
+      "instance": 100,
+      "name": "UO 10 Binary Status",
+      "description": "Default Off; Models: SE8300, SE8350",
+      "units": "",
+      "access": "C",
+      "states": "Off / On"
+    },
+    {
+      "type": "BO",
+      "instance": 101,
+      "name": "UO 11 Binary Status",
+      "description": "Default Off; Models: SE8300, SE8350",
+      "units": "",
+      "access": "C",
+      "states": "Off / On"
+    },
+    {
+      "type": "BO",
+      "instance": 102,
+      "name": "UO 12 Binary Status",
+      "description": "Default Off; Models: SE8300, SE8350",
+      "units": "",
+      "access": "C",
+      "states": "Off / On"
+    },
+    {
+      "type": "BI",
+      "instance": 29,
+      "name": "BI 1 / UI 16 Status",
+      "description": "Default Deactivated",
+      "units": "",
+      "access": "R",
+      "states": "Deactivated / Activated"
+    },
+    {
+      "type": "BI",
+      "instance": 30,
+      "name": "BI 2 / UI 17 Status",
+      "description": "Default Deactivated",
+      "units": "",
+      "access": "R",
+      "states": "Deactivated / Activated"
+    },
+    {
+      "type": "BI",
+      "instance": 91,
+      "name": "RUI 1 / UI 19 Status",
+      "description": "Default Deactivated",
+      "units": "",
+      "access": "R",
+      "states": "Deactivated / Activated"
+    },
+    {
+      "type": "BI",
+      "instance": 92,
+      "name": "RBI 2 Status",
+      "description": "Default Deactivated",
+      "units": "",
+      "access": "R",
+      "states": "Deactivated / Activated"
+    },
+    {
+      "type": "CSV",
+      "instance": 1,
+      "name": "Short Screen Message",
+      "description": "Not saved in flash; lost on power loss",
+      "units": "",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "CSV",
+      "instance": 2,
+      "name": "Long Screen Message",
+      "description": "Not saved in flash; lost on power loss",
+      "units": "",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "MV",
+      "instance": 1,
+      "name": "Long message background color",
+      "description": "Default White",
+      "units": "",
+      "access": "C",
+      "states": "1=White, 2=Green, 3=Blue, 4=Grey, 5=Brown, 6=Default, 7=Red"
+    },
+    {
+      "type": "MV",
+      "instance": 2,
+      "name": "Colour",
+      "description": "Default Green",
+      "units": "",
+      "access": "C",
+      "states": "1=White, 2=Green, 3=Blue, 4=Grey, 5=Brown"
+    },
+    {
+      "type": "MV",
+      "instance": 3,
+      "name": "Main Display",
+      "description": "Default Temperature",
+      "units": "",
+      "access": "C",
+      "states": "1=Temperature, 2=Setpoint"
+    },
+    {
+      "type": "MV",
+      "instance": 4,
+      "name": "Display Language",
+      "description": "Default English",
+      "units": "",
+      "access": "C",
+      "states": "1=English, 2=French, 3=Spanish, 4=Chinese"
+    },
+    {
+      "type": "MV",
+      "instance": 6,
+      "name": "Network Units",
+      "description": "Default SI",
+      "units": "",
+      "access": "C",
+      "states": "1=SI, 2=Imperial"
+    },
+    {
+      "type": "MV",
+      "instance": 7,
+      "name": "Network Language",
+      "description": "Default English",
+      "units": "",
+      "access": "C",
+      "states": "1=English, 2=French, 3=Spanish"
+    },
+    {
+      "type": "MV",
+      "instance": 8,
+      "name": "BACnet Baud Rate",
+      "description": "Default Auto",
+      "units": "",
+      "access": "C",
+      "states": "1=9600, 2=19200, 3=38400, 4=57600, 5=76800, 6=115200, 7=Auto"
+    },
+    {
+      "type": "MV",
+      "instance": 9,
+      "name": "No Activity Sleep Mode",
+      "description": "Default Disabled",
+      "units": "",
+      "access": "C",
+      "states": "1=Disabled, 2=Enabled"
+    },
+    {
+      "type": "MV",
+      "instance": 10,
+      "name": "Occupancy Command",
+      "description": "Default Local Occupancy",
+      "units": "",
+      "access": "C",
+      "states": "1=Local Occupancy, 2=Occupied, 3=Unoccupied"
+    },
+    {
+      "type": "MV",
+      "instance": 11,
+      "name": "Standby Mode",
+      "description": "Default Absolute",
+      "units": "",
+      "access": "C",
+      "states": "1=Absolute, 2=Offset"
+    },
+    {
+      "type": "MV",
+      "instance": 13,
+      "name": "Dehumidification Lockout",
+      "description": "Default Enabled; Models: SER8350, SE8350",
+      "units": "",
+      "access": "C",
+      "states": "1=Disabled, 2=Enabled"
+    },
+    {
+      "type": "MV",
+      "instance": 15,
+      "name": "Sequence of Operation",
+      "description": "Default Heating Only",
+      "units": "",
+      "access": "C",
+      "states": "1=Cooling Only, 2=Heating Only, 3=Cooling with Electric Reheat, 4=Heating with Electric Reheat, 5=Electric Rheat Only"
+    },
+    {
+      "type": "MV",
+      "instance": 16,
+      "name": "System Mode",
+      "description": "Default Heat",
+      "units": "",
+      "access": "C",
+      "states": "1=Off, 2=Auto, 3=Cool, 4=Heat"
+    },
+    {
+      "type": "MV",
+      "instance": 17,
+      "name": "Fan Mode",
+      "description": "Default Auto",
+      "units": "",
+      "access": "C",
+      "states": "1=Low, 2=Med, 3=High, 4=Auto, 5=On"
+    },
+    {
+      "type": "MV",
+      "instance": 32,
+      "name": "Use Standby Screen",
+      "description": "Default No",
+      "units": "",
+      "access": "C",
+      "states": "1=No, 2=Yes"
+    },
+    {
+      "type": "MV",
+      "instance": 46,
+      "name": "BI 1 / UI 16 Configuration",
+      "description": "Default None",
+      "units": "",
+      "access": "C",
+      "states": "1=None, 2=Rem NSB, 3=Motion NO, 4=Motion NC, 5=Window"
+    },
+    {
+      "type": "MV",
+      "instance": 47,
+      "name": "BI 2 / UI 17 Configuration",
+      "description": "Default None",
+      "units": "",
+      "access": "C",
+      "states": "1=None, 2=Door Dry, 3=Override"
+    },
+    {
+      "type": "MV",
+      "instance": 49,
+      "name": "UI 19 Configuration",
+      "description": "Models: SE8300, SE8350",
+      "units": "",
+      "access": "C",
+      "states": ""
+    },
+    {
+      "type": "MV",
+      "instance": 50,
+      "name": "Auto Mode Enable",
+      "description": "Default Enabled",
+      "units": "",
+      "access": "C",
+      "states": "1=Disabled, 2=Enabled"
+    },
+    {
+      "type": "MV",
+      "instance": 51,
+      "name": "Temperature Scale",
+      "description": "Default °C",
+      "units": "",
+      "access": "C",
+      "states": "1=°C, 2=°F"
+    },
+    {
+      "type": "MV",
+      "instance": 57,
+      "name": "Fan Sequence",
+      "description": "Default On-Auto",
+      "units": "",
+      "access": "C",
+      "states": "1=Low-Med-High, 2=Low-High, 3=Low-Med-High-Auto, 4=Low-High-Auto, 5=On-Auto"
+    },
+    {
+      "type": "MV",
+      "instance": 66,
+      "name": "Auto Fan Function",
+      "description": "Default AS",
+      "units": "",
+      "access": "C",
+      "states": "1=AS, 2=AS / AD"
+    },
+    {
+      "type": "MV",
+      "instance": 70,
+      "name": "Room Humidity Setpoint",
+      "description": "Default Disabled; Models: SER8350, SE8350",
+      "units": "",
+      "access": "C",
+      "states": "1=Disabled, 2=Enabled"
+    },
+    {
+      "type": "MV",
+      "instance": 81,
+      "name": "Control Type",
+      "description": "Models: SE8300, SE8350",
+      "units": "",
+      "access": "C",
+      "states": ""
+    },
+    {
+      "type": "MV",
+      "instance": 82,
+      "name": "RUI 1 Configuration",
+      "description": "Default None; Models: SER8300, SER8350",
+      "units": "",
+      "access": "C",
+      "states": "1=None, 2=Filter, 3=Service, 4=COC/NH, 5=COC/NC, 6=COS"
+    },
+    {
+      "type": "MV",
+      "instance": 83,
+      "name": "RBI 2 Configuration",
+      "description": "Default None",
+      "units": "",
+      "access": "C",
+      "states": "1=None, 2=Filter, 3=Service"
+    },
+    {
+      "type": "MV",
+      "instance": 86,
+      "name": "Heating Valve",
+      "description": "Default Normaly Closed",
+      "units": "",
+      "access": "C",
+      "states": "1=NO, 2=NC"
+    },
+    {
+      "type": "MV",
+      "instance": 87,
+      "name": "Cooling Valve",
+      "description": "Default Normally Closed",
+      "units": "",
+      "access": "C",
+      "states": "1=NO, 2=NC"
+    },
+    {
+      "type": "MV",
+      "instance": 90,
+      "name": "Pulsed Heating",
+      "description": "Default Off",
+      "units": "",
+      "access": "C",
+      "states": "1=Off, 2=On, 3=Occupancy Output"
+    },
+    {
+      "type": "MV",
+      "instance": 91,
+      "name": "BO8 Aux Output Time Base",
+      "description": "Models: SE8300, SE8350",
+      "units": "",
+      "access": "C",
+      "states": ""
+    },
+    {
+      "type": "MV",
+      "instance": 92,
+      "name": "BO8 Aux Output configuration",
+      "description": "Models: SE8300, SE8350",
+      "units": "",
+      "access": "C",
+      "states": ""
+    },
+    {
+      "type": "MV",
+      "instance": 94,
+      "name": "DA / RA",
+      "description": "Models: SE8300, SE8350",
+      "units": "",
+      "access": "C",
+      "states": ""
+    },
+    {
+      "type": "MV",
+      "instance": 95,
+      "name": "Fan Control",
+      "description": "Default On",
+      "units": "",
+      "access": "C",
+      "states": "1=On, 2=Off-Auto, 3=Off-All"
+    },
+    {
+      "type": "MV",
+      "instance": 96,
+      "name": "UO 9 Configuration",
+      "description": "Default Binary; Models: SE8300, SE8350",
+      "units": "",
+      "access": "C",
+      "states": "1=Analog, 2=Binary"
+    },
+    {
+      "type": "MV",
+      "instance": 97,
+      "name": "UO 10 Configuration",
+      "description": "Default Binary; Models: SE8300, SE8350",
+      "units": "",
+      "access": "C",
+      "states": "1=Analog, 2=Binary"
+    },
+    {
+      "type": "MV",
+      "instance": 98,
+      "name": "UO 11 Configuration",
+      "description": "Default Binary; Models: SE8300, SE8350",
+      "units": "",
+      "access": "C",
+      "states": "1=Analog, 2=Binary"
+    },
+    {
+      "type": "MV",
+      "instance": 99,
+      "name": "UO 12 Configuration",
+      "description": "Default Binary; Models: SE8300, SE8350",
+      "units": "",
+      "access": "C",
+      "states": "1=Analog, 2=Binary"
+    },
+    {
+      "type": "MI",
+      "instance": 1,
+      "name": "BACnet Status",
+      "description": "Default Offline",
+      "units": "",
+      "access": "R",
+      "states": "1=Offline, 2=Online"
+    },
+    {
+      "type": "MI",
+      "instance": 2,
+      "name": "ZigBee Status",
+      "description": "Default N/A",
+      "units": "",
+      "access": "R",
+      "states": "1=Not Detecting, 2=Power On, 3=No Network, 4=Joined, 5=Online"
+    },
+    {
+      "type": "MI",
+      "instance": 33,
+      "name": "Effective Occupancy",
+      "description": "Default Occupied",
+      "units": "",
+      "access": "R",
+      "states": "1=Occupied, 2=Unoccupied, 3=Override, 4=Standby"
+    }
+  ]
+}

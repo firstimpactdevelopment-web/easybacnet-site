@@ -105,6 +105,14 @@ ANALYTICS = ("""
     d.querySelector('#cc-no').onclick=function(){try{localStorage.setItem(KEY,'denied');}catch(e){}d.remove();};
   }
   if(document.readyState==='loading'){document.addEventListener('DOMContentLoaded',banner);}else{banner();}
+  // "Get the app" taps: one named event per Google Play link click, with the
+  // placement (nav/hero/guide_cta/footer, from the link's utm_medium) and page.
+  // Queued in dataLayer, so it is only sent for visitors who accepted analytics.
+  document.addEventListener('click',function(e){
+    var a=e.target&&e.target.closest&&e.target.closest('a[href*="play.google.com/store/apps"]');if(!a)return;
+    var m=/[?&]utm_medium=([^&#]+)/.exec(a.href);
+    gtag('event','play_store_click',{placement:m?decodeURIComponent(m[1]):'other',page_path:location.pathname,link_url:a.href,transport_type:'beacon'});
+  },true);
 })();
 </script>
 <style>
@@ -5205,7 +5213,8 @@ def main(ping=False):
     # AI crawlers stay on "*" and can still read the JSON.
     data_rules = ("Allow: /\n"
                   "Disallow: /bacnet-points-lists/*.csv$\n"
-                  "Disallow: /bacnet-points-lists/*.json$\n")
+                  "Disallow: /bacnet-points-lists/*.json$\n"
+                  "Disallow: /device-remotes/\n")
     write("robots.txt", "User-agent: Googlebot\n" + data_rules + "\n"
           "User-agent: Bingbot\n" + data_rules + "\n"
           "User-agent: *\nAllow: /\n\nSitemap: %s/sitemap.xml\n" % BASE_URL)

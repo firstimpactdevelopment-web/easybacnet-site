@@ -1,0 +1,2216 @@
+{
+  "manufacturer": "Schneider Electric",
+  "manufacturer_slug": "schneider-electric",
+  "model": "SE8600 Series Rooftop Unit, Heat Pump and IAQ Controller (2015 BACnet list)",
+  "short_model": "SE8600 rooftop / IAQ",
+  "model_slug": "se8600-rooftop-iaq-controller",
+  "aliases": [
+    "SE8600",
+    "SE8600UxBxx",
+    "SE8600U5B00",
+    "SE8000 Series SE8600",
+    "IG-SE8600-BNET",
+    "Schneider SE8600 RTU"
+  ],
+  "equipment_type": "Rooftop unit controller (room thermostat, conventional or heat-pump RTUs)",
+  "applies_to": "Schneider Electric SE8600 Series touchscreen room controllers for conventional rooftop units and heat pumps with economizer and indoor air quality (CO2 / fresh air) control.",
+  "summary": "The SE8600 is an SE8000 Series touchscreen room controller for rooftop units and heat pumps (MV 119 Application), with staged G/Y1/Y2/W1/W2 outputs, economizer and CO2 / fresh-air control. It is a BACnet application-specific controller on BACnet MS/TP and also carries a weekly occupancy schedule and calendar, ten Lua program objects and status for up to ten ZigBee wireless zones. This is the April 2015 object list; names differ from the later Viconics VT8650 / SpaceLogic guides.",
+  "bacnet_transport": [
+    "BACnet MS/TP"
+  ],
+  "firmware": null,
+  "default_device_instance": "86000 + MAC address",
+  "access_inferred": false,
+  "notes": [
+    "Access follows the manual's property tables: AV, AO, BV, BO and MV present values are commandable, CSVs are writable, and AI, BI and MSI (MI here) inputs are read-only (AI and MSI only writable while Out_Of_Service is TRUE).",
+    "Lua Program 1-10 are BACnet Program objects (typed Other here); the Lua script is held in each object's Description property. Occupancy Schedule (SCH 1) holds 7 days with 3 occupied / 3 unoccupied times; Occupancy Calendar (CAL 1) holds dates, ranges and weekends.",
+    "Wireless Zone 1-10 objects (AI IEEE address, MV set function, MI status / battery / paired) only report data for ZigBee sensors paired to the controller.",
+    "Names are as printed, including spellings such as 'Dehumidifcation Lockout'. Ranges and defaults from the range tables are given in the descriptions."
+  ],
+  "source": {
+    "title": "SE8600 Series BACnet Integration Manual - Rooftop Unit and Indoor Air Quality Controller",
+    "doc_number": "IG-SE8600-BNET-A4.EN.04.2015.v2",
+    "revision_date": "April 2015",
+    "url": "https://assets.kele.com/Catalog/22%20Thermostats_Controllers/PDFs/SE8600%20RTU%20HPIAQ%20BACNET%20INTEGRATION%20GUIDE.pdf",
+    "unofficial": true,
+    "host": "Kele"
+  },
+  "integration": {
+    "summary": "Set a MAC address from 0 to 127 (the factory value 254 keeps BACnet off), then command occupancy (MV 10), system mode (MV 16), fan mode (MV 17) and the occupied setpoints (AV 39 / AV 40). Read room temperature (AV 100), effective occupancy (MI 33), the G/Y/W stage outputs and the alarm BVs. Use priorities 4-16 for live commands.",
+    "minimum_points": [
+      {
+        "ref": "MV 10",
+        "name": "Occupancy Command",
+        "why": "BMS occupancy: local, occupied or unoccupied"
+      },
+      {
+        "ref": "MV 16",
+        "name": "System Mode",
+        "why": "Off / auto / cool / heat"
+      },
+      {
+        "ref": "MV 17",
+        "name": "Fan Mode",
+        "why": "Fan mode: on / auto / smart"
+      },
+      {
+        "ref": "AV 39",
+        "name": "Occupied Heat Setpoint",
+        "why": "Occupied heating setpoint"
+      },
+      {
+        "ref": "AV 40",
+        "name": "Occupied Cool Setpoint",
+        "why": "Occupied cooling setpoint"
+      },
+      {
+        "ref": "BO 25",
+        "name": "G Fan Status",
+        "why": "Fan (G) output state"
+      },
+      {
+        "ref": "MI 33",
+        "name": "Effective Occupancy",
+        "why": "Actual occupancy state"
+      },
+      {
+        "ref": "AV 100",
+        "name": "Room Temperature",
+        "why": "Space temperature used for control"
+      },
+      {
+        "ref": "AV 106",
+        "name": "CO2 Level",
+        "why": "Space CO2, ppm"
+      },
+      {
+        "ref": "BV 39",
+        "name": "Fan Lock Alarm",
+        "why": "Fan lock alarm (1 = on)"
+      }
+    ],
+    "enable": "BACnet communication starts once the MAC address is changed from the factory value 254 to 0-127. The BMS then writes MV 10 Occupancy Command (1 = Local Occupancy, 2 = Occupied, 3 = Unoccupied) and MV 16 System Mode. MV 110 Occupancy Source picks motion or the internal schedule for local occupancy.",
+    "heartbeat": "No heartbeat point. If the controller goes offline, network-bound Room Temperature, Outdoor Temperature and Occupancy are released.",
+    "remote_sensors": "The manual lists Outdoor Temperature (AV 101) as a global value the BMS can send to all controllers and Room Temperature (AV 100) for testing and override. Writes at priority 4-16 override the controller's own value until relinquished or power is lost.",
+    "setup": [
+      "Factory MAC address is 254, which disables BACnet; set 0-127 to join the token ring.",
+      "Default Device ID is 86000 + MAC (MAC 63 gives 86063); the device name and ID are writable.",
+      "Baud rate auto-detects (MV 8, default Auto: 9600-115200).",
+      "Up to 64 Schneider Electric nodes per segment and 128 per network; 510 ohm bias resistors, at most two sets per segment."
+    ],
+    "gotchas": [
+      "Priorities 1-3 are saved to flash and survive a power cycle, locking the value until a NULL is written at the same priority; use 4-16 (RAM) for live control and rewrite after a restart.",
+      "CSV 1 / CSV 2 screen messages are not saved and are lost on power loss.",
+      "Remove configuration objects from the BAS after setup to cut polling traffic, as the manual recommends.",
+      "MV 119 Application switches between rooftop and heat-pump sequences; MV 117 sets the reversing valve as O or B."
+    ]
+  },
+  "points": [
+    {
+      "type": "AV",
+      "instance": 2,
+      "name": "User HMI",
+      "description": "Default 0; range 0 to 11",
+      "units": "",
+      "access": "C",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 3,
+      "name": "Low Backlight",
+      "description": "Default 60%; range 0% to 100%",
+      "units": "%",
+      "access": "C",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 4,
+      "name": "Night Backlight",
+      "description": "Default 5%; range 0% to 100%",
+      "units": "%",
+      "access": "C",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 7,
+      "name": "Calibrate Temperature Sensor",
+      "description": "Default 0°F (0°C); maximum 5°F(2.5°C) (minimum printed as '-')",
+      "units": "°F/°C",
+      "access": "C",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 10,
+      "name": "COM Address",
+      "description": "Default 254; range 0 to 254",
+      "units": "",
+      "access": "C",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 11,
+      "name": "ZigBee PAN ID",
+      "description": "Default 0; range 0 to 1000",
+      "units": "",
+      "access": "C",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 12,
+      "name": "ZigBee channel",
+      "description": "Default 10; range 0 to 25",
+      "units": "",
+      "access": "C",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 13,
+      "name": "ZigBee Short Address",
+      "description": "Default 0; range -32768 to 32767",
+      "units": "",
+      "access": "C",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 14,
+      "name": "ZigBee IEEE Address",
+      "description": "Default 0; range 0 to 32767",
+      "units": "",
+      "access": "C",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 16,
+      "name": "BACnet Stack Poll Rate",
+      "description": "Default 4; range 1 to 5",
+      "units": "",
+      "access": "C",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 20,
+      "name": "Discharge Low Limit",
+      "description": "Default 45°F (7°C); range 35°F (1.5°C) to 65°F (18°C)",
+      "units": "°F/°C",
+      "access": "C",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 21,
+      "name": "Minimum Fresh Air",
+      "description": "Default 0 CFM; range 0 CFM to 20000 CFM",
+      "units": "CFM",
+      "access": "C",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 22,
+      "name": "Maximum Fresh Air",
+      "description": "Default 0 CFM; range 0 CFM to 20000 CFM",
+      "units": "CFM",
+      "access": "C",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 23,
+      "name": "Minimum CO2",
+      "description": "Default 800 ppm; range 0 ppm to 2000 ppm",
+      "units": "ppm",
+      "access": "C",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 24,
+      "name": "Maximum CO2",
+      "description": "Default 1200 ppm; range 0 ppm to 2000 ppm",
+      "units": "ppm",
+      "access": "C",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 25,
+      "name": "Lua Parameter A",
+      "description": "Default 0; range -32768 to 32767",
+      "units": "",
+      "access": "C",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 26,
+      "name": "Lua Parameter B",
+      "description": "Default 0; range -32768 to 32767",
+      "units": "",
+      "access": "C",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 27,
+      "name": "Lua Parameter C",
+      "description": "Default 0; range -32768 to 32767",
+      "units": "",
+      "access": "C",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 28,
+      "name": "Lua Parameter D",
+      "description": "Default 0; range -32768 to 32767",
+      "units": "",
+      "access": "C",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 29,
+      "name": "Lua Parameter E",
+      "description": "Default 0; range -32768 to 32767",
+      "units": "",
+      "access": "C",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 30,
+      "name": "Lua Parameter F",
+      "description": "Default 0; range -32768 to 32767",
+      "units": "",
+      "access": "C",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 39,
+      "name": "Occupied Heat Setpoint",
+      "description": "Default 72°F (22°C); range 40°F (4.5°C) to 90°F (32°C)",
+      "units": "°F/°C",
+      "access": "C",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 40,
+      "name": "Occupied Cool Setpoint",
+      "description": "Default 75°F (24°C); range 54°F (12°C) to 100°F (37.5°C)",
+      "units": "°F/°C",
+      "access": "C",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 41,
+      "name": "Standby Heat Setpoint",
+      "description": "Default 69°F (21°C); range 40°F (4.5°C) to 90°F (32°C)",
+      "units": "°F/°C",
+      "access": "C",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 42,
+      "name": "Standby Cool Setpoint",
+      "description": "Default 78°F (26°C); range 54°F (12°C) to 100°F (37.5°C)",
+      "units": "°F/°C",
+      "access": "C",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 43,
+      "name": "Unoccupied Heat Setpoint",
+      "description": "Default 62°F (16.5°C); range 40°F (4.5°C) to 90°F (32°C)",
+      "units": "°F/°C",
+      "access": "C",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 44,
+      "name": "Unoccupied Cooling Setpoint",
+      "description": "Default 80°F (26.5°C); range 54°F (12°C) to 100°F (37.5°C)",
+      "units": "°F/°C",
+      "access": "C",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 45,
+      "name": "Default Heating Setpoint",
+      "description": "Default 72°F (22°C); range 65°F (18°C) to 80°F (26.5°C)",
+      "units": "°F/°C",
+      "access": "C",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 46,
+      "name": "Standby Temperature Differential",
+      "description": "Default 40°F (22°C); range 10°F (5.5°C) to 50°F (28°C)",
+      "units": "°F/°C",
+      "access": "C",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 56,
+      "name": "Main Password",
+      "description": "Default N/A; range 0 to 9999",
+      "units": "",
+      "access": "C",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 57,
+      "name": "User Password",
+      "description": "Default 0; range 0 to 9999",
+      "units": "",
+      "access": "C",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 58,
+      "name": "Heating Setpoint Limit",
+      "description": "Default 90°F (32°C); range 40°F (4.5°C) to 90°F (32°C)",
+      "units": "°F/°C",
+      "access": "C",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 59,
+      "name": "Cooling Setpoint Limit",
+      "description": "Default 54°F (12°C); range 54°F (12°C) to 100°F (37.5°C)",
+      "units": "°F/°C",
+      "access": "C",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 62,
+      "name": "Temporary Occupancy Time",
+      "description": "Default 2H; range 0H to 24H",
+      "units": "h",
+      "access": "C",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 63,
+      "name": "Minimum Deadband",
+      "description": "Default 2°F (1°C); range 2°F (1°C) to 5°F (2.5°C)",
+      "units": "°F/°C",
+      "access": "C",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 65,
+      "name": "Proportional Band",
+      "description": "Default 3°F (1.2°C); range 3°F (1.2°C) to 10°F (5.6°C)",
+      "units": "°F/°C",
+      "access": "C",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 67,
+      "name": "Standby time",
+      "description": "Default 5H; range 5H to 24H",
+      "units": "h",
+      "access": "C",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 68,
+      "name": "Unoccupied Time",
+      "description": "Default 0H; range 0H to 24H",
+      "units": "h",
+      "access": "C",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 74,
+      "name": "Calibrate Outside Temp. Sensor",
+      "description": "Default 0°F (0°C); maximum 5°F(2.5°C) (minimum printed as '-')",
+      "units": "°F/°C",
+      "access": "C",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 75,
+      "name": "Number of Cooling Stages",
+      "description": "Default 2; range 1 to 2",
+      "units": "",
+      "access": "C",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 76,
+      "name": "Power-up Delay",
+      "description": "Default 10 s; range 10 s to 120 s",
+      "units": "s",
+      "access": "C",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 78,
+      "name": "Economizer Minimum Position",
+      "description": "Default 0%; range 0% to 100%",
+      "units": "%",
+      "access": "C",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 81,
+      "name": "Economizer Maximum Position",
+      "description": "Default 100%; range 0% to 100%",
+      "units": "%",
+      "access": "C",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 84,
+      "name": "Heating CPH",
+      "description": "Default 4; range 3 to 8",
+      "units": "",
+      "access": "C",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 85,
+      "name": "Cooling CPH",
+      "description": "Default 4; range 3 to 8",
+      "units": "",
+      "access": "C",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 86,
+      "name": "Anti Short Cycle Timer",
+      "description": "Default 2 min; range 0 min to 5 min",
+      "units": "min",
+      "access": "C",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 87,
+      "name": "Number of Heating Stages",
+      "description": "Default 2; range 0 to 2",
+      "units": "",
+      "access": "C",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 88,
+      "name": "Heating Demand Limit",
+      "description": "Default 0%; range 0% to 100%",
+      "units": "%",
+      "access": "C",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 89,
+      "name": "Cooling Demand Limit",
+      "description": "Default 0%; range 0% to 100%",
+      "units": "%",
+      "access": "C",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 91,
+      "name": "Heat Lock",
+      "description": "Default 120°F (49°C); range -15°F (-26°C) to 120°F (49°C)",
+      "units": "°F/°C",
+      "access": "C",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 93,
+      "name": "Cool Lock",
+      "description": "Default -40°F (-40°C); range -40°F (-40°C) to 125°F (52°C)",
+      "units": "°F/°C",
+      "access": "C",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 94,
+      "name": "Supply Air Setpoint",
+      "description": "Default 55°F (13°C); range 50°F (10°C) to 90°F (32°C)",
+      "units": "°F/°C",
+      "access": "C",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 95,
+      "name": "Changeover Setpoint",
+      "description": "Default 55°F (13°C); range 14°F (-10°C) to 70°F (21°C)",
+      "units": "°F/°C",
+      "access": "C",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 96,
+      "name": "Fresh Air Range Upper Limit",
+      "description": "Default 0 ft3; range 0 ft3 to 20000 ft3",
+      "units": "ft3",
+      "access": "C",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 97,
+      "name": "Minimum Supply Heat",
+      "description": "Default 64°F (18°C); range 50°F (10°C) to 72°F (22°C)",
+      "units": "°F/°C",
+      "access": "C",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 98,
+      "name": "Supply Heat Lockout",
+      "description": "Default 32°F (0°C); range -15°F (-26°C) to 120°F (49°C)",
+      "units": "°F/°C",
+      "access": "C",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 99,
+      "name": "Discharge High Limit",
+      "description": "Default 120°F (49°C); range 70°F (21°C) to 150°F (65.5°C)",
+      "units": "°F/°C",
+      "access": "C",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 100,
+      "name": "Room Temperature",
+      "description": "Default N/A; range -40°F (-40°C) to 122°F (50°C)",
+      "units": "°F/°C",
+      "access": "C",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 101,
+      "name": "Outdoor Temperature",
+      "description": "Default N/A; range -40°F (-40°C) to 122°F (50°C)",
+      "units": "°F/°C",
+      "access": "C",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 102,
+      "name": "Supply Temperature",
+      "description": "Default N/A; range -40°F (-40°C) to 122°F (50°C)",
+      "units": "°F/°C",
+      "access": "C",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 106,
+      "name": "CO2 Level",
+      "description": "Default 0 ppm; range 0 ppm to 2000 ppm",
+      "units": "ppm",
+      "access": "C",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 107,
+      "name": "Air Flow Level",
+      "description": "Default 0 ft3; range 0 ft3 to 20000 ft3",
+      "units": "ft3",
+      "access": "C",
+      "states": ""
+    },
+    {
+      "type": "AV",
+      "instance": 108,
+      "name": "UI19 Status",
+      "description": "Default 0%; range 0% to 100%",
+      "units": "%",
+      "access": "C",
+      "states": ""
+    },
+    {
+      "type": "AI",
+      "instance": 2,
+      "name": "Light Sensor Level",
+      "description": "Default N/A; range 0 to 30000",
+      "units": "",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AI",
+      "instance": 5,
+      "name": "Rem. Sensor (UI 20)",
+      "description": "Default 0; range 0 to 4095",
+      "units": "",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AI",
+      "instance": 7,
+      "name": "Outdoor Remote Input (UI 21)",
+      "description": "Default 0; range 0 to 4095",
+      "units": "",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AI",
+      "instance": 8,
+      "name": "Supply Temp Input (UI 22)",
+      "description": "Default 0; range 0 to 4095",
+      "units": "",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AI",
+      "instance": 9,
+      "name": "UI 24 Raw Value",
+      "description": "Default 0; range 0 to 4095",
+      "units": "",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AI",
+      "instance": 31,
+      "name": "UI 19 Raw Value",
+      "description": "Default 0; range 0 to 4095",
+      "units": "",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AI",
+      "instance": 210,
+      "name": "Wireless Zone 1 IEEE address",
+      "description": "Default 0; range 0 to 32767",
+      "units": "",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AI",
+      "instance": 220,
+      "name": "Wireless Zone 2 IEEE address",
+      "description": "Default 0; range 0 to 32767",
+      "units": "",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AI",
+      "instance": 230,
+      "name": "Wireless Zone 3 IEEE address",
+      "description": "Default 0; range 0 to 32767",
+      "units": "",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AI",
+      "instance": 240,
+      "name": "Wireless Zone 4 IEEE address",
+      "description": "Default 0; range 0 to 32767",
+      "units": "",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AI",
+      "instance": 250,
+      "name": "Wireless Zone 5 IEEE address",
+      "description": "Default 0; range 0 to 32767",
+      "units": "",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AI",
+      "instance": 260,
+      "name": "Wireless Zone 6 IEEE address",
+      "description": "Default 0; range 0 to 32767",
+      "units": "",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AI",
+      "instance": 270,
+      "name": "Wireless Zone 7 IEEE address",
+      "description": "Default 0; range 0 to 32767",
+      "units": "",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AI",
+      "instance": 280,
+      "name": "Wireless Zone 8 IEEE address",
+      "description": "Default 0; range 0 to 32767",
+      "units": "",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AI",
+      "instance": 290,
+      "name": "Wireless Zone 9 IEEE address",
+      "description": "Default 0; range 0 to 32767",
+      "units": "",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AI",
+      "instance": 300,
+      "name": "Wireless Zone 10 IEEE address",
+      "description": "Default 0; range 0 to 32767",
+      "units": "",
+      "access": "R",
+      "states": ""
+    },
+    {
+      "type": "AO",
+      "instance": 21,
+      "name": "PI Heating Demand",
+      "description": "Default N/A; range 0% to 100%",
+      "units": "%",
+      "access": "C",
+      "states": ""
+    },
+    {
+      "type": "AO",
+      "instance": 22,
+      "name": "PI Cooling Demand",
+      "description": "Default N/A; range 0% to 100%",
+      "units": "%",
+      "access": "C",
+      "states": ""
+    },
+    {
+      "type": "AO",
+      "instance": 23,
+      "name": "Econo. Demand",
+      "description": "Default N/A; range 0% to 100%",
+      "units": "%",
+      "access": "C",
+      "states": ""
+    },
+    {
+      "type": "AO",
+      "instance": 24,
+      "name": "Analog Output Heat Demand",
+      "description": "Default N/A; range 0% to 100%",
+      "units": "%",
+      "access": "C",
+      "states": ""
+    },
+    {
+      "type": "AO",
+      "instance": 123,
+      "name": "UO 11 Analog Output",
+      "description": "Default 0; range 0 to 10",
+      "units": "",
+      "access": "C",
+      "states": ""
+    },
+    {
+      "type": "AO",
+      "instance": 124,
+      "name": "UO 12 Analog Output",
+      "description": "Default 0; range 0 to 10",
+      "units": "",
+      "access": "C",
+      "states": ""
+    },
+    {
+      "type": "AO",
+      "instance": 125,
+      "name": "UO 9 Analog Output",
+      "description": "Default 0; range 0 to 10",
+      "units": "",
+      "access": "C",
+      "states": ""
+    },
+    {
+      "type": "AO",
+      "instance": 126,
+      "name": "UO 10 Analog Output",
+      "description": "Default 0; range 0 to 10",
+      "units": "",
+      "access": "C",
+      "states": ""
+    },
+    {
+      "type": "BI",
+      "instance": 29,
+      "name": "UI 16 Binary Input",
+      "description": "Default Deactivated",
+      "units": "",
+      "access": "R",
+      "states": "Deactivated / Activated"
+    },
+    {
+      "type": "BI",
+      "instance": 30,
+      "name": "UI 17 Binary Input",
+      "description": "Default Deactivated",
+      "units": "",
+      "access": "R",
+      "states": "Deactivated / Activated"
+    },
+    {
+      "type": "BI",
+      "instance": 91,
+      "name": "UI 19 Binary Input",
+      "description": "Default Deactivated",
+      "units": "",
+      "access": "R",
+      "states": "Deactivated / Activated"
+    },
+    {
+      "type": "BO",
+      "instance": 25,
+      "name": "G Fan Status",
+      "description": "Default Off",
+      "units": "",
+      "access": "C",
+      "states": "Off / On"
+    },
+    {
+      "type": "BO",
+      "instance": 26,
+      "name": "Y1 Status",
+      "description": "Default Off",
+      "units": "",
+      "access": "C",
+      "states": "Off / On"
+    },
+    {
+      "type": "BO",
+      "instance": 27,
+      "name": "Y2 Status",
+      "description": "Default Off",
+      "units": "",
+      "access": "C",
+      "states": "Off / On"
+    },
+    {
+      "type": "BO",
+      "instance": 28,
+      "name": "W1 Status",
+      "description": "Default Off",
+      "units": "",
+      "access": "C",
+      "states": "Off / On"
+    },
+    {
+      "type": "BO",
+      "instance": 29,
+      "name": "W2 Status",
+      "description": "Default Off",
+      "units": "",
+      "access": "C",
+      "states": "Off / On"
+    },
+    {
+      "type": "BO",
+      "instance": 94,
+      "name": "UO 10 Binary Output",
+      "description": "Default Off",
+      "units": "",
+      "access": "C",
+      "states": "Off / On"
+    },
+    {
+      "type": "BO",
+      "instance": 98,
+      "name": "BO 1 Auxiliary Binary Output",
+      "description": "Default Off",
+      "units": "",
+      "access": "C",
+      "states": "Off / On"
+    },
+    {
+      "type": "BO",
+      "instance": 101,
+      "name": "UO 11 Binary Output",
+      "description": "Default Off",
+      "units": "",
+      "access": "C",
+      "states": "Off / On"
+    },
+    {
+      "type": "BO",
+      "instance": 102,
+      "name": "UO 12 Binary Output",
+      "description": "Default Off",
+      "units": "",
+      "access": "C",
+      "states": "Off / On"
+    },
+    {
+      "type": "BV",
+      "instance": 1,
+      "name": "Door Contact Status",
+      "description": "Default Closed",
+      "units": "",
+      "access": "C",
+      "states": "Closed / Open"
+    },
+    {
+      "type": "BV",
+      "instance": 2,
+      "name": "Door Contact Installed",
+      "description": "Default No",
+      "units": "",
+      "access": "C",
+      "states": "No / Yes"
+    },
+    {
+      "type": "BV",
+      "instance": 3,
+      "name": "Window Contact Status",
+      "description": "Default Closed",
+      "units": "",
+      "access": "C",
+      "states": "Closed / Opened"
+    },
+    {
+      "type": "BV",
+      "instance": 4,
+      "name": "Window Contact Installed",
+      "description": "Default No",
+      "units": "",
+      "access": "C",
+      "states": "No / Yes"
+    },
+    {
+      "type": "BV",
+      "instance": 5,
+      "name": "Low Battery Alarm",
+      "description": "Default Off",
+      "units": "",
+      "access": "C",
+      "states": "Off / On"
+    },
+    {
+      "type": "BV",
+      "instance": 6,
+      "name": "Force High Backlight",
+      "description": "Default Off",
+      "units": "",
+      "access": "C",
+      "states": "Off / On"
+    },
+    {
+      "type": "BV",
+      "instance": 7,
+      "name": "Display Long Screen Message",
+      "description": "Default Off",
+      "units": "",
+      "access": "C",
+      "states": "Off / On"
+    },
+    {
+      "type": "BV",
+      "instance": 10,
+      "name": "Exception Status",
+      "description": "Default Off",
+      "units": "",
+      "access": "C",
+      "states": "Off / On"
+    },
+    {
+      "type": "BV",
+      "instance": 32,
+      "name": "PIR Local Motion",
+      "description": "Default Off",
+      "units": "",
+      "access": "C",
+      "states": "Off / On"
+    },
+    {
+      "type": "BV",
+      "instance": 35,
+      "name": "Window Alarm",
+      "description": "Default Off",
+      "units": "",
+      "access": "C",
+      "states": "Off / On"
+    },
+    {
+      "type": "BV",
+      "instance": 36,
+      "name": "Filter Alarm",
+      "description": "Default Off",
+      "units": "",
+      "access": "C",
+      "states": "Off / On"
+    },
+    {
+      "type": "BV",
+      "instance": 37,
+      "name": "Service alarm",
+      "description": "Default Off",
+      "units": "",
+      "access": "C",
+      "states": "Off / On"
+    },
+    {
+      "type": "BV",
+      "instance": 39,
+      "name": "Fan Lock Alarm",
+      "description": "Default Off",
+      "units": "",
+      "access": "C",
+      "states": "Off / On"
+    },
+    {
+      "type": "BV",
+      "instance": 40,
+      "name": "Smart Recovery",
+      "description": "Default Off",
+      "units": "",
+      "access": "C",
+      "states": "Off / On"
+    },
+    {
+      "type": "BV",
+      "instance": 41,
+      "name": "CO2 Alarm",
+      "description": "Default Off",
+      "units": "",
+      "access": "C",
+      "states": "Off / On"
+    },
+    {
+      "type": "BV",
+      "instance": 42,
+      "name": "Air Alarm",
+      "description": "Default Off",
+      "units": "",
+      "access": "C",
+      "states": "Off / On"
+    },
+    {
+      "type": "BV",
+      "instance": 43,
+      "name": "Frost Protection Alarm",
+      "description": "Default Off",
+      "units": "",
+      "access": "C",
+      "states": "Off / On"
+    },
+    {
+      "type": "BV",
+      "instance": 200,
+      "name": "ZigBee PIR Sensor Installed",
+      "description": "Default Off",
+      "units": "",
+      "access": "C",
+      "states": "Off / On"
+    },
+    {
+      "type": "BV",
+      "instance": 201,
+      "name": "Zigbee Sensor Motion",
+      "description": "Default Off",
+      "units": "",
+      "access": "C",
+      "states": "Off / On"
+    },
+    {
+      "type": "CSV",
+      "instance": 1,
+      "name": "Short Screen Message",
+      "description": "Text string; not kept after power loss",
+      "units": "",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "CSV",
+      "instance": 2,
+      "name": "Long Screen Message",
+      "description": "Text string; not kept after power loss",
+      "units": "",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "MV",
+      "instance": 1,
+      "name": "Long Message Background Colour",
+      "description": "Default White",
+      "units": "",
+      "access": "C",
+      "states": "1=White, 2=Green, 3=Blue, 4=Grey, 5=Dark Grey, 6=Default, 7=Red"
+    },
+    {
+      "type": "MV",
+      "instance": 2,
+      "name": "HMI Colour",
+      "description": "Default Green",
+      "units": "",
+      "access": "C",
+      "states": "1=White, 2=Green, 3=Blue, 4=Grey, 5=Dark Grey"
+    },
+    {
+      "type": "MV",
+      "instance": 3,
+      "name": "Main Display",
+      "description": "Default Temperature",
+      "units": "",
+      "access": "C",
+      "states": "1=Temperature, 2=Setpoint"
+    },
+    {
+      "type": "MV",
+      "instance": 4,
+      "name": "Display Language",
+      "description": "Default English",
+      "units": "",
+      "access": "C",
+      "states": "1=English, 2=French, 3=Spanish, 4=Chinese, 5=Russian, 6=Arabic, 7=Bulgarian, 8=Czech, 9=Danish, 10=Dutch, 11=Finnish, 12=German, 13=Hungarian, 14=Indonesian, 15=Italian, 16=Norwegian, 17=Polish, 18=Portuguese, 19=Slovak, 20=Swedish, 21=Turkish"
+    },
+    {
+      "type": "MV",
+      "instance": 5,
+      "name": "Time Format",
+      "description": "Default AM-PM",
+      "units": "",
+      "access": "C",
+      "states": "1=AM-PM, 2=24 Hours"
+    },
+    {
+      "type": "MV",
+      "instance": 6,
+      "name": "Network Units",
+      "description": "Default SI",
+      "units": "",
+      "access": "C",
+      "states": "1=SI, 2=Imperial"
+    },
+    {
+      "type": "MV",
+      "instance": 13,
+      "name": "Dehumidifcation Lockout",
+      "description": "Default Enabled",
+      "units": "",
+      "access": "C",
+      "states": "1=Disabled, 2=Enabled"
+    },
+    {
+      "type": "MV",
+      "instance": 7,
+      "name": "Network Language",
+      "description": "Default English",
+      "units": "",
+      "access": "C",
+      "states": "1=English, 2=French, 3=Spanish"
+    },
+    {
+      "type": "MV",
+      "instance": 8,
+      "name": "BACnet Baud Rate",
+      "description": "Default Auto",
+      "units": "",
+      "access": "C",
+      "states": "1=9600, 2=19200, 3=38400, 4=57600, 5=76800, 6=115200, 7=Auto"
+    },
+    {
+      "type": "MV",
+      "instance": 10,
+      "name": "Occupancy Command",
+      "description": "Default Local Occupancy",
+      "units": "",
+      "access": "C",
+      "states": "1=Local Occupancy, 2=Occupied, 3=Unoccupied"
+    },
+    {
+      "type": "MV",
+      "instance": 11,
+      "name": "Standby Mode Config",
+      "description": "Default Absolute",
+      "units": "",
+      "access": "C",
+      "states": "1=Absolute, 2=Offset"
+    },
+    {
+      "type": "MV",
+      "instance": 16,
+      "name": "System Mode",
+      "description": "Default Heat",
+      "units": "",
+      "access": "C",
+      "states": "1=Off, 2=Auto, 3=Cool, 4=Heat"
+    },
+    {
+      "type": "MV",
+      "instance": 17,
+      "name": "Fan Mode",
+      "description": "Default Auto",
+      "units": "",
+      "access": "C",
+      "states": "1=On, 2=Auto, 3=Smart"
+    },
+    {
+      "type": "MV",
+      "instance": 32,
+      "name": "Use Standby Screen",
+      "description": "Default No",
+      "units": "",
+      "access": "C",
+      "states": "1=No, 2=Yes"
+    },
+    {
+      "type": "MV",
+      "instance": 46,
+      "name": "UI 16 Configuration",
+      "description": "Default None",
+      "units": "",
+      "access": "C",
+      "states": "1=None, 2=Rem NSB, 3=Motion NO, 4=Motion NC, 5=Window"
+    },
+    {
+      "type": "MV",
+      "instance": 47,
+      "name": "UI 17 Configuration",
+      "description": "Default None",
+      "units": "",
+      "access": "C",
+      "states": "1=None, 2=Door Dry, 3=Override"
+    },
+    {
+      "type": "MV",
+      "instance": 49,
+      "name": "UI 19 Configuration",
+      "description": "Default None",
+      "units": "",
+      "access": "C",
+      "states": "1=None, 2=CO 2"
+    },
+    {
+      "type": "MV",
+      "instance": 51,
+      "name": "Temperature Scale",
+      "description": "Default °C",
+      "units": "",
+      "access": "C",
+      "states": "1=°C, 2=°F"
+    },
+    {
+      "type": "MV",
+      "instance": 55,
+      "name": "Frost Protection",
+      "description": "Default Off",
+      "units": "",
+      "access": "C",
+      "states": "1=Off, 2=On"
+    },
+    {
+      "type": "MV",
+      "instance": 58,
+      "name": "Setpoint Function",
+      "description": "Default Attach Stp",
+      "units": "",
+      "access": "C",
+      "states": "1=Dual Stp, 2=Attach Stp"
+    },
+    {
+      "type": "MV",
+      "instance": 70,
+      "name": "Room Humidity Display",
+      "description": "Default Disabled",
+      "units": "",
+      "access": "C",
+      "states": "1=Disabled, 2=Enabled"
+    },
+    {
+      "type": "MV",
+      "instance": 71,
+      "name": "Smart Recovery",
+      "description": "Default Off",
+      "units": "",
+      "access": "C",
+      "states": "1=Off, 2=On"
+    },
+    {
+      "type": "MV",
+      "instance": 72,
+      "name": "Econo Config",
+      "description": "Default Off",
+      "units": "",
+      "access": "C",
+      "states": "1=Off, 2=On"
+    },
+    {
+      "type": "MV",
+      "instance": 73,
+      "name": "Schedule menu",
+      "description": "Default Enabled",
+      "units": "",
+      "access": "C",
+      "states": "1=Disabled, 2=Enabled, 3=Dis.no.clk, 4=En.no.clk"
+    },
+    {
+      "type": "MV",
+      "instance": 79,
+      "name": "Mechanical Cooling Allowed",
+      "description": "Default Off",
+      "units": "",
+      "access": "C",
+      "states": "1=Off, 2=On"
+    },
+    {
+      "type": "MV",
+      "instance": 92,
+      "name": "BO1 Auxiliary Output Config",
+      "description": "Default NO",
+      "units": "",
+      "access": "C",
+      "states": "1=NO, 2=NC"
+    },
+    {
+      "type": "MV",
+      "instance": 95,
+      "name": "Fan Control in Heating Mode",
+      "description": "Default On",
+      "units": "",
+      "access": "C",
+      "states": "1=On, 2=Off-Auto, 3=Off-All"
+    },
+    {
+      "type": "MV",
+      "instance": 96,
+      "name": "UO 9 Configuration",
+      "description": "Default Relay RH",
+      "units": "",
+      "access": "C",
+      "states": "1=Analog, 2=Binary, 3=Relay RC, 4=Relay RH"
+    },
+    {
+      "type": "MV",
+      "instance": 97,
+      "name": "UO 10 Configuration",
+      "description": "Default Analog",
+      "units": "",
+      "access": "C",
+      "states": "1=Analog, 2=Binary, 3=Relay RC"
+    },
+    {
+      "type": "MV",
+      "instance": 98,
+      "name": "UO 11 Configuration",
+      "description": "Default Analog",
+      "units": "",
+      "access": "C",
+      "states": "1=Analog, 2=Binary"
+    },
+    {
+      "type": "MV",
+      "instance": 99,
+      "name": "UO 12 Configuration",
+      "description": "Default Analog",
+      "units": "",
+      "access": "C",
+      "states": "1=Analog, 2=Binary"
+    },
+    {
+      "type": "MV",
+      "instance": 101,
+      "name": "French",
+      "description": "Default Enabled",
+      "units": "",
+      "access": "C",
+      "states": "1=Disabled, 2=Enabled"
+    },
+    {
+      "type": "MV",
+      "instance": 102,
+      "name": "Spanish",
+      "description": "Default Enabled",
+      "units": "",
+      "access": "C",
+      "states": "1=Disabled, 2=Enabled"
+    },
+    {
+      "type": "MV",
+      "instance": 103,
+      "name": "Chinese",
+      "description": "Default Enabled",
+      "units": "",
+      "access": "C",
+      "states": "1=Disabled, 2=Enabled"
+    },
+    {
+      "type": "MV",
+      "instance": 104,
+      "name": "Russian",
+      "description": "Default Enabled",
+      "units": "",
+      "access": "C",
+      "states": "1=Disabled, 2=Enabled"
+    },
+    {
+      "type": "MV",
+      "instance": 110,
+      "name": "Occupancy Source",
+      "description": "Default Motion",
+      "units": "",
+      "access": "C",
+      "states": "1=Motion, 2=Schedule"
+    },
+    {
+      "type": "MV",
+      "instance": 111,
+      "name": "Mode button",
+      "description": "Default Normal",
+      "units": "",
+      "access": "C",
+      "states": "1=Normal, 2=Off-Auto"
+    },
+    {
+      "type": "MV",
+      "instance": 114,
+      "name": "Custom button icon",
+      "description": "Default Default Button",
+      "units": "",
+      "access": "C",
+      "states": "1=Default Button, 2=No Button, 3=System Mode Heat/Cool, 4=System Mode On/Off, 5=Fan Mode, 6=Override Button, 7=Units Button, 8=Help Button, 9=Language Button, 10=Schedule Button, 11=Lighting Button, 12=Blind Button, 13=Lamp Button, 14=Energy Button, 15=Make Room Button, 16=Setting Button, 17=Timer Button"
+    },
+    {
+      "type": "MV",
+      "instance": 115,
+      "name": "Custom button behaviour",
+      "description": "Default Default Function",
+      "units": "",
+      "access": "C",
+      "states": "1=Default Function, 2=No Function, 3=System Mode Function, 4=Fan Function, 5=Override Function, 6=Schedule Function, 7=Units Function, 8=Help Function, 9=Language Function, 10=Configuration Function, 11=Custom Function, 12=Standby Function"
+    },
+    {
+      "type": "MV",
+      "instance": 116,
+      "name": "Comfort or economy mode",
+      "description": "Default Comfort",
+      "units": "",
+      "access": "C",
+      "states": "1=Comfort, 2=Economy"
+    },
+    {
+      "type": "MV",
+      "instance": 117,
+      "name": "Reversing valve operation",
+      "description": "Default O",
+      "units": "",
+      "access": "C",
+      "states": "1=O, 2=B"
+    },
+    {
+      "type": "MV",
+      "instance": 118,
+      "name": "Compressor - auxiliary interlock",
+      "description": "Default Off",
+      "units": "",
+      "access": "C",
+      "states": "1=Off, 2=On"
+    },
+    {
+      "type": "MV",
+      "instance": 119,
+      "name": "Application",
+      "description": "Default Rooftop",
+      "units": "",
+      "access": "C",
+      "states": "1=Rooftop, 2=Heatpump"
+    },
+    {
+      "type": "MV",
+      "instance": 120,
+      "name": "Arabic",
+      "description": "Default Disabled",
+      "units": "",
+      "access": "C",
+      "states": "1=Disabled, 2=Enabled"
+    },
+    {
+      "type": "MV",
+      "instance": 121,
+      "name": "Bulgarian",
+      "description": "Default Disabled",
+      "units": "",
+      "access": "C",
+      "states": "1=Disabled, 2=Enabled"
+    },
+    {
+      "type": "MV",
+      "instance": 122,
+      "name": "Czech",
+      "description": "Default Disabled",
+      "units": "",
+      "access": "C",
+      "states": "1=Disabled, 2=Enabled"
+    },
+    {
+      "type": "MV",
+      "instance": 123,
+      "name": "Danish",
+      "description": "Default Disabled",
+      "units": "",
+      "access": "C",
+      "states": "1=Disabled, 2=Enabled"
+    },
+    {
+      "type": "MV",
+      "instance": 124,
+      "name": "Dutch",
+      "description": "Default Disabled",
+      "units": "",
+      "access": "C",
+      "states": "1=Disabled, 2=Enabled"
+    },
+    {
+      "type": "MV",
+      "instance": 125,
+      "name": "Finnish",
+      "description": "Default Disabled",
+      "units": "",
+      "access": "C",
+      "states": "1=Disabled, 2=Enabled"
+    },
+    {
+      "type": "MV",
+      "instance": 126,
+      "name": "German",
+      "description": "Default Disabled",
+      "units": "",
+      "access": "C",
+      "states": "1=Disabled, 2=Enabled"
+    },
+    {
+      "type": "MV",
+      "instance": 127,
+      "name": "Hungarian",
+      "description": "Default Disabled",
+      "units": "",
+      "access": "C",
+      "states": "1=Disabled, 2=Enabled"
+    },
+    {
+      "type": "MV",
+      "instance": 128,
+      "name": "Indonesian",
+      "description": "Default Disabled",
+      "units": "",
+      "access": "C",
+      "states": "1=Disabled, 2=Enabled"
+    },
+    {
+      "type": "MV",
+      "instance": 129,
+      "name": "Italian",
+      "description": "Default Disabled",
+      "units": "",
+      "access": "C",
+      "states": "1=Disabled, 2=Enabled"
+    },
+    {
+      "type": "MV",
+      "instance": 130,
+      "name": "Norwegian",
+      "description": "Default Disabled",
+      "units": "",
+      "access": "C",
+      "states": "1=Disabled, 2=Enabled"
+    },
+    {
+      "type": "MV",
+      "instance": 131,
+      "name": "Polish",
+      "description": "Default Disabled",
+      "units": "",
+      "access": "C",
+      "states": "1=Disabled, 2=Enabled"
+    },
+    {
+      "type": "MV",
+      "instance": 132,
+      "name": "Portuguese",
+      "description": "Default Disabled",
+      "units": "",
+      "access": "C",
+      "states": "1=Disabled, 2=Enabled"
+    },
+    {
+      "type": "MV",
+      "instance": 133,
+      "name": "Slovak",
+      "description": "Default Disabled",
+      "units": "",
+      "access": "C",
+      "states": "1=Disabled, 2=Enabled"
+    },
+    {
+      "type": "MV",
+      "instance": 134,
+      "name": "Swedish",
+      "description": "Default Disabled",
+      "units": "",
+      "access": "C",
+      "states": "1=Disabled, 2=Enabled"
+    },
+    {
+      "type": "MV",
+      "instance": 135,
+      "name": "Turkish",
+      "description": "Default Disabled",
+      "units": "",
+      "access": "C",
+      "states": "1=Disabled, 2=Enabled"
+    },
+    {
+      "type": "MV",
+      "instance": 210,
+      "name": "Wireless Zone 1 Set Function",
+      "description": "Default None",
+      "units": "",
+      "access": "C",
+      "states": "1=None, 2=Window, 3=Door, 4=Motion, 5=Status, 6=Remove"
+    },
+    {
+      "type": "MV",
+      "instance": 220,
+      "name": "Wireless Zone 2 Set Function",
+      "description": "Default None",
+      "units": "",
+      "access": "C",
+      "states": "1=None, 2=Window, 3=Door, 4=Motion, 5=Status, 6=Remove"
+    },
+    {
+      "type": "MV",
+      "instance": 230,
+      "name": "Wireless Zone 3 Set Function",
+      "description": "Default None",
+      "units": "",
+      "access": "C",
+      "states": "1=None, 2=Window, 3=Door, 4=Motion, 5=Status, 6=Remove"
+    },
+    {
+      "type": "MV",
+      "instance": 240,
+      "name": "Wireless Zone 4 Set Function",
+      "description": "Default None",
+      "units": "",
+      "access": "C",
+      "states": "1=None, 2=Window, 3=Door, 4=Motion, 5=Status, 6=Remove"
+    },
+    {
+      "type": "MV",
+      "instance": 250,
+      "name": "Wireless Zone 5 Set Function",
+      "description": "Default None",
+      "units": "",
+      "access": "C",
+      "states": "1=None, 2=Window, 3=Door, 4=Motion, 5=Status, 6=Remove"
+    },
+    {
+      "type": "MV",
+      "instance": 260,
+      "name": "Wireless Zone 6 Set Function",
+      "description": "Default None",
+      "units": "",
+      "access": "C",
+      "states": "1=None, 2=Window, 3=Door, 4=Motion, 5=Status, 6=Remove"
+    },
+    {
+      "type": "MV",
+      "instance": 270,
+      "name": "Wireless Zone 7 Set Function",
+      "description": "Default None",
+      "units": "",
+      "access": "C",
+      "states": "1=None, 2=Window, 3=Door, 4=Motion, 5=Status, 6=Remove"
+    },
+    {
+      "type": "MV",
+      "instance": 280,
+      "name": "Wireless Zone 8 Set Function",
+      "description": "Default None",
+      "units": "",
+      "access": "C",
+      "states": "1=None, 2=Window, 3=Door, 4=Motion, 5=Status, 6=Remove"
+    },
+    {
+      "type": "MV",
+      "instance": 290,
+      "name": "Wireless Zone 9 Set Function",
+      "description": "Default None",
+      "units": "",
+      "access": "C",
+      "states": "1=None, 2=Window, 3=Door, 4=Motion, 5=Status, 6=Remove"
+    },
+    {
+      "type": "MV",
+      "instance": 300,
+      "name": "Wireless Zone 10 Set Function",
+      "description": "Default None",
+      "units": "",
+      "access": "C",
+      "states": "1=None, 2=Window, 3=Door, 4=Motion, 5=Status, 6=Remove"
+    },
+    {
+      "type": "MI",
+      "instance": 1,
+      "name": "BACnet Status",
+      "description": "Default Offline",
+      "units": "",
+      "access": "R",
+      "states": "1=Offline, 2=Online"
+    },
+    {
+      "type": "MI",
+      "instance": 2,
+      "name": "ZigBee Status",
+      "description": "Default N/A",
+      "units": "",
+      "access": "R",
+      "states": "1=Not Detected, 2=Power On, 3=No Network, 4=Joined, 5=Online"
+    },
+    {
+      "type": "MI",
+      "instance": 33,
+      "name": "Effective Occupancy",
+      "description": "Default Occupied",
+      "units": "",
+      "access": "R",
+      "states": "1=Occupied, 2=Unoccupied, 3=Override, 4=Standby"
+    },
+    {
+      "type": "MI",
+      "instance": 210,
+      "name": "Wireless Zone 1 Status",
+      "description": "Default None",
+      "units": "",
+      "access": "R",
+      "states": "1=None, 2=Closed, 3=Opened, 4=Motion, 5=No Motion"
+    },
+    {
+      "type": "MI",
+      "instance": 211,
+      "name": "Wireless Zone 1 Battery",
+      "description": "Default None",
+      "units": "",
+      "access": "R",
+      "states": "1=None, 2=Normal, 3=Low"
+    },
+    {
+      "type": "MI",
+      "instance": 212,
+      "name": "Wireless Zone 1 Paired",
+      "description": "Default No",
+      "units": "",
+      "access": "R",
+      "states": "1=No, 2=Yes, 3=Invalid"
+    },
+    {
+      "type": "MI",
+      "instance": 220,
+      "name": "Wireless Zone 2 Status",
+      "description": "Default None",
+      "units": "",
+      "access": "R",
+      "states": "1=None, 2=Closed, 3=Opened, 4=Motion, 5=No Motion"
+    },
+    {
+      "type": "MI",
+      "instance": 221,
+      "name": "Wireless Zone 2 Battery",
+      "description": "Default None",
+      "units": "",
+      "access": "R",
+      "states": "1=None, 2=Normal, 3=Low"
+    },
+    {
+      "type": "MI",
+      "instance": 222,
+      "name": "Wireless Zone 2 Paired",
+      "description": "Default No",
+      "units": "",
+      "access": "R",
+      "states": "1=No, 2=Yes, 3=Invalid"
+    },
+    {
+      "type": "MI",
+      "instance": 230,
+      "name": "Wireless Zone 3 Status",
+      "description": "Default None",
+      "units": "",
+      "access": "R",
+      "states": "1=None, 2=Closed, 3=Opened, 4=Motion, 5=No Motion"
+    },
+    {
+      "type": "MI",
+      "instance": 231,
+      "name": "Wireless Zone 3 Battery",
+      "description": "Default None",
+      "units": "",
+      "access": "R",
+      "states": "1=None, 2=Normal, 3=Low"
+    },
+    {
+      "type": "MI",
+      "instance": 232,
+      "name": "Wireless Zone 3 Paired",
+      "description": "Default No",
+      "units": "",
+      "access": "R",
+      "states": "1=No, 2=Yes, 3=Invalid"
+    },
+    {
+      "type": "MI",
+      "instance": 240,
+      "name": "Wireless Zone 4 Status",
+      "description": "Default None",
+      "units": "",
+      "access": "R",
+      "states": "1=None, 2=Closed, 3=Opened, 4=Motion, 5=No Motion"
+    },
+    {
+      "type": "MI",
+      "instance": 241,
+      "name": "Wireless Zone 4 Battery",
+      "description": "Default None",
+      "units": "",
+      "access": "R",
+      "states": "1=None, 2=Normal, 3=Low"
+    },
+    {
+      "type": "MI",
+      "instance": 242,
+      "name": "Wireless Zone 4 Paired",
+      "description": "Default No",
+      "units": "",
+      "access": "R",
+      "states": "1=No, 2=Yes, 3=Invalid"
+    },
+    {
+      "type": "MI",
+      "instance": 250,
+      "name": "Wireless Zone 5 Status",
+      "description": "Default None",
+      "units": "",
+      "access": "R",
+      "states": "1=None, 2=Closed, 3=Opened, 4=Motion, 5=No Motion"
+    },
+    {
+      "type": "MI",
+      "instance": 251,
+      "name": "Wireless Zone 5 Battery",
+      "description": "Default None",
+      "units": "",
+      "access": "R",
+      "states": "1=None, 2=Normal, 3=Low"
+    },
+    {
+      "type": "MI",
+      "instance": 252,
+      "name": "Wireless Zone 5 Paired",
+      "description": "Default No",
+      "units": "",
+      "access": "R",
+      "states": "1=No, 2=Yes, 3=Invalid"
+    },
+    {
+      "type": "MI",
+      "instance": 260,
+      "name": "Wireless Zone 6 Status",
+      "description": "Default None",
+      "units": "",
+      "access": "R",
+      "states": "1=None, 2=Closed, 3=Opened, 4=Motion, 5=No Motion"
+    },
+    {
+      "type": "MI",
+      "instance": 261,
+      "name": "Wireless Zone 6 Battery",
+      "description": "Default None",
+      "units": "",
+      "access": "R",
+      "states": "1=None, 2=Normal, 3=Low"
+    },
+    {
+      "type": "MI",
+      "instance": 262,
+      "name": "Wireless Zone 6 Paired",
+      "description": "Default No",
+      "units": "",
+      "access": "R",
+      "states": "1=No, 2=Yes, 3=Invalid"
+    },
+    {
+      "type": "MI",
+      "instance": 270,
+      "name": "Wireless Zone 7 Status",
+      "description": "Default None",
+      "units": "",
+      "access": "R",
+      "states": "1=None, 2=Closed, 3=Opened, 4=Motion, 5=No Motion"
+    },
+    {
+      "type": "MI",
+      "instance": 271,
+      "name": "Wireless Zone 7 Battery",
+      "description": "Default None",
+      "units": "",
+      "access": "R",
+      "states": "1=None, 2=Normal, 3=Low"
+    },
+    {
+      "type": "MI",
+      "instance": 272,
+      "name": "Wireless Zone 7 Paired",
+      "description": "Default No",
+      "units": "",
+      "access": "R",
+      "states": "1=No, 2=Yes, 3=Invalid"
+    },
+    {
+      "type": "MI",
+      "instance": 280,
+      "name": "Wireless Zone 8 Status",
+      "description": "Default None",
+      "units": "",
+      "access": "R",
+      "states": "1=None, 2=Closed, 3=Opened, 4=Motion, 5=No Motion"
+    },
+    {
+      "type": "MI",
+      "instance": 281,
+      "name": "Wireless Zone 8 Battery",
+      "description": "Default None",
+      "units": "",
+      "access": "R",
+      "states": "1=None, 2=Normal, 3=Low"
+    },
+    {
+      "type": "MI",
+      "instance": 282,
+      "name": "Wireless Zone 8 Paired",
+      "description": "Default No",
+      "units": "",
+      "access": "R",
+      "states": "1=No, 2=Yes, 3=Invalid"
+    },
+    {
+      "type": "MI",
+      "instance": 290,
+      "name": "Wireless Zone 9 Status",
+      "description": "Default None",
+      "units": "",
+      "access": "R",
+      "states": "1=None, 2=Closed, 3=Opened, 4=Motion, 5=No Motion"
+    },
+    {
+      "type": "MI",
+      "instance": 291,
+      "name": "Wireless Zone 9 Battery",
+      "description": "Default None",
+      "units": "",
+      "access": "R",
+      "states": "1=None, 2=Normal, 3=Low"
+    },
+    {
+      "type": "MI",
+      "instance": 292,
+      "name": "Wireless Zone 9 Paired",
+      "description": "Default No",
+      "units": "",
+      "access": "R",
+      "states": "1=No, 2=Yes, 3=Invalid"
+    },
+    {
+      "type": "MI",
+      "instance": 300,
+      "name": "Wireless Zone 10 Status",
+      "description": "Default None",
+      "units": "",
+      "access": "R",
+      "states": "1=None, 2=Closed, 3=Opened, 4=Motion, 5=No Motion"
+    },
+    {
+      "type": "MI",
+      "instance": 301,
+      "name": "Wireless Zone 10 Battery",
+      "description": "Default None",
+      "units": "",
+      "access": "R",
+      "states": "1=None, 2=Normal, 3=Low"
+    },
+    {
+      "type": "MI",
+      "instance": 302,
+      "name": "Wireless Zone 10 Paired",
+      "description": "Default No",
+      "units": "",
+      "access": "R",
+      "states": "1=No, 2=Yes, 3=Invalid"
+    },
+    {
+      "type": "Other",
+      "instance": 1,
+      "name": "Lua Program 1",
+      "description": "Program object (PG); Lua script held in the Description property",
+      "units": "",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "Other",
+      "instance": 2,
+      "name": "Lua Program 2",
+      "description": "Program object (PG); Lua script held in the Description property",
+      "units": "",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "Other",
+      "instance": 3,
+      "name": "Lua Program 3",
+      "description": "Program object (PG); Lua script held in the Description property",
+      "units": "",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "Other",
+      "instance": 4,
+      "name": "Lua Program 4",
+      "description": "Program object (PG); Lua script held in the Description property",
+      "units": "",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "Other",
+      "instance": 5,
+      "name": "Lua Program 5",
+      "description": "Program object (PG); Lua script held in the Description property",
+      "units": "",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "Other",
+      "instance": 6,
+      "name": "Lua Program 6",
+      "description": "Program object (PG); Lua script held in the Description property",
+      "units": "",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "Other",
+      "instance": 7,
+      "name": "Lua Program 7",
+      "description": "Program object (PG); Lua script held in the Description property",
+      "units": "",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "Other",
+      "instance": 8,
+      "name": "Lua Program 8",
+      "description": "Program object (PG); Lua script held in the Description property",
+      "units": "",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "Other",
+      "instance": 9,
+      "name": "Lua Program 9",
+      "description": "Program object (PG); Lua script held in the Description property",
+      "units": "",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "Other",
+      "instance": 10,
+      "name": "Lua Program 10",
+      "description": "Program object (PG); Lua script held in the Description property",
+      "units": "",
+      "access": "W",
+      "states": ""
+    },
+    {
+      "type": "SCH",
+      "instance": 1,
+      "name": "Occupancy Schedule",
+      "description": "Weekly schedule: 3 occupied / 3 unoccupied times per day",
+      "units": "",
+      "access": "W",
+      "states": "0=Unoccupied, 1=Occupied"
+    },
+    {
+      "type": "CAL",
+      "instance": 1,
+      "name": "Occupancy Calendar",
+      "description": "Holiday dates, date ranges and weekends",
+      "units": "",
+      "access": "W",
+      "states": ""
+    }
+  ]
+}

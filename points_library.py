@@ -32,6 +32,7 @@ import shutil
 import subprocess
 
 HERE = os.path.dirname(os.path.abspath(__file__))
+import device_remotes
 DATA_DIR = os.path.join(HERE, "points_data")
 BASE_URL = "https://easybacnet.com"
 ROOT = "bacnet-points-lists"
@@ -1411,7 +1412,7 @@ writable &mdash; with each object&rsquo;s type, instance number, name, engineeri
   <a class="btn" href="/bacnet-points-list-compare.html?list=%(rel)s">Compare with your scan</a>
   <a class="btn app" href="%(play_pdf)s" rel="noopener" target="_blank">Download Easy BACnet Mobile App <small>Google Play</small></a>
 </div>
-<p class="count">Reference only, provided as-is: verify against %(mfr)s&rsquo;s current documentation and the live
+%(devremote)s<p class="count">Reference only, provided as-is: verify against %(mfr)s&rsquo;s current documentation and the live
 device before use. Not official %(mfr)s information. <a href="/terms.html#content">Terms of use</a>.</p>
 %(integ)s
 <h2 id="points">%(full)s BACnet objects</h2>
@@ -1445,6 +1446,7 @@ Object names, instances and units are reproduced as published; descriptions are 
                     "It is re-typed from %s&rsquo;s own free documentation, linked below." % esc(m["manufacturer"])),
         "srcbtn": "Source PDF (unofficial copy)" if is_unofficial(m) else "Manufacturer PDF",
         "calc": calc_callout(m), "rel": esc(m["manufacturer_slug"] + "/" + m["model_slug"]),
+        "devremote": (device_remotes.button_html(m, m["_remote"]) if m.get("_remote") else ""),
         "base": base, "src": esc(s["url"]), "play_pdf": PLAY_URL % "pdf", "fbar": filter_bar(m), "table": points_table(m),
         "notes": notes_html, "faq": faq_html, "integ": integration_html(m), "ids": id_index(m),
         "inferred": ('<p class="count"><strong>Note:</strong> the source document has no read/write column, so access '
@@ -1769,6 +1771,13 @@ def build(write):
     out_dir = os.path.join(HERE, ROOT)
     if os.path.isdir(out_dir):
         shutil.rmtree(out_dir)
+    rem_dir = os.path.join(HERE, device_remotes.ROOT)
+    if os.path.isdir(rem_dir):
+        shutil.rmtree(rem_dir)
+    remotes = 0
+    for m in models:
+        m["_remote"] = device_remotes.template(m, clean(model_path(m))) if device_remotes.ENABLED else None
+        remotes += m["_remote"] is not None
     assign_dates(models)
     LASTMOD.clear()
     groups = by_manufacturer(models)
@@ -1793,6 +1802,8 @@ def build(write):
             write(model_path(m, ".csv"), csv_text(m))
             write(model_path(m, "-ede.csv"), ede_text(m))
             write(model_path(m, ".json"), json_text(m))
+            if m.get("_remote"):
+                write(device_remotes.path_of(m), device_remotes.text_of(m["_remote"]))
             paths.append(model_path(m))
     for bslug, (bname, gws) in brands.items():
         if bslug not in groups:
@@ -1828,4 +1839,5 @@ def build(write):
             llms.append("  - %s (%d objects): %s" % (model_title(m), len(m["points"]), clean(model_path(m))))
     print("points library: %d manufacturers, %d models, %d objects" % (
         len(groups), len(models), sum(len(m["points"]) for m in models)))
+    print("device remotes: %d templates (high-confidence lists only)" % remotes)
     return paths, llms
