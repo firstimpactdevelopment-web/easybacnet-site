@@ -4846,6 +4846,8 @@ footer a{color:var(--mut); text-decoration:underline}
       point on them, and writes and releases values at the priority you pick. It also
       builds remotes and control panels for the equipment you look after, and can stand in
       as a BACnet device so you can see exactly what the BMS is sending.</p>
+      <p class="sub"><a href="bacnet-points-lists/index.html"><b>Browse the free BACnet points lists</b></a>
+      for 1,600+ HVAC controllers and gateways, with object IDs and a CSV or EDE download for each.</p>
       <p class="sub">No account and no cloud. Scan data stays on your phone and your local
       network. <b>Easy.</b></p>
       <p class="cta"><a class="btn" href="{{PLAY_HERO}}" rel="noopener">Get it on Google Play</a>
@@ -5228,10 +5230,25 @@ def main(ping=False):
     lastmod.update({t["slug"] + ".html": t["updated"] for t in TOOLS if t.get("updated")})
     lastmod["index.html"] = max(lastmod.values())
     lastmod["about.html"] = ABOUT_UPDATED
-    for u in urls:
-        sm.append("  <url><loc>%s/%s</loc><lastmod>%s</lastmod></url>"
-                  % (BASE_URL, u, lastmod.get(u, UPDATED)))
-    sm.append("</urlset>")
+    # sitemap.xml is an index over two child sitemaps so Search Console reports
+    # indexing separately for the guides/tools and for the points library.
+    lib_set = set(lib_paths)
+    parts = [("sitemap-main.xml", [u for u in urls if u not in lib_set]),
+             ("sitemap-library.xml", [u for u in urls if u in lib_set])]
+    for name, part in parts:
+        ps = ['<?xml version="1.0" encoding="UTF-8"?>',
+              '<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">']
+        for u in part:
+            ps.append("  <url><loc>%s/%s</loc><lastmod>%s</lastmod></url>"
+                      % (BASE_URL, u, lastmod.get(u, UPDATED)))
+        ps.append("</urlset>")
+        write(name, "\n".join(ps) + "\n")
+    sm = ['<?xml version="1.0" encoding="UTF-8"?>',
+          '<sitemapindex xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">']
+    for name, part in parts:
+        sm.append("  <sitemap><loc>%s/%s</loc><lastmod>%s</lastmod></sitemap>"
+                  % (BASE_URL, name, max(lastmod.get(u, UPDATED) for u in part)))
+    sm.append("</sitemapindex>")
     write("sitemap.xml", "\n".join(sm) + "\n")
 
     # Search bots skip the points-list data files (CSV/EDE/JSON); the HTML page is the
