@@ -369,16 +369,17 @@ def page(slug, title, question, answer_html, body_html, related, description,
 %(shots)s
 %(body)s
   <div class="appcta">
-    <p><strong>Check it on your own network.</strong> Easy BACnet is a free Android app
-    that finds BACnet IP devices and reads their points in a couple of taps.</p>
+    <p><strong>Check it on your own network.</strong> Easy BACnet is a free BACnet IP
+    scanner and explorer for Android. Find devices, read and write points, build remotes
+    and control panels, or let the phone stand in as a device to see what the BMS sends.</p>
     <a class="btn" href="%(play_cta)s" rel="noopener">Get it on Google Play</a>
   </div>
 </article>%(rel)s
 
 <footer>
   <p>Published alongside <a href="%(prefix)sindex.html">Easy BACnet</a>, a
-  <a href="%(play_footer)s" rel="noopener">free Android app</a> that scans a building network for BACnet IP devices, reads and
-  commands their points, and exports the results as an Excel (.xlsx) spreadsheet.</p>
+  <a href="%(play_footer)s" rel="noopener">free Android app</a> for BACnet IP: a scanner and
+  explorer, custom remotes, multi-device control panels, a device emulator and Excel export.</p>
   <p><a href="%(prefix)sindex.html#guides">All guides</a> &middot;
   <a href="%(prefix)sguides/bacnet-glossary.html">BACnet glossary</a> &middot;
   <a href="%(prefix)sbacnet-points-lists/index.html">BACnet points lists by manufacturer</a> &middot;
@@ -2332,7 +2333,7 @@ GUIDES.append(dict(
 GUIDES.append(dict(
     slug="guides/bacnet-scanner-app-android",
     title="BACnet IP scanner app for Android | Easy BACnet",
-    updated="2026-11-19",
+    updated="2026-11-22",
     question="Is there a BACnet IP scanner app for Android?",
     description="Yes. How to discover, read and command BACnet/IP devices from an Android phone, what a phone can and cannot reach, and the subnet and MS/TP catches.",
     answer_html="""<p>Yes. <a href="../index.html">Easy BACnet</a> is an Android app that
@@ -2379,6 +2380,15 @@ GUIDES.append(dict(
   <a href="bacnet-priority-and-stuck-overrides.html">BACnet priority and stuck
   overrides</a> and <a href="how-to-write-to-a-bacnet-point.html">how to write to a
   BACnet point</a>.</p>
+
+  <h2>Remotes and control panels for repeat visits</h2>
+  <p>If you go back to the same equipment often, scrolling the point list every time gets
+  old. A <strong>custom remote</strong> puts the handful of points you use on a unit
+  (discharge setpoint, occupancy, fan status, alarms) on one screen you lay out yourself.
+  A <strong>control panel</strong> does the same across up to 32 devices, so a floor of
+  VAVs or a plant room fits on one page. Both use the same write rails as the rest of the
+  app. See <a href="how-to-build-a-custom-remote.html">building a custom remote</a> and
+  <a href="how-to-build-a-control-panel.html">building a control panel</a>.</p>
 
   <h2>The phone can be a device, too</h2>
   <p>In <strong>Device Emulator</strong> mode the phone answers on the network as a BACnet
@@ -4661,7 +4671,7 @@ INDEX = """<!doctype html>
 <link rel="icon" type="image/svg+xml" href="icon.svg">
 <link rel="apple-touch-icon" href="/apple-touch-icon.png">
 <title>Easy BACnet: Free BACnet Points Lists and BACnet IP Scanner</title>
-<meta name="description" content="Free Android app to scan for BACnet IP devices, read and command points, build custom remotes, emulate a device to see what the BMS writes, and export to Excel.">
+<meta name="description" content="Free BACnet IP scanner and explorer for Android: find devices, read and write points, build remotes and control panels, and emulate a BACnet device.">
 <link rel="canonical" href="{{BASE}}/index.html">
 <meta name="robots" content="index, follow">
 <meta name="google-site-verification" content="5mp_Qm6jQXeHC7IbyiRUwPt3te2kFjKv67pCaqqLAhQ">
@@ -4738,10 +4748,11 @@ strong{color:#fff}
 .cell{background:var(--panel); padding:1.6rem 1.4rem; border-top:3px solid var(--accent)}
 .cell .n{font-family:"IBM Plex Mono",monospace; font-weight:600; color:var(--accent); font-size:.78rem; letter-spacing:.12em; margin-bottom:.8rem}
 .cell p{color:var(--mut); font-size:.95rem; margin:0}
+.features .note{color:var(--mut); font-size:.9rem; margin:1.5rem 0 0}
 
 /* screenshot strip */
 .shots{padding:clamp(2rem,4vw,3.5rem) 0; border-top:1px solid var(--line)}
-.shotrow{display:grid; grid-template-columns:repeat(3,1fr); gap:1.25rem}
+.shotrow{display:grid; grid-template-columns:repeat(4,1fr); gap:1.25rem}
 .shotrow figure{margin:0}
 .shotrow img{width:100%; height:auto; display:block; border:1px solid var(--line); border-radius:18px; background:var(--ink)}
 .shotrow figcaption{color:var(--mut); font-size:.85rem; margin-top:.6rem; text-align:center}
@@ -4768,7 +4779,7 @@ footer a{color:var(--mut); text-decoration:underline}
   .hero .wrap{grid-template-columns:1fr}
   .phone{max-width:230px}
   .grid{grid-template-columns:1fr}
-  .shotrow{grid-template-columns:1fr}
+  .shotrow{grid-template-columns:repeat(2,1fr)}
   .top .tag{display:none}
 }
 @media (max-width:520px){
@@ -4809,7 +4820,7 @@ footer a{color:var(--mut); text-decoration:underline}
       "downloadUrl": "https://play.google.com/store/apps/details?id=com.easybacnet.app",
       "offers": { "@type": "Offer", "price": "0", "priceCurrency": "USD" },
       "publisher": { "@id": "{{BASE}}/#org" },
-      "description": "Scans a local network for BACnet IP devices, reads their points, commands and releases them by priority, builds custom remotes for its devices, exports the results as an Excel (.xlsx) spreadsheet, and can act as a BACnet IP device itself (Device Emulator) to log the writes a supervisor sends."
+      "description": "BACnet IP scanner and explorer for Android. Discovers BACnet IP devices, browses and reads their points, writes and releases values by priority, exports a points list to Excel (.xlsx), builds custom remotes for one device and control panels for up to 32 devices, and can act as a BACnet IP device itself (Device Emulator) to log the writes a supervisor sends."
     }
   ]
 }
@@ -4829,15 +4840,14 @@ footer a{color:var(--mut); text-decoration:underline}
 <section class="hero">
   <div class="wrap">
     <div class="copy">
-      <p class="eyebrow">BACnet/IP &middot; Android</p>
-      <h1>Browse and <span>control</span> BACnet/IP devices, straight from your phone</h1>
-      <p class="lede">Easy BACnet is a BACnet/IP <strong>browser and control tool</strong> for anyone
-      who works with BACnet/IP devices &mdash; discover what is on the network, browse each
-      device and its points, read live values, command a point at the priority you choose
-      (and release it), export a full report, and build your own on-screen controls for the
-      equipment you touch most.</p>
-      <p class="sub">No account, no sign-up, no cloud. <b>Easy.</b> Your scan data stays on
-      your phone and your local network.</p>
+      <p class="eyebrow">BACnet IP scanner &middot; Explorer &middot; Android</p>
+      <h1>Scan, explore and <span>control</span> BACnet IP from your phone</h1>
+      <p class="lede">Easy BACnet finds the BACnet IP devices on a network, opens every
+      point on them, and writes and releases values at the priority you pick. It also
+      builds remotes and control panels for the equipment you look after, and can stand in
+      as a BACnet device so you can see exactly what the BMS is sending.</p>
+      <p class="sub">No account and no cloud. Scan data stays on your phone and your local
+      network. <b>Easy.</b></p>
       <p class="cta"><a class="btn" href="{{PLAY_HERO}}" rel="noopener">Get it on Google Play</a>
       <span>Free &middot; Android</span></p>
     </div>
@@ -4849,37 +4859,48 @@ footer a{color:var(--mut); text-decoration:underline}
 
 <section class="features">
   <div class="wrap">
-    <h2>What it does</h2>
+    <h2>What&rsquo;s in the app</h2>
     <div class="grid">
-      <div class="cell"><div class="n">01 / DISCOVER</div>
-        <h3>Discover the network</h3>
-        <p>Finds every BACnet/IP device on the subnet, including MS/TP devices reached
-        through a BACnet router. <strong>BACnet IP only</strong> &mdash; it does not connect
-        to an MS/TP (RS-485) serial trunk directly.</p></div>
-      <div class="cell"><div class="n">02 / BROWSE</div>
-        <h3>Browse devices &amp; points</h3>
-        <p>Every object on every device &mdash; type, instance, name, live value, units,
-        status flags and description. A full browser in your pocket.</p></div>
-      <div class="cell"><div class="n">03 / COMMAND</div>
-        <h3>See who&rsquo;s commanding, then command &amp; release</h3>
-        <p>The priority array shows whether a point is overridden and at what level. Write
-        at the priority you choose, then release it back to automatic. Write mode is off by
-        default and resets on every launch.</p></div>
-      <div class="cell"><div class="n">04 / BUILD</div>
-        <h3>Build custom BACnet/IP controls</h3>
-        <p>Create your own on-screen control menu for a unit &mdash; run an air handler,
-        chiller or any BMS point from setpoints, toggles and readouts you arrange yourself.</p></div>
-      <div class="cell"><div class="n">05 / EXPORT</div>
-        <h3>Export a device &amp; points list</h3>
-        <p>Scan and export the whole network as an Excel (.xlsx) spreadsheet &mdash; a
-        device summary plus every point &mdash; ready to hand to an integrator, keep on
-        file, or feed an AI.</p></div>
-      <div class="cell"><div class="n">06 / EMULATE</div>
-        <h3>Emulate a device</h3>
-        <p>Make the phone answer as a BACnet IP device with any Device ID and see every
-        write the BMS sends it: point, value, priority and sender.
+      <div class="cell"><div class="n">01 / SCANNER &amp; EXPLORER</div>
+        <h3>See what is on the network</h3>
+        <p>A Who-Is scan lists every device that answers, including MS/TP devices behind
+        a BACnet router. Open any device to browse its objects with live values, units,
+        status flags and the priority array. Add devices by IP or through a BBMD when they
+        sit on another subnet.</p></div>
+      <div class="cell"><div class="n">02 / WRITE &amp; RELEASE</div>
+        <h3>Command a point, then hand it back</h3>
+        <p>Check the priority array to see who is in control, write at the priority you
+        choose, and release it to automatic when you are done. Write mode is off by default
+        and turns itself off every time the app starts.
+        <a href="guides/how-to-write-to-a-bacnet-point.html">Writing safely</a></p></div>
+      <div class="cell"><div class="n">03 / CUSTOM REMOTES</div>
+        <h3>A remote for one unit</h3>
+        <p>Lay out the setpoints, switches, readouts and status lights you actually use on
+        a rooftop unit, AHU or chiller, and run it from one screen instead of digging
+        through the point list every visit.
+        <a href="guides/how-to-build-a-custom-remote.html">Build a remote</a></p></div>
+      <div class="cell"><div class="n">04 / CONTROL PANELS</div>
+        <h3>One screen for up to 32 devices</h3>
+        <p>Put points from several controllers on the same panel: every VAV on a floor,
+        a row of heat pumps, or a central plant. Panels can be exported and shared with
+        the rest of the crew.
+        <a href="guides/how-to-build-a-control-panel.html">Build a panel</a></p></div>
+      <div class="cell"><div class="n">05 / DEVICE EMULATOR</div>
+        <h3>Turn the phone into a BACnet device</h3>
+        <p>Answer on the network with any Device ID and log every write the BMS sends:
+        point, value, priority and sender. Use it to prove whether a supervisor is really
+        commanding a unit, or to check graphics before the equipment is on site.
         <a href="guides/bacnet-device-emulator-check-writes.html">How it works</a></p></div>
+      <div class="cell"><div class="n">06 / EXPORT</div>
+        <h3>Take the points list with you</h3>
+        <p>Export every device and point to an Excel (.xlsx) spreadsheet: Device ID,
+        IP, object type and instance, name, value, units and status. Handy on a site
+        with no documentation, or for the next integrator.
+        <a href="guides/export-bacnet-points-to-csv.html">Exporting</a></p></div>
     </div>
+    <p class="note">BACnet IP only. The app does not connect to an MS/TP (RS-485) trunk
+    directly; it reaches MS/TP devices through a BACnet router.
+    <a href="guides/does-easy-bacnet-support-mstp-rs485.html">More on MS/TP</a></p>
   </div>
 </section>
 
@@ -4888,7 +4909,8 @@ footer a{color:var(--mut); text-decoration:underline}
     <div class="shotrow">
       <figure><img src="img/points.png" alt="A device's points" width="480" height="1068" loading="lazy"><figcaption>Browse each device and its points</figcaption></figure>
       <figure><img src="img/write.png" alt="Writing a value at a chosen priority" width="480" height="1068" loading="lazy"><figcaption>Command a point at the priority you choose</figcaption></figure>
-      <figure><img src="img/remote-use.png" alt="A custom remote for one unit" width="480" height="1068" loading="lazy"><figcaption>Build your own custom remote</figcaption></figure>
+      <figure><img src="img/remote-use.png" alt="A custom remote for one unit" width="480" height="1068" loading="lazy"><figcaption>Run a unit from your own remote</figcaption></figure>
+      <figure><img src="img/emu-writes.png" alt="The Device Emulator's log of writes received from a supervisor" width="480" height="1069" loading="lazy"><figcaption>See every write the BMS sends</figcaption></figure>
     </div>
   </div>
 </section>
@@ -5006,7 +5028,7 @@ GUIDES_NEW_20261104 = ['bacnet-cov-vs-polling', 'bacnet-mstp-troubleshooting', '
 GUIDES_EDITED_20261104 = ['bacnet-device-shows-offline', 'bacnet-glossary', 'bacnet-mstp-vs-bacnet-ip', 'does-easy-bacnet-support-mstp-rs485', 'export-bacnet-points-to-csv', 'how-to-find-your-bacnet-points-list', 'is-it-safe-to-write-to-bacnet', 'what-is-a-bacnet-points-list', 'what-port-does-bacnet-use', 'who-is-i-am-explained']
 
 
-ABOUT_UPDATED = "2026-11-10"
+ABOUT_UPDATED = "2026-11-22"
 
 
 def about_page(n_models, n_calcs):
@@ -5047,12 +5069,16 @@ def about_page(n_models, n_calcs):
   <a href="terms.html">terms of use</a> cover this in full.</p>
 
   <h2>The app</h2>
-  <p><a href="index.html">Easy BACnet</a> is an Android app that scans a network for
-  BACnet IP devices, reads their points, writes and releases values by priority, and
-  exports a report to Excel. Before each release it is tested against 19 independent
-  BACnet stacks. Scanning, reading, writing and exporting are free. An optional Pro
-  subscription removes the ads in the free version and unlocks unlimited custom
-  remotes. The app, its optional subscription and ads on this site pay for the site.</p>
+  <p><a href="index.html">Easy BACnet</a> is a BACnet IP scanner and explorer for
+  Android. It finds the devices on a network, reads their points, writes and releases
+  values by priority, and exports a points list to Excel. It also builds custom remotes
+  for a single unit and control panels that cover up to 32 devices, and its Device
+  Emulator lets the phone answer as a BACnet device and log every write it receives.
+  Before each release it is tested against 19 independent BACnet stacks.</p>
+  <p>Scanning, reading, writing and exporting are free, and the free version includes one
+  remote, one control panel and a small emulated device. An optional Pro subscription
+  removes the ads and those limits. The app, its subscription and ads on this site pay
+  for the site.</p>
 
   <h2>Independence</h2>
   <p>Easy BACnet is not affiliated with, endorsed by or paid by any manufacturer named
@@ -5274,7 +5300,7 @@ def main(ping=False):
 
     # llms.txt for AI agents: site name, purpose, and key URLs
     llms = ["# Easy BACnet",
-            "Free Android app to scan for BACnet IP devices, read and command points, build custom remotes, emulate a device to see what the BMS writes, and export to Excel. Plus plain-English BACnet guides.",
+            "Free BACnet IP scanner and explorer app for Android: discover devices, read and write points by priority, export to Excel, build custom remotes for one device and control panels for up to 32, and emulate a BACnet device to log what the BMS writes. Plus a free BACnet points list library, browser tools and plain-English BACnet guides.",
             "",
             "## Free tools"]
     for t in TOOLS:

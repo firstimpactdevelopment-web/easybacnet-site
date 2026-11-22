@@ -1429,7 +1429,8 @@ controller <em>can</em> expose; the unit in front of you may differ by firmware 
 provided as-is for reference only and may contain mistakes &mdash; confirming it before you write,
 map or commission anything is up to you (<a href="/terms.html#content">terms</a>).
 <a href="/index.html">Easy BACnet</a> scans a network for BACnet IP devices from an Android phone, reads every
-object on the %(model)s and exports what it actually has to Excel &mdash; free. New to BACnet?
+object on the %(model)s and exports what it actually has to Excel &mdash; free. It can also
+turn those points into a custom remote, or a control panel that covers several units. New to BACnet?
 Start with <a href="/guides/what-is-a-bacnet-points-list.html">what a BACnet points list is</a> and
 <a href="/guides/bacnet-object-types-explained.html">what the object types mean</a>.</p></div>
 %(faq)s
