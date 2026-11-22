@@ -170,6 +170,9 @@ CSS = """
   footer { margin-top:3.5rem; padding-top:1.5rem; border-top:1px solid var(--line);
            color:var(--muted); font-size:.9rem; }
   footer a { color:var(--accent); }
+  .shotkey { margin:.2rem 0 1.6rem; padding-left:1.1rem; font-size:.95rem; }
+  .shotkey li { margin:.25rem 0; }
+  .shotrow.big figure { flex:0 1 300px; }
   .shotrow { display:flex; flex-wrap:wrap; gap:1rem; margin:1.75rem 0; }
   .shotrow figure { margin:0; flex:0 1 200px; }
   .shotrow img { width:100%; height:auto; border:1px solid var(--line);
@@ -202,7 +205,7 @@ CSS = """
 
 
 SCREENSHOTS = {
-    "guides/how-to-use-easy-bacnet": [("picker.png","Choose a mode on the home screen"),
+    "guides/how-to-use-easy-bacnet": [("picker.png","Choose a mode: five cards"),
         ("scan.png","A finished scan"),
         ("devices.png","Every device found"),("points.png","One device\u2019s points")],
     "guides/how-to-write-to-a-bacnet-point": [("point.png","Point detail, showing who is commanding it"),
@@ -1236,7 +1239,7 @@ GUIDES.append(dict(
 GUIDES.append(dict(
     slug="guides/how-to-use-easy-bacnet",
     title="How to Scan for Your BACnet Points List | Easy BACnet",
-    updated="2026-11-19",
+    updated="2026-11-21",
     question="How do I scan for my BACnet points list?",
     description="Step by step: get on the controls network, scan for BACnet IP devices, check their points, and share the whole lot as an Excel report from your phone.",
     answer_html="""<p>Get the phone onto the same network as the building controls
@@ -1272,7 +1275,7 @@ GUIDES.append(dict(
   <p>The first time you open the app it asks you to <strong>Choose your
   language</strong> (English, Espa&ntilde;ol, Deutsch, Fran&ccedil;ais, Portugu&ecirc;s
   or Thai) and to accept a short safety notice (<strong>I Agree</strong>). After that
-  it opens on <em>Choose how you want to work today</em> with four cards:</p>
+  it opens on <em>Choose how you want to work today</em> with five cards:</p>
   <ul>
     <li><strong>Easy BACnet Mode</strong> &mdash; the scan, read and export flow
     this guide covers.</li>
@@ -1280,13 +1283,13 @@ GUIDES.append(dict(
     vendor detail, and a tool to read any property of any object by number.</li>
     <li><strong>Custom Remotes</strong> &mdash; your own control screen for one device
     (<a href="how-to-build-a-custom-remote.html">guide</a>).</li>
+    <li><strong>Control Panel Builder</strong> &mdash; one control screen for up to 32
+    devices (<a href="how-to-build-a-control-panel.html">guide</a>).</li>
     <li><strong>Device Emulator</strong> &mdash; the phone answers as a BACnet IP device
     with the Device ID you choose and logs every write sent to it
     (<a href="bacnet-device-emulator-check-writes.html">guide</a>).</li>
   </ul>
-  <p>Testers on the beta version also see a fifth card, <strong>Control Panel
-  Builder</strong> (<a href="how-to-build-a-control-panel.html">guide</a>). Tap
-  <strong>Easy BACnet Mode</strong>.</p>
+  <p>Tap <strong>Easy BACnet Mode</strong>.</p>
 
   <h2>Step 2 &mdash; Scan</h2>
   <p>The scan screen shows the network your phone is on and its IP address, so you
@@ -1663,7 +1666,7 @@ GUIDES.append(dict(
     <li><strong>Import:</strong> on <strong>My Remotes</strong>, menu &rarr; <strong>Import
     remote</strong>, then pick the <code>.ebremote</code> file. If you already have a remote for
     that device, the app asks <em>Replace the existing remote?</em> first. Control-panel files
-    (<code>.ebpanel</code>, from the beta Control Panel Builder) can't be opened here.</li>
+    (<code>.ebpanel</code>, from the Control Panel Builder) can't be opened here.</li>
   </ul>
   <p>The file is plain JSON holding the layout, the device's ID and its last known address. It
   holds no values from the building.</p>
@@ -1697,10 +1700,9 @@ GUIDES.append(dict(
     slug="guides/how-to-build-a-control-panel",
     title="Build a multi-device BACnet control panel | Easy BACnet",
     question="How do I build a custom BACnet control panel for several devices in Easy BACnet?",
-    description="Beta: build one live control screen for up to 32 BACnet IP devices with the Control Panel Builder. Devices, grid width, controls and sharing.",
-    answer_html="""<p>The Control Panel Builder is a <strong>beta</strong> feature: it is
-    only in the beta version of Easy BACnet, not the standard Play Store release. In the beta
-    app, tap <strong>Control Panel Builder</strong> on the opening screen, then <strong>New
+    updated="2026-11-21",
+    description="Build one live control screen for up to 32 BACnet IP devices with the Control Panel Builder: devices, grid width, controls and sharing.",
+    answer_html="""<p>Tap <strong>Control Panel Builder</strong> on the opening screen, then <strong>New
     panel</strong> (the <strong>+</strong> in the top bar, or <strong>Create a Panel</strong>).
     Pick the first device from your scan and name the panel; it opens in Edit mode. Tap
     <strong>Add Control</strong> to place a readout, setpoint, toggle, button, multi-state picker
@@ -1711,10 +1713,9 @@ GUIDES.append(dict(
     with up to 32 devices each.</p>""",
     body_html="""
   <div class="callout">
-  <p><strong>Beta feature.</strong> The Control Panel Builder is only in the beta version of
-  Easy BACnet; the standard Play Store release does not include it. It works end to end, but
-  check each control against the equipment the first time you use it. Panels are saved on your
-  phone and can be shared as <code>.ebpanel</code> files.</p>
+  <p><strong>Check each control the first time.</strong> Before you rely on a new panel,
+  check every control against the equipment it drives. Panels are saved on your phone and
+  can be shared as <code>.ebpanel</code> files.</p>
   </div>
 
   <h2>Remote or control panel?</h2>
@@ -2908,6 +2909,15 @@ GUIDES.append(dict(
     <li><strong>Refused writes.</strong> A setpoint sent as the wrong data type, or a write to
     an input. The emulator shows the reason a real controller would give.</li>
   </ul>
+
+  <div class="shotrow big"><figure><img src="../img/emu-writes.png" alt="Writes received, with two refused writes and a priority 16 write marked" width="480" height="1069" loading="lazy"><figcaption>The write log after a supervisor's commands</figcaption></figure></div>
+  <ol class="shotkey">
+    <li><strong>1:</strong> a write to a read-only input, refused: &ldquo;read-only input&rdquo;.</li>
+    <li><strong>2:</strong> a setpoint sent as the wrong data type, refused with the reason.</li>
+    <li><strong>3:</strong> a write with no priority lands at 16. It was accepted, but the
+    point still reads 70 because priority 8 holds it. This is the classic &ldquo;the BMS
+    sent it and nothing happened&rdquo;.</li>
+  </ol>
   <p>The free version emulates one Device ID with up to three points; Easy BACnet Pro removes
   the limits. Step by step: <a href="bacnet-device-emulator-check-writes.html">how to check
   what a BMS writes</a>.</p>
@@ -2977,6 +2987,16 @@ GUIDES.append(dict(
   <p>Tap <strong>Start emulator</strong>. The screen shows the Device ID, the phone's IP
   address and port, and live counts of Who-Is requests, reads and writes.</p>
 
+  <div class="shotrow big"><figure><img src="../img/emu-setup.png" alt="Device Emulator setup screen with the Device ID, auto-create option and free-version limit marked" width="480" height="1069" loading="lazy"><figcaption>Setting up the device</figcaption></figure><figure><img src="../img/emu-points.png" alt="Device Emulator points list, Run in background switch and Start button marked" width="480" height="1069" loading="lazy"><figcaption>Points, background, start</figcaption></figure></div>
+  <ol class="shotkey">
+    <li><strong>Left, 1:</strong> the Device ID the supervisor expects.
+    <strong>2:</strong> create any point a client touches.
+    <strong>3:</strong> the free version: one Device ID, up to three points.</li>
+    <li><strong>Right, 1:</strong> your own points (here a setpoint, a fan command and a
+    read-only fan status). <strong>2:</strong> Run in background.
+    <strong>3:</strong> Start emulator.</li>
+  </ol>
+
   <div class="callout">
   <p><strong>Don't run two devices with the same ID.</strong> If the real controller is
   still on the network, mimicking its Device ID creates a
@@ -3006,6 +3026,15 @@ GUIDES.append(dict(
     reason, for example the wrong data type for that object. A real controller would refuse
     it the same way.</li>
   </ul>
+
+  <div class="shotrow big"><figure><img src="../img/emu-writes.png" alt="Writes received, with two refused writes and a priority 16 write marked" width="480" height="1069" loading="lazy"><figcaption>The write log after a supervisor's commands</figcaption></figure></div>
+  <ol class="shotkey">
+    <li><strong>1:</strong> a write to a read-only input, refused: &ldquo;read-only input&rdquo;.</li>
+    <li><strong>2:</strong> a setpoint sent as the wrong data type, refused with the reason.</li>
+    <li><strong>3:</strong> a write with no priority lands at 16. It was accepted, but the
+    point still reads 70 because priority 8 holds it. This is the classic &ldquo;the BMS
+    sent it and nothing happened&rdquo;.</li>
+  </ol>
   <p><strong>Points on this device</strong> shows each point's current value and which
   priority is commanding it, and the activity log can be copied to paste into a report or
   an email.</p>
