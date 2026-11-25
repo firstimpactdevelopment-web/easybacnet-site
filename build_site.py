@@ -1540,7 +1540,7 @@ GUIDES.append(dict(
     four-column grid, tap one to rename, resize, recolour or set its write priority, then tap
     <strong>Done</strong>. Saved remotes live under <strong>My Remotes</strong>; long-press one
     to export it as an <code>.ebremote</code> file. The free version keeps one remote (opening
-    it asks to show a short ad); Easy BACnet Pro, a $9.99-a-year subscription, removes the ads
+    it asks to show a short ad); Easy BACnet Pro, a $12-a-year subscription, removes the ads
     and the limit.</p>""",
     body_html="""
   <h2>What a custom remote is for</h2>
@@ -1689,7 +1689,7 @@ GUIDES.append(dict(
   mechanical room with no signal) the remote just opens, so you are never locked out of your
   own controls. Building or importing a second remote shows <em>One remote on the free
   version</em> with an <strong>Unlock</strong> button.</p>
-  <p><strong>Easy BACnet Pro</strong> is a Google Play subscription: $9.99 a year (Play shows
+  <p><strong>Easy BACnet Pro</strong> is a Google Play subscription: $12 a year (Play shows
   the price in your currency). It
   removes the ads and the limit: as many remotes as you like, on as many devices as you look
   after. Cancel any time in Google Play &rsaquo; Subscriptions; Pro stays on until the end of
@@ -1718,7 +1718,7 @@ GUIDES.append(dict(
     or release button, each bound to one point on one device. Add more devices from the menu's
     <strong>Devices&hellip;</strong> (up to 32 per panel), set the <strong>Grid width</strong>,
     drag controls into place, then tap <strong>Done</strong> to use it live. The free version
-    keeps one panel driving one device; Easy BACnet Pro ($9.99 a year) allows unlimited panels
+    keeps one panel driving one device; Easy BACnet Pro ($12 a year) allows unlimited panels
     with up to 32 devices each.</p>""",
     body_html="""
   <div class="callout">
@@ -1848,7 +1848,7 @@ GUIDES.append(dict(
   panel shows <em>One panel on the free version</em>. Importing a multi-device panel on the free
   version keeps the layout and the primary device's controls; controls for the other devices
   are disconnected. Opening a saved panel on the free version asks to show one short ad, as a
-  remote does; if no ad loads, the panel just opens. Easy BACnet Pro, the same $9.99-a-year subscription that removes ads and
+  remote does; if no ad loads, the panel just opens. Easy BACnet Pro, the same $12-a-year subscription that removes ads and
   lifts the remotes limit, allows unlimited panels with up to 32 devices each. If the
   subscription ends, your panels are kept, but the free limits apply again.</p>
 
