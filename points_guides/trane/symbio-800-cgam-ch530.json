@@ -1,0 +1,99 @@
+{
+  "jobs": [
+    {
+      "job": "Enable and auto/stop",
+      "how": "BO 1 is the BMS auto/stop; at Auto the chiller runs when its own run conditions are met. Run Enabled, Running State and Running Mode show the result.",
+      "points": [
+        {"ref": "BO 1", "use": "Write Active = Auto, Inactive = Stop; check it's writable on the controller"},
+        {"ref": "BI 1", "use": "Read whether the chiller is available to run"},
+        {"ref": "BI 4", "use": "Read running state, Active = On"},
+        {"ref": "MI 1", "use": "Read running mode: 1 Off, 2 Start, 3 Run"}
+      ]
+    },
+    {
+      "job": "Chiller mode",
+      "how": "Write the mode to MO 1 and confirm it on MI 2 Operating Mode.",
+      "points": [
+        {"ref": "MO 1", "use": "Write 1 Cool, 2 Heat, 3 Ice; check it's writable on the controller"},
+        {"ref": "MI 2", "use": "Read operating mode: 1 Cool, 2 Heat, 3 Ice"}
+      ]
+    },
+    {
+      "job": "Water setpoints",
+      "how": "Write the chilled or hot water setpoint and read the active setpoint back. If Local Setpoint Control is active, the chiller is using local setpoints instead of the BAS values.",
+      "points": [
+        {"ref": "AO 1", "use": "Write chilled water setpoint, 0-75 °F; check it's writable on the controller"},
+        {"ref": "AO 4", "use": "Write hot water setpoint, 80-140 °F; check it's writable on the controller"},
+        {"ref": "AI 1", "use": "Read the active chilled or hot water setpoint"},
+        {"ref": "BI 2", "use": "Read Active = Local Control, Inactive = Remote Control"}
+      ]
+    },
+    {
+      "job": "Capacity and demand limit",
+      "how": "Limit capacity with the demand limit setpoint and read actual running capacity. Capacity Limited and Maximum Capacity show when the chiller cannot reach setpoint or is using everything it has.",
+      "points": [
+        {"ref": "AO 3", "use": "Write demand limit, 0-120 %; check it's writable on the controller"},
+        {"ref": "AI 3", "use": "Read active demand limit setpoint"},
+        {"ref": "AI 5", "use": "Read actual running capacity %"},
+        {"ref": "BI 3", "use": "Read Active = capacity limited"},
+        {"ref": "BI 6", "use": "Read Active = all available capacity in use"}
+      ]
+    },
+    {
+      "job": "Water temperatures, flow and pump",
+      "how": "Read entering and leaving evaporator water temperatures and flow status. Water Pump Request is the chiller's request to turn on the water pump.",
+      "points": [
+        {"ref": "AI 44", "use": "Read evaporator entering water temperature"},
+        {"ref": "AI 45", "use": "Read evaporator leaving water temperature"},
+        {"ref": "BI 22", "use": "Read evaporator water flow, Active = Flow"},
+        {"ref": "BI 18", "use": "Read water pump request, Active = On"},
+        {"ref": "AI 57", "use": "Read outdoor air temperature"}
+      ]
+    },
+    {
+      "job": "Heat recovery and noise reduction",
+      "how": "Request heat recovery or reduced noise with the BOs and read the matching status points. Points that don't apply to the unit's configuration are absent.",
+      "points": [
+        {"ref": "BO 5", "use": "Write Active = Heat Recovery; check it's writable on the controller"},
+        {"ref": "AO 6", "use": "Write heat recovery leaving water setpoint, 80-140 °F; check it's writable on the controller"},
+        {"ref": "BI 26", "use": "Read heat recovery control active"},
+        {"ref": "AI 100", "use": "Read heat recovery leaving water temperature"},
+        {"ref": "BO 4", "use": "Write Active = Reduced Noise; check it's writable on the controller"},
+        {"ref": "BI 20", "use": "Read noise reduction active"}
+      ]
+    },
+    {
+      "job": "Compressors and refrigerant circuits",
+      "how": "Each compressor has a running BI, a starts count and a run time; each circuit has suction and discharge pressure. Objects for parts not fitted are absent.",
+      "points": [
+        {"ref": "BI 9", "use": "Read compressor 1A running"},
+        {"ref": "AI 26", "use": "Read compressor 1A starts"},
+        {"ref": "AI 34", "use": "Read compressor 1A run time"},
+        {"ref": "AI 8", "use": "Read circuit 1 suction pressure"},
+        {"ref": "AI 17", "use": "Read circuit 1 discharge pressure"},
+        {"ref": "BI 21", "use": "Read Active = one or more circuits in defrost"}
+      ]
+    },
+    {
+      "job": "Alarms and reset",
+      "how": "BI 23 is the summary alarm; this list has no per-alarm diagnostic objects. BO 2 remotely resets diagnostics that can be reset.",
+      "points": [
+        {"ref": "BI 23", "use": "Read summary alarm, Active = Alarm"},
+        {"ref": "BI 24", "use": "Read shutdown alarm present"},
+        {"ref": "BI 25", "use": "Read last diagnostic"},
+        {"ref": "BO 2", "use": "Write Active = Reset Request; check it's writable on the controller"}
+      ]
+    }
+  ],
+  "checklist": [
+    "Confirm the chiller uses this short-instance list (AI 1, AO 1, BO 1) and not the standard Symbio 800 CGAM list with 5-digit AV/BV/MV objects.",
+    "For MS/TP, land on the P1 link and set the rotary address to 001-127 (it ships at 000, which disables MS/TP, at 76,800 bps); this also sets the Device ID.",
+    "For BACnet IP use Ethernet port 1 on UDP 47808, set a software Device ID if needed through the web UI over USB at http://198.80.18.1/, and enable BBMD only if it is the only BACnet IP device on the subnet.",
+    "Discover the chiller and read BI 1 (Run Enabled), BI 4 (Chiller Running State), MI 1 (Running Mode) and AI 45 (Evaporator Leaving Water Temp), noting the units are fixed I-P or SI from the factory.",
+    "Check BI 2 (Local Setpoint Control) reads Inactive = Remote Control before relying on BAS setpoints.",
+    "Check AO 1 (Chilled Water Setpoint) is writable, write a test value and confirm AI 1 (Active Cool/Heat Setpoint Temperature) follows.",
+    "Test BO 1 (Chiller Auto Stop Command) at Stop and back to Auto while watching BI 4 and MI 1.",
+    "Remember that on release BO 1 goes to Auto, AO 1 to 44 °F and AO 3 to 100 %, so the chiller can run on its own conditions.",
+    "Map BI 23 (Alarm Present) and BI 24 (Shutdown Alarm Present) as alarms, and use BO 2 (Remote Diagnostic Reset Command) only for resettable diagnostics."
+  ]
+}

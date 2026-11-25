@@ -5168,7 +5168,7 @@ def main(ping=False):
     ref_paths, ref_llms = reftools.build(write)
 
     write("about.html", about_page(
-        n_models=len([p for p in lib_paths if p.count("/") == 2 and not p.endswith("index.html")]),
+        n_models=points_library.MODEL_COUNT,
         n_calcs=len(calculators.CALCS)))
 
     # The homepage lists guides by topic, not in the order they were written.

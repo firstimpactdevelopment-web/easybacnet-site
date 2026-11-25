@@ -1,0 +1,81 @@
+{
+  "jobs": [
+    {
+      "job": "Start, stop and forced off",
+      "how": "Each indoor unit group has its own block of objects (instance MMGGPP); refs here are M-NET 01, group 01. Start and stop with On Off Setup and confirm with On Off State. System Forced Off works per group or for all groups.",
+      "points": [
+        {"ref": "BO 10101", "use": "Write Active = Run, Inactive = Stop"},
+        {"ref": "BI 10102", "use": "Read: run status, Active = Run"},
+        {"ref": "BV 10121", "use": "Write Active = Execute forced off for this group"},
+        {"ref": "BV 999921", "use": "Write Active = Execute forced off for all groups"},
+        {"ref": "BV 10113", "use": "Write Active = Prohibit local on/off at the remote"}
+      ]
+    },
+    {
+      "job": "Mode and fan speed",
+      "how": "Write the operating mode and fan speed, then read the state objects to confirm. Dry mode and the Mid 1/Mid 2 fan speeds must first be enabled in the BAC-HD150 Setting Tool.",
+      "points": [
+        {"ref": "MO 10105", "use": "Write 1=Cooling, 2=Heating, 3=Fan, 4=Auto, 5=Dry"},
+        {"ref": "MI 10106", "use": "Read: current operating mode"},
+        {"ref": "MO 10107", "use": "Write 1=Low, 2=High, 3=Mid 2, 4=Mid 1"},
+        {"ref": "MI 10108", "use": "Read: current fan speed"},
+        {"ref": "MO 10122", "use": "Write vane: 1=Horizontal ... 5=Swing"},
+        {"ref": "MI 10123", "use": "Read: current vane direction"},
+        {"ref": "BV 10114", "use": "Write Active = Prohibit local mode change"}
+      ]
+    },
+    {
+      "job": "Setpoints and room temperature",
+      "how": "Single-setpoint groups use Set Temp; dual-setpoint groups use Set Temp Cool and Heat and reject the other. The dual and setback objects only work with Old Model Compatibility Mode disabled.",
+      "points": [
+        {"ref": "AV 10110", "use": "Write: setpoint for single-setpoint groups"},
+        {"ref": "AV 10124", "use": "Write: cooling setpoint, dual-setpoint groups"},
+        {"ref": "AV 10125", "use": "Write: heating setpoint, dual-setpoint groups"},
+        {"ref": "AV 10126", "use": "Write: auto-mode setpoint"},
+        {"ref": "AV 10127", "use": "Write: setback upper limit"},
+        {"ref": "AV 10128", "use": "Write: setback lower limit"},
+        {"ref": "AI 10109", "use": "Read: room temp (water temp on BU/AU groups)"},
+        {"ref": "BV 10116", "use": "Write Active = Prohibit local setpoint change"}
+      ]
+    },
+    {
+      "job": "Alarms and communication",
+      "how": "Map Alarm Signal per group and read Error Code for the category. If the M-NET line to the BAC-HD150 is lost, every group's Error Code reads Communication error.",
+      "points": [
+        {"ref": "BI 10103", "use": "Read: group alarm, Active = Error"},
+        {"ref": "MI 10104", "use": "Read: error category, 1 = Normal, 8 = Communication error"},
+        {"ref": "BI 10120", "use": "Read: M-NET communication, Active = Error"},
+        {"ref": "BI 19981", "use": "Read: expansion controller communication, Active = Error"}
+      ]
+    },
+    {
+      "job": "Filter sign",
+      "how": "Read the filter sign and reset it from the BMS. Local filter sign reset can be locked out at the remote.",
+      "points": [
+        {"ref": "BI 10111", "use": "Read: filter sign, Active = ON"},
+        {"ref": "BV 10112", "use": "Write Inactive = Reset to clear the filter sign"},
+        {"ref": "BV 10115", "use": "Write Active = Prohibit local filter sign reset"}
+      ]
+    },
+    {
+      "job": "Lossnay and Air To Water groups",
+      "how": "Lossnay groups use the ventilation mode objects and PWFY Air To Water groups use their own mode objects. They only respond on groups of that type.",
+      "points": [
+        {"ref": "MO 10135", "use": "Write 1=Heat exchange, 2=Bypass, 3=Auto"},
+        {"ref": "MI 10136", "use": "Read: current Lossnay ventilation mode"},
+        {"ref": "MO 10137", "use": "Write 1=Heating, 2=Heating ECO, 3=Hot Water, 5=Cooling"},
+        {"ref": "MI 10138", "use": "Read: current Air To Water mode"}
+      ]
+    }
+  ],
+  "checklist": [
+    "With the BAC-HD150 Setting Tool, set the LAN1 (BACnet, factory 192.168.1.254) and LAN2 (factory 192.168.200.212) addresses before connecting LAN1; BACnet uses UDP 47808.",
+    "Set the device instance and groups in the Setting Tool, and enable Dry, Mid fan speeds, Setback or Old Model Compatibility Mode as the job needs.",
+    "Build each group's object instances as MMGGPP (M-NET number, group number, point number); the refs in this guide are M-NET 01, group 01.",
+    "Set BMS polling to at least 200 ms per property, and wait N x 200 ms after a ReadPropertyMultiple of N properties.",
+    "Verify reads of BI 10120 (M-NET Communication State), MI 10104 (Error Code), BI 10102 (On Off State) and AI 10109 (Room Temp).",
+    "Write BO 10101 (On Off Setup) = Run and confirm BI 10102 changes, then write a setpoint (AV 10110, or AV 10124/AV 10125 on dual-setpoint groups) and check for errors.",
+    "Write BV 10121 (System Forced Off) = Execute, confirm the group stops, then write Reset.",
+    "Map BI 10103 (Alarm Signal) and MI 10104 (Error Code) for every group, plus BI 19981 if an expansion controller is used."
+  ]
+}

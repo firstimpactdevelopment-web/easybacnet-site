@@ -1,0 +1,103 @@
+{
+  "jobs": [
+    {
+      "job": "Start and stop a group",
+      "how": "Command each group with its On Off Setup BO and read back On Off State. Instances follow 01NNPP, so group 01 is 101xx and group 02 is 102xx. System Forced Off also has a collective (all groups) object.",
+      "points": [
+        {"ref": "BO 10101", "use": "Write Active = Run, Inactive = Stop"},
+        {"ref": "BI 10102", "use": "Read run status to confirm the command"},
+        {"ref": "BV 10121", "use": "Write Active = Execute to force this group off"},
+        {"ref": "BV 19921", "use": "Write Active = Execute to force all groups off"}
+      ]
+    },
+    {
+      "job": "Operating mode",
+      "how": "Write the mode to Operational Mode Setup and confirm it on Operational Mode State. Dry and Setback depend on BACnet Setting Tool / Initial Setting Tool options.",
+      "points": [
+        {"ref": "MO 10105", "use": "Write mode 1-6: Cool, Heat, Fan, Auto, Dry, Setback"},
+        {"ref": "MI 10106", "use": "Read the mode the group is actually in"}
+      ]
+    },
+    {
+      "job": "Setpoints",
+      "how": "Single-setpoint groups use Set Temp; dual-setpoint groups use Set Temp Cool and Set Temp Heat instead. Write only when the value changes: each property allows 24 writes per day.",
+      "points": [
+        {"ref": "AV 10110", "use": "Write single setpoint (set water temp on Air To Water)"},
+        {"ref": "AV 10124", "use": "Write cooling setpoint on dual-setpoint groups"},
+        {"ref": "AV 10125", "use": "Write heating setpoint on dual-setpoint groups"},
+        {"ref": "AV 10126", "use": "Write Auto-mode setpoint (single setpoint auto)"},
+        {"ref": "AV 10127", "use": "Write upper setback limit"},
+        {"ref": "AV 10128", "use": "Write lower setback limit"}
+      ]
+    },
+    {
+      "job": "Room temperature and thermo state",
+      "how": "Read Room Temp for each group; on Air To Water groups the same point carries water temperature. Thermo On Off State shows the unit's thermostat on/off status.",
+      "points": [
+        {"ref": "AI 10109", "use": "Read room temp (water temp on Air To Water)"},
+        {"ref": "BI 10147", "use": "Read thermostat on/off status"},
+        {"ref": "TL 10180", "use": "Read the controller's own Room Temp trend log"}
+      ]
+    },
+    {
+      "job": "Fan speed and air direction",
+      "how": "Write fan speed and vane direction with the Setup MOs and read the State MIs back. Mid 1 and Mid 2 depend on Setting Tool options.",
+      "points": [
+        {"ref": "MO 10107", "use": "Write 1 Low, 2 High, 3 Mid2, 4 Mid1, 5 Auto"},
+        {"ref": "MI 10108", "use": "Read current fan speed"},
+        {"ref": "MO 10122", "use": "Write 1 Horizontal, 2-4 Downblow 60/80/100%, 5 Swing"},
+        {"ref": "MI 10123", "use": "Read current vane direction"}
+      ]
+    },
+    {
+      "job": "Lock out local remote controllers",
+      "how": "The Prohibition BVs block changes from the local remote controller, one BV per function. Set them once; do not rewrite them periodically.",
+      "points": [
+        {"ref": "BV 10113", "use": "Write Active = Prohibit to block local on/off"},
+        {"ref": "BV 10114", "use": "Write Active = Prohibit to block local mode change"},
+        {"ref": "BV 10116", "use": "Write Active = Prohibit to block local setpoint change"},
+        {"ref": "BV 10117", "use": "Write Active = Prohibit to block local fan speed change"},
+        {"ref": "BV 10115", "use": "Write Active = Prohibit to block local filter sign reset"}
+      ]
+    },
+    {
+      "job": "Alarms, errors and filter sign",
+      "how": "Alarm Signal is the group fault, Error Code the category and Error Code Detail the number. An M-NET comms loss also sets these, subject to the 'Not reflect communication error to alarm signal' setting.",
+      "points": [
+        {"ref": "BI 10103", "use": "Read group alarm, Active = Error"},
+        {"ref": "MI 10104", "use": "Read error category, 1 Normal to 9 System error"},
+        {"ref": "AI 10149", "use": "Read numeric error code"},
+        {"ref": "BI 10120", "use": "Read M-NET communication state, Active = Error"},
+        {"ref": "BI 410103", "use": "Read PI controller alarm"},
+        {"ref": "BI 10111", "use": "Read filter sign"},
+        {"ref": "BV 10112", "use": "Write Inactive = Reset to clear the filter sign"}
+      ]
+    },
+    {
+      "job": "Chillers on the M-NET",
+      "how": "Chiller system objects use the 71 block. Commands only work when the chiller's command source is the system controller; change mode only while the chiller is off.",
+      "points": [
+        {"ref": "BO 710101", "use": "Write Active = ON, Inactive = OFF"},
+        {"ref": "BI 710102", "use": "Read chiller run status"},
+        {"ref": "MO 710103", "use": "Write 1 Heating, 2 Cooling, 3 Anti-freeze, 4 Heating ECO"},
+        {"ref": "AV 710107", "use": "Write cooling water setpoint (°C)"},
+        {"ref": "AV 710108", "use": "Write heating water setpoint (°C)"},
+        {"ref": "AI 710109", "use": "Read inlet water temperature"},
+        {"ref": "AI 710110", "use": "Read outlet water temperature"},
+        {"ref": "BI 710111", "use": "Read chiller system alarm"},
+        {"ref": "BI 710112", "use": "Read chiller communication state"}
+      ]
+    }
+  ],
+  "checklist": [
+    "Register the BACnet connection license on the AE-C400 / EW-C50 so the controller can go ONLINE.",
+    "Connect the BMS to LAN2 on its own network and switch, separate from LAN1, using UDP 47808 and a Class C private address.",
+    "In the BACnet Setting Tool (one controller at a time) set the device number, protocol revision (Rev.12 for front ends at Rev.4-11), COV/event destinations and the objects in use.",
+    "Wait for the controller to show ONLINE, which can take up to about 10 minutes on large systems, then discover it from the BMS.",
+    "Read BI 10102 (On Off State), MI 10106 (Operational Mode State) and AI 10109 (Room Temp) for group 01 and compare them with the local remote; other groups follow 01NNPP.",
+    "Check whether each group is single or dual setpoint before mapping AV 10110 (Set Temp) or AV 10124 / AV 10125 (Set Temp Cool / Heat).",
+    "Test one write, such as BO 10101 (On Off Setup) to Run, and confirm it on BI 10102, leaving at least 200 ms between writes.",
+    "Set the BMS to write on change only, since each property allows 24 writes per day, and never rewrite on/off, setpoint, mode or prohibitions cyclically.",
+    "Map BI 10103 (Alarm Signal), MI 10104 (Error Code), AI 10149 (Error Code Detail) and BI 10120 (M-NET Communication State) as alarms for each group."
+  ]
+}

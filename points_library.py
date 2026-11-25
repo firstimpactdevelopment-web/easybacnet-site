@@ -48,6 +48,21 @@ LASTMOD = {}
 # {"<mfr>/<model>": [(calculator url, label)]}, filled by build_site from calculators.links().
 CALC_LINKS = {}
 
+# INDEX RULE (2026-11-24, after the November 2026 core update cut Google traffic to ~0).
+# Only lists that have earned search traffic, or are high-confidence and were at least shown
+# in Google, stay indexable. The rest stay on the site for people (and in the hub/category
+# pages) but carry noindex and are left out of the sitemap, so Google judges the site by its
+# strongest lists. Traffic comes from points_search_traffic.csv (a Search Console export).
+TRAFFIC_FILE = os.path.join(HERE, "points_search_traffic.csv")
+INDEX_MIN_CLICKS = 1          # any click in the 90-day window keeps a page indexed
+INDEX_MIN_IMPRESSIONS = 10    # ...or this many impressions
+INDEX_MIN_POINTS = 20         # high-confidence lists also need this many objects
+# Per-page "field quick reference" (points by job + commissioning checklist), hand-written
+# for the busiest lists: points_guides/<mfr>/<model>.json. Every ref is checked against the list.
+GUIDE_DIR = os.path.join(HERE, "points_guides")
+# Every list on the site, indexed or not (build()'s returned paths only hold the indexable ones).
+MODEL_COUNT = 0
+
 MONTHS = ("January", "February", "March", "April", "May", "June", "July", "August",
           "September", "October", "November", "December")
 
@@ -129,6 +144,77 @@ def load_all():
         assign_row_ids(d["points"])
         models.append(d)
     return models
+
+
+def load_traffic():
+    """{"<mfr>/<model>": (clicks, impressions)} from points_search_traffic.csv."""
+    out = {}
+    if not os.path.exists(TRAFFIC_FILE):
+        return out
+    with io.open(TRAFFIC_FILE, encoding="utf-8") as f:
+        for row in csv.DictReader(line for line in f if not line.startswith("#")):
+            out[row["page"]] = (int(row["clicks"] or 0), int(row["impressions"] or 0))
+    return out
+
+
+def indexable(m, traffic):
+    """INDEX RULE: see TRAFFIC_FILE above."""
+    clicks, impressions = traffic.get(m["manufacturer_slug"] + "/" + m["model_slug"], (0, 0))
+    if clicks >= INDEX_MIN_CLICKS or impressions >= INDEX_MIN_IMPRESSIONS:
+        return True
+    high_confidence = (not m.get("access_inferred") and not is_unofficial(m)
+                       and len(m["points"]) >= INDEX_MIN_POINTS)
+    return high_confidence and impressions >= 1
+
+
+def guide_of(m):
+    """The validated field quick reference, or None. Drops refs that aren't in the list."""
+    path = os.path.join(GUIDE_DIR, m["manufacturer_slug"], m["model_slug"] + ".json")
+    if not os.path.exists(path):
+        return None
+    with io.open(path, encoding="utf-8") as f:
+        g = json.load(f)
+    index = {}
+    for pt in m["points"]:
+        index.setdefault((pt["type"].upper(), pt.get("instance")), pt)
+    jobs = []
+    for job in g.get("jobs") or []:
+        pts = []
+        for ref in job.get("points") or []:
+            key = parse_ref(ref.get("ref"))
+            pt = index.get(key) if key else None
+            if pt is None:
+                print("  WARN guide %s %s: %r not in list" % (m["manufacturer"], m["model"], ref.get("ref")))
+                continue
+            pts.append((pt, (ref.get("use") or "").strip()))
+        if pts and (job.get("job") or "").strip():
+            jobs.append(((job.get("job") or "").strip(), (job.get("how") or "").strip(), pts))
+    steps = [x.strip() for x in g.get("checklist") or [] if x and x.strip()]
+    return {"jobs": jobs, "checklist": steps} if (jobs or steps) else None
+
+
+def guide_html(m):
+    g = guide_of(m)
+    if not g:
+        return ""
+    out = ['<section class="integ" id="quick-reference"><h2>Field quick reference: %s</h2>' % esc(full_name(m)),
+           '<p class="count">The points you need for each job, picked from the full list below.</p>']
+    for job, how, pts in g["jobs"]:
+        rows = "".join(
+            '<tr><td class="t"><a href="#%s">%s %s</a></td><td class="n">%s</td><td>%s</td>'
+            '<td><span class="acc %s">%s</span></td></tr>' % (
+                row_id(pt), esc(pt["type"]), "" if pt.get("instance") is None else pt["instance"],
+                esc(pt["name"]), esc(use), pt["access"], access_label(pt["access"]))
+            for pt, use in pts)
+        out.append('<h3>%s</h3>%s<div class="tablewrap"><table class="pts min"><thead><tr>'
+                   '<th scope="col">Object</th><th scope="col">Name</th><th scope="col">Use</th>'
+                   '<th scope="col">Access</th></tr></thead><tbody>%s</tbody></table></div>'
+                   % (esc(job), ('<p>%s</p>' % esc(how)) if how else "", rows))
+    if g["checklist"]:
+        out.append('<h3>Commissioning checklist</h3><ol class="notes">%s</ol>'
+                   % "".join("<li>%s</li>" % esc(x) for x in g["checklist"]))
+    out.append("</section>")
+    return "\n".join(out)
 
 
 def _norm(p):
@@ -522,7 +608,8 @@ FONTS = ('<link rel="preconnect" href="https://fonts.googleapis.com">\n'
          '<link href="https://fonts.googleapis.com/css2?family=Archivo:wght@600;800;900&family=Manrope:wght@400;500;600;700&family=IBM+Plex+Mono:wght@500;600&display=swap" rel="stylesheet">')
 
 
-def shell(relpath, title, description, h1_html, body, jsonld, crumbs, og_type="website"):
+def shell(relpath, title, description, h1_html, body, jsonld, crumbs, og_type="website",
+          robots="index, follow, max-snippet:-1, max-image-preview:large"):
     url = clean(relpath)
     crumb_html = "".join(
         '<li><a href="%s">%s</a></li>' % (esc(href), esc(name)) if href else
@@ -536,7 +623,7 @@ def shell(relpath, title, description, h1_html, body, jsonld, crumbs, og_type="w
 <title>%(title)s</title>
 <meta name="description" content="%(desc)s">
 <link rel="canonical" href="%(url)s">
-<meta name="robots" content="index, follow, max-snippet:-1, max-image-preview:large">
+<meta name="robots" content="%(robots)s">
 <meta name="theme-color" content="#14171a">
 <link rel="icon" type="image/svg+xml" href="/icon.svg">
 <link rel="apple-touch-icon" href="/apple-touch-icon.png">
@@ -589,7 +676,7 @@ def shell(relpath, title, description, h1_html, body, jsonld, crumbs, og_type="w
 </html>
 """ % {
         "title": esc(title), "desc": esc(description), "url": url, "base": BASE_URL,
-        "ogtype": og_type, "fonts": FONTS, "css": CSS, "jsonld": jsonld,
+        "ogtype": og_type, "robots": robots, "fonts": FONTS, "css": CSS, "jsonld": jsonld,
         "crumbs": crumb_html, "h1": h1_html, "body": body, "script": FILTER_JS,
         "play_nav": PLAY_URL % "nav", "play_footer": PLAY_URL % "footer",
     }
@@ -1414,7 +1501,7 @@ writable &mdash; with each object&rsquo;s type, instance number, name, engineeri
 </div>
 %(devremote)s<p class="count">Reference only, provided as-is: verify against %(mfr)s&rsquo;s current documentation and the live
 device before use. Not official %(mfr)s information. <a href="/terms.html#content">Terms of use</a>.</p>
-%(integ)s
+%(guide)s%(integ)s
 <h2 id="points">%(full)s BACnet objects</h2>
 <p class="count">Type: <abbr title="Analog Input">AI</abbr>, AO, AV, BI, BO, BV, MI/MO/MV (multi-state) &middot;
 Access: <span class="acc">Read</span> read-only, <span class="acc W">Write</span> writable,
@@ -1449,7 +1536,7 @@ Object names, instances and units are reproduced as published; descriptions are 
         "calc": calc_callout(m), "rel": esc(m["manufacturer_slug"] + "/" + m["model_slug"]),
         "devremote": (device_remotes.button_html(m, m["_remote"]) if m.get("_remote") else ""),
         "base": base, "src": esc(s["url"]), "play_pdf": PLAY_URL % "pdf", "fbar": filter_bar(m), "table": points_table(m),
-        "notes": notes_html, "faq": faq_html, "integ": integration_html(m), "ids": id_index(m),
+        "notes": notes_html, "faq": faq_html, "integ": integration_html(m), "guide": guide_html(m), "ids": id_index(m),
         "inferred": ('<p class="count"><strong>Note:</strong> the source document has no read/write column, so access '
                      'here is inferred from the object type (inputs read-only, values writable). Confirm on the live '
                      'controller before writing.</p>') if m.get("access_inferred") else "", "sib": sib_html, "srcline": source_line(m),
@@ -1486,7 +1573,9 @@ Object names, instances and units are reproduced as published; descriptions are 
                "dateModified": m.get("_modified") or UPDATED, "isPartOf": {"@id": BASE_URL + "/#site"},
                "mainEntity": {"@id": url + "#dataset"}, "publisher": {"@id": ORG["@id"]}}
     jsonld = graph(ORG, page_ld, dataset, faq_ld, breadcrumb_ld(crumbs, url))
-    return shell(relpath, title, desc, h1, body, jsonld, crumbs, og_type="article")
+    return shell(relpath, title, desc, h1, body, jsonld, crumbs, og_type="article",
+                 robots=("index, follow, max-snippet:-1, max-image-preview:large" if m.get("_index", True)
+                         else "noindex, follow"))
 
 
 def card(m):
@@ -1780,6 +1869,11 @@ def build(write):
         m["_remote"] = device_remotes.template(m, clean(model_path(m))) if device_remotes.ENABLED else None
         remotes += m["_remote"] is not None
     assign_dates(models)
+    global MODEL_COUNT
+    MODEL_COUNT = len(models)
+    traffic = load_traffic()
+    for m in models:
+        m["_index"] = indexable(m, traffic)
     LASTMOD.clear()
     groups = by_manufacturer(models)
     seen = {}
@@ -1805,7 +1899,8 @@ def build(write):
             write(model_path(m, ".json"), json_text(m))
             if m.get("_remote"):
                 write(device_remotes.path_of(m), device_remotes.text_of(m["_remote"]))
-            paths.append(model_path(m))
+            if m["_index"]:
+                paths.append(model_path(m))
     for bslug, (bname, gws) in brands.items():
         if bslug not in groups:
             write(mfr_path(bslug), brand_page(bslug, bname, gws, groups, brands))
@@ -1840,5 +1935,8 @@ def build(write):
             llms.append("  - %s (%d objects): %s" % (model_title(m), len(m["points"]), clean(model_path(m))))
     print("points library: %d manufacturers, %d models, %d objects" % (
         len(groups), len(models), sum(len(m["points"]) for m in models)))
+    print("points library: %d lists indexable, %d noindex; %d with a field quick reference" % (
+        sum(m["_index"] for m in models), sum(not m["_index"] for m in models),
+        sum(1 for m in models if guide_of(m))))
     print("device remotes: %d templates (high-confidence lists only)" % remotes)
     return paths, llms

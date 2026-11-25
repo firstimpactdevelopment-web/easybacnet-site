@@ -1,0 +1,97 @@
+{
+  "jobs": [
+    {
+      "job": "Boiler on/off",
+      "how": "Each boiler on the Master profile has its own On/Off BV: boilers 1-4 are BV 162-165. Check the boiler shows as detected on the bus before commanding it.",
+      "points": [
+        {"ref": "BV 162", "use": "Write boiler 1 on/off; check it's writable on the controller"},
+        {"ref": "BV 163", "use": "Write boiler 2 on/off; check it's writable on the controller"},
+        {"ref": "BI 17", "use": "Read boiler 1 detected on the bus"},
+        {"ref": "AI 12", "use": "Read central heat call"}
+      ]
+    },
+    {
+      "job": "Target setpoint or firing rate",
+      "how": "Target Mode selects which target applies; then write Setpoint Target, Target temperature or Target Mod Rate. The manual does not document the Target Mode values, so confirm the result on the read-back AIs.",
+      "points": [
+        {"ref": "BV 134", "use": "Write target mode (values undocumented); check it's writable on the controller"},
+        {"ref": "AV 135", "use": "Write target water setpoint; check it's writable on the controller"},
+        {"ref": "AV 158", "use": "Write target water temperature; check it's writable on the controller"},
+        {"ref": "AV 160", "use": "Write target modulation rate; check it's writable on the controller"},
+        {"ref": "AI 14", "use": "Read the current target water temperature"},
+        {"ref": "AI 15", "use": "Read the current target firing rate"}
+      ]
+    },
+    {
+      "job": "System temperatures and calls",
+      "how": "System-level values sit at the top of the list on every VERSA IC device. No units or state texts are given, so check readings against the boiler display.",
+      "points": [
+        {"ref": "AI 2", "use": "Read system supply water temperature"},
+        {"ref": "AI 3", "use": "Read outdoor air temperature"},
+        {"ref": "AI 11", "use": "Read setback state"},
+        {"ref": "AI 12", "use": "Read central heat call"},
+        {"ref": "AI 7", "use": "Read system pump state"}
+      ]
+    },
+    {
+      "job": "Per-boiler readings",
+      "how": "Each boiler has a 29-point block: boiler 1 is BI 17 to AI 45, boiler 2 starts at BI 46, boiler 3 at BI 75, boiler 4 at BI 104. Flow sensor and flame current sit separately at AI 166-174.",
+      "points": [
+        {"ref": "AI 18", "use": "Read boiler 1 outlet water temperature"},
+        {"ref": "AI 19", "use": "Read boiler 1 inlet water temperature"},
+        {"ref": "AI 20", "use": "Read boiler 1 vent (flue) temperature"},
+        {"ref": "AI 23", "use": "Read boiler 1 modulation rate"},
+        {"ref": "AI 25", "use": "Read boiler 1 ignition status code"},
+        {"ref": "AI 166", "use": "Read boiler 1 flow sensor value"},
+        {"ref": "AI 171", "use": "Read boiler 1 flame current"}
+      ]
+    },
+    {
+      "job": "Outdoor reset and warm weather shutdown",
+      "how": "The outdoor reset curve is set by outdoor start/design and boiler water start/design. Warm weather shutdown has separate occupied and unoccupied values. These are boiler settings; do not rewrite them cyclically.",
+      "points": [
+        {"ref": "AV 136", "use": "Write outdoor start temperature; check it's writable on the controller"},
+        {"ref": "AV 137", "use": "Write outdoor design temperature; check it's writable on the controller"},
+        {"ref": "AV 138", "use": "Write boiler water start temperature; check it's writable on the controller"},
+        {"ref": "AV 139", "use": "Write boiler water design temperature; check it's writable on the controller"},
+        {"ref": "AV 146", "use": "Write occupied WWSD temperature; check it's writable on the controller"},
+        {"ref": "AV 147", "use": "Write unoccupied WWSD temperature; check it's writable on the controller"}
+      ]
+    },
+    {
+      "job": "DHW, tank and pool",
+      "how": "DHW, tank and pool each have a setpoint, a differential and an unoccupied on/off BV. Read DHW Call and DHW Temperature to confirm the DHW side is working.",
+      "points": [
+        {"ref": "AV 142", "use": "Write DHW tank setting; check it's writable on the controller"},
+        {"ref": "AV 143", "use": "Write DHW differential; check it's writable on the controller"},
+        {"ref": "BV 144", "use": "Write DHW priority on/off; check it's writable on the controller"},
+        {"ref": "AI 4", "use": "Read DHW tank temperature"},
+        {"ref": "AI 13", "use": "Read DHW call"},
+        {"ref": "AV 148", "use": "Write tank setpoint; check it's writable on the controller"},
+        {"ref": "AV 151", "use": "Write pool setpoint; check it's writable on the controller"}
+      ]
+    },
+    {
+      "job": "Errors and alarms",
+      "how": "Each boiler reports an active error code plus 15 history entries. The manual gives no code list, so log the number and look it up in the boiler documentation.",
+      "points": [
+        {"ref": "AI 30", "use": "Read boiler 1 active error code"},
+        {"ref": "AI 31", "use": "Read boiler 1 error history entry 1"},
+        {"ref": "AI 59", "use": "Read boiler 2 active error code"},
+        {"ref": "AI 25", "use": "Read boiler 1 ignition status code"},
+        {"ref": "BI 17", "use": "Read boiler 1 detected; alarm if it drops out"}
+      ]
+    }
+  ],
+  "checklist": [
+    "Set the ProtoNode S-bank DIP switches: all off for BACnet IP (default), or S0 on for BACnet MS/TP with the MAC (1-127) on the A-bank and the baud on B0-B3.",
+    "Wire the ProtoNode to the master VERSA IC only, at Modbus RTU 19200 baud, with a unique node ID on each unit.",
+    "Open the Web Configurator (default IP 192.168.1.24), add a Master profile per VERSA IC (Follower profile for cascade followers) and change BN_Node_Offset if 50000 clashes.",
+    "Discover each VERSA IC as its own BACnet device: instance = offset + Modbus node ID (node 10 = 50010 by default).",
+    "Read BI 17 (Blr 1 detected), AI 2 (System Supply Temperature), AI 18 (Blr 1 Outlet temperature) and AI 23 (Blr 1 Mod Rate) and compare them with the boiler display.",
+    "Confirm BV 162 (Blr 1 On/Off) is writable, then switch it and watch AI 25 (Blr 1 Ignition Status) and AI 23 respond.",
+    "Set BV 134 (Target Mode) with AV 135 (Setpoint Target) or AV 160 (Target Mod Rate) and check AI 14 / AI 15 show the target you meant, since the mode values are undocumented.",
+    "Program the BMS to write boiler settings only on change, never cyclically.",
+    "Map AI 30 (Blr 1 Error Code) and BI 17 for each boiler as alarms, using the matching points in the boiler 2-4 blocks."
+  ]
+}

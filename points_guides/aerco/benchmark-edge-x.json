@@ -1,0 +1,105 @@
+{
+  "jobs": [
+    {
+      "job": "BAS control and comm-loss behaviour",
+      "how": "There is no start/stop object. The BAS takes control through Operating Mode and Remote Signal, and Unit Failsafe Mode decides what the unit does if it loses the BAS.",
+      "points": [
+        {"ref": "AV 12", "use": "Write 0 Constant Setpt, 1 Rmt Setpt, 2 Outdoor Reset"},
+        {"ref": "AV 13", "use": "Write 0 = BAS so the remote setpoint comes from BACnet"},
+        {"ref": "AV 24", "use": "Write 0 Standby or 1 Constant Setpt on BAS loss"},
+        {"ref": "AI 155", "use": "Read active BAS protocol, 1 MSTP, 2 IP"}
+      ]
+    },
+    {
+      "job": "Unit setpoint",
+      "how": "Write the unit setpoint to AV 4 and confirm it on Active Setpoint Temp. The setpoint low and high limits bound the allowed setpoint.",
+      "points": [
+        {"ref": "AV 4", "use": "Write unit setpoint, 35-220 °F"},
+        {"ref": "AI 16", "use": "Read the setpoint currently in use"},
+        {"ref": "AV 18", "use": "Write lowest allowed setpoint"},
+        {"ref": "AV 19", "use": "Write highest allowed setpoint"},
+        {"ref": "AV 20", "use": "Write outlet temperature high limit"}
+      ]
+    },
+    {
+      "job": "Temperatures",
+      "how": "Read outlet, inlet, outdoor and header temperatures. Values are listed in °F; AV 8 switches the BAS interface between English and Metric.",
+      "points": [
+        {"ref": "AI 2", "use": "Read outlet water temperature"},
+        {"ref": "AI 3", "use": "Read inlet water temperature"},
+        {"ref": "AI 5", "use": "Read outdoor air temperature"},
+        {"ref": "AI 158", "use": "Read header temperature (BMK E only)"},
+        {"ref": "AV 8", "use": "Write to switch BAS units English / Metric"}
+      ]
+    },
+    {
+      "job": "Status, output and run data",
+      "how": "Unit Status gives the operating state and Power Output the current output. On BMK E, power limit management can cap output.",
+      "points": [
+        {"ref": "AI 1", "use": "Read state: 1 Standby, 3 Automatic, 5 Fault, 7 Starting"},
+        {"ref": "AI 157", "use": "Read current power output % (BMK E only)"},
+        {"ref": "AI 13", "use": "Read total run hours"},
+        {"ref": "AI 11", "use": "Read total burner run cycles"},
+        {"ref": "AV 83", "use": "Write 1 to enable power limit management (BMK E)"},
+        {"ref": "AV 84", "use": "Write PLM power limit % (BMK E)"}
+      ]
+    },
+    {
+      "job": "Cascade plant on a BST manager",
+      "how": "Connect the BAS to the BST manager only. It takes the plant setpoint on AV 200 and reports plant-wide temperatures, output and unit counts.",
+      "points": [
+        {"ref": "AV 200", "use": "Write plant setpoint"},
+        {"ref": "AI 114", "use": "Read plant setpoint currently in use"},
+        {"ref": "AI 119", "use": "Read plant mode: 0 Constant, 1 Rmt Setpt, 2 Outdoor Reset"},
+        {"ref": "AI 106", "use": "Read average plant outlet temperature"},
+        {"ref": "AI 110", "use": "Read header temperature"},
+        {"ref": "AI 112", "use": "Read average plant power output %"},
+        {"ref": "AI 107", "use": "Read units available to the cascade"},
+        {"ref": "AI 113", "use": "Read units currently firing"}
+      ]
+    },
+    {
+      "job": "Individual units in the cascade",
+      "how": "The manager exposes a read-only block per unit: unit 1 is AI 300-320, unit 2 is AI 400-420, up to unit 16 at AI 1800-1820. Points marked legacy BMK only are not used on BMK E.",
+      "points": [
+        {"ref": "AI 301", "use": "Read unit 1 state, 4 Unit Fault, 8 Comm Error"},
+        {"ref": "AI 302", "use": "Read unit 1 active event code"},
+        {"ref": "AI 303", "use": "Read unit 1 outlet temperature"},
+        {"ref": "AI 320", "use": "Read unit 1 power output %"},
+        {"ref": "AI 313", "use": "Read unit 1 isolation valve status"}
+      ]
+    },
+    {
+      "job": "Plant setback schedule",
+      "how": "On a BST manager, enable the setback schedule and set the setback setpoint with its start and stop times.",
+      "points": [
+        {"ref": "AV 204", "use": "Write Enable / Disable for the setback schedule"},
+        {"ref": "AV 201", "use": "Write plant setback setpoint"},
+        {"ref": "AV 202", "use": "Write setback schedule start time"},
+        {"ref": "AV 203", "use": "Write setback schedule stop time"}
+      ]
+    },
+    {
+      "job": "Faults and events",
+      "how": "Active Event ID carries the event or fault code and Unit Status shows Fault. On a cascade, Units Faulted counts faulted units and each unit block has its own state and event code.",
+      "points": [
+        {"ref": "AI 0", "use": "Read active event / fault code"},
+        {"ref": "AI 1", "use": "Read unit status, 5 = Fault"},
+        {"ref": "AI 108", "use": "Read number of units faulted in the cascade"},
+        {"ref": "AI 301", "use": "Read unit 1 state; alarm on Unit Fault or Comm Error"},
+        {"ref": "AI 302", "use": "Read unit 1 active event code"}
+      ]
+    }
+  ],
+  "checklist": [
+    "Log in at technician level on the Edge X controller, since BAS points are not available without it.",
+    "Go to Settings > Advanced Setup > Comm & Failsafe and enable BAS; for IP turn on the 'BAS (J6)' toggle, which actually uses the J5 Ethernet jack.",
+    "Set DHCP or a fixed IP, the device-instance offset, UDP port and network number, or for MS/TP wire J16 pins 5 (+) and 7 (-), set the baud and use the TERM1 switch at the trunk ends.",
+    "On a cascade, connect the BAS to the BST manager only; the clients talk to it over Modbus RS-485.",
+    "Discover the unit and read AI 1 (Unit Status), AI 2 (Outlet Temp), AI 0 (Active Event ID) and AI 155 (BAS Enable), and check AV 8 for English or Metric units.",
+    "Set AV 24 (Unit Failsafe Mode) to Standby or Constant Setpt so a lost BAS connection is handled the way the site wants.",
+    "Write AV 12 (Operating Mode) = 1 and AV 13 (Remote Signal) = 0, then write AV 4 (Setpoint), or AV 200 on a BST manager, and confirm it on AI 16 or AI 114.",
+    "On a cascade, check AI 107 (Units Available) and each unit block from AI 301 against the plant.",
+    "Map AI 0, AI 1 (5 = Fault), AI 108 (Units Faulted) and each unit's Cascade Client State (AI 301, 401 and so on) as alarms."
+  ]
+}

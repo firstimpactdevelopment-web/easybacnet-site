@@ -1,0 +1,97 @@
+{
+  "jobs": [
+    {
+      "job": "Start and stop per indoor unit group",
+      "how": "Instances shown are for indoor unit 000; every group uses the same layout, with instance = unit number x 256 + member. Write BO 1 to start or stop a group and read BI 2 back.",
+      "points": [
+        {"ref": "BO 1", "use": "Write Active = on, Inactive = off"},
+        {"ref": "BI 2", "use": "Read actual on/off status"},
+        {"ref": "BO 24", "use": "Write Active = forced thermo-off"},
+        {"ref": "BI 25", "use": "Read forced thermo-off status"},
+        {"ref": "BI 28", "use": "Read thermo-on status"},
+        {"ref": "BV 21", "use": "Write stops whole DIII-Net line; clearing does not restart"}
+      ]
+    },
+    {
+      "job": "Operation mode",
+      "how": "Write the mode to MO 5 and read MI 6 to confirm. Note the status object has no Auto state: 4 is 'not used' on MI 6.",
+      "points": [
+        {"ref": "MO 5", "use": "Write 1 cool, 2 heat, 3 fan, 4 auto, 5 dry"},
+        {"ref": "MI 6", "use": "Read 1 cool, 2 heat, 3 fan, 5 dry"},
+        {"ref": "BO 26", "use": "Write Active = energy saving on"},
+        {"ref": "BI 27", "use": "Read energy saving status"}
+      ]
+    },
+    {
+      "job": "Setpoint and room temperature",
+      "how": "Write AV 10 only when the value changes. Out-of-range values are rounded to the unit's limits and F/C conversion can read back slightly different; do not keep resending until it matches.",
+      "points": [
+        {"ref": "AV 10", "use": "Write setpoint; avoid cyclic writes (non-volatile memory)"},
+        {"ref": "AI 9", "use": "Read room temp; reference only, skewed when fan off or defrosting"}
+      ]
+    },
+    {
+      "job": "Fan speed and airflow direction",
+      "how": "Fan speed and airflow direction are saved in the indoor unit's non-volatile memory, so write them on change only.",
+      "points": [
+        {"ref": "MO 7", "use": "Write 1 low, 2 high, 3 middle, 4 auto"},
+        {"ref": "MI 8", "use": "Read fan speed: 1 low, 2 high, 3 middle, 4 auto"},
+        {"ref": "AV 22", "use": "Write airflow direction setting"},
+        {"ref": "AI 23", "use": "Read airflow direction status"},
+        {"ref": "BI 30", "use": "Read indoor fan on/off"}
+      ]
+    },
+    {
+      "job": "Remote controller and central lockouts",
+      "how": "Lock local remote controllers out of on/off, mode or setpoint per group. Daikin central controllers can still change on/off, mode and setpoint unless CL_Rejection is active on that line's first unit.",
+      "points": [
+        {"ref": "BV 13", "use": "Write Active = prohibit remote on/off"},
+        {"ref": "BV 14", "use": "Write Active = prohibit remote mode change"},
+        {"ref": "BV 16", "use": "Write Active = prohibit remote setpoint change"},
+        {"ref": "BV 17", "use": "Write Active = disable central controllers (units 000/064/128/192)"}
+      ]
+    },
+    {
+      "job": "Alarms, running status and filter",
+      "how": "Alarm and communication status are per group. MI 4 reads 1 when normal; any other state is a Daikin malfunction code.",
+      "points": [
+        {"ref": "BI 3", "use": "Read Active = malfunction"},
+        {"ref": "MI 4", "use": "Read 1 = normal, other = Daikin malfunction code"},
+        {"ref": "BI 20", "use": "Read Active = communication error with the unit"},
+        {"ref": "BI 11", "use": "Read Active = filter sign on"},
+        {"ref": "BV 12", "use": "Write to reset the filter sign"},
+        {"ref": "BI 29", "use": "Read compressor on/off"},
+        {"ref": "BI 31", "use": "Read heater on/off"}
+      ]
+    },
+    {
+      "job": "ERV (VAM) ventilation",
+      "how": "These members apply to VAM units only. Write the ventilation mode and amount and read the status objects back.",
+      "points": [
+        {"ref": "MO 32", "use": "Write 1 bypass, 2 ERV, 3 auto"},
+        {"ref": "MI 33", "use": "Read ventilation mode: 1 bypass, 2 ERV, 3 auto"},
+        {"ref": "MO 34", "use": "Write 1 low, 2 high, 3 auto (4-6 fresh up)"},
+        {"ref": "MI 35", "use": "Read ventilation amount status"}
+      ]
+    },
+    {
+      "job": "Energy metering",
+      "how": "Accumulated gas and power need the optional power-proportional-distribution setup. Both are read-only totals per group.",
+      "points": [
+        {"ref": "ACC 19", "use": "Read accumulated power, kWh"},
+        {"ref": "ACC 18", "use": "Read accumulated gas, m3"}
+      ]
+    }
+  ],
+  "checklist": [
+    "Confirm the interface runs Ver. 6.20 or later and commission it with the Daikin test-operation/setup tool.",
+    "Set the BACnet/IP port (factory 47808) and, if the BMS is on another subnet, register the interface as a foreign device with the BBMD.",
+    "After power-up wait about a minute for indoor unit discovery, since reads return UNKNOWN_OBJECT until then.",
+    "Work out each group's instances as unit number x 256 + member, so unit 001's BO 1 (StartStopCommand_001) is BO 257.",
+    "Read BI 2 (StartStopStatus), AI 9 (RoomTemp), MI 6 (AirConModeStatus) and BI 20 (CommunicationStatus) for every group.",
+    "Test one group by writing BO 1 (StartStopCommand) on, checking BI 2 follows, then writing it off again.",
+    "Set the BMS to write setpoint, on/off, mode, fan speed and airflow direction only on change, because they go to non-volatile memory with a write-count limit.",
+    "Decide on lockouts: BV 13/14/16 per group, and BV 17 (CL_Rejection) on units 000/064/128/192 if central controllers must not override the BMS.",
+    "Map BI 3 (Alarm), MI 4 (MalfunctionCode) and BI 20 (CommunicationStatus) as alarms for every group."
+  ]
+}

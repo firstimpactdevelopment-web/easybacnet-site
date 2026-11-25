@@ -1,0 +1,176 @@
+{
+  "jobs": [
+    {
+      "job": "Per-unit on/off",
+      "how": "Each Samsung unit is its own BACnet device, and every indoor unit device uses the same small instance numbers. Write BV 9 inside the indoor unit's device; BO 1 on the gateway device turns everything off.",
+      "points": [
+        {
+          "ref": "BV 9",
+          "use": "Write on/off; check it's writable on the controller"
+        },
+        {
+          "ref": "BO 1",
+          "use": "Gateway: write all devices off; check it's writable on the controller"
+        }
+      ]
+    },
+    {
+      "job": "Mode and remote-controller limits",
+      "how": "Write the indoor unit mode to MV 14. MV 17 restricts which modes are allowed and MV 18 enables, disables or conditionally allows the local remote controller.",
+      "points": [
+        {
+          "ref": "MV 14",
+          "use": "Write 1-5 = auto/cool/heat/fan/dry; check it's writable on the controller"
+        },
+        {
+          "ref": "MV 17",
+          "use": "Write 1-3 = none/cool-only/heat-only; check it's writable on the controller"
+        },
+        {
+          "ref": "MV 18",
+          "use": "Write 1-3 = enable/disable/conditional RC; check it's writable on the controller"
+        }
+      ]
+    },
+    {
+      "job": "Setpoints and limits",
+      "how": "Write the main setpoint to AV 2; in auto mode the unit has separate cooling and heating setpoints. Limit points need their matching enable BV set True. Instances 27-32 exist in the Advanced point set only.",
+      "points": [
+        {
+          "ref": "AV 2",
+          "use": "Write setpoint, °C; check it's writable on the controller"
+        },
+        {
+          "ref": "AV 31",
+          "use": "Write auto-mode cooling setpoint; check it's writable on the controller"
+        },
+        {
+          "ref": "AV 32",
+          "use": "Write auto-mode heating setpoint; check it's writable on the controller"
+        },
+        {
+          "ref": "AV 27",
+          "use": "Write cooling upper limit; check it's writable on the controller"
+        },
+        {
+          "ref": "BV 29",
+          "use": "Write True = apply AV 27; check it's writable on the controller"
+        },
+        {
+          "ref": "AV 28",
+          "use": "Write heating lower limit; check it's writable on the controller"
+        },
+        {
+          "ref": "BV 30",
+          "use": "Write True = apply AV 28; check it's writable on the controller"
+        }
+      ]
+    },
+    {
+      "job": "Room and discharge temperature",
+      "how": "Read room temperature on AI 1. Discharge temperature, discharge setpoints and air-quality points are optional and only appear on units that support them.",
+      "points": [
+        {
+          "ref": "AI 1",
+          "use": "Read indoor (room) temperature, °C"
+        },
+        {
+          "ref": "AI 24",
+          "use": "Read discharge air temperature"
+        },
+        {
+          "ref": "AV 22",
+          "use": "Write discharge cooling setpoint; check it's writable on the controller"
+        },
+        {
+          "ref": "AV 23",
+          "use": "Write discharge heating setpoint; check it's writable on the controller"
+        },
+        {
+          "ref": "AI 35",
+          "use": "Read PM2.5, μg/m3 (dust sensor units only)"
+        },
+        {
+          "ref": "MI 33",
+          "use": "Read air cleanliness level: 2 good to 7 worst"
+        }
+      ]
+    },
+    {
+      "job": "Fan and airflow",
+      "how": "Fan speed and louvre direction are per indoor unit. Wind-Free only exists on units that support it.",
+      "points": [
+        {
+          "ref": "MV 15",
+          "use": "Write 1-5 = auto/low/mid/high/turbo; check it's writable on the controller"
+        },
+        {
+          "ref": "MV 16",
+          "use": "Write airflow direction, 8 = swing; check it's writable on the controller"
+        },
+        {
+          "ref": "BV 25",
+          "use": "Write Wind-Free on/off; check it's writable on the controller"
+        }
+      ]
+    },
+    {
+      "job": "Errors, filter and gateway health",
+      "how": "Watch AI 19 on each indoor unit and AI 2 on the gateway device. A unit that loses communication shows Reliability = COMMUNICATION_FAILURE and the fault flag, and its Present_Value is no longer reliable.",
+      "points": [
+        {
+          "ref": "AI 19",
+          "use": "Read combined indoor and outdoor unit error code"
+        },
+        {
+          "ref": "BI 12",
+          "use": "Read True = filter sign on"
+        },
+        {
+          "ref": "BO 13",
+          "use": "Write to reset filter sign; check it's writable on the controller"
+        },
+        {
+          "ref": "AI 2",
+          "use": "Gateway: read 0 normal, 8 e-stop, 109 DMS comms failed"
+        },
+        {
+          "ref": "AI 3",
+          "use": "Gateway: read BACnet error code"
+        }
+      ]
+    },
+    {
+      "job": "Energy and run time",
+      "how": "Each indoor unit device reports energy and hours of use since a base date and within a period.",
+      "points": [
+        {
+          "ref": "AI 5",
+          "use": "Read kWh since base date"
+        },
+        {
+          "ref": "AI 6",
+          "use": "Read minutes of use since base date"
+        },
+        {
+          "ref": "AI 7",
+          "use": "Read kWh within period"
+        },
+        {
+          "ref": "AI 8",
+          "use": "Read minutes of use within period"
+        }
+      ]
+    }
+  ],
+  "checklist": [
+    "In the DMS2.5 BACnet web pages set the gateway IP, BACnet port (default 47808) and a Network No. (DNET 1-40, default 9) that is different for each gateway on the network.",
+    "Pick Basic or Advanced point provision before mapping, because changing it later restarts the DMS and renumbers instances.",
+    "Discover the devices and decode each device ID as DNET + CPP code + unit address (941732 = gateway 9, indoor unit 01.01.32) to match devices to units.",
+    "On the gateway device read AI 2 (DMS2.5_Status) and confirm it shows 0 = Normal.",
+    "On one indoor unit device read AI 1 (AC_RoomTemp), MV 14 (AC_Operation_Mode) and AI 19 (AC_Error_Code).",
+    "Test BV 9 (AC_Power) at priority 8, confirm the unit turns on, then turn it off, without sending commands in quick succession.",
+    "Set MV 18 (AC_Remocon_Limit) and MV 17 (AC_Mode_Limit) per unit if local control must be restricted.",
+    "Map AI 19 on every indoor unit and AI 2 on the gateway as alarms, and resubscribe any COV after the gateway is power cycled."
+  ]
+}
