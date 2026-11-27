@@ -29,6 +29,7 @@ import diagrams
 import points_library
 import calculators
 import reftools
+import printable_guides
 
 BASE_URL = "https://easybacnet.com"
 
@@ -400,7 +401,7 @@ def page(slug, title, question, answer_html, body_html, related, description,
         "question": question,
         "answer": answer_html,
         "shots": screenshot_block(slug, prefix),
-        "body": re.sub(r"\{\{fig:(\w+)\}\}", lambda m: diagrams.figure(m.group(1)), body_html),
+        "body": re.sub(r"\{\{fig:(\w+)\}\}", lambda m: diagrams.figure(m.group(1)), body_html) + (printable_guides.box(slug) if slug != printable_guides.HUB else ""),
         "rel": rel,
         "prefix": prefix,
         "updated_h": human_date(updated or published or UPDATED),
@@ -5166,6 +5167,7 @@ def main(ping=False):
     lib_paths, lib_llms = points_library.build(write)
     calc_paths, calc_llms = calculators.build(write)
     ref_paths, ref_llms = reftools.build(write)
+    pg_paths, pg_llms = printable_guides.build(write, page)
 
     write("about.html", about_page(
         n_models=points_library.MODEL_COUNT,
@@ -5205,6 +5207,7 @@ def main(ping=False):
     )
     tool_links = ('  <li><a href="%s">BACnet number lookup</a><br><span class="muted">Type any BACnet number and see what it means: engineering units, property IDs, object types, error codes, reliability.</span></li>\n'
                   '  <li><a href="%s">Compare a scan with a points list</a><br><span class="muted">Drop in an Easy BACnet export or EDE file and see what matches the manufacturer list, what is missing and what is extra.</span></li>\n' % (reftools.hub_path(), reftools.COMPARE)) + tool_links
+    tool_links = ('  <li><a href="%s.html">Printable PDF guides</a><br><span class="muted">Short illustrated guides: export a points list, build remotes and control panels, use the device emulator.</span></li>\n' % printable_guides.HUB) + tool_links
     tool_links = ('  <li><a href="%s">BACnet instance calculators (%d brands and gateways)</a><br>'
                   '<span class="muted">Enter a unit address, get every object instance: Fujitsu, Mitsubishi '
                   'Electric, Daikin, Samsung, Toshiba, Gree, Intesis and more.</span></li>\n'
@@ -5222,7 +5225,7 @@ def main(ping=False):
     urls = (["index.html", "about.html", "privacy.html", "terms.html"]
             + [t["slug"] + ".html" for t in TOOLS]
             + [g["slug"] + ".html" for g in GUIDES]
-            + lib_paths + calc_paths + ref_paths)
+            + lib_paths + calc_paths + ref_paths + pg_paths)
     sm = ['<?xml version="1.0" encoding="UTF-8"?>',
           '<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">']
     lastmod = {g["slug"] + ".html": guide_lastmod(g) for g in GUIDES}
@@ -5328,6 +5331,7 @@ def main(ping=False):
         llms.append("- %s: %s/%s" % (html_module.unescape(g["question"]), BASE_URL, g["slug"]))
     llms.extend(lib_llms)
     llms.extend(calc_llms)
+    llms.extend(pg_llms)
     llms.extend(ref_llms)
     llms.append("")
     llms.append("- Easy BACnet home: %s/" % BASE_URL)
