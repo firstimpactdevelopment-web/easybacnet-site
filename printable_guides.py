@@ -9,7 +9,7 @@ import html as _h
 import os
 
 HERE = os.path.dirname(os.path.abspath(__file__))
-PC_PUBLIC = False
+PC_PUBLIC = True
 HUB = "printable-guides"
 UPDATED = "2026-11-26"
 
