@@ -646,7 +646,7 @@ def shell(relpath, title, description, h1_html, body, jsonld, crumbs, og_type="w
 <body>
 <div class="top"><div class="wrap">
   <a class="brand" href="/index.html"><img src="/icon.svg" alt="" width="28" height="28"><b>Easy BACnet</b></a>
-  <nav aria-label="Site"><a href="/bacnet-points-lists/index.html" class="on">Points lists</a><a href="/bacnet-instance-calculators/index.html">Calculators</a><a href="/index.html#guides">Guides</a><a href="/index.html">The app</a><a class="getapp" href="%(play_nav)s" rel="noopener">Get the app</a></nav>
+  <nav aria-label="Site"><a href="/bacnet-points-lists/index.html" class="on">Points lists</a><a href="/bacnet-instance-calculators/index.html">Calculators</a><a href="/index.html#guides">Guides</a><a href="/index.html">The app</a><a href="/view.html">Enter a code</a><a class="getapp" href="%(play_nav)s" rel="noopener">Get the app</a></nav>
 </div></div>
 <main class="wrap">
 <ol class="crumbs" aria-label="Breadcrumb">%(crumbs)s</ol>

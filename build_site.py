@@ -30,6 +30,7 @@ import points_library
 import calculators
 import reftools
 import printable_guides
+import share_view
 
 BASE_URL = "https://easybacnet.com"
 
@@ -356,6 +357,7 @@ def page(slug, title, question, answer_html, body_html, related, description,
   <a href="%(prefix)sindex.html" style="display:inline-flex;align-items:center;gap:.5rem;text-decoration:none"><img src="icon.svg" alt="" width="28" height="28" style="border-radius:7px"><b class="brand">Easy BACnet</b></a>
   <span class="muted">&middot; BACnet IP Controls made Easy</span>
   <a class="navl" href="%(prefix)sbacnet-points-lists/index.html" style="margin-left:1rem;font-family:'IBM Plex Mono',monospace;font-size:.72rem;letter-spacing:.12em;text-transform:uppercase;color:#ff9a1f">Points lists</a>
+  <a class="navl" href="%(prefix)sview.html" style="margin-left:1rem;font-family:'IBM Plex Mono',monospace;font-size:.72rem;letter-spacing:.12em;text-transform:uppercase">Enter a code</a>
   <a class="getapp" href="%(play_nav)s" rel="noopener">Get the app</a>
 </header>
 
@@ -459,7 +461,9 @@ def _clean_internal_urls(text):
 def write(relpath, content):
     # Inject the analytics + consent banner into every HTML page, right after
     # the charset meta so it never pushes charset past the first 1 KB.
-    if "<head>" in content and "googletagmanager" not in content:
+    # Pages carrying <!--no-analytics--> (the shared-scan viewer) get no
+    # analytics, consent banner or ads.
+    if "<head>" in content and "googletagmanager" not in content and "<!--no-analytics-->" not in content:
         marker = '<meta charset="utf-8">'
         if marker in content:
             content = content.replace(marker, marker + ANALYTICS, 1)
@@ -1392,8 +1396,10 @@ GUIDES.append(dict(
 
   <h2>Good to know</h2>
   <ul>
-    <li><strong>Nothing is uploaded anywhere.</strong> The app has no account and
-    no server. The spreadsheet exists on your phone and wherever you send it.</li>
+    <li><strong>Nothing is uploaded unless you choose to.</strong> The app has no account.
+    The spreadsheet exists on your phone and wherever you send it. <strong>Share with code</strong>
+    uploads an encrypted copy that only people with the code can open, and it deletes itself after
+    7 days. See <a href="share-bacnet-scan-results-with-a-code.html">sharing scan results with a code</a>.</li>
     <li><strong>Scanning and reading don't change anything</strong> on the
     equipment. Writing has to be switched on separately &mdash; see
     <a href="how-to-write-to-a-bacnet-point.html">how to write to a BACnet
@@ -2787,6 +2793,15 @@ GUIDES.append(dict(
     send it.</li>
   </ol>
 
+  <h2>Or skip the email: share with a code</h2>
+  <p>Instead of attaching a file, tap <strong>Share with code</strong> under the results. The app
+  reads the points the same way, then gives you an 8-character code like <code>K7QM-4XPR</code>.
+  Whoever needs the list types it at <a href="../view.html">easybacnet.com/view</a> and sees every
+  device and point, with the values read at scan time, and can download it as a CSV. The scan is
+  encrypted on your phone with the code, so we can't read it, and it deletes itself 7 days after
+  the last scan you add. You can keep adding scans to the same code from the same phone. See
+  <a href="share-bacnet-scan-results-with-a-code.html">sharing scan results with a code</a>.</p>
+
   <h2>What the spreadsheet contains</h2>
   <p>One sheet with two tables:</p>
   <table>
@@ -2837,8 +2852,10 @@ GUIDES.append(dict(
   </div>
 
   <h2>Privacy</h2>
-  <p>The export is built on your phone and kept in the app's private cache; the app has no
-  server and sends nothing itself. Once you share it, it goes wherever you send it. A points
+  <p>The export is built on your phone and kept in the app's private cache, and the app sends
+  nothing itself. Once you share it, it goes wherever you send it. (<strong>Share with code</strong>
+  is the one exception you choose: it uploads an encrypted copy that only people with the code can
+  open.) A points
   list is a map of a building's controls, so send it to a named person, not a shared inbox.
   Details are in the <a href="../privacy.html">privacy policy</a>.</p>
 """,
@@ -2846,6 +2863,7 @@ GUIDES.append(dict(
         ("guides/how-to-use-easy-bacnet", "How do I scan for my BACnet points list?"),
         ("guides/what-is-a-bacnet-points-list", "What is a BACnet IP points list?"),
         ("guides/vendor-asking-for-bacnet-information", "A vendor asked for my BACnet information"),
+        ("guides/share-bacnet-scan-results-with-a-code", "How do I share BACnet scan results with a code?"),
         ("guides/read-bacnet-values-from-phone", "How do I read BACnet values from a phone?"),
     ],
 ))
@@ -4375,6 +4393,7 @@ TOOL_TEMPLATE = """<!doctype html>
 <header class="site">
   <a href="index.html" style="display:inline-flex;align-items:center;gap:.5rem;text-decoration:none"><img src="icon.svg" alt="" width="26" height="26" style="border-radius:6px"><span>Easy BACnet</span></a>
   <span class="muted">&middot; free BACnet tools</span>
+  <a class="navl" href="view.html" style="margin-left:1rem;font-family:'IBM Plex Mono',monospace;font-size:.72rem;letter-spacing:.12em;text-transform:uppercase">Enter a code</a>
   <a class="getapp" href="{{PLAY_NAV}}" rel="noopener">Get the app</a>
 </header>
 
@@ -4729,6 +4748,13 @@ strong{color:#fff}
 .top .getapp{margin-left:.9rem; padding:.35rem .75rem; border-radius:8px; background:var(--accent); color:#0d0f11; font-weight:700; font-family:"IBM Plex Mono",monospace; font-size:.72rem; letter-spacing:.1em; text-transform:uppercase; text-decoration:none; white-space:nowrap}
 .hero .cta{display:flex; align-items:center; gap:1rem; flex-wrap:wrap; margin-top:1.5rem}
 .hero .cta .btn{background:var(--accent); color:#0d0f11; font-weight:800; padding:.8rem 1.3rem; border-radius:12px; text-decoration:none; font-size:1.05rem}
+.hero .cta .btn.alt{background:transparent; color:var(--fg); border:1px solid var(--line)}
+.hero .cta .btn.alt:hover{border-color:var(--accent)}
+.heroCode{margin-top:1.3rem; max-width:26rem}
+.heroCode label{display:block; color:var(--mut); font-size:.9rem; margin-bottom:.4rem}
+.heroCode div{display:flex; gap:.5rem}
+.heroCode input{flex:1; min-width:0; padding:.55rem .7rem; font-family:"IBM Plex Mono",monospace; font-size:1.05rem; letter-spacing:.14em; text-transform:uppercase; color:var(--fg); background:#101418; border:1px solid var(--line); border-radius:10px}
+.heroCode button{padding:.55rem 1rem; font-weight:800; color:#0d0f11; background:var(--accent); border:none; border-radius:10px; cursor:pointer}
 .hero .cta span{color:var(--mut); font-family:"IBM Plex Mono",monospace; font-size:.75rem; letter-spacing:.12em; text-transform:uppercase}
 
 /* hero */
@@ -4834,6 +4860,7 @@ footer a{color:var(--mut); text-decoration:underline}
     <a class="brand" href="index.html"><img src="icon.svg" alt=""><b>Easy BACnet</b></a>
     <span class="tag">BACnet IP Controls made Easy</span>
     <a class="navl" href="bacnet-points-lists/index.html" style="margin-left:1.2rem;font-family:'IBM Plex Mono',monospace;font-size:.72rem;letter-spacing:.14em;text-transform:uppercase">Points lists</a>
+    <a class="navl" href="view.html" style="margin-left:1.2rem;font-family:'IBM Plex Mono',monospace;font-size:.72rem;letter-spacing:.14em;text-transform:uppercase">Enter a code</a>
     <a class="getapp" href="{{PLAY_NAV}}" rel="noopener">Get the app</a>
   </div>
 </div>
@@ -4849,10 +4876,15 @@ footer a{color:var(--mut); text-decoration:underline}
       as a BACnet device so you can see exactly what the BMS is sending.</p>
       <p class="sub"><a href="bacnet-points-lists/index.html"><b>Browse the free BACnet points lists</b></a>
       for 1,600+ HVAC controllers and gateways, with object IDs and a CSV or EDE download for each.</p>
-      <p class="sub">No account and no cloud. Scan data stays on your phone and your local
-      network. <b>Easy.</b></p>
-      <p class="cta"><a class="btn" href="{{PLAY_HERO}}" rel="noopener">Get it on Google Play</a>
+      <p class="sub">No account needed. Scan data stays on your phone unless you choose to
+      share it with a code. Shared scans are encrypted, deleted after 7 days, and we can't read them. <b>Easy.</b></p>
+      <p class="cta"><a class="btn" href="{{PLAY_HERO}}" rel="noopener">Download the app</a>
+      <a class="btn alt" href="view.html">View a shared scan</a>
       <span>Free &middot; Android</span></p>
+      <form class="heroCode" action="view.html" onsubmit="event.preventDefault();var v=this.c.value.trim();location.href='view.html'+(v?'#'+encodeURIComponent(v):'')">
+        <label for="heroc">Got a code from someone? See their scan results:</label>
+        <div><input id="heroc" name="c" maxlength="11" placeholder="K7QM-4XPR" autocomplete="off" spellcheck="false" autocapitalize="characters"><button type="submit">View</button></div>
+      </form>
     </div>
     <div class="art">
       <div class="phone"><img src="img/scan.png" alt="A finished scan in Easy BACnet" width="480" height="1068" fetchpriority="high"></div>
@@ -5168,6 +5200,7 @@ def main(ping=False):
     calc_paths, calc_llms = calculators.build(write)
     ref_paths, ref_llms = reftools.build(write)
     pg_paths, pg_llms = printable_guides.build(write, page)
+    sv_paths, sv_llms = share_view.build(write, page, CSS, TOOL_CSS_EXTRA)
 
     write("about.html", about_page(
         n_models=points_library.MODEL_COUNT,
@@ -5207,6 +5240,8 @@ def main(ping=False):
     )
     tool_links = ('  <li><a href="%s">BACnet number lookup</a><br><span class="muted">Type any BACnet number and see what it means: engineering units, property IDs, object types, error codes, reliability.</span></li>\n'
                   '  <li><a href="%s">Compare a scan with a points list</a><br><span class="muted">Drop in an Easy BACnet export or EDE file and see what matches the manufacturer list, what is missing and what is extra.</span></li>\n' % (reftools.hub_path(), reftools.COMPARE)) + tool_links
+    tool_links = ('  <li><a href="view.html">View a shared scan</a><br><span class="muted">Got an 8-character code from someone? Type it in to see their scan results. '
+                  '<a href="guides/share-bacnet-scan-results-with-a-code.html">How sharing works</a>.</span></li>\n') + tool_links
     tool_links = ('  <li><a href="%s.html">Printable PDF guides</a><br><span class="muted">Short illustrated guides: export a points list, build remotes and control panels, use the device emulator.</span></li>\n' % printable_guides.HUB) + tool_links
     tool_links = ('  <li><a href="%s">BACnet instance calculators (%d brands and gateways)</a><br>'
                   '<span class="muted">Enter a unit address, get every object instance: Fujitsu, Mitsubishi '
@@ -5225,7 +5260,7 @@ def main(ping=False):
     urls = (["index.html", "about.html", "privacy.html", "terms.html"]
             + [t["slug"] + ".html" for t in TOOLS]
             + [g["slug"] + ".html" for g in GUIDES]
-            + lib_paths + calc_paths + ref_paths + pg_paths)
+            + lib_paths + calc_paths + ref_paths + pg_paths + sv_paths)
     sm = ['<?xml version="1.0" encoding="UTF-8"?>',
           '<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">']
     lastmod = {g["slug"] + ".html": guide_lastmod(g) for g in GUIDES}
@@ -5332,6 +5367,7 @@ def main(ping=False):
     llms.extend(lib_llms)
     llms.extend(calc_llms)
     llms.extend(pg_llms)
+    llms.extend(sv_llms)
     llms.extend(ref_llms)
     llms.append("")
     llms.append("- Easy BACnet home: %s/" % BASE_URL)
