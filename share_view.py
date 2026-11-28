@@ -128,6 +128,7 @@ const LOCAL = ["localhost", "127.0.0.1"].includes(location.hostname);
 const API = LOCAL ? (new URLSearchParams(location.search).get("api") || "http://127.0.0.1:8787") : "%(api)s";
 const $ = (id) => document.getElementById(id);
 let keys = null, folder = null, current = null;
+const DEMO_CODES = ["GQLMQX9Z", "K7QM4XPR"];
 const cache = new Map();
 
 function say(text, err) { $("msg").textContent = text; $("msg").className = "msg" + (err ? " err" : ""); }
@@ -150,6 +151,15 @@ async function api(path, tries = 3) {
 async function open(raw) {
   const code = normalizeCode(raw);
   if (!code) { say("A code is 8 letters and numbers, like K7QM-4XPR. It never uses 0, O, 1 or I.", true); return; }
+  // Codes printed in our own store screenshots and examples never hold real scans.
+  if (DEMO_CODES.includes(code)) {
+    $("code").value = formatCode(code);
+    $("out").classList.add("hidden");
+    $("msg").className = "msg";
+    $("msg").innerHTML = "Nice try! That code is from our screenshots, so there's nothing behind it. " +
+      'Run a scan in the <a href="%(play)s" rel="noopener">Easy BACnet app</a> and share your own.';
+    return;
+  }
   $("code").value = formatCode(code);
   $("go").disabled = true;
   say("Unlocking…");
@@ -183,7 +193,7 @@ function renderFolder() {
     const n = Number(s.seq) || 0;
     if (!m) return `<button class="scan" disabled><b>Scan ${n}</b><span>Could not unlock this scan.</span></button>`;
     return `<button class="scan" data-seq="${n}"><b>${esc(when(m.scannedAt))}</b>
-      <span>${esc(m.kind === "advanced" ? "Advanced scan" : "Easy scan")} · ${esc(m.devices)} devices · ${esc(m.points)} points</span>
+      <span>${esc(m.kind === "advanced" ? "Advanced scan" : "Easy scan")} · ${esc(m.devices)} ${m.devices === 1 ? "device" : "devices"} · ${esc(m.points)} ${m.points === 1 ? "point" : "points"}</span>
       <span>Scanned from ${esc(m.ip || "unknown IP")}${m.app ? " · " + esc(m.app) : ""}</span></button>`;
   }).reverse().join("");
   for (const b of $("scans").querySelectorAll("button[data-seq]")) b.onclick = () => show(Number(b.dataset.seq));
@@ -374,7 +384,7 @@ def build(write, page, css, tool_css):
     write(VIEW + ".html", HEAD % dict(title="View a shared scan | Easy BACnet",
                                       desc="Type an Easy BACnet share code to see a scan someone shared with you.",
                                       css=full_css, play=_play("nav"))
-          + VIEW_BODY.replace("%(guide)s", GUIDE + ".html").replace("%(api)s", API_PROD))
+          + VIEW_BODY.replace("%(guide)s", GUIDE + ".html").replace("%(api)s", API_PROD).replace("%(play)s", _play("demo")))
     write(ADMIN + ".html", HEAD % dict(title="Shared codes | Easy BACnet", desc="Admin list.",
                                        css=full_css, play=_play("nav"))
           + ADMIN_BODY.replace("%(api)s", API_PROD))
